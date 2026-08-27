@@ -16,108 +16,108 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-      <h3 class="fw-bold brand-font mb-0">Customer Payments, Invoices &amp; Links</h3>
+      <h3 class="fw-bold brand-font mb-1">Customer Payments, Invoices &amp; Links</h3>
       <p class="text-muted small mb-0">End-to-end payment tracking: Customer &rarr; Supplier &rarr; Applicant &rarr; Passport &rarr; Visa Type &rarr; Invoice &rarr; Wallet.</p>
     </div>
-    <div class="d-flex gap-2">
-      <a href="/payments/history" class="btn btn-outline-dark px-3 fw-semibold shadow-sm">
+    <div class="d-flex flex-wrap gap-2">
+      <a href="/payments/history" class="btn btn-outline-dark btn-sm px-3 fw-semibold shadow-sm">
         <i class="fa-solid fa-clock-rotate-left me-1"></i> Payment History
       </a>
-      <a href="/payments/links" class="btn btn-outline-info px-3 fw-semibold shadow-sm">
+      <a href="/payments/links" class="btn btn-outline-info btn-sm px-3 fw-semibold shadow-sm">
         <i class="fa-solid fa-list-check me-1"></i> Payment Links (<?= $metrics['total_online_links'] ?>)
       </a>
-      <button type="button" class="btn btn-outline-primary px-3 fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#generateLinkModal">
-        <i class="fa-solid fa-link me-1"></i> Generate Payment Link
+      <button type="button" class="btn btn-outline-primary btn-sm px-3 fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#generateLinkModal">
+        <i class="fa-solid fa-link me-1"></i> Generate Link
       </button>
-      <button type="button" class="btn btn-success px-3 fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#recordPaymentModal">
+      <button type="button" class="btn btn-success btn-sm px-3 fw-semibold shadow-sm">
         <i class="fa-solid fa-credit-card me-1"></i> Record Payment
       </button>
     </div>
   </div>
 
-  <!-- Financial KPI Metrics -->
+  <!-- Financial KPI Metrics (100% Responsive Grid) -->
   <div class="row g-3 mb-4">
-    <div class="col-md-2 col-6">
-      <div class="stat-card p-3">
-        <div class="stat-icon-wrapper bg-success bg-opacity-10 text-success fs-5 p-2">
-          <i class="fa-solid fa-money-bill-wave"></i>
+    <div class="col-12 col-sm-6 col-md-4 col-xl-2">
+      <div class="stat-card p-3 h-100 shadow-sm">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <div class="stat-icon-wrapper bg-success bg-opacity-10 text-success fs-5 p-2 rounded-3">
+            <i class="fa-solid fa-money-bill-wave"></i>
+          </div>
+          <div class="stat-title text-muted text-uppercase fw-bold" style="font-size: 0.68rem; letter-spacing: 0.03em;">Total Collected</div>
         </div>
-        <div>
-          <div class="stat-title" style="font-size: 0.72rem;">Total Collected</div>
-          <div class="stat-value text-success fs-5"><?= format_currency($metrics['total_received']) ?></div>
-        </div>
+        <div class="stat-value text-success fw-bold fs-5 mb-0"><?= format_currency($metrics['total_received']) ?></div>
       </div>
     </div>
-    <div class="col-md-2 col-6">
-      <div class="stat-card p-3">
-        <div class="stat-icon-wrapper bg-danger bg-opacity-10 text-danger fs-5 p-2">
-          <i class="fa-solid fa-file-invoice-dollar"></i>
+    <div class="col-12 col-sm-6 col-md-4 col-xl-2">
+      <div class="stat-card p-3 h-100 shadow-sm">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <div class="stat-icon-wrapper bg-danger bg-opacity-10 text-danger fs-5 p-2 rounded-3">
+            <i class="fa-solid fa-file-invoice-dollar"></i>
+          </div>
+          <div class="stat-title text-muted text-uppercase fw-bold" style="font-size: 0.68rem; letter-spacing: 0.03em;">Outstanding</div>
         </div>
-        <div>
-          <div class="stat-title" style="font-size: 0.72rem;">Outstanding</div>
-          <div class="stat-value text-danger fs-5"><?= format_currency($metrics['outstanding']) ?></div>
-        </div>
+        <div class="stat-value text-danger fw-bold fs-5 mb-0"><?= format_currency($metrics['outstanding']) ?></div>
       </div>
     </div>
-    <div class="col-md-2 col-6">
-      <div class="stat-card p-3">
-        <div class="stat-icon-wrapper bg-warning bg-opacity-10 text-warning fs-5 p-2">
-          <i class="fa-solid fa-rotate-left"></i>
+    <div class="col-12 col-sm-6 col-md-4 col-xl-2">
+      <div class="stat-card p-3 h-100 shadow-sm">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <div class="stat-icon-wrapper bg-warning bg-opacity-10 text-warning fs-5 p-2 rounded-3">
+            <i class="fa-solid fa-rotate-left"></i>
+          </div>
+          <div class="stat-title text-muted text-uppercase fw-bold" style="font-size: 0.68rem; letter-spacing: 0.03em;">Refunded</div>
         </div>
-        <div>
-          <div class="stat-title" style="font-size: 0.72rem;">Refunded</div>
-          <div class="stat-value text-warning fs-5"><?= format_currency($metrics['total_refunded']) ?></div>
-        </div>
+        <div class="stat-value text-warning fw-bold fs-5 mb-0"><?= format_currency($metrics['total_refunded']) ?></div>
       </div>
     </div>
-    <div class="col-md-2 col-6">
-      <div class="stat-card p-3">
-        <div class="stat-icon-wrapper bg-info bg-opacity-10 text-info fs-5 p-2">
-          <i class="fa-solid fa-wallet"></i>
+    <div class="col-12 col-sm-6 col-md-4 col-xl-2">
+      <div class="stat-card p-3 h-100 shadow-sm">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <div class="stat-icon-wrapper bg-info bg-opacity-10 text-info fs-5 p-2 rounded-3">
+            <i class="fa-solid fa-wallet"></i>
+          </div>
+          <div class="stat-title text-muted text-uppercase fw-bold" style="font-size: 0.68rem; letter-spacing: 0.03em;">Wallet Credits</div>
         </div>
-        <div>
-          <div class="stat-title" style="font-size: 0.72rem;">Wallet Credits</div>
-          <div class="stat-value text-info fs-5"><?= format_currency($metrics['total_wallet_credits']) ?></div>
-        </div>
+        <div class="stat-value text-info fw-bold fs-5 mb-0"><?= format_currency($metrics['total_wallet_credits']) ?></div>
       </div>
     </div>
-    <div class="col-md-2 col-6">
-      <div class="stat-card p-3">
-        <div class="stat-icon-wrapper bg-primary bg-opacity-10 text-primary fs-5 p-2">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+    <div class="col-12 col-sm-6 col-md-4 col-xl-2">
+      <div class="stat-card p-3 h-100 shadow-sm">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <div class="stat-icon-wrapper bg-primary bg-opacity-10 text-primary fs-5 p-2 rounded-3">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </div>
+          <div class="stat-title text-muted text-uppercase fw-bold" style="font-size: 0.68rem; letter-spacing: 0.03em;">Wallet Debits</div>
         </div>
-        <div>
-          <div class="stat-title" style="font-size: 0.72rem;">Wallet Debits</div>
-          <div class="stat-value text-primary fs-5"><?= format_currency($metrics['total_wallet_debits']) ?></div>
-        </div>
+        <div class="stat-value text-primary fw-bold fs-5 mb-0"><?= format_currency($metrics['total_wallet_debits']) ?></div>
       </div>
     </div>
-    <div class="col-md-2 col-6">
-      <div class="stat-card p-3">
-        <div class="stat-icon-wrapper bg-secondary bg-opacity-10 text-secondary fs-5 p-2">
-          <i class="fa-solid fa-share-nodes"></i>
+    <div class="col-12 col-sm-6 col-md-4 col-xl-2">
+      <div class="stat-card p-3 h-100 shadow-sm">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <div class="stat-icon-wrapper bg-secondary bg-opacity-10 text-secondary fs-5 p-2 rounded-3">
+            <i class="fa-solid fa-share-nodes"></i>
+          </div>
+          <div class="stat-title text-muted text-uppercase fw-bold" style="font-size: 0.68rem; letter-spacing: 0.03em;">Payment Links</div>
         </div>
-        <div>
-          <div class="stat-title" style="font-size: 0.72rem;">Payment Links</div>
-          <div class="stat-value text-secondary fs-5"><?= $metrics['total_online_links'] ?> Links</div>
-        </div>
+        <div class="stat-value text-secondary fw-bold fs-5 mb-0"><?= $metrics['total_online_links'] ?> Links</div>
       </div>
     </div>
   </div>
 
-  <!-- Multi-Filter & Search Bar -->
+  <!-- Multi-Filter & Search Bar (100% Responsive Toolbar) -->
   <div class="card card-enterprise mb-4 shadow-sm">
     <div class="card-body p-3">
       <form method="GET" action="/payments" class="row g-2 align-items-end">
-        <div class="col-md-3">
-          <label class="form-label small text-muted mb-1">Search Keywords</label>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+          <label class="form-label small text-muted mb-1 fw-semibold">Search Keywords</label>
           <div class="input-group input-group-sm">
-            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
             <input type="text" name="search" class="form-control" placeholder="Receipt / Invoice / Name / Passport..." value="<?= e($_GET['search'] ?? '') ?>">
           </div>
         </div>
-        <div class="col-md-2">
-          <label class="form-label small text-muted mb-1">Supplier Channel</label>
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <label class="form-label small text-muted mb-1 fw-semibold">Supplier Channel</label>
           <select name="supplier_id" class="form-select form-select-sm">
             <option value="">-- All Suppliers --</option>
             <?php foreach ($suppliersList as $sup): ?>
@@ -127,8 +127,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <?php endforeach; ?>
           </select>
         </div>
-        <div class="col-md-2">
-          <label class="form-label small text-muted mb-1">Destination Country</label>
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <label class="form-label small text-muted mb-1 fw-semibold">Destination Country</label>
           <select name="country_id" class="form-select form-select-sm">
             <option value="">-- All Countries --</option>
             <?php foreach ($countriesList as $cnt): ?>
@@ -138,8 +138,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <?php endforeach; ?>
           </select>
         </div>
-        <div class="col-md-2">
-          <label class="form-label small text-muted mb-1">Payment Method</label>
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <label class="form-label small text-muted mb-1 fw-semibold">Payment Method</label>
           <select name="method" class="form-select form-select-sm">
             <option value="">-- All Methods --</option>
             <option value="Stripe" <?= ($_GET['method'] ?? '') === 'Stripe' ? 'selected' : '' ?>>Stripe / Online</option>
@@ -149,33 +149,35 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <option value="Card" <?= ($_GET['method'] ?? '') === 'Card' ? 'selected' : '' ?>>POS Card</option>
           </select>
         </div>
-        <div class="col-md-3 d-flex gap-2">
-          <button type="submit" class="btn btn-primary btn-sm flex-grow-1 fw-semibold">
-            <i class="fa-solid fa-filter me-1"></i> Filter Records
-          </button>
-          <a href="/payments" class="btn btn-outline-secondary btn-sm" title="Reset Filters">
-            <i class="fa-solid fa-rotate-left"></i>
-          </a>
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+          <div class="btn-group btn-group-sm w-100 shadow-sm" role="group">
+            <button type="submit" class="btn btn-primary fw-semibold">
+              <i class="fa-solid fa-filter me-1"></i> Filter Records
+            </button>
+            <a href="/payments" class="btn btn-outline-secondary" title="Reset Filters">
+              <i class="fa-solid fa-rotate-left"></i>
+            </a>
+          </div>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Payments Table -->
+  <!-- Payments & Invoices Table (100% Horizontal Responsive Grid) -->
   <div class="card card-enterprise shadow-sm">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0" style="font-size: 0.88rem;">
+    <div class="table-responsive" style="-webkit-overflow-scrolling: touch;">
+      <table class="table table-hover align-middle mb-0 table-custom" style="font-size: 0.86rem; min-width: 1100px;">
         <thead class="table-light">
           <tr>
-            <th>Receipt / Invoice #</th>
-            <th>Applicant &amp; Passport</th>
-            <th>Destination &amp; Visa Type</th>
-            <th>Supplier</th>
-            <th>Date &amp; Method</th>
-            <th>Transaction Ref</th>
-            <th>Amount Paid</th>
-            <th>Status</th>
-            <th class="text-end">Actions</th>
+            <th style="width: 150px;" class="text-nowrap">Receipt / Invoice #</th>
+            <th style="width: 190px;" class="text-nowrap">Applicant &amp; Passport</th>
+            <th style="width: 220px;">Destination &amp; Visa Type</th>
+            <th style="width: 150px;">Supplier</th>
+            <th style="width: 140px;" class="text-nowrap">Date &amp; Method</th>
+            <th style="width: 140px;" class="text-nowrap">Transaction Ref</th>
+            <th style="width: 110px;" class="text-nowrap">Amount Paid</th>
+            <th style="width: 110px;" class="text-nowrap">Status</th>
+            <th style="width: 90px;" class="text-end text-nowrap">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -184,41 +186,41 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <?php else: ?>
             <?php foreach ($payments as $p): ?>
               <tr>
-                <td>
-                  <span class="fw-bold text-primary"><?= e($p['payment_number']) ?></span>
-                  <div class="badge bg-light text-dark border small mt-0.5"><?= e($p['invoice_number'] ?: 'INV-N/A') ?></div>
+                <td class="text-nowrap">
+                  <span class="fw-bold text-primary d-block"><?= e($p['payment_number']) ?></span>
+                  <span class="badge bg-light text-dark border small mt-0.5"><?= e($p['invoice_number'] ?: 'INV-N/A') ?></span>
                 </td>
                 <td>
-                  <div class="fw-bold text-dark"><?= e($p['customer_name']) ?></div>
-                  <div class="small text-muted">ID: <strong><?= e($p['customer_code']) ?></strong> &bull; Pass: <?= e($p['passport_number'] ?: 'N/A') ?></div>
+                  <div class="fw-bold text-dark text-truncate" style="max-width: 180px;" title="<?= e($p['customer_name']) ?>"><?= e($p['customer_name']) ?></div>
+                  <div class="small text-muted text-nowrap">ID: <strong><?= e($p['customer_code']) ?></strong> &bull; Pass: <?= e($p['passport_number'] ?: 'N/A') ?></div>
                 </td>
                 <td>
-                  <div class="fw-semibold text-dark"><?= $p['flag_emoji'] ?? '✈️' ?> <?= e($p['country_name'] ?? 'General') ?></div>
-                  <div class="small text-muted"><?= e($p['service_name'] ?? 'Visa Service') ?></div>
+                  <div class="fw-semibold text-dark text-truncate" style="max-width: 210px;"><?= $p['flag_emoji'] ?? '✈️' ?> <?= e($p['country_name'] ?? 'General') ?></div>
+                  <div class="small text-muted text-truncate" style="max-width: 210px;" title="<?= e($p['service_name'] ?? 'Visa Service') ?>"><?= e($p['service_name'] ?? 'Visa Service') ?></div>
                 </td>
                 <td>
-                  <span class="badge bg-light text-secondary border"><?= e($p['supplier_name'] ?: 'In-House / Direct') ?></span>
+                  <span class="badge bg-light text-secondary border text-truncate" style="max-width: 140px;" title="<?= e($p['supplier_name'] ?: 'In-House / Direct') ?>"><?= e($p['supplier_name'] ?: 'In-House / Direct') ?></span>
                 </td>
-                <td>
+                <td class="text-nowrap">
                   <div class="fw-semibold"><?= format_date($p['payment_date']) ?></div>
-                  <div class="badge bg-primary-subtle text-primary small"><?= e($p['payment_method']) ?></div>
+                  <span class="badge bg-primary-subtle text-primary small"><?= e($p['payment_method']) ?></span>
                 </td>
-                <td>
-                  <span class="text-dark small font-monospace"><?= e($p['transaction_reference'] ?: 'N/A') ?></span>
+                <td class="text-nowrap">
+                  <span class="text-dark small font-monospace d-block"><?= e($p['transaction_reference'] ?: 'N/A') ?></span>
                   <?php if (!empty($p['wallet_transaction_id'])): ?>
                     <div class="text-warning small fw-semibold"><i class="fa-solid fa-wallet me-1"></i>Wallet Txn #<?= $p['wallet_transaction_id'] ?></div>
                   <?php endif; ?>
                 </td>
-                <td>
+                <td class="text-nowrap">
                   <span class="fw-bold text-success fs-6"><?= format_currency((float)$p['amount']) ?></span>
                 </td>
-                <td>
+                <td class="text-nowrap">
                   <span class="badge bg-success-subtle text-success fw-bold px-2 py-1">
                     <i class="fa-solid fa-circle-check me-1"></i> <?= e($p['status']) ?>
                   </span>
                 </td>
-                <td class="text-end">
-                  <div class="btn-group btn-group-sm">
+                <td class="text-end text-nowrap">
+                  <div class="btn-group btn-group-sm shadow-sm" role="group">
                     <a href="/payments/receipt?id=<?= $p['id'] ?>" target="_blank" class="btn btn-outline-secondary" title="Print Official Receipt">
                       <i class="fa-solid fa-print"></i>
                     </a>
