@@ -44,29 +44,36 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   <!-- Operational Expiry & Compliance Alerts Bar (Section 2) -->
   <div class="row g-2 mb-3">
     <div class="col-12">
-      <div class="p-2.5 rounded-3 bg-white border shadow-sm d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div class="d-flex flex-wrap align-items-center gap-2 small">
-          <span class="fw-bold text-dark"><i class="fa-solid fa-bell text-warning me-1"></i> Live Alerts:</span>
-          <a href="/documents?expiry_filter=30" class="badge bg-warning-subtle text-dark border text-decoration-none py-1.5 px-2">
-            <i class="fa-solid fa-passport text-warning me-1"></i> Passports Expiring (90d): <strong><?= $alerts['expiring_passports'] ?></strong>
+      <div class="live-alerts-bar">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <span class="live-alerts-header">
+            <i class="fa-solid fa-bell"></i> Live Alerts:
+          </span>
+          <a href="/documents?expiry_filter=30" class="alert-pill alert-pill-amber">
+            <i class="fa-solid fa-passport"></i> Passports Expiring (90d):
+            <span class="count-badge"><?= $alerts['expiring_passports'] ?></span>
           </a>
-          <a href="/customers" class="badge bg-info-subtle text-dark border text-decoration-none py-1.5 px-2">
-            <i class="fa-solid fa-id-card text-info me-1"></i> National ID Expiring: <strong><?= $alerts['expiring_national_ids'] ?></strong>
+          <a href="/customers" class="alert-pill alert-pill-cyan">
+            <i class="fa-solid fa-id-card"></i> National ID Expiring:
+            <span class="count-badge"><?= $alerts['expiring_national_ids'] ?></span>
           </a>
-          <a href="/applications" class="badge bg-primary-subtle text-primary border text-decoration-none py-1.5 px-2">
-            <i class="fa-solid fa-house-user text-primary me-1"></i> Residency Expiring: <strong><?= $alerts['expiring_residences'] ?></strong>
+          <a href="/applications" class="alert-pill alert-pill-indigo">
+            <i class="fa-solid fa-house-user"></i> Residency Expiring:
+            <span class="count-badge"><?= $alerts['expiring_residences'] ?></span>
           </a>
-          <a href="/tasks" class="badge bg-danger-subtle text-danger border text-decoration-none py-1.5 px-2">
-            <i class="fa-solid fa-clock-rotate-left text-danger me-1"></i> Overdue Tasks: <strong><?= $alerts['overdue_tasks'] ?></strong>
+          <a href="/tasks" class="alert-pill alert-pill-rose">
+            <i class="fa-solid fa-clock-rotate-left"></i> Overdue Tasks:
+            <span class="count-badge"><?= $alerts['overdue_tasks'] ?></span>
           </a>
-          <a href="/payments" class="badge bg-danger bg-opacity-10 text-danger border text-decoration-none py-1.5 px-2">
-            <i class="fa-solid fa-receipt me-1"></i> Outstanding Balances: <strong><?= $alerts['unpaid_applications'] ?></strong>
+          <a href="/payments" class="alert-pill alert-pill-ruby">
+            <i class="fa-solid fa-receipt"></i> Outstanding Balances:
+            <span class="count-badge"><?= $alerts['unpaid_applications'] ?></span>
           </a>
         </div>
-        <div class="d-flex align-items-center gap-2 small">
-          <span class="badge bg-light text-secondary border">Today: <strong><?= $kpi['today'] ?></strong></span>
-          <span class="badge bg-light text-secondary border">This Week: <strong><?= $kpi['week'] ?></strong></span>
-          <span class="badge bg-light text-secondary border">This Month: <strong><?= $kpi['month'] ?></strong></span>
+        <div class="date-summary-group">
+          <span class="date-summary-pill">Today: <strong><?= $kpi['today'] ?></strong></span>
+          <span class="date-summary-pill">This Week: <strong><?= $kpi['week'] ?></strong></span>
+          <span class="date-summary-pill">This Month: <strong><?= $kpi['month'] ?></strong></span>
         </div>
       </div>
     </div>
