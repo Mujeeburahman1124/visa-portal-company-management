@@ -144,8 +144,7 @@
 
 <div class="pay-card">
     <!-- Header -->
-    <div class="pay-header" style="background: linear-gradient(135deg, #060e1c 0%, #0a1e3d 50%, #1e3a8a 100%);">
-        <div class="brand-badge" style="background: rgba(255, 255, 255, 0.12);">
+    <div class="pay-header" style="background: linear-gradient(135deg, #090d16 0%, #1e293b 50%, #881337 100%);">
         <div class="brand-badge" style="background: rgba(255, 255, 255, 0.15);">
             <img src="/assets/images/logo.png" alt="MS Travel Hub" style="height: 28px; width: auto;" class="bg-white p-0.5 rounded-1 me-1">
             MS TRAVEL HUB &bull; SECURE PAYMENT GATEWAY

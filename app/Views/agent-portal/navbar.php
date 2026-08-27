@@ -17,16 +17,16 @@ function agentNavActive(string $path): string {
   <link rel="icon" type="image/png" href="/assets/images/logo.png">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/style.css?v=7.0.0">
+  <link rel="stylesheet" href="/assets/css/style.css?v=6.0.0">
   <style>
-    .agent-navbar { background: linear-gradient(135deg,#060e1c 0%,#0a2040 50%,#0a3d62 100%); }
-    .agent-navbar .nav-link { color: rgba(255,255,255,.82) !important; font-size:.9rem; padding:.5rem .9rem; border-radius:8px; transition:all .2s; font-family:'Times New Roman',Times,serif; }
-    .agent-navbar .nav-link:hover, .agent-navbar .nav-link.active { background:rgba(255,255,255,.14); color:#fff !important; }
-    .agent-navbar .navbar-brand { color:#fff !important; font-weight:700; font-family:'Times New Roman',Times,serif; }
-    .agent-portal-body { background:#f0f8ff; min-height:100vh; font-family:'Times New Roman', Times, serif; }
-    .agent-card { background:#fff; border-radius:14px; box-shadow:0 2px 14px rgba(10,22,40,.07); padding:1.5rem; margin-bottom:1.25rem; border:1px solid #dce8f5; }
-    .stat-agent { background:#fff; border-radius:12px; padding:1.25rem; border:1px solid #dce8f5; display:flex; align-items:center; gap:1rem; box-shadow:0 2px 8px rgba(10,22,40,.05); }
-    .stat-agent-icon { width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.15rem; }
+    .agent-navbar { background: linear-gradient(135deg, #070a12 0%, #064e3b 35%, #0369a1 70%, #1d4ed8 100%); }
+    .agent-navbar .nav-link { color: rgba(255,255,255,.85) !important; font-size:.9rem; padding:.5rem .9rem; border-radius:6px; transition:background .2s; }
+    .agent-navbar .nav-link:hover, .agent-navbar .nav-link.active { background:rgba(255,255,255,.15); color:#fff !important; }
+    .agent-navbar .navbar-brand { color:#fff !important; font-weight:700; }
+    .agent-portal-body { background:#f0fdf4; min-height:100vh; font-family:'Times New Roman', Times, serif; }
+    .agent-card { background:#fff; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,.07); padding:1.5rem; margin-bottom:1.25rem; border:1px solid #d1fae5; }
+    .stat-agent { background:#fff; border-radius:10px; padding:1.25rem; border:1px solid #d1fae5; display:flex; align-items:center; gap:1rem; }
+    .stat-agent-icon { width:42px;height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem; }
   </style>
 </head>
 <body class="agent-portal-body">

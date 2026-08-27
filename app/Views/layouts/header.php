@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-  <meta name="theme-color" content="#2563eb">
+  <meta name="theme-color" content="#e11d48">
   <title><?= e($pageTitle ?? 'MS TRAVEL HUB — Global Visa Management Portal') ?></title>
   
   <!-- Official Favicon -->
@@ -20,8 +20,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Application CSS & Timeline CSS -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=7.0.0">
-  <link rel="stylesheet" href="/assets/css/timeline.css?v=7.0.0">
+  <link rel="stylesheet" href="/assets/css/style.css?v=6.0.0">
+  <link rel="stylesheet" href="/assets/css/timeline.css?v=6.0.0">
 </head>
 <body class="app-body">
 <div class="app-wrapper" id="appWrapper">

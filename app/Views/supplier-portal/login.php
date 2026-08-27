@@ -5,16 +5,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= e($pageTitle) ?></title>
-  <link rel="icon" type="image/png" href="/assets/images/logo.png">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏢</text></svg>">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/style.css?v=7.0.0">
+  <link rel="stylesheet" href="/assets/css/style.css?v=5.0.0">
 </head>
 <body class="auth-page-body">
 <div class="container d-flex flex-column align-items-center justify-content-center" style="min-height:100vh;padding:1.5rem 1rem;">
   <div class="auth-card-compact">
     <div class="text-center mb-3">
-      <div class="d-inline-flex align-items-center justify-content-center text-white rounded-3 shadow-sm mb-2" style="width:52px;height:52px;font-size:1.4rem;background:linear-gradient(135deg,#0a1628 0%,#1e3a8a 100%);">
+      <div class="d-inline-flex align-items-center justify-content-center text-white rounded-3 shadow-sm mb-2" style="width:48px;height:48px;font-size:1.4rem;background:linear-gradient(135deg,#1e293b 0%,#475569 100%);">
         <i class="fa-solid fa-building"></i>
       </div>
       <h3 class="fw-bold brand-font text-dark mb-0" style="font-size:1.45rem;">MS Travel Hub</h3>
@@ -47,7 +47,7 @@
           <input type="password" name="password" class="form-control" placeholder="••••••••" required>
         </div>
       </div>
-      <button type="submit" class="btn w-100 fw-semibold py-2" style="background:linear-gradient(135deg,#2563eb,#1e40af);color:#fff;border:none;border-radius:8px;font-family:'Times New Roman',Times,serif;">
+      <button type="submit" class="btn btn-dark w-100 fw-semibold py-2">
         <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In to Supplier Portal
       </button>
     </form>

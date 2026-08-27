@@ -16,19 +16,16 @@ function supplierNavActive(string $path): string {
   <link rel="icon" type="image/png" href="/assets/images/logo.png">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/style.css?v=7.0.0">
+  <link rel="stylesheet" href="/assets/css/style.css?v=6.0.0">
   <style>
-    .supplier-navbar { background: linear-gradient(135deg,#060e1c 0%,#0a1e3d 50%,#0d3462 100%); }
-    .supplier-navbar .nav-link { color: rgba(255,255,255,.80) !important; font-size:.9rem; padding:.5rem .9rem; border-radius:8px; transition:all .2s; font-family:'Times New Roman',Times,serif; }
-    .supplier-navbar .nav-link:hover, .supplier-navbar .nav-link.active { background:rgba(255,255,255,.13); color:#fff !important; }
-    .supplier-navbar .navbar-brand { color:#fff !important; font-weight:700; font-family:'Times New Roman',Times,serif; }
-    .supplier-portal-body { background:#f0f6ff; min-height:100vh; font-family:'Times New Roman', Times, serif; }
-    .supplier-card { background:#fff; border-radius:14px; box-shadow:0 2px 14px rgba(10,22,40,.07); padding:1.5rem; margin-bottom:1.25rem; border:1px solid #dce8f5; }
-    .supplier-card .card-header-brand { background:linear-gradient(135deg,#2563eb 0%,#1e40af 100%); color:#fff; padding:.85rem 1.25rem; margin:-1.5rem -1.5rem 1.25rem; border-radius:13px 13px 0 0; font-weight:700; }
-    .stat-sup { background:#fff; border-radius:12px; padding:1.25rem; border:1px solid #dce8f5; display:flex; align-items:center; gap:1rem; box-shadow:0 2px 8px rgba(10,22,40,.05); transition:transform .2s; }
-    .stat-sup:hover { transform:translateY(-3px); }
-    .stat-sup-icon { width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.15rem; }
-    .scoped-notice { background:linear-gradient(135deg,#f0f6ff,#e8f4f8); border:1px solid #bfdbfe; border-radius:10px; padding:.75rem 1rem; margin-bottom:1rem; font-size:.82rem; color:#1e40af; }
+    .supplier-navbar { background: linear-gradient(135deg, #070a12 0%, #064e3b 35%, #0369a1 70%, #1d4ed8 100%); }
+    .supplier-navbar .nav-link { color: rgba(255,255,255,.85) !important; font-size:.9rem; padding:.5rem .9rem; border-radius:6px; transition:background .2s; }
+    .supplier-navbar .nav-link:hover, .supplier-navbar .nav-link.active { background:rgba(255,255,255,.15); color:#fff !important; }
+    .supplier-navbar .navbar-brand { color:#fff !important; font-weight:700; }
+    .supplier-portal-body { background:#f8fafc; min-height:100vh; font-family:'Times New Roman', Times, serif; }
+    .supplier-card { background:#fff; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,.06); padding:1.5rem; margin-bottom:1.25rem; border:1px solid #e2e8f0; }
+    .stat-sup { background:#fff; border-radius:10px; padding:1.25rem; border:1px solid #e2e8f0; display:flex; align-items:center; gap:1rem; }
+    .stat-sup-icon { width:42px;height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem; }
   </style>
 </head>
 <body class="supplier-portal-body">

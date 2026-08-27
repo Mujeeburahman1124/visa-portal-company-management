@@ -1,7 +1,26 @@
+# Environment & Credentials
 .env
-vendor/
-node_modules/
+.env.local
+.env.production
+
+# Scratch & Temporary Test Scripts
 scratch/
-*.log
+tests/tmp/
+
+# Uploaded Customer Documents & Files
+public/uploads/customers/*
+public/uploads/documents/*
+public/uploads/receipts/*
+public/uploads/avatars/*
+!public/uploads/customers/.gitkeep
+!public/uploads/documents/.gitkeep
+!public/uploads/receipts/.gitkeep
+!public/uploads/avatars/.gitkeep
+
+# IDE & Editor Files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
 .DS_Store
 Thumbs.db

@@ -34,8 +34,8 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
 
     <!-- Mobile Brand Logo -->
     <a href="/dashboard" class="d-lg-none d-flex align-items-center text-decoration-none">
-      <img src="/assets/images/logo.png" alt="MS Travel Hub" style="height: 34px; width: auto;" class="me-1">
-      <span class="fw-bold fs-6 text-dark">MS <span class="text-brand-gradient">TRAVEL</span></span>
+      <img src="/assets/images/logo.png" alt="MS Travel Hub" style="height: 32px; width: auto;" class="me-1">
+      <span class="fw-bold fs-6 text-dark font-monospace">MS <span class="text-danger">TRAVEL</span></span>
     </a>
     
     <!-- Breadcrumb Trail & Page Context (Responsive) -->

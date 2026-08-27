@@ -6,8 +6,8 @@ $customerId = (int)($customer['id'] ?? 0);
 $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE (customer_id = {$customerId} OR (recipient_type = 'Customer' AND customer_id IS NULL)) AND is_read = 0")->fetchColumn();
 ?>
 
-<!-- Customer Portal Header Navbar (MS Travel Hub — Navy & Blue Gradient) -->
-<nav class="navbar navbar-expand-lg navbar-dark sticky-top shadow py-2" style="background: linear-gradient(135deg, #060e1c 0%, #0a1e3d 50%, #1e3a8a 100%); border-bottom: 1px solid rgba(37,99,235,0.25); z-index: 1040;">
+<!-- Customer Portal Header Navbar (MS Luxury Obsidian, Emerald & Sapphire Gradient) -->
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top shadow py-2" style="background: linear-gradient(135deg, #070a12 0%, #064e3b 35%, #0369a1 70%, #1d4ed8 100%); border-bottom: 1px solid rgba(255,255,255,0.15); z-index: 1040;">
   <div class="container">
     <!-- Brand Logo -->
     <a class="navbar-brand d-flex align-items-center gap-2" href="/portal/dashboard">

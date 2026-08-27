@@ -242,7 +242,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     <div class="modal-content border-0 shadow">
       <form action="/payments/link/create" method="POST">
         <?= csrf_field() ?>
-        <div class="modal-header text-white" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);">
+        <div class="modal-header bg-primary text-white">
           <h5 class="modal-title fw-bold"><i class="fa-solid fa-link me-2"></i> Generate Online Payment Link</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
@@ -291,7 +291,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     <div class="modal-content border-0 shadow">
       <form action="/payments/store" method="POST" enctype="multipart/form-data">
         <?= csrf_field() ?>
-        <div class="modal-header text-white" style="background: linear-gradient(135deg, #22c55e 0%, #0891b2 50%, #1d4ed8 100%);">
+        <div class="modal-header bg-success text-white">
           <h5 class="modal-title fw-bold"><i class="fa-solid fa-credit-card me-2"></i> Record Application Payment</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
@@ -320,38 +320,25 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             </select>
           </div>
 
-          <!-- Step 2: Auto-populated Customer Financial Card -->
-          <div id="applicantCard" class="d-none mb-3" style="border:1.5px solid #bfdbfe;border-radius:12px;overflow:hidden;">
-            <div style="background:linear-gradient(135deg,#0a1628 0%,#0f2040 100%);color:#fff;padding:0.85rem 1.1rem;display:flex;align-items:center;justify-content:space-between;">
+          <!-- Step 2: Auto-populated Customer Card (Part 18, 19, 51) -->
+          <div id="applicantCard" class="card bg-light border p-3 mb-3 d-none">
+            <div class="d-flex justify-content-between align-items-start border-bottom pb-2 mb-2">
               <div>
-                <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#7bafd4;">Customer Profile</div>
-                <div class="fw-bold" id="cardCustName" style="font-size:1rem;">—</div>
-                <div style="font-size:0.8rem;color:#94a3b8;">ID: <strong id="cardCustCode" style="color:#7dd3fc;">—</strong> &bull; Passport: <strong id="cardPassport" style="color:#7dd3fc;">—</strong></div>
+                <span class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem;">Customer Identity:</span>
+                <div class="fw-bold text-dark fs-6" id="cardCustName">—</div>
+                <div class="small text-muted">ID: <strong id="cardCustCode">—</strong> &bull; Passport: <strong id="cardPassport">—</strong></div>
               </div>
-              <div style="text-align:right;">
-                <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#7bafd4;">Application</div>
-                <div class="fw-bold" id="cardAppNo" style="font-size:0.95rem;color:#38bdf8;">—</div>
-                <div id="cardDestination" style="font-size:0.8rem;color:#94a3b8;">—</div>
+              <div class="text-end">
+                <span class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem;">Outstanding Balance:</span>
+                <div class="fw-bold text-danger fs-5" id="cardBalance">$0.00</div>
               </div>
             </div>
-            <div style="background:#f8fbff;padding:0.85rem 1.1rem;">
-              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.6rem;">
-                <div style="text-align:center;padding:0.6rem;background:#fff;border-radius:8px;border:1px solid #dce8f5;">
-                  <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;color:#64748b;">Total Cost</div>
-                  <div id="cardTotal" style="font-size:1.05rem;font-weight:800;color:#0f172a;">$0.00</div>
-                </div>
-                <div style="text-align:center;padding:0.6rem;background:#fff;border-radius:8px;border:1px solid #bbf7d0;">
-                  <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;color:#16a34a;">Paid</div>
-                  <div id="cardPaid" style="font-size:1.05rem;font-weight:800;color:#16a34a;">$0.00</div>
-                </div>
-                <div style="text-align:center;padding:0.6rem;background:#fff;border-radius:8px;border:1px solid #fecdd3;">
-                  <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;color:#dc2626;">Outstanding</div>
-                  <div id="cardBalance" style="font-size:1.05rem;font-weight:800;color:#dc2626;">$0.00</div>
-                </div>
-                <div style="text-align:center;padding:0.6rem;background:#fff;border-radius:8px;border:1px solid #a5f3fc;">
-                  <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;color:#0891b2;">Contact</div>
-                  <div id="cardContact" style="font-size:0.75rem;font-weight:600;color:#0f172a;">—</div>
-                </div>
+            <div class="row g-2 small">
+              <div class="col-sm-6">
+                <span class="text-muted">Contact:</span> <span class="text-dark" id="cardContact">—</span>
+              </div>
+              <div class="col-sm-6 text-sm-end">
+                <span class="text-muted">Destination:</span> <span class="fw-semibold text-dark" id="cardDestination">—</span>
               </div>
             </div>
           </div>
@@ -427,21 +414,16 @@ function onApplicantSelected(select) {
   }
 
   card.classList.remove('d-none');
-  const total = parseFloat(opt.dataset.total || 0);
-  const bal   = parseFloat(opt.dataset.balance || 0);
-  const paid  = total - bal;
-
-  document.getElementById('cardCustName').innerText   = opt.dataset.name     || '—';
-  document.getElementById('cardCustCode').innerText   = opt.dataset.code     || '—';
-  document.getElementById('cardPassport').innerText   = opt.dataset.passport || '—';
-  document.getElementById('cardAppNo').innerText      = opt.dataset.appno    || '—';
-  document.getElementById('cardContact').innerText    = (opt.dataset.mobile  || '—');
-  document.getElementById('cardDestination').innerText= (opt.dataset.emoji   || '✈️') + ' ' + (opt.dataset.country || '') + ' — ' + (opt.dataset.service || '');
-  document.getElementById('cardTotal').innerText      = '$' + total.toFixed(2);
-  document.getElementById('cardPaid').innerText       = '$' + (paid > 0 ? paid : 0).toFixed(2);
-  document.getElementById('cardBalance').innerText    = '$' + bal.toFixed(2);
-
-  const due = bal > 0 ? bal : total;
+  document.getElementById('cardCustName').innerText = opt.dataset.name || '—';
+  document.getElementById('cardCustCode').innerText = opt.dataset.code || '—';
+  document.getElementById('cardPassport').innerText = opt.dataset.passport || '—';
+  document.getElementById('cardContact').innerText = (opt.dataset.mobile || '') + ' | ' + (opt.dataset.email || '');
+  document.getElementById('cardDestination').innerText = (opt.dataset.emoji || '') + ' ' + (opt.dataset.country || '') + ' (' + (opt.dataset.service || '') + ')';
+  
+  const bal = parseFloat(opt.dataset.balance || 0);
+  const tot = parseFloat(opt.dataset.total || 0);
+  const due = bal > 0 ? bal : tot;
+  document.getElementById('cardBalance').innerText = '$' + due.toFixed(2);
   document.getElementById('recordPaymentAmount').value = due.toFixed(2);
 }
 </script>

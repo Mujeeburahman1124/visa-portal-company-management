@@ -17,9 +17,9 @@ $canViewPayments = user_has_role(['super-admin', 'admin', 'branch-manager', 'acc
   <!-- Sidebar Brand Header -->
   <div class="sidebar-header">
     <a href="/dashboard" class="sidebar-brand text-decoration-none">
-      <img src="/assets/images/logo.png" alt="MS Travel Hub Logo" class="brand-logo-sidebar me-2" style="height:42px;width:auto;filter:brightness(1.1);">
+      <img src="/assets/images/logo.png" alt="MS Travel Hub Logo" class="brand-logo-sidebar me-2">
       <div class="sidebar-brand-text">
-        <div class="fw-bold brand-title">MS <span class="brand-gem">TRAVEL HUB</span></div>
+        <div class="fw-bold brand-title">MS <span class="ruby-gem">TRAVEL HUB</span></div>
         <div class="brand-subtitle">GLOBAL VISA MANAGEMENT</div>
       </div>
     </a>

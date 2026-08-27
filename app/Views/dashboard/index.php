@@ -35,7 +35,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       <a href="/tracking" class="btn btn-light btn-sm px-3 shadow fw-semibold text-primary">
         <i class="fa-solid fa-route text-primary me-1"></i> Visual Tracking Hub
       </a>
-      <a href="/applications/create" class="btn btn-sm px-3 shadow fw-semibold" style="background: linear-gradient(135deg,#22c55e,#06b6d4,#2563eb); border: none; color: #ffffff; border-radius: 8px;">
+      <a href="/applications/create" class="btn btn-primary btn-sm px-3 shadow fw-semibold" style="background: var(--ms-gradient-ruby); border: 1px solid rgba(255,255,255,0.25);">
         <i class="fa-solid fa-plus me-1"></i> New Application
       </a>
     </div>
