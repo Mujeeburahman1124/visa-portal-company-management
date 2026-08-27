@@ -50,8 +50,12 @@ $entities = [
 ];
 
 foreach ($entities as $ent) {
-    $stmt = $pdo->query("SELECT name FROM sqlite_master WHERE type IN ('table', 'view') AND name='{$ent}'");
-    assertTest("Database entity '{$ent}' exists", (bool)$stmt->fetch());
+    try {
+        $stmt = $pdo->query("SELECT 1 FROM `{$ent}` LIMIT 1");
+        assertTest("Database entity '{$ent}' exists", true);
+    } catch (\PDOException $e) {
+        assertTest("Database entity '{$ent}' exists", false, $e->getMessage());
+    }
 }
 
 // ---------------------------------------------------------

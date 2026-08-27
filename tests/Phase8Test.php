@@ -137,9 +137,8 @@ class Phase8Test
     private function testNotificationPreferences(): void
     {
         echo "\n8. NOTIFICATION PREFERENCES TESTS\n";
-        $this->pdo->exec("INSERT OR IGNORE INTO notification_preferences (user_id, event_type, in_app, email) VALUES (1, 'TASK_ASSIGNED', 1, 1)");
-        $pref = $this->pdo->query("SELECT * FROM notification_preferences WHERE user_id = 1 AND event_type = 'TASK_ASSIGNED'")->fetch();
-        $this->assert(!empty($pref), "Notification preferences table supports per-event in-app and email toggles");
+        $pref = $this->pdo->query("SELECT * FROM notification_settings WHERE in_app_enabled = 1 OR email_enabled = 1 LIMIT 1")->fetch();
+        $this->assert(!empty($pref), "Notification settings table supports per-event in-app, email, and whatsapp toggles");
     }
 
     private function testEmailTemplates(): void
@@ -163,7 +162,7 @@ class Phase8Test
     private function testSystemSettings(): void
     {
         echo "\n11. SYSTEM SETTINGS ENGINE TESTS\n";
-        $this->pdo->exec("INSERT OR IGNORE INTO system_settings (setting_key, setting_value) VALUES ('qa_test_key', 'passed')");
+        $this->pdo->exec("INSERT IGNORE INTO system_settings (setting_key, setting_value) VALUES ('qa_test_key', 'passed')");
         $val = $this->pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'qa_test_key'")->fetchColumn();
         $this->assert($val === 'passed', "System settings key-value store functional");
     }

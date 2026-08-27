@@ -67,9 +67,9 @@ $insApp = $pdo->prepare("INSERT INTO applications (
 ) VALUES (
     ?, ?, ?, 1, 1,
     'Application Registered', 'Registered', 'High', 100, 'Initial registration',
-    'Emirati', 'United Arab Emirates', ?, CURRENT_DATE, date('now', '+15 days'),
-    500.00, 300.00, 25.00, 525.00, 0.00, 525.00,
-    'Collect and verify initial required documents', date('now', '+3 days'), 1
+    'Emirati', 'United Arab Emirates', ?, CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 15 DAY),
+    500.00, 250.00, 25.00, 525.00, 0.00, 525.00,
+    'Collect initial documents', DATE_ADD(CURRENT_DATE, INTERVAL 2 DAY), 1
 )");
 $insApp->execute([$appNum, $customerId, $serviceId, $testPassport]);
 $appId = (int)$pdo->lastInsertId();

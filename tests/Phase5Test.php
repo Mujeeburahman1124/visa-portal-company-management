@@ -52,7 +52,7 @@ $pdo->prepare("INSERT INTO applications (
 ) VALUES (
     ?, ?, ?, 1, 1,
     'Documents Collected', 'In Process', 'Normal', 100, 'Initial check',
-    'Omani', 'Oman', 'OM-778899', CURRENT_DATE, date('now', '+15 days'),
+    'Omani', 'Oman', 'OM-778899', CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 15 DAY),
     400.00, 200.00, 20.00, 420.00, 0.00, 420.00, 1
 )")->execute([$appNum, $customerId, $serviceId]);
 $appId = (int)$pdo->lastInsertId();
@@ -77,7 +77,7 @@ file_put_contents($dummyPath, $dummyContent);
 $insDoc = $pdo->prepare("INSERT INTO documents (
     application_id, customer_id, document_type_id, document_title, file_path, file_name,
     file_size, mime_type, version, expiry_date, status, uploaded_by_type, uploaded_by_id
-) VALUES (?, ?, ?, 'Applicant Passport Copy', ?, ?, ?, 'application/pdf', 1, date('now', '+180 days'), 'UNDER_REVIEW', 'Staff', 1)");
+) VALUES (?, ?, ?, 'Applicant Passport Copy', ?, ?, ?, 'application/pdf', 1, DATE_ADD(CURRENT_DATE, INTERVAL 180 DAY), 'UNDER_REVIEW', 'Staff', 1)");
 $insDoc->execute([$appId, $customerId, $docTypeId, $dummyFileName, 'Original_Passport.pdf', strlen($dummyContent)]);
 $docId = (int)$pdo->lastInsertId();
 

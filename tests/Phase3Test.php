@@ -33,7 +33,7 @@ assert_test("1. Database Connection & Bootstrapper", $pdo instanceof PDO, "Drive
 
 // Check tables
 if ($driver === 'sqlite') {
-    $tables = $pdo->query("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(PDO::FETCH_COLUMN);
+    $tables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
 } else {
     $tables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
 }
