@@ -1,28 +1,49 @@
-.table-modern, .table-enterprise {
+/* ==========================================================================
+   TABLES & COMPONENT DATA GRID STYLES
+   ========================================================================== */
+
+.table-modern, .table-enterprise, .table-custom {
   width: 100%;
   margin-bottom: 0;
   vertical-align: middle;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
-.table-modern thead th, .table-enterprise thead th {
-  background: linear-gradient(135deg, #f0f6ff 0%, #e8f0fe 100%);
-  color: var(--mh-blue-dark);
+.table-modern thead th, .table-enterprise thead th, .table-custom thead th {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: var(--vt-text-main, #0f172a);
   font-size: 0.73rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 0.9rem 1rem;
-  border-bottom: 2px solid var(--mh-blue-border);
+  padding: 0.85rem 1rem;
+  border-bottom: 2px solid #e2e8f0;
   white-space: nowrap;
 }
 
-.table-modern tbody td, .table-enterprise tbody td {
-  padding: 0.95rem 1rem;
-  border-bottom: 1px solid #f0f6ff;
-  font-size: 0.88rem;
-  color: var(--vt-text-body);
+.table-modern tbody td, .table-enterprise tbody td, .table-custom tbody td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.85rem;
+  color: var(--vt-text-body, #334155);
+  vertical-align: middle;
 }
 
-.table-modern tbody tr:hover, .table-enterprise tbody tr:hover {
-  background-color: #f0f6ff;
+.table-modern tbody tr:hover, .table-enterprise tbody tr:hover, .table-custom tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Responsive Table Wrapper */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-sm, 8px);
+}
+
+.table-responsive .table-custom,
+.table-responsive .table-modern,
+.table-responsive .table-enterprise {
+  min-width: 920px;
 }

@@ -114,18 +114,20 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </div>
   </div>
 
-  <!-- 3. Advanced Multi-Filter Toolbar -->
+  <!-- 3. Advanced Multi-Filter Toolbar (100% Responsive Grid) -->
   <div class="card card-enterprise mb-4 bg-white">
     <div class="card-body p-3">
       <form action="/documents" method="GET" class="row g-2 align-items-center">
-        <div class="col-12 col-md-3">
+        <!-- Search Input -->
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3">
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-magnifying-glass"></i></span>
             <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Search title, applicant, passport, file..." value="<?= e($_GET['search'] ?? '') ?>">
           </div>
         </div>
 
-        <div class="col-6 col-md-2">
+        <!-- Status Filter -->
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
           <select name="status" class="form-select form-select-sm">
             <option value="">All Statuses</option>
             <option value="UNDER_REVIEW" <?= ($_GET['status'] ?? '') === 'UNDER_REVIEW' ? 'selected' : '' ?>>Under Review</option>
@@ -136,7 +138,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </select>
         </div>
 
-        <div class="col-6 col-md-2">
+        <!-- Document Type Filter -->
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
           <select name="type_id" class="form-select form-select-sm">
             <option value="">All Document Types</option>
             <?php foreach ($docTypes as $dt): ?>
@@ -147,7 +150,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </select>
         </div>
 
-        <div class="col-6 col-md-2">
+        <!-- Visa Package Filter -->
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
           <select name="service_id" class="form-select form-select-sm">
             <option value="">All Visa Packages</option>
             <?php foreach ($services as $srv): ?>
@@ -158,7 +162,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </select>
         </div>
 
-        <div class="col-6 col-md-2">
+        <!-- Expiry Filter -->
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
           <select name="expiry" class="form-select form-select-sm">
             <option value="">Any Expiry</option>
             <option value="7days" <?= ($_GET['expiry'] ?? '') === '7days' ? 'selected' : '' ?>>Expires in &le;7 days</option>
@@ -167,9 +172,10 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </select>
         </div>
 
-        <div class="col-12 col-md-1 d-flex gap-1">
-          <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fa-solid fa-filter me-1"></i> Filter</button>
-          <a href="/documents" class="btn btn-outline-secondary btn-sm" title="Clear Filters"><i class="fa-solid fa-rotate-left"></i></a>
+        <!-- Action Buttons -->
+        <div class="col-12 col-sm-6 col-md-4 col-xl-auto ms-auto d-flex gap-1.5 justify-content-end">
+          <button type="submit" class="btn btn-primary btn-sm px-3 shadow-sm flex-fill flex-md-grow-0"><i class="fa-solid fa-filter me-1"></i> Filter</button>
+          <a href="/documents" class="btn btn-outline-secondary btn-sm px-2.5" title="Clear Filters"><i class="fa-solid fa-rotate-left"></i></a>
         </div>
       </form>
     </div>
