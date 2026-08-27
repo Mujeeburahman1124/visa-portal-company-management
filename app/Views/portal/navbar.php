@@ -7,66 +7,75 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
 ?>
 
 <!-- Customer Portal Header Navbar (MS Luxury Obsidian, Emerald & Sapphire Gradient) -->
-<nav class="navbar navbar-expand-lg navbar-dark sticky-top shadow py-2" style="background: linear-gradient(135deg, #070a12 0%, #064e3b 35%, #0369a1 70%, #1d4ed8 100%); border-bottom: 1px solid rgba(255,255,255,0.15); z-index: 1040;">
-  <div class="container">
+<nav class="navbar navbar-expand-xl navbar-dark sticky-top shadow-sm py-2" style="background: linear-gradient(135deg, #070a12 0%, #064e3b 35%, #0369a1 70%, #1d4ed8 100%); border-bottom: 1px solid rgba(255,255,255,0.15); z-index: 1040;">
+  <div class="container-fluid container-xl">
     <!-- Brand Logo -->
-    <a class="navbar-brand d-flex align-items-center gap-2" href="/portal/dashboard">
-      <img src="/assets/images/logo.png" alt="MS Travel Hub" style="height: 38px; width: auto;" class="bg-white p-1 rounded-2 shadow-sm">
-      <div>
+    <a class="navbar-brand d-flex align-items-center gap-2 me-3" href="/portal/dashboard">
+      <img src="/assets/images/logo.png" alt="MS Travel Hub" style="height: 36px; width: auto;" class="bg-white p-1 rounded-2 shadow-sm">
+      <div class="lh-sm">
         <span class="fw-bold brand-font text-white fs-5" style="letter-spacing: -0.02em;">MS TRAVEL HUB</span>
         <span class="text-white-50 small d-none d-sm-inline ms-1" style="font-size: 0.72rem; letter-spacing: 0.05em;">| APPLICANT PORTAL</span>
       </div>
     </a>
 
     <!-- Mobile Toggler -->
-    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#portalNavbar" aria-controls="portalNavbar" aria-expanded="false" aria-label="Toggle navigation">
+    <button class="navbar-toggler border-0 p-2 text-white shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#portalNavbar" aria-controls="portalNavbar" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
 
     <div class="collapse navbar-collapse" id="portalNavbar">
-      <!-- Portal Navigation Links -->
-      <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-1">
+      <!-- Portal Navigation Links (Stacked Icon + Label Layout) -->
+      <ul class="navbar-nav mx-auto mb-2 mb-xl-0 gap-1 gap-xl-3 py-2 py-xl-0 align-items-stretch align-items-xl-center">
         <li class="nav-item">
-          <a class="nav-link text-white fw-semibold px-3 rounded-pill <?= str_starts_with($currentUri, '/portal/dashboard') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/dashboard">
-            <i class="fa-solid fa-gauge-high me-1.5"></i> Dashboard
+          <a class="nav-link text-white text-center px-2 py-1 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/dashboard') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/dashboard">
+            <i class="fa-solid fa-gauge-high fs-5 mb-xl-1"></i>
+            <span style="font-size: 0.75rem; font-weight: 600;">Dashboard</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white fw-semibold px-3 rounded-pill <?= str_starts_with($currentUri, '/portal/documents') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/documents">
-            <i class="fa-solid fa-file-circle-check me-1.5"></i> Documents
+          <a class="nav-link text-white text-center px-2 py-1 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/documents') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/documents">
+            <i class="fa-solid fa-file-circle-check fs-5 mb-xl-1"></i>
+            <span style="font-size: 0.75rem; font-weight: 600;">Documents</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white fw-semibold px-3 rounded-pill <?= str_starts_with($currentUri, '/portal/appointments') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/appointments">
-            <i class="fa-solid fa-calendar-check me-1.5"></i> Appointments
+          <a class="nav-link text-white text-center px-2 py-1 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/appointments') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/appointments">
+            <i class="fa-solid fa-calendar-check fs-5 mb-xl-1"></i>
+            <span style="font-size: 0.75rem; font-weight: 600;">Appointments</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white fw-semibold px-3 rounded-pill <?= str_starts_with($currentUri, '/portal/invoices') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/invoices">
-            <i class="fa-solid fa-receipt me-1.5"></i> Invoices
+          <a class="nav-link text-white text-center px-2 py-1 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/invoices') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/invoices">
+            <i class="fa-solid fa-receipt fs-5 mb-xl-1"></i>
+            <span style="font-size: 0.75rem; font-weight: 600;">Invoices</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white fw-semibold px-3 rounded-pill <?= str_starts_with($currentUri, '/portal/wallet') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/wallet">
-            <i class="fa-solid fa-wallet me-1.5 text-warning"></i> Wallet
+          <a class="nav-link text-white text-center px-2 py-1 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/wallet') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/wallet">
+            <i class="fa-solid fa-wallet fs-5 mb-xl-1 text-warning"></i>
+            <span style="font-size: 0.75rem; font-weight: 600;">Wallet</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white fw-semibold px-3 rounded-pill position-relative <?= str_starts_with($currentUri, '/portal/notifications') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/notifications">
-            <i class="fa-solid fa-bell me-1.5" id="portalNotifBellIcon"></i> Alerts
-            <span id="portalNotifBadge" class="badge bg-danger rounded-pill ms-1 <?= $unreadNotifsCount > 0 ? '' : 'd-none' ?>" style="font-size: 0.65rem;"><?= $unreadNotifsCount ?></span>
+          <a class="nav-link text-white text-center px-2 py-1 rounded-3 position-relative d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/notifications') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/notifications">
+            <div class="position-relative">
+              <i class="fa-solid fa-bell fs-5 mb-xl-1" id="portalNotifBellIcon"></i>
+              <span id="portalNotifBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle <?= $unreadNotifsCount > 0 ? '' : 'd-none' ?>" style="font-size: 0.62rem; padding: 0.25em 0.45em;"><?= $unreadNotifsCount ?></span>
+            </div>
+            <span style="font-size: 0.75rem; font-weight: 600;">Alerts</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white fw-semibold px-3 rounded-pill <?= str_starts_with($currentUri, '/portal/support') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/support">
-            <i class="fa-solid fa-headset me-1.5"></i> Help &amp; Support
+          <a class="nav-link text-white text-center px-2 py-1 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/support') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/support">
+            <i class="fa-solid fa-headset fs-5 mb-xl-1"></i>
+            <span style="font-size: 0.75rem; font-weight: 600;">Help &amp; Support</span>
           </a>
         </li>
       </ul>
 
       <!-- User Profile & Sign Out -->
-      <div class="d-flex align-items-center gap-3 pt-2 pt-lg-0 border-top border-lg-0 border-white border-opacity-10">
-        <div class="text-white text-end d-none d-md-block" style="line-height: 1.15;">
+      <div class="d-flex align-items-center justify-content-between justify-content-xl-end gap-3 pt-3 pt-xl-0 border-top border-xl-0 border-white border-opacity-10 mt-2 mt-xl-0">
+        <div class="text-white text-start text-xl-end" style="line-height: 1.15;">
           <div class="fw-bold small text-white"><?= e($customer['full_name'] ?? 'Applicant') ?></div>
           <div class="text-white-50" style="font-size: 0.72rem;"><i class="fa-solid fa-id-badge me-1"></i><?= e($customer['customer_code'] ?? 'MSV-CUST') ?></div>
         </div>
@@ -77,6 +86,21 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
     </div>
   </div>
 </nav>
+
+<style>
+@media (max-width: 1199.98px) {
+  #portalNavbar {
+    background: rgba(7, 10, 18, 0.96);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    padding: 1.25rem;
+    border-radius: 12px;
+    margin-top: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  }
+}
+</style>
 
 <script>
 // Real-time Applicant Notification Synchronizer

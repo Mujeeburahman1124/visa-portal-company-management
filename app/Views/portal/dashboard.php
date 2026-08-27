@@ -101,11 +101,11 @@ $flash = get_flash();
       ?>
       <div class="card card-enterprise mb-4 shadow-sm border">
         <!-- Application Card Header -->
-        <div class="card-header bg-white border-bottom py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="card-header bg-white border-bottom py-3 px-3 px-md-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
           <div class="d-flex align-items-center gap-2.5">
             <span class="fs-3"><?= $app['flag_emoji'] ?></span>
             <div>
-              <div class="d-flex align-items-center gap-2">
+              <div class="d-flex flex-wrap align-items-center gap-2">
                 <span class="fw-bold fs-6 text-primary"><?= e($app['application_number']) ?></span>
                 <span class="badge bg-light text-dark border small"><?= e($app['service_name']) ?></span>
               </div>
@@ -124,7 +124,7 @@ $flash = get_flash();
         </div>
 
         <!-- Application Card Body -->
-        <div class="card-body p-4">
+        <div class="card-body p-3 p-md-4">
           <!-- Summary Metrics -->
           <div class="row g-3 mb-4">
             <div class="col-6 col-md-3">
@@ -177,10 +177,10 @@ $flash = get_flash();
                   $isDone = ($stepNum < $activeIndex) || $isApproved;
                   $isCurrent = ($stepNum === $activeIndex) && !$isApproved;
                 ?>
-                <div class="col-4 col-md-2 mb-2">
-                  <div class="p-2 rounded border <?= $isDone ? 'bg-success-subtle border-success text-success' : ($isCurrent ? 'bg-primary-subtle border-primary text-primary shadow-sm' : 'bg-white text-muted') ?>">
+                <div class="col-6 col-sm-4 col-md-2 mb-2">
+                  <div class="p-2 rounded border h-100 <?= $isDone ? 'bg-success-subtle border-success text-success' : ($isCurrent ? 'bg-primary-subtle border-primary text-primary shadow-sm' : 'bg-white text-muted') ?>">
                     <div class="fs-5 mb-1"><i class="fa-solid <?= $stg['icon'] ?>"></i></div>
-                    <div class="fw-bold" style="font-size: 0.72rem;"><?= $stg['name'] ?></div>
+                    <div class="fw-bold text-truncate" style="font-size: 0.72rem;" title="<?= $stg['name'] ?>"><?= $stg['name'] ?></div>
                     <div class="small" style="font-size: 0.65rem;">
                       <?= $isDone ? 'Completed' : ($isCurrent ? 'In Progress' : 'Upcoming') ?>
                     </div>
