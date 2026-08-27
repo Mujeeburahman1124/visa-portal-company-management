@@ -102,22 +102,28 @@ $flash = get_flash();
       <div class="card card-enterprise mb-4 shadow-sm border">
         <!-- Application Card Header -->
         <div class="card-header bg-white border-bottom py-3 px-3 px-md-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
-          <div class="d-flex align-items-center gap-2.5">
-            <span class="fs-3"><?= $app['flag_emoji'] ?></span>
+          <div class="d-flex align-items-center gap-3">
+            <div class="fs-2 lh-1 p-2 rounded-3 bg-light border shadow-sm d-flex align-items-center justify-content-center" style="width: 46px; height: 46px;">
+              <?= $app['flag_emoji'] ?>
+            </div>
             <div>
-              <div class="d-flex flex-wrap align-items-center gap-2">
-                <span class="fw-bold fs-6 text-primary"><?= e($app['application_number']) ?></span>
-                <span class="badge bg-light text-dark border small"><?= e($app['service_name']) ?></span>
+              <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                <span class="fw-bold fs-6 text-primary me-1"><?= e($app['application_number']) ?></span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill small fw-semibold"><?= e($app['service_name']) ?></span>
               </div>
-              <div class="text-muted small" style="font-size: 0.74rem;">
-                <?= e($app['country_name']) ?> &bull; <?= e($app['entry_type']) ?> &bull; Duration: <?= e($app['duration']) ?>
+              <div class="text-muted small d-flex flex-wrap align-items-center gap-2" style="font-size: 0.76rem;">
+                <span><i class="fa-solid fa-earth-americas me-1 text-secondary"></i><?= e($app['country_name']) ?></span>
+                <span>&bull;</span>
+                <span><i class="fa-solid fa-passport me-1 text-secondary"></i><?= e($app['entry_type']) ?></span>
+                <span>&bull;</span>
+                <span><i class="fa-regular fa-clock me-1 text-secondary"></i>Duration: <?= e($app['duration']) ?></span>
               </div>
             </div>
           </div>
 
           <div>
-            <span class="badge <?= $isApproved ? 'bg-success' : ($isActionRequired ? 'bg-danger' : 'bg-primary') ?> fs-6 px-3 py-1.5 fw-bold">
-              <i class="fa-solid <?= $isApproved ? 'fa-circle-check' : ($isActionRequired ? 'fa-triangle-exclamation' : 'fa-spinner fa-spin-pulse') ?> me-1"></i>
+            <span class="badge <?= $isApproved ? 'bg-success' : ($isActionRequired ? 'bg-danger' : 'bg-primary') ?> fs-6 px-3 py-2 fw-bold rounded-pill shadow-sm">
+              <i class="fa-solid <?= $isApproved ? 'fa-circle-check' : ($isActionRequired ? 'fa-triangle-exclamation' : 'fa-spinner fa-spin-pulse') ?> me-1.5"></i>
               <?= e($app['status']) ?>
             </span>
           </div>
@@ -146,13 +152,13 @@ $flash = get_flash();
           </div>
 
           <!-- Customer Friendly Visa Journey Visual Progression -->
-          <div class="p-3 bg-light rounded border mb-3">
-            <div class="fw-bold small text-uppercase mb-3 text-dark d-flex align-items-center gap-1.5">
-              <i class="fa-solid fa-route text-primary"></i>
+          <div class="p-3 bg-light rounded-3 border mb-3">
+            <div class="fw-bold small text-uppercase mb-3 text-dark d-flex align-items-center gap-2">
+              <i class="fa-solid fa-route text-primary fs-6"></i>
               <span>Visa Tracking Journey</span>
             </div>
 
-            <div class="row g-2 text-center">
+            <div class="row g-2.5 text-center">
               <?php
                 $stagesList = [
                   ['name' => 'Registration', 'icon' => 'fa-id-card'],
@@ -178,10 +184,10 @@ $flash = get_flash();
                   $isCurrent = ($stepNum === $activeIndex) && !$isApproved;
                 ?>
                 <div class="col-6 col-sm-4 col-md-2 mb-2">
-                  <div class="p-2 rounded border h-100 <?= $isDone ? 'bg-success-subtle border-success text-success' : ($isCurrent ? 'bg-primary-subtle border-primary text-primary shadow-sm' : 'bg-white text-muted') ?>">
-                    <div class="fs-5 mb-1"><i class="fa-solid <?= $stg['icon'] ?>"></i></div>
-                    <div class="fw-bold text-truncate" style="font-size: 0.72rem;" title="<?= $stg['name'] ?>"><?= $stg['name'] ?></div>
-                    <div class="small" style="font-size: 0.65rem;">
+                  <div class="p-2.5 rounded-3 border h-100 d-flex flex-column align-items-center justify-content-center <?= $isDone ? 'bg-success-subtle border-success text-success' : ($isCurrent ? 'bg-primary-subtle border-primary text-primary shadow-sm' : 'bg-white text-muted') ?>">
+                    <div class="fs-5 mb-1.5"><i class="fa-solid <?= $stg['icon'] ?>"></i></div>
+                    <div class="fw-bold text-truncate w-100" style="font-size: 0.74rem;" title="<?= $stg['name'] ?>"><?= $stg['name'] ?></div>
+                    <div class="small mt-0.5" style="font-size: 0.65rem;">
                       <?= $isDone ? 'Completed' : ($isCurrent ? 'In Progress' : 'Upcoming') ?>
                     </div>
                   </div>

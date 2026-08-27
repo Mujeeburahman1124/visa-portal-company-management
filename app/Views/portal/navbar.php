@@ -11,7 +11,7 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
   <div class="container-fluid container-xl">
     <!-- Brand Logo -->
     <a class="navbar-brand d-flex align-items-center gap-2 me-3" href="/portal/dashboard">
-      <img src="/assets/images/logo.png" alt="MS Travel Hub" style="height: 36px; width: auto;" class="bg-white p-1 rounded-2 shadow-sm">
+      <img src="/assets/images/logo.png" alt="MS Travel Hub" style="height: 36px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));" class="rounded-2">
       <div class="lh-sm">
         <span class="fw-bold brand-font text-white fs-5" style="letter-spacing: -0.02em;">MS TRAVEL HUB</span>
         <span class="text-white-50 small d-none d-sm-inline ms-1" style="font-size: 0.72rem; letter-spacing: 0.05em;">| APPLICANT PORTAL</span>
