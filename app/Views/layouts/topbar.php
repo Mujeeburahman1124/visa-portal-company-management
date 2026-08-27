@@ -89,12 +89,12 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
   </div>
 
   <!-- Topbar Action Items -->
-  <div class="d-flex align-items-center gap-2 gap-md-3">
-    <!-- Quick Actions Button -->
-    <div class="dropdown">
-      <button class="btn btn-primary btn-sm px-2 px-md-3 rounded-pill d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Quick Action">
+  <div class="d-flex align-items-center gap-2 gap-md-3 flex-shrink-0">
+    <!-- Quick Actions Button (100% Responsive) -->
+    <div class="dropdown flex-shrink-0">
+      <button class="btn btn-primary btn-sm px-2.5 px-md-3 rounded-pill d-flex align-items-center gap-1 shadow-sm topbar-quick-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Quick Action">
         <i class="fa-solid fa-plus"></i>
-        <span class="d-none d-lg-inline">Quick Action</span>
+        <span class="d-none d-sm-inline ms-1 fw-semibold">Quick Action</span>
       </button>
       <ul class="dropdown-menu dropdown-menu-end shadow border-0 topbar-quick-action-menu" style="font-size: 0.875rem;">
         <li class="dropdown-header small text-uppercase text-muted" style="font-size: 0.7rem;">Visa Operations</li>

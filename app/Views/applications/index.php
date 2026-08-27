@@ -118,9 +118,11 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </select>
         </div>
 
-        <div class="col-12 col-lg-1 d-flex gap-1">
-          <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold"><i class="fa-solid fa-filter me-1"></i> Filter</button>
-          <a href="/applications" class="btn btn-light btn-sm border" title="Reset Filters"><i class="fa-solid fa-rotate-left"></i></a>
+        <div class="col-12 col-lg-auto ms-auto d-flex justify-content-end">
+          <div class="btn-group btn-group-sm w-100 w-lg-auto shadow-sm" role="group" aria-label="Filter Controls">
+            <button type="submit" class="btn btn-primary px-3 fw-semibold"><i class="fa-solid fa-filter me-1"></i> Filter</button>
+            <a href="/applications" class="btn btn-primary border-start border-white border-opacity-25 px-2.5" title="Reset Filters"><i class="fa-solid fa-rotate-left"></i></a>
+          </div>
         </div>
       </form>
     </div>

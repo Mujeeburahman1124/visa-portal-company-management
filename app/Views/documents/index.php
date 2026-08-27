@@ -172,10 +172,16 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </select>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="col-12 col-sm-6 col-md-4 col-xl-auto ms-auto d-flex gap-1.5 justify-content-end">
-          <button type="submit" class="btn btn-primary btn-sm px-3 shadow-sm flex-fill flex-md-grow-0"><i class="fa-solid fa-filter me-1"></i> Filter</button>
-          <a href="/documents" class="btn btn-outline-secondary btn-sm px-2.5" title="Clear Filters"><i class="fa-solid fa-rotate-left"></i></a>
+        <!-- Action Buttons (Joined Responsive Button Group) -->
+        <div class="col-12 col-sm-6 col-md-4 col-xl-auto ms-auto d-flex justify-content-end">
+          <div class="btn-group btn-group-sm w-100 w-md-auto shadow-sm" role="group" aria-label="Filter Controls">
+            <button type="submit" class="btn btn-primary px-3 fw-semibold">
+              <i class="fa-solid fa-filter me-1.5"></i> Filter
+            </button>
+            <a href="/documents" class="btn btn-primary border-start border-white border-opacity-25 px-2.5" title="Clear / Reset Filters">
+              <i class="fa-solid fa-rotate-left"></i>
+            </a>
+          </div>
         </div>
       </form>
     </div>
