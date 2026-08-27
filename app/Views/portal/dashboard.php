@@ -32,11 +32,11 @@ $flash = get_flash();
   <?php endif; ?>
 
   <!-- Welcome Hero Banner -->
-  <div class="card card-enterprise mb-4 shadow-sm border-0" style="background: linear-gradient(135deg, #090e1a 0%, #1e3a8a 60%, #3b82f6 100%); color: white;">
+  <div class="card mb-4 shadow-sm border-0" style="background: linear-gradient(135deg, #090e1a 0%, #1e3a8a 60%, #3b82f6 100%); color: white; border-radius: var(--radius-md, 14px); overflow: hidden;">
     <div class="card-body p-4 p-md-5">
       <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
         <div>
-          <span class="badge bg-white bg-opacity-20 text-white px-3 py-1.5 rounded-pill fw-semibold mb-2" style="font-size: 0.75rem;">
+          <span class="badge text-white px-3 py-2 rounded-pill fw-semibold mb-2" style="font-size: 0.75rem; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(6px);">
             <i class="fa-solid fa-shield-halved me-1"></i> SECURE APPLICANT SESSION
           </span>
           <h2 class="fw-bold brand-font mb-1 text-white">Welcome, <?= e($customer['full_name']) ?></h2>
