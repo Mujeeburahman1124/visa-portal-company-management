@@ -41,50 +41,50 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
     </div>
   </div>
 
-  <!-- Multi-Criteria Advanced Filter Panel (Sir Feedback) -->
+  <!-- Multi-Criteria Advanced Filter Panel (100% Responsive) -->
   <div class="card card-enterprise mb-4 border-0 shadow-sm">
     <div class="card-body p-3">
-      <form action="/tracking" method="GET" class="row g-2">
+      <form action="/tracking" method="GET" class="row g-2 align-items-end">
         <input type="hidden" name="view" value="<?= htmlspecialchars($viewMode) ?>">
 
         <!-- Row 1: Key Identifiers -->
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3">
           <label class="form-label small fw-semibold text-secondary mb-1">Customer / Applicant Name</label>
           <input type="text" name="name" class="form-control form-control-sm bg-light" placeholder="Search name..." value="<?= htmlspecialchars($_GET['name'] ?? '') ?>">
         </div>
 
-        <div class="col-md-2">
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
           <label class="form-label small fw-semibold text-secondary mb-1">Passport Number</label>
           <input type="text" name="passport" class="form-control form-control-sm bg-light font-monospace" placeholder="Passport #..." value="<?= htmlspecialchars($_GET['passport'] ?? '') ?>">
         </div>
 
-        <div class="col-md-2">
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
           <label class="form-label small fw-semibold text-secondary mb-1">Mobile / WhatsApp</label>
           <input type="text" name="phone" class="form-control form-control-sm bg-light" placeholder="Phone #..." value="<?= htmlspecialchars($_GET['phone'] ?? '') ?>">
         </div>
 
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3">
           <label class="form-label small fw-semibold text-secondary mb-1">Email Address</label>
           <input type="email" name="email" class="form-control form-control-sm bg-light" placeholder="Email..." value="<?= htmlspecialchars($_GET['email'] ?? '') ?>">
         </div>
 
-        <div class="col-md-2">
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
           <label class="form-label small fw-semibold text-secondary mb-1">Visa Number</label>
           <input type="text" name="visa_number" class="form-control form-control-sm bg-light font-monospace" placeholder="Visa #..." value="<?= htmlspecialchars($_GET['visa_number'] ?? '') ?>">
         </div>
 
         <!-- Row 2: Dates, Destination, Stage, Supplier -->
-        <div class="col-md-2">
+        <div class="col-6 col-sm-6 col-md-3 col-xl-2">
           <label class="form-label small fw-semibold text-secondary mb-1">Date From</label>
           <input type="date" name="date_from" class="form-control form-control-sm bg-light" value="<?= htmlspecialchars($_GET['date_from'] ?? '') ?>">
         </div>
 
-        <div class="col-md-2">
+        <div class="col-6 col-sm-6 col-md-3 col-xl-2">
           <label class="form-label small fw-semibold text-secondary mb-1">Date To</label>
           <input type="date" name="date_to" class="form-control form-control-sm bg-light" value="<?= htmlspecialchars($_GET['date_to'] ?? '') ?>">
         </div>
 
-        <div class="col-md-2">
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
           <label class="form-label small fw-semibold text-secondary mb-1">Destination Country</label>
           <select name="country_id" class="form-select form-select-sm bg-light">
             <option value="">All Countries</option>
@@ -96,7 +96,7 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
           </select>
         </div>
 
-        <div class="col-md-2">
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
           <label class="form-label small fw-semibold text-secondary mb-1">Lifecycle Stage</label>
           <select name="stage" class="form-select form-select-sm bg-light">
             <option value="">All Stages</option>
@@ -110,7 +110,7 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
           </select>
         </div>
 
-        <div class="col-md-2">
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
           <label class="form-label small fw-semibold text-secondary mb-1">Assigned Staff</label>
           <select name="staff_id" class="form-select form-select-sm bg-light">
             <option value="">All Staff</option>
@@ -122,13 +122,16 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
           </select>
         </div>
 
-        <div class="col-md-2 d-flex align-items-end gap-1">
-          <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">
-            <i class="fa-solid fa-filter me-1"></i> Filter
-          </button>
-          <a href="/tracking" class="btn btn-light btn-sm" title="Reset Filters">
-            <i class="fa-solid fa-rotate-left"></i>
-          </a>
+        <!-- Joined Action Buttons (Filter + Clear) -->
+        <div class="col-12 col-md-4 col-xl-auto ms-auto d-flex justify-content-end">
+          <div class="btn-group btn-group-sm w-100 w-md-auto shadow-sm" role="group" aria-label="Filter Controls">
+            <button type="submit" class="btn btn-primary px-3 fw-semibold">
+              <i class="fa-solid fa-filter me-1.5"></i> Filter
+            </button>
+            <a href="/tracking" class="btn btn-primary border-start border-white border-opacity-25 px-2.5" title="Reset Filters">
+              <i class="fa-solid fa-rotate-left"></i>
+            </a>
+          </div>
         </div>
       </form>
     </div>
@@ -153,22 +156,22 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
   <?php else: ?>
 
     <?php if ($viewMode === 'table'): ?>
-      <!-- TABULAR TRACKING VIEW (Sir Feedback) -->
+      <!-- TABULAR TRACKING VIEW (100% Responsive) -->
       <div class="card card-enterprise border-0 shadow-sm mb-4">
-        <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
+        <div class="table-responsive" style="-webkit-overflow-scrolling: touch;">
+          <table class="table table-custom table-hover align-middle mb-0" style="min-width: 1050px;">
             <thead class="table-light">
               <tr class="small text-muted text-uppercase">
-                <th>App Ref &amp; Date</th>
-                <th>Customer / Applicant</th>
-                <th>Passport #</th>
-                <th>Phone &amp; Email</th>
-                <th>Destination &amp; Visa Type</th>
-                <th>Visa Number</th>
-                <th>Current Status / Stage</th>
-                <th>Staff &amp; Supplier</th>
-                <th>Health</th>
-                <th class="text-end">Actions</th>
+                <th style="min-width: 130px;">App Ref &amp; Date</th>
+                <th style="min-width: 160px;">Customer / Applicant</th>
+                <th style="min-width: 110px;">Passport #</th>
+                <th style="min-width: 170px;">Phone &amp; Email</th>
+                <th style="min-width: 180px;">Destination &amp; Visa Type</th>
+                <th style="min-width: 120px;">Visa Number</th>
+                <th style="min-width: 160px;">Current Status / Stage</th>
+                <th style="min-width: 160px;">Staff &amp; Supplier</th>
+                <th style="min-width: 80px;">Health</th>
+                <th class="text-end" style="min-width: 90px;">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -179,10 +182,10 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
               ?>
                 <tr>
                   <td>
-                    <a href="/applications/show?id=<?= $app['id'] ?>" class="fw-bold text-primary text-decoration-none">
+                    <a href="/applications/show?id=<?= $app['id'] ?>" class="fw-bold text-primary text-decoration-none text-nowrap">
                       <?= e($app['application_number']) ?>
                     </a>
-                    <div class="small text-muted"><?= date('M d, Y', strtotime($app['application_date'] ?? $app['created_at'])) ?></div>
+                    <div class="small text-muted text-nowrap"><?= date('M d, Y', strtotime($app['application_date'] ?? $app['created_at'])) ?></div>
                   </td>
                   <td>
                     <div class="fw-semibold text-dark"><?= e($app['customer_name']) ?></div>
@@ -192,8 +195,8 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
                     <span class="badge bg-light text-dark font-monospace border"><?= e($app['passport_number'] ?: '—') ?></span>
                   </td>
                   <td>
-                    <div class="small"><i class="fa-solid fa-phone text-muted me-1"></i><?= e($app['customer_mobile'] ?: '—') ?></div>
-                    <div class="small text-muted"><i class="fa-solid fa-envelope me-1"></i><?= e($app['customer_email'] ?: '—') ?></div>
+                    <div class="small text-nowrap"><i class="fa-solid fa-phone text-muted me-1"></i><?= e($app['customer_mobile'] ?: '—') ?></div>
+                    <div class="small text-muted text-truncate" style="max-width: 160px;" title="<?= e($app['customer_email']) ?>"><i class="fa-solid fa-envelope me-1"></i><?= e($app['customer_email'] ?: '—') ?></div>
                   </td>
                   <td>
                     <div><?= $app['flag_emoji'] ?> <strong><?= e($app['country_name']) ?></strong></div>
@@ -201,7 +204,7 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
                   </td>
                   <td>
                     <?php if (!empty($app['visa_number'])): ?>
-                      <span class="badge bg-success-subtle text-success border border-success font-monospace">
+                      <span class="badge bg-success-subtle text-success border border-success font-monospace text-nowrap">
                         <i class="fa-solid fa-stamp me-1"></i><?= e($app['visa_number']) ?>
                       </span>
                     <?php else: ?>
@@ -209,14 +212,14 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
                     <?php endif; ?>
                   </td>
                   <td>
-                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1">
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 text-nowrap">
                       <?= e($app['current_stage']) ?>
                     </span>
-                    <div class="small text-muted mt-1">Status: <?= e($app['status']) ?></div>
+                    <div class="small text-muted mt-1 text-nowrap">Status: <?= e($app['status']) ?></div>
                   </td>
                   <td>
-                    <div class="small text-dark fw-medium"><i class="fa-solid fa-user-tie text-secondary me-1"></i><?= e($app['staff_name'] ?? 'Unassigned') ?></div>
-                    <div class="small text-muted"><i class="fa-solid fa-building me-1"></i><?= e($app['supplier_name'] ?? 'In-House') ?></div>
+                    <div class="small text-dark fw-medium text-nowrap"><i class="fa-solid fa-user-tie text-secondary me-1"></i><?= e($app['staff_name'] ?? 'Unassigned') ?></div>
+                    <div class="small text-muted text-nowrap"><i class="fa-solid fa-building me-1"></i><?= e($app['supplier_name'] ?? 'In-House') ?></div>
                   </td>
                   <td>
                     <span class="badge <?= $healthClass ?> text-white" title="<?= e($app['health_reason'] ?? 'Good health') ?>">
