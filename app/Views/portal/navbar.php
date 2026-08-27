@@ -27,37 +27,37 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
       <!-- Portal Navigation Links (Stacked Icon + Label Layout) -->
       <ul class="navbar-nav mx-auto mb-2 mb-xl-0 gap-1 gap-xl-3 py-2 py-xl-0 align-items-stretch align-items-xl-center">
         <li class="nav-item">
-          <a class="nav-link text-white text-center px-2 py-1 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/dashboard') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/dashboard">
+          <a class="nav-link portal-nav-link text-center px-2.5 py-1.5 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/dashboard') ? 'active' : '' ?>" href="/portal/dashboard">
             <i class="fa-solid fa-gauge-high fs-5 mb-xl-1"></i>
             <span style="font-size: 0.75rem; font-weight: 600;">Dashboard</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white text-center px-2 py-1 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/documents') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/documents">
+          <a class="nav-link portal-nav-link text-center px-2.5 py-1.5 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/documents') ? 'active' : '' ?>" href="/portal/documents">
             <i class="fa-solid fa-file-circle-check fs-5 mb-xl-1"></i>
             <span style="font-size: 0.75rem; font-weight: 600;">Documents</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white text-center px-2 py-1 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/appointments') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/appointments">
+          <a class="nav-link portal-nav-link text-center px-2.5 py-1.5 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/appointments') ? 'active' : '' ?>" href="/portal/appointments">
             <i class="fa-solid fa-calendar-check fs-5 mb-xl-1"></i>
             <span style="font-size: 0.75rem; font-weight: 600;">Appointments</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white text-center px-2 py-1 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/invoices') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/invoices">
+          <a class="nav-link portal-nav-link text-center px-2.5 py-1.5 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/invoices') ? 'active' : '' ?>" href="/portal/invoices">
             <i class="fa-solid fa-receipt fs-5 mb-xl-1"></i>
             <span style="font-size: 0.75rem; font-weight: 600;">Invoices</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white text-center px-2 py-1 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/wallet') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/wallet">
+          <a class="nav-link portal-nav-link text-center px-2.5 py-1.5 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/wallet') ? 'active' : '' ?>" href="/portal/wallet">
             <i class="fa-solid fa-wallet fs-5 mb-xl-1 text-warning"></i>
             <span style="font-size: 0.75rem; font-weight: 600;">Wallet</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white text-center px-2 py-1 rounded-3 position-relative d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/notifications') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/notifications">
+          <a class="nav-link portal-nav-link text-center px-2.5 py-1.5 rounded-3 position-relative d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/notifications') ? 'active' : '' ?>" href="/portal/notifications">
             <div class="position-relative">
               <i class="fa-solid fa-bell fs-5 mb-xl-1" id="portalNotifBellIcon"></i>
               <span id="portalNotifBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle <?= $unreadNotifsCount > 0 ? '' : 'd-none' ?>" style="font-size: 0.62rem; padding: 0.25em 0.45em;"><?= $unreadNotifsCount ?></span>
@@ -66,7 +66,7 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link text-white text-center px-2 py-1 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/support') ? 'active bg-white bg-opacity-20' : 'opacity-75 hover-opacity-100' ?>" href="/portal/support">
+          <a class="nav-link portal-nav-link text-center px-2.5 py-1.5 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/support') ? 'active' : '' ?>" href="/portal/support">
             <i class="fa-solid fa-headset fs-5 mb-xl-1"></i>
             <span style="font-size: 0.75rem; font-weight: 600;">Help &amp; Support</span>
           </a>
@@ -88,6 +88,22 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
 </nav>
 
 <style>
+.portal-nav-link {
+  color: rgba(255, 255, 255, 0.85) !important;
+  transition: all 0.2s ease;
+  border: 1px solid transparent !important;
+}
+.portal-nav-link:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+.portal-nav-link.active {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+}
+
 @media (max-width: 1199.98px) {
   #portalNavbar {
     background: rgba(7, 10, 18, 0.96);
