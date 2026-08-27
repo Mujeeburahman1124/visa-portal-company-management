@@ -1,9 +1,24 @@
 <?php
-$pageTitle = 'My Wallet & Advance Payments — VISA TRACK';
+$pageTitle = 'My Wallet & Advance Payments — MS TRAVEL HUB';
 $flash = get_flash();
-require_once __DIR__ . '/header.php';
-require_once __DIR__ . '/navbar.php';
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><?= e($pageTitle) ?></title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>✈️</text></svg>">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/main.css?v=7.0.0">
+</head>
+<body class="app-body">
+
+<?php require_once __DIR__ . '/navbar.php'; ?>
 
 <div class="container py-4">
   <!-- Flash Alert -->
@@ -164,4 +179,6 @@ require_once __DIR__ . '/navbar.php';
   </div>
 </div>
 
-<?php require_once __DIR__ . '/footer.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
