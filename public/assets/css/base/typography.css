@@ -1,0 +1,40 @@
+body.app-body, html, body {
+  font-family: 'Times New Roman', Times, Georgia, serif !important;
+  color: var(--vt-text-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.brand-font, .brand-title, h1, h2, h3, h4, h5, h6,
+button, input, select, textarea, .btn, .nav-link-custom, .stat-value, .badge, .table,
+.form-control, .form-select, .card, .dropdown-menu, .modal {
+  font-family: 'Times New Roman', Times, Georgia, serif !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--vt-text-main);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+i.fa-solid, i.fa-regular, i.fa-brands {
+  display: inline-block;
+  vertical-align: -0.12em;
+  line-height: 1;
+}
+
+.nav-icon {
+  font-size: 0.95rem !important;
+  width: 18px !important;
+  text-align: center;
+}
+
+a {
+  color: var(--mh-blue);
+  text-decoration: none;
+  transition: all var(--vt-transition-fast);
+}
+a:hover {
+  color: var(--mh-blue-hover);
+}

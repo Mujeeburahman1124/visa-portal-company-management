@@ -1,0 +1,94 @@
+:root {
+  /* === MH BRAND GRADIENT PALETTE === */
+  --mh-green:          #22c55e;
+  --mh-green-light:    #4ade80;
+  --mh-green-dark:     #16a34a;
+  --mh-green-lime:     #84cc16;
+  --mh-green-subtle:   #f0fdf4;
+  --mh-green-border:   #bbf7d0;
+
+  --mh-teal:           #06b6d4;
+  --mh-teal-light:     #22d3ee;
+  --mh-teal-dark:      #0891b2;
+  --mh-teal-subtle:    #ecfeff;
+  --mh-teal-border:    #a5f3fc;
+
+  --mh-blue:           #2563eb;
+  --mh-blue-hover:     #1d4ed8;
+  --mh-blue-dark:      #1e40af;
+  --mh-blue-deep:      #1e3a8a;
+  --mh-blue-light:     #eff6ff;
+  --mh-blue-subtle:    #dbeafe;
+  --mh-blue-border:    #bfdbfe;
+  --mh-blue-glow:      rgba(37, 99, 235, 0.32);
+
+  /* === PRIMARY BRAND (BLUE) === */
+  --vt-primary:        var(--mh-blue);
+  --vt-primary-hover:  var(--mh-blue-hover);
+  --vt-primary-dark:   var(--mh-blue-dark);
+  --vt-primary-light:  var(--mh-blue-light);
+  --vt-primary-subtle: var(--mh-blue-subtle);
+  --vt-primary-border: var(--mh-blue-border);
+
+  /* === BRAND GRADIENTS === */
+  --mh-gradient-brand: linear-gradient(135deg, #22c55e 0%, #06b6d4 50%, #2563eb 100%);
+  --mh-gradient-brand-r: linear-gradient(135deg, #2563eb 0%, #06b6d4 50%, #22c55e 100%);
+  --mh-gradient-blue:  linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+  --mh-gradient-teal:  linear-gradient(135deg, #22d3ee 0%, #06b6d4 50%, #0891b2 100%);
+  --mh-gradient-green: linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
+  --mh-gradient-dark:  linear-gradient(180deg, #060e1c 0%, #0a1628 100%);
+  --mh-gradient-sidebar: linear-gradient(180deg, #080f1e 0%, #04090f 100%);
+  --mh-gradient-hero:  linear-gradient(135deg, #060e1c 0%, #0d2048 50%, #1e3a8a 100%);
+  --ms-gradient-success: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  --ms-gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+
+  /* === DARK SIDEBAR NAVY === */
+  --mh-navy:           #0a1628;
+  --mh-navy-dark:      #060e1c;
+  --mh-navy-light:     #0f2040;
+  --mh-navy-muted:     #1a2f50;
+
+  /* === NEUTRAL SURFACES === */
+  --vt-bg:             #f0f6ff;
+  --vt-surface:        #ffffff;
+  --vt-surface-glass:  rgba(255, 255, 255, 0.96);
+  --vt-surface-muted:  #f0f6ff;
+  --vt-border:         #dce8f5;
+  --vt-border-glass:   rgba(255, 255, 255, 0.6);
+
+  /* === TYPOGRAPHY === */
+  --vt-text-main:      #0f172a;
+  --vt-text-body:      #334155;
+  --vt-text-muted:     #64748b;
+  --vt-text-light:     #94a3b8;
+
+  /* === STATUS COLORS === */
+  --vt-success:        #22c55e;
+  --vt-warning:        #f59e0b;
+  --vt-danger:         #ef4444;
+  --vt-info:           var(--mh-teal);
+  --vt-purple:         #8b5cf6;
+
+  /* === DIMENSIONS === */
+  --sidebar-width:           270px;
+  --sidebar-collapsed-width: 76px;
+  --topbar-height:           70px;
+  --radius-xs:  6px;
+  --radius-sm:  10px;
+  --radius-md:  14px;
+  --radius-lg:  18px;
+  --radius-xl:  26px;
+
+  /* === ELEVATION === */
+  --vt-shadow-xs: 0 1px 2px 0 rgba(0,0,0,0.04);
+  --vt-shadow-sm: 0 2px 6px 0 rgba(10,22,40,0.06), 0 1px 2px -1px rgba(10,22,40,0.04);
+  --vt-shadow-md: 0 6px 16px -2px rgba(10,22,40,0.08), 0 2px 6px -2px rgba(10,22,40,0.04);
+  --vt-shadow-lg: 0 14px 28px -4px rgba(10,22,40,0.10), 0 4px 10px -2px rgba(10,22,40,0.04);
+  --vt-shadow-xl: 0 24px 38px -6px rgba(10,22,40,0.13), 0 10px 16px -4px rgba(10,22,40,0.05);
+  --vt-glow-primary: 0 8px 25px -4px var(--mh-blue-glow);
+  --vt-glow-success: 0 8px 25px -4px rgba(34,197,94,0.35);
+  --vt-glow-warning: 0 8px 25px -4px rgba(245,158,11,0.35);
+
+  --vt-transition-fast:   0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --vt-transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
