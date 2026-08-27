@@ -37,7 +37,7 @@ class PaymentController
                 JOIN customers c ON p.customer_id = c.id
                 JOIN visa_services vs ON a.visa_service_id = vs.id
                 JOIN countries ct ON vs.country_id = ct.id
-                LEFT JOIN suppliers s ON (p.supplier_id = s.id OR a.supplier_id = s.id)
+                LEFT JOIN suppliers s ON a.supplier_id = s.id
                 LEFT JOIN users u ON p.received_by = u.id
                 WHERE 1=1";
 
@@ -59,8 +59,7 @@ class PaymentController
         }
 
         if ($supplierId > 0) {
-            $sql .= " AND (p.supplier_id = ? OR a.supplier_id = ?)";
-            $params[] = $supplierId;
+            $sql .= " AND a.supplier_id = ?";
             $params[] = $supplierId;
         }
 
@@ -98,15 +97,33 @@ class PaymentController
             WHERE a.is_archived = 0 
             ORDER BY a.created_at DESC LIMIT 100")->fetchAll();
 
-        // Summary metrics
+        // Summary metrics (defensive execution)
         $metrics = [
-            'total_received' => (float)$pdo->query("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'Completed'")->fetchColumn(),
-            'total_refunded' => (float)$pdo->query("SELECT COALESCE(SUM(amount), 0) FROM refunds WHERE status = 'Processed'")->fetchColumn(),
-            'outstanding' => (float)$pdo->query("SELECT COALESCE(SUM(balance_amount), 0) FROM applications WHERE is_archived = 0")->fetchColumn(),
-            'total_wallet_credits' => (float)$pdo->query("SELECT COALESCE(SUM(amount), 0) FROM wallet_transactions WHERE transaction_type = 'Credit'")->fetchColumn(),
-            'total_wallet_debits' => (float)$pdo->query("SELECT COALESCE(SUM(amount), 0) FROM wallet_transactions WHERE transaction_type = 'Debit'")->fetchColumn(),
-            'total_online_links' => (int)$pdo->query("SELECT COUNT(*) FROM payment_links")->fetchColumn(),
+            'total_received' => 0.0,
+            'total_refunded' => 0.0,
+            'outstanding' => 0.0,
+            'total_wallet_credits' => 0.0,
+            'total_wallet_debits' => 0.0,
+            'total_online_links' => 0,
         ];
+        try {
+            $metrics['total_received'] = (float)($pdo->query("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'Completed'")->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {}
+        try {
+            $metrics['total_refunded'] = (float)($pdo->query("SELECT COALESCE(SUM(amount), 0) FROM refunds WHERE status = 'Processed'")->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {}
+        try {
+            $metrics['outstanding'] = (float)($pdo->query("SELECT COALESCE(SUM(balance_amount), 0) FROM applications WHERE is_archived = 0")->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {}
+        try {
+            $metrics['total_wallet_credits'] = (float)($pdo->query("SELECT COALESCE(SUM(amount), 0) FROM wallet_transactions WHERE transaction_type = 'Credit'")->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {}
+        try {
+            $metrics['total_wallet_debits'] = (float)($pdo->query("SELECT COALESCE(SUM(amount), 0) FROM wallet_transactions WHERE transaction_type = 'Debit'")->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {}
+        try {
+            $metrics['total_online_links'] = (int)($pdo->query("SELECT COUNT(*) FROM payment_links")->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {}
 
         require_once dirname(__DIR__) . '/Views/payments/index.php';
     }
