@@ -504,6 +504,11 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE agents ADD COLUMN payment_terms VARCHAR(100) DEFAULT 'Net 30'"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE agents ADD COLUMN bank_details TEXT NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE agents ADD COLUMN last_login_at DATETIME NULL"); } catch (\Throwable $e) {}
+
+            // Safe ALTER TABLE migrations for agent_payments table
+            try { $pdo->exec("ALTER TABLE agent_payments ADD COLUMN application_id INT NULL AFTER agent_id"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agent_payments ADD COLUMN payment_type VARCHAR(50) DEFAULT 'Payment' AFTER amount"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agent_payments ADD COLUMN created_by INT NULL AFTER notes"); } catch (\Throwable $e) {}
         } else {
             $pdo->exec("CREATE TABLE IF NOT EXISTS agents (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
