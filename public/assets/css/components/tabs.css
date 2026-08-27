@@ -1,0 +1,29 @@
+.nav-tabs-custom {
+  border-bottom: 2px solid var(--mh-blue-border);
+  gap: 0;
+  flex-wrap: wrap;
+}
+
+.nav-tabs-custom .nav-link {
+  color: var(--vt-text-muted);
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.88rem;
+  border-radius: 0;
+  margin-bottom: -2px;
+  transition: all var(--vt-transition-fast);
+}
+
+.nav-tabs-custom .nav-link:hover {
+  color: var(--mh-blue);
+  background: var(--mh-blue-light);
+}
+
+.nav-tabs-custom .nav-link.active {
+  color: var(--mh-blue);
+  border-bottom-color: var(--mh-blue);
+  background: transparent;
+  font-weight: 700;
+}

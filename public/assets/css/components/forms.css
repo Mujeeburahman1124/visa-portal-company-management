@@ -1,0 +1,76 @@
+.form-control, .form-select {
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--vt-border);
+  padding: 0.55rem 0.85rem;
+  font-size: 0.9rem;
+  color: var(--vt-text-main);
+  transition: border-color var(--vt-transition-fast), box-shadow var(--vt-transition-fast);
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--mh-blue);
+  box-shadow: 0 0 0 3px var(--mh-blue-subtle);
+  outline: none;
+}
+
+/* Live applicant selector */
+.applicant-search-box {
+  position: relative;
+}
+
+.applicant-search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid var(--mh-blue-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--vt-shadow-lg);
+  z-index: 999;
+  max-height: 260px;
+  overflow-y: auto;
+  margin-top: 2px;
+}
+
+.applicant-result-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background var(--vt-transition-fast);
+  border-bottom: 1px solid #f0f6ff;
+}
+
+.applicant-result-item:hover {
+  background: var(--mh-blue-light);
+}
+
+.applicant-result-item:last-child { border-bottom: none; }
+
+.applicant-avatar-sm {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--mh-gradient-brand);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+/* Sticky action footer */
+.form-sticky-actions {
+  position: sticky;
+  bottom: 0;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--mh-blue-border);
+  padding: 1rem 1.5rem;
+  z-index: 100;
+  margin: 0 -1.75rem;
+}

@@ -1,0 +1,45 @@
+.card-enterprise, .card-custom {
+  background: var(--vt-surface);
+  border: 1px solid var(--vt-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--vt-shadow-sm);
+  transition: transform var(--vt-transition-fast), box-shadow var(--vt-transition-fast);
+  overflow: hidden;
+}
+
+.card-enterprise:hover, .card-custom:hover {
+  box-shadow: var(--vt-shadow-md);
+}
+
+.card-enterprise .card-header, .card-custom-header {
+  background: linear-gradient(135deg, #f0f6ff 0%, #ffffff 100%);
+  border-bottom: 2px solid var(--mh-blue-border);
+  padding: 1rem 1.35rem;
+  font-weight: 700;
+  color: var(--vt-text-main);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-enterprise .card-body, .card-custom-body {
+  padding: 1.35rem;
+}
+
+.payment-card {
+  background: #ffffff;
+  border: 1px solid var(--mh-blue-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--vt-shadow-sm);
+}
+
+.payment-card-header {
+  background: linear-gradient(135deg, var(--mh-navy) 0%, var(--mh-navy-light) 100%);
+  color: #ffffff;
+  padding: 1.15rem 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
