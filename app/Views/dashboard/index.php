@@ -387,29 +387,31 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
     <!-- Recent Audit Activity -->
     <div class="col-lg-6">
-      <div class="card card-enterprise h-100">
-        <div class="card-header d-flex align-items-center justify-content-between">
-          <span class="fw-bold small text-uppercase text-secondary"><i class="fa-solid fa-clock-rotate-left text-secondary me-2"></i> Operations Audit Trail</span>
-          <a href="/audit-logs" class="btn btn-link btn-sm text-decoration-none p-0" style="font-size: 0.78rem;">All Logs &rarr;</a>
+      <div class="card card-enterprise shadow-sm border h-100">
+        <div class="card-header bg-white border-bottom py-3 px-3 px-md-4 d-flex align-items-center justify-content-between">
+          <span class="fw-bold small text-uppercase text-secondary d-flex align-items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left text-primary"></i> Operations Audit Trail
+          </span>
+          <a href="/audit-logs" class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold" style="font-size: 0.78rem;">All Logs &rarr;</a>
         </div>
-        <div class="card-body p-0">
-          <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
-            <table class="table-modern mb-0">
-              <thead>
+        <div class="card-body p-0 d-flex flex-column justify-content-between">
+          <div class="table-responsive" style="-webkit-overflow-scrolling: touch;">
+            <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem; min-width: 480px;">
+              <thead class="table-light">
                 <tr>
-                  <th>Timestamp</th>
-                  <th>User</th>
-                  <th>Action</th>
-                  <th>Details</th>
+                  <th style="font-size: 0.72rem; text-transform: uppercase;" class="text-nowrap ps-3">Timestamp</th>
+                  <th style="font-size: 0.72rem; text-transform: uppercase;">User</th>
+                  <th style="font-size: 0.72rem; text-transform: uppercase;">Action</th>
+                  <th style="font-size: 0.72rem; text-transform: uppercase;" class="text-end pe-3">Details</th>
                 </tr>
               </thead>
               <tbody>
                 <?php foreach ($recentActivities as $act): ?>
                   <tr>
-                    <td class="text-muted small" style="white-space: nowrap; font-size: 0.72rem;"><?= format_datetime($act['created_at']) ?></td>
-                    <td><span class="fw-semibold small"><?= e($act['user_name'] ?? 'System') ?></span></td>
-                    <td><span class="badge bg-light text-dark border" style="font-size: 0.68rem;"><?= e($act['action']) ?></span></td>
-                    <td><span class="small text-truncate d-inline-block" style="max-width: 180px;"><?= e($act['description']) ?></span></td>
+                    <td class="text-muted small text-nowrap ps-3" style="font-size: 0.76rem;"><?= format_datetime($act['created_at']) ?></td>
+                    <td><span class="fw-bold small text-dark"><?= e($act['user_name'] ?? 'System') ?></span></td>
+                    <td><span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-semibold px-2 py-1" style="font-size: 0.68rem;"><?= e($act['action']) ?></span></td>
+                    <td class="text-end pe-3"><span class="small text-truncate d-inline-block text-secondary" style="max-width: 180px;" title="<?= e($act['description']) ?>"><?= e($act['description']) ?></span></td>
                   </tr>
                 <?php endforeach; ?>
               </tbody>
