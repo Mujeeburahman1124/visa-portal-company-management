@@ -41,36 +41,56 @@ $flash = get_flash();
 
   <div class="row g-4">
     <!-- Contact Channels & Inquiry Form Column -->
-    <div class="col-lg-6">
-      <!-- Quick Contact Cards -->
+    <div class="col-12 col-lg-6">
+      <!-- Quick Contact Cards (Fluid 2-Column Responsive Grid) -->
       <div class="row g-3 mb-4">
-        <div class="col-sm-6">
-          <div class="p-3.5 bg-white rounded-3 border shadow-sm h-100">
-            <div class="fs-3 text-success mb-2"><i class="fa-brands fa-whatsapp"></i></div>
-            <div class="fw-bold text-dark fs-6">Official WhatsApp Desk</div>
-            <div class="text-muted small mb-2">Direct assistance with document prep</div>
-            <a href="https://wa.me/971501112233" target="_blank" class="btn btn-outline-success btn-sm w-100 fw-semibold">
-              Chat on WhatsApp &rarr;
+        <div class="col-12 col-sm-6">
+          <div class="p-3.5 p-md-4 bg-white rounded-3 border shadow-sm h-100 d-flex flex-column justify-content-between transition-all">
+            <div>
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="fs-3 text-success p-2 rounded-3 bg-success-subtle d-inline-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                  <i class="fa-brands fa-whatsapp"></i>
+                </div>
+                <div class="fw-bold text-dark fs-6">Official WhatsApp Desk</div>
+              </div>
+              <div class="text-muted small mb-3">Direct real-time assistance with document prep and visa queries.</div>
+            </div>
+            <a href="https://wa.me/971501112233" target="_blank" class="btn btn-outline-success btn-sm w-100 fw-semibold shadow-sm">
+              <i class="fa-brands fa-whatsapp me-1.5"></i> Chat on WhatsApp &rarr;
             </a>
           </div>
         </div>
 
-        <div class="col-sm-6">
-          <div class="p-3.5 bg-white rounded-3 border shadow-sm h-100">
-            <div class="fs-3 text-primary mb-2"><i class="fa-solid fa-phone-volume"></i></div>
-            <div class="fw-bold text-dark fs-6">Support Hotline</div>
-            <div class="text-muted small mb-2"><?= e($settings['company_phone'] ?? '+971 4 388 9900') ?></div>
-            <div class="text-secondary small">Mon - Sat: 9:00 AM - 6:00 PM</div>
+        <div class="col-12 col-sm-6">
+          <div class="p-3.5 p-md-4 bg-white rounded-3 border shadow-sm h-100 d-flex flex-column justify-content-between transition-all">
+            <div>
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="fs-4 text-primary p-2 rounded-3 bg-primary-subtle d-inline-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                  <i class="fa-solid fa-headset"></i>
+                </div>
+                <div class="fw-bold text-dark fs-6">Support Hotline</div>
+              </div>
+              <a href="tel:<?= e(preg_replace('/[^0-9+]/', '', $settings['company_phone'] ?? '+97143889900')) ?>" class="text-decoration-none text-dark fw-bold fs-6 d-block mb-1">
+                <i class="fa-solid fa-phone me-1 text-primary"></i><?= e($settings['company_phone'] ?? '+971 4 388 9900') ?>
+              </a>
+              <div class="text-secondary small mb-3"><i class="fa-regular fa-clock me-1 text-muted"></i>Mon - Sat: 9:00 AM - 6:00 PM</div>
+            </div>
+            <a href="tel:<?= e(preg_replace('/[^0-9+]/', '', $settings['company_phone'] ?? '+97143889900')) ?>" class="btn btn-outline-primary btn-sm w-100 fw-semibold shadow-sm">
+              <i class="fa-solid fa-phone me-1.5"></i> Call Hotline Now
+            </a>
           </div>
         </div>
       </div>
 
       <!-- Submit Message to Case Officer Form -->
       <div class="card card-enterprise shadow-sm border">
-        <div class="card-header bg-white border-bottom py-3">
-          <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-paper-plane text-primary me-2"></i> Send Message to Visa Processing Desk</h6>
+        <div class="card-header bg-white border-bottom py-3 px-3 px-md-4">
+          <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+            <i class="fa-solid fa-paper-plane text-primary fs-5"></i>
+            <span>Send Message to Visa Processing Desk</span>
+          </h6>
         </div>
-        <div class="card-body p-4">
+        <div class="card-body p-3 p-md-4">
           <form action="/portal/support/inquiry" method="POST">
             <?= csrf_field() ?>
             <div class="mb-3">
@@ -83,8 +103,8 @@ $flash = get_flash();
               <textarea name="message" class="form-control" rows="4" placeholder="Type your question or message for your case officer..." required></textarea>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold shadow-sm w-100">
-              <i class="fa-solid fa-paper-plane me-1"></i> Send Inquiry
+            <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold shadow-sm w-100 py-2.5">
+              <i class="fa-solid fa-paper-plane me-1.5"></i> Send Inquiry to Support
             </button>
           </form>
         </div>
@@ -92,60 +112,63 @@ $flash = get_flash();
     </div>
 
     <!-- FAQ Accordion Column -->
-    <div class="col-lg-6">
-      <div class="card card-enterprise shadow-sm border">
-        <div class="card-header bg-white border-bottom py-3">
-          <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-circle-question text-primary me-2"></i> Frequently Asked Questions</h6>
+    <div class="col-12 col-lg-6">
+      <div class="card card-enterprise shadow-sm border h-100">
+        <div class="card-header bg-white border-bottom py-3 px-3 px-md-4">
+          <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+            <i class="fa-solid fa-circle-question text-primary fs-5"></i>
+            <span>Frequently Asked Questions</span>
+          </h6>
         </div>
-        <div class="card-body p-3">
+        <div class="card-body p-3 p-md-4">
           <div class="accordion accordion-flush" id="faqAccordion">
-            <div class="accordion-item">
+            <div class="accordion-item border rounded-3 mb-2 overflow-hidden shadow-xs">
               <h2 class="accordion-header">
-                <button class="accordion-button fw-semibold small text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                <button class="accordion-button fw-semibold small text-dark py-3 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
                   How do I know when my visa is approved?
                 </button>
               </h2>
               <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
-                <div class="accordion-body small text-secondary">
-                  As soon as consular authorities issue your visa decision, the status on your dashboard updates immediately to <strong>Approved</strong>, and an electronic copy will be available for instant download.
+                <div class="accordion-body small text-secondary bg-light p-3">
+                  As soon as consular authorities issue your visa decision, the status on your dashboard updates immediately to <strong class="text-success">Approved</strong>, and an electronic copy will be available for instant download.
                 </div>
               </div>
             </div>
 
-            <div class="accordion-item">
+            <div class="accordion-item border rounded-3 mb-2 overflow-hidden shadow-xs">
               <h2 class="accordion-header">
-                <button class="accordion-button collapsed fw-semibold small text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                <button class="accordion-button collapsed fw-semibold small text-dark py-3 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
                   What if a document is rejected or needs replacement?
                 </button>
               </h2>
               <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                <div class="accordion-body small text-secondary">
-                  If an officer flags an issue (e.g. blurry scan or missing page), you will see an <strong>ACTION REQUIRED</strong> alert on your dashboard with the exact reason. Simply click the Upload button to provide a replacement copy.
+                <div class="accordion-body small text-secondary bg-light p-3">
+                  If an officer flags an issue (e.g. blurry scan or missing page), you will see an <strong class="text-danger">ACTION REQUIRED</strong> alert on your dashboard with the exact reason. Simply click the Upload button to provide a replacement copy.
                 </div>
               </div>
             </div>
 
-            <div class="accordion-item">
+            <div class="accordion-item border rounded-3 mb-2 overflow-hidden shadow-xs">
               <h2 class="accordion-header">
-                <button class="accordion-button collapsed fw-semibold small text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                <button class="accordion-button collapsed fw-semibold small text-dark py-3 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
                   What should I bring to my biometrics appointment?
                 </button>
               </h2>
               <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                <div class="accordion-body small text-secondary">
+                <div class="accordion-body small text-secondary bg-light p-3">
                   Always bring your original valid passport, the official appointment confirmation letter, and physical copies of your application dossier as indicated on your appointment card.
                 </div>
               </div>
             </div>
 
-            <div class="accordion-item">
+            <div class="accordion-item border rounded-3 mb-2 overflow-hidden shadow-xs">
               <h2 class="accordion-header">
-                <button class="accordion-button collapsed fw-semibold small text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                <button class="accordion-button collapsed fw-semibold small text-dark py-3 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
                   How are processing timelines estimated?
                 </button>
               </h2>
               <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                <div class="accordion-body small text-secondary">
+                <div class="accordion-body small text-secondary bg-light p-3">
                   Timelines shown in the portal are standard target milestones. Official processing times are ultimately determined by respective government embassies and consular clearing authorities.
                 </div>
               </div>
@@ -155,6 +178,7 @@ $flash = get_flash();
       </div>
     </div>
   </div>
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
