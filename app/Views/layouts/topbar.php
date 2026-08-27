@@ -39,7 +39,7 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
     </a>
     
     <!-- Breadcrumb Trail & Page Context (Responsive) -->
-    <div class="d-none d-md-block topbar-breadcrumb-container" style="min-width: 180px; max-width: 340px;">
+    <div class="d-none d-lg-block topbar-breadcrumb-container" style="min-width: 180px; max-width: 340px;">
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb mb-0" style="font-size: 0.75rem;">
           <li class="breadcrumb-item"><a href="/dashboard" class="text-decoration-none text-muted"><i class="fa-solid fa-house-chimney small me-1"></i>Home</a></li>
@@ -92,9 +92,9 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
   <div class="d-flex align-items-center gap-2 gap-md-3">
     <!-- Quick Actions Button -->
     <div class="dropdown">
-      <button class="btn btn-primary btn-sm px-2 px-md-3 rounded-pill d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+      <button class="btn btn-primary btn-sm px-2 px-md-3 rounded-pill d-flex align-items-center gap-1 shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Quick Action">
         <i class="fa-solid fa-plus"></i>
-        <span class="d-none d-md-inline">Quick Action</span>
+        <span class="d-none d-lg-inline">Quick Action</span>
       </button>
       <ul class="dropdown-menu dropdown-menu-end shadow border-0 topbar-quick-action-menu" style="font-size: 0.875rem;">
         <li class="dropdown-header small text-uppercase text-muted" style="font-size: 0.7rem;">Visa Operations</li>
@@ -163,11 +163,11 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
 
     <!-- User Profile Dropdown -->
     <div class="dropdown">
-      <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-dark topbar-user-btn" data-bs-toggle="dropdown" aria-expanded="false">
+      <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-dark topbar-user-btn" data-bs-toggle="dropdown" aria-expanded="false" title="<?= e($currentUser['name'] ?? 'User Profile') ?>">
         <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm topbar-user-avatar" style="width: 36px; height: 36px; font-size: 0.9rem;">
           <?= strtoupper(substr($currentUser['name'] ?? 'U', 0, 1)) ?>
         </div>
-        <div class="d-none d-md-block text-start" style="line-height: 1.1;">
+        <div class="d-none d-lg-block text-start" style="line-height: 1.1;">
           <div class="fw-semibold small user-name-label"><?= e($currentUser['name'] ?? 'Staff') ?></div>
           <div class="text-muted user-role-label" style="font-size: 0.72rem;"><?= e($currentUser['role_name'] ?? 'Staff') ?></div>
         </div>

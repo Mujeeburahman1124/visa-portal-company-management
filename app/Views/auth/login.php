@@ -11,7 +11,222 @@ $flash = get_flash();
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>✈️</text></svg>">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/style.css?v=5.0.0">
+  <link rel="stylesheet" href="/assets/css/main.css?v=7.0.0">
+  <style>
+    .auth-login-bg {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #060e1c 0%, #0a1e3d 40%, #0d3462 70%, #0f4c75 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .auth-login-bg::before {
+      content: '';
+      position: absolute;
+      top: -100px; left: -100px;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(34,197,94,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .auth-login-bg::after {
+      content: '';
+      position: absolute;
+      bottom: -100px; right: -80px;
+      width: 350px; height: 350px;
+      background: radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .login-card {
+      background: rgba(255,255,255,0.98);
+      border-radius: 20px;
+      padding: 2.5rem 2.25rem;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 25px 60px rgba(6,14,28,0.5), 0 8px 24px rgba(37,99,235,0.15);
+      border: 1px solid rgba(37,99,235,0.15);
+      position: relative;
+      z-index: 2;
+    }
+    .login-card .logo-wrap {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid #e8f0fe;
+    }
+    .login-card .logo-wrap img {
+      height: 72px; width: auto;
+      filter: drop-shadow(0 4px 12px rgba(37,99,235,0.20));
+      margin-bottom: 0.75rem;
+    }
+    .login-card .brand-name {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.1rem;
+    }
+    .login-card .brand-name .grad {
+      background: linear-gradient(135deg, #22c55e 0%, #06b6d4 50%, #2563eb 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .login-card .brand-tagline {
+      font-size: 0.76rem;
+      color: #64748b;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .login-section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 0.35rem;
+    }
+    .login-section-sub {
+      font-size: 0.82rem;
+      color: #64748b;
+      margin-bottom: 1.25rem;
+    }
+    .login-input-wrap {
+      margin-bottom: 1rem;
+    }
+    .login-input-wrap label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.35rem;
+    }
+    .login-input-group {
+      display: flex;
+      align-items: center;
+      border: 1.5px solid #dce8f5;
+      border-radius: 10px;
+      background: #f8fbff;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+    .login-input-group:focus-within {
+      border-color: #2563eb;
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+    }
+    .login-input-group .icon {
+      padding: 0 0.75rem;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+    .login-input-group input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 0.65rem 0.5rem;
+      font-size: 0.9rem;
+      color: #0f172a;
+      outline: none;
+      font-family: 'Times New Roman', Times, serif;
+      min-height: 44px;
+    }
+    .login-input-group .toggle-btn {
+      background: none;
+      border: none;
+      padding: 0 0.75rem;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .login-input-group .toggle-btn:hover { color: #2563eb; }
+    .btn-login {
+      display: block;
+      width: 100%;
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, #22c55e 0%, #06b6d4 50%, #2563eb 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.25);
+      font-family: 'Times New Roman', Times, serif;
+      margin-top: 0.5rem;
+    }
+    .btn-login:hover {
+      opacity: 0.92;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(37,99,235,0.35);
+    }
+    .btn-login:disabled { opacity: 0.7; cursor: not-allowed; }
+    .quick-fill-btn {
+      background: #f0f6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e40af;
+      border-radius: 6px;
+      padding: 0.25rem 0.65rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: 'Times New Roman', Times, serif;
+    }
+    .quick-fill-btn:hover {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #ffffff;
+    }
+    .remember-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+    .remember-row .form-check-label {
+      font-size: 0.82rem;
+      color: #64748b;
+    }
+    .forgot-link {
+      font-size: 0.8rem;
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .forgot-link:hover { text-decoration: underline; }
+    .portal-link-row {
+      text-align: center;
+      margin-top: 1.25rem;
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+    .portal-link-row a {
+      color: #2563eb;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .portal-link-row a:hover { text-decoration: underline; }
+    .footer-copy {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.45);
+      position: relative;
+      z-index: 2;
+    }
+    @media (max-width: 480px) {
+      .login-card { padding: 1.75rem 1.25rem; border-radius: 16px; }
+      .login-card .logo-wrap img { height: 56px; }
+      .login-card .brand-name { font-size: 1.25rem; }
+    }
+  </style>
+>>>>>>> 1b1738a (refactor(views): update staff layout and auth views to reference main.css)
 </head>
 <body class="auth-page-body">
 

@@ -19,9 +19,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Application CSS & Timeline CSS -->
-  <link rel="stylesheet" href="/assets/css/style.css?v=6.0.0">
-  <link rel="stylesheet" href="/assets/css/timeline.css?v=6.0.0">
+  <!-- Application CSS -->
+  <link rel="stylesheet" href="/assets/css/main.css?v=7.0.0">
 </head>
 <body class="app-body">
 <div class="app-wrapper" id="appWrapper">
