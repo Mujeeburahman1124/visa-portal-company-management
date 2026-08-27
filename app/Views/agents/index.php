@@ -23,57 +23,57 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       <h3 class="fw-bold brand-font text-dark mb-1">Agent &amp; B2B Partner Network</h3>
       <p class="text-muted small mb-0">Manage partner travel agents, credit limits, commission rates, balances, and portal access.</p>
     </div>
-    <div class="d-flex gap-2">
-      <button class="btn btn-success btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#newAgentModal">
+    <div class="d-flex flex-wrap gap-2">
+      <button class="btn btn-success btn-sm px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#newAgentModal">
         <i class="fa-solid fa-plus me-1"></i> Register New Agent
       </button>
-      <button class="btn btn-outline-secondary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#recordAgentPayModal">
+      <button class="btn btn-outline-secondary btn-sm px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#recordAgentPayModal">
         <i class="fa-solid fa-receipt me-1"></i> Record Agent Payment
       </button>
     </div>
   </div>
 
-  <!-- Agent Summary Metrics -->
+  <!-- Agent Summary Metrics (100% Responsive Grid) -->
   <div class="row g-3 mb-4">
-    <div class="col-md-3">
-      <div class="card card-enterprise shadow-sm border p-3">
+    <div class="col-12 col-sm-6 col-md-3">
+      <div class="stat-card p-3 h-100 shadow-sm border rounded-3">
         <div class="d-flex align-items-center gap-3">
           <div class="p-3 bg-success bg-opacity-10 text-success rounded-3 fs-4"><i class="fa-solid fa-handshake"></i></div>
           <div>
-            <div class="text-muted small">Total Registered Agents</div>
+            <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.03em;">Total Registered</div>
             <h4 class="fw-bold mb-0 text-dark"><?= count($agents) ?></h4>
           </div>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card card-enterprise shadow-sm border p-3">
+    <div class="col-12 col-sm-6 col-md-3">
+      <div class="stat-card p-3 h-100 shadow-sm border rounded-3">
         <div class="d-flex align-items-center gap-3">
           <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3 fs-4"><i class="fa-solid fa-folder-tree"></i></div>
           <div>
-            <div class="text-muted small">Agent Applications</div>
+            <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.03em;">Agent Applications</div>
             <h4 class="fw-bold mb-0 text-primary"><?= array_sum(array_column($agents, 'total_applications')) ?></h4>
           </div>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card card-enterprise shadow-sm border p-3">
+    <div class="col-12 col-sm-6 col-md-3">
+      <div class="stat-card p-3 h-100 shadow-sm border rounded-3">
         <div class="d-flex align-items-center gap-3">
           <div class="p-3 bg-danger bg-opacity-10 text-danger rounded-3 fs-4"><i class="fa-solid fa-wallet"></i></div>
           <div>
-            <div class="text-muted small">Total Outstanding Balance</div>
+            <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.03em;">Outstanding Balance</div>
             <h4 class="fw-bold mb-0 text-danger"><?= format_currency(array_sum(array_column($agents, 'current_balance'))) ?></h4>
           </div>
         </div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card card-enterprise shadow-sm border p-3">
+    <div class="col-12 col-sm-6 col-md-3">
+      <div class="stat-card p-3 h-100 shadow-sm border rounded-3">
         <div class="d-flex align-items-center gap-3">
           <div class="p-3 bg-warning bg-opacity-10 text-warning rounded-3 fs-4"><i class="fa-solid fa-money-bill-transfer"></i></div>
           <div>
-            <div class="text-muted small">Total Payments Collected</div>
+            <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.03em;">Payments Collected</div>
             <h4 class="fw-bold mb-0 text-warning"><?= format_currency(array_sum(array_column($agents, 'total_paid'))) ?></h4>
           </div>
         </div>
@@ -81,24 +81,24 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </div>
   </div>
 
-  <!-- Agent Table -->
+  <!-- Agent Table (100% Touch Scroll Responsive Grid) -->
   <div class="card card-enterprise shadow-sm border">
     <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
+      <div class="table-responsive" style="-webkit-overflow-scrolling: touch;">
+        <table class="table table-hover align-middle mb-0 table-custom" style="font-size: 0.86rem; min-width: 1100px;">
           <thead class="table-light">
             <tr>
-              <th>Agent Code</th>
-              <th>Company Name</th>
-              <th>Contact Person</th>
-              <th>Contact Details</th>
-              <th>Location</th>
-              <th>Credit Limit</th>
-              <th>Balance</th>
-              <th>Commission</th>
-              <th>Applications</th>
-              <th>Status</th>
-              <th class="text-end">Actions</th>
+              <th style="width: 100px;" class="text-nowrap">Agent Code</th>
+              <th style="width: 200px;">Company Name</th>
+              <th style="width: 140px;">Contact Person</th>
+              <th style="width: 200px;">Contact Details</th>
+              <th style="width: 140px;">Location</th>
+              <th style="width: 120px;" class="text-nowrap">Credit Limit</th>
+              <th style="width: 120px;" class="text-nowrap">Balance</th>
+              <th style="width: 90px;" class="text-nowrap">Commission</th>
+              <th style="width: 90px;" class="text-nowrap">Apps</th>
+              <th style="width: 90px;" class="text-nowrap">Status</th>
+              <th style="width: 90px;" class="text-end text-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -108,33 +108,37 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               <?php foreach ($agents as $a): ?>
                 <?php $active = (int)$a['is_active'] === 1; ?>
                 <tr>
-                  <td><span class="badge bg-success-subtle text-success fw-bold border"><?= e($a['agent_code']) ?></span></td>
+                  <td class="text-nowrap"><span class="badge bg-success-subtle text-success fw-bold border"><?= e($a['agent_code']) ?></span></td>
                   <td>
-                    <div class="fw-bold text-dark"><?= e($a['company_name']) ?></div>
+                    <div class="fw-bold text-dark text-truncate" style="max-width: 190px;" title="<?= e($a['company_name']) ?>"><?= e($a['company_name']) ?></div>
                     <div class="text-muted small"><?= e($a['payment_terms']) ?></div>
                   </td>
-                  <td><?= e($a['contact_person']) ?></td>
+                  <td><span class="text-truncate d-inline-block" style="max-width: 130px;" title="<?= e($a['contact_person']) ?>"><?= e($a['contact_person']) ?></span></td>
                   <td class="small">
-                    <div><i class="fa-solid fa-phone me-1 text-muted"></i><?= e($a['mobile']) ?></div>
-                    <div><i class="fa-solid fa-envelope me-1 text-muted"></i><?= e($a['email']) ?></div>
+                    <div class="text-nowrap"><i class="fa-solid fa-phone me-1 text-muted"></i><?= e($a['mobile']) ?></div>
+                    <div class="text-truncate" style="max-width: 190px;" title="<?= e($a['email']) ?>"><i class="fa-solid fa-envelope me-1 text-muted"></i><?= e($a['email']) ?></div>
                   </td>
-                  <td class="small"><?= e($a['city'] ?: '') ?><?= !empty($a['city']) && !empty($a['country']) ? ', ' : '' ?><?= e($a['country'] ?: '—') ?></td>
-                  <td><?= format_currency((float)$a['credit_limit']) ?></td>
-                  <td>
+                  <td class="small">
+                    <span class="text-truncate d-inline-block" style="max-width: 130px;" title="<?= e($a['city'] ?: '') ?><?= !empty($a['city']) && !empty($a['country']) ? ', ' : '' ?><?= e($a['country'] ?: '—') ?>">
+                      <?= e($a['city'] ?: '') ?><?= !empty($a['city']) && !empty($a['country']) ? ', ' : '' ?><?= e($a['country'] ?: '—') ?>
+                    </span>
+                  </td>
+                  <td class="text-nowrap"><?= format_currency((float)$a['credit_limit']) ?></td>
+                  <td class="text-nowrap">
                     <span class="fw-bold <?= (float)$a['current_balance'] > 0 ? 'text-danger' : 'text-success' ?>">
                       <?= format_currency((float)$a['current_balance']) ?>
                     </span>
                   </td>
-                  <td><span class="badge bg-light text-dark border"><?= (float)$a['commission_rate'] ?>%</span></td>
-                  <td><span class="badge bg-primary"><?= (int)$a['total_applications'] ?></span></td>
-                  <td>
-                    <span class="badge <?= $active ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' ?>">
+                  <td class="text-nowrap"><span class="badge bg-light text-dark border"><?= (float)$a['commission_rate'] ?>%</span></td>
+                  <td class="text-nowrap"><span class="badge bg-primary rounded-pill px-2.5 py-1"><?= (int)$a['total_applications'] ?></span></td>
+                  <td class="text-nowrap">
+                    <span class="badge <?= $active ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' ?> fw-bold px-2 py-1">
                       <?= $active ? 'Active' : 'Suspended' ?>
                     </span>
                   </td>
-                  <td class="text-end">
+                  <td class="text-end text-nowrap">
                     <div class="dropdown">
-                      <button class="btn btn-light btn-sm dropdown-toggle border" data-bs-toggle="dropdown">Actions</button>
+                      <button class="btn btn-light btn-sm dropdown-toggle border shadow-sm" data-bs-toggle="dropdown">Actions</button>
                       <ul class="dropdown-menu dropdown-menu-end shadow border-0 small">
                         <li>
                           <form action="/agents/toggle-status" method="POST">
