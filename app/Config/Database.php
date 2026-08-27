@@ -32,7 +32,15 @@ class Database
                     ]);
                 } else {
                     $customPath = Env::get('DB_PATH');
-                    $dbPath = !empty($customPath) ? (string)$customPath : App::dbPath();
+                    if (!empty($customPath)) {
+                        $customPathStr = (string)$customPath;
+                        $isAbsolute = str_starts_with($customPathStr, '/') || 
+                                      str_starts_with($customPathStr, '\\') || 
+                                      (strlen($customPathStr) > 1 && $customPathStr[1] === ':');
+                        $dbPath = $isAbsolute ? $customPathStr : App::basePath($customPathStr);
+                    } else {
+                        $dbPath = App::dbPath();
+                    }
                     $dsn = "sqlite:{$dbPath}";
                     
                     self::$pdo = new PDO($dsn, null, null, [

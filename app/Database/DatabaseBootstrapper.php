@@ -55,6 +55,106 @@ class DatabaseBootstrapper
                 FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
                 FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE
             );");
+
+            // Ensure customer_family table exists for SQLite
+            $pdo->exec("CREATE TABLE IF NOT EXISTS customer_family (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_id INTEGER NOT NULL UNIQUE,
+                father_name TEXT,
+                father_dob DATE,
+                father_country_of_birth TEXT,
+                father_nationality TEXT,
+                father_religion TEXT,
+                mother_name TEXT,
+                mother_dob DATE,
+                mother_country_of_birth TEXT,
+                mother_nationality TEXT,
+                mother_religion TEXT,
+                mother_mobile TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+            );");
+
+            // Ensure visa_approvals table exists for SQLite
+            $pdo->exec("CREATE TABLE IF NOT EXISTS visa_approvals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                application_id INTEGER NOT NULL UNIQUE,
+                visa_number TEXT NOT NULL,
+                issue_date DATE NOT NULL,
+                expiry_date DATE NOT NULL,
+                entry_before_date DATE,
+                maximum_stay TEXT DEFAULT '30 Days',
+                validity TEXT DEFAULT '60 Days',
+                approved_visa_file TEXT,
+                approval_notes TEXT,
+                approved_by INTEGER,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE,
+                FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL
+            );");
+
+            // Ensure visa_rejections table exists for SQLite
+            $pdo->exec("CREATE TABLE IF NOT EXISTS visa_rejections (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                application_id INTEGER NOT NULL UNIQUE,
+                rejection_date DATE NOT NULL,
+                customer_reason TEXT NOT NULL,
+                internal_reason TEXT,
+                reapplication_eligibility TEXT DEFAULT 'Eligible to Reapply',
+                rejection_document TEXT,
+                rejected_by INTEGER,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE,
+                FOREIGN KEY (rejected_by) REFERENCES users(id) ON DELETE SET NULL
+            );");
+
+            // Ensure application_returns table exists for SQLite
+            $pdo->exec("CREATE TABLE IF NOT EXISTS application_returns (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                application_id INTEGER NOT NULL,
+                return_reason TEXT NOT NULL,
+                required_changes TEXT,
+                deadline DATE,
+                staff_comment TEXT,
+                returned_by INTEGER,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE,
+                FOREIGN KEY (returned_by) REFERENCES users(id) ON DELETE SET NULL
+            );");
+
+            // Ensure customer_wallets table exists for SQLite
+            $pdo->exec("CREATE TABLE IF NOT EXISTS customer_wallets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_id INTEGER NOT NULL UNIQUE,
+                currency TEXT DEFAULT 'USD',
+                current_balance REAL DEFAULT 0.00,
+                total_credited REAL DEFAULT 0.00,
+                total_debited REAL DEFAULT 0.00,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+            );");
+
+            // Ensure wallet_transactions table exists for SQLite
+            $pdo->exec("CREATE TABLE IF NOT EXISTS wallet_transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                transaction_id TEXT NOT NULL UNIQUE,
+                wallet_id INTEGER NOT NULL,
+                customer_id INTEGER NOT NULL,
+                transaction_type TEXT NOT NULL,
+                amount REAL NOT NULL,
+                balance_after REAL NOT NULL,
+                description TEXT NOT NULL,
+                payment_id INTEGER,
+                application_id INTEGER,
+                created_by INTEGER,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (wallet_id) REFERENCES customer_wallets(id) ON DELETE CASCADE,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+            );");
         } else {
             // Ensure password_resets table exists for MySQL
             $pdo->exec("CREATE TABLE IF NOT EXISTS password_resets (
