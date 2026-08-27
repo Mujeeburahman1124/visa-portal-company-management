@@ -1,0 +1,25 @@
+/* Auth pages login / portal entry */
+.auth-page-body {
+  background: linear-gradient(135deg, #060e1c 0%, #0a1e3d 40%, #063c5a 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-card-compact {
+  width: 100%;
+  max-width: 440px;
+  background: rgba(255,255,255,0.97);
+  border: 1px solid rgba(37,99,235,0.15);
+  border-radius: var(--radius-lg);
+  padding: 2.25rem 2.5rem;
+  box-shadow: 0 20px 60px rgba(6,14,28,0.4), 0 4px 20px rgba(37,99,235,0.12);
+}
+@media (max-width: 576px) {
+  .auth-card-compact {
+    padding: 1.5rem 1.25rem;
+    max-width: 100%;
+    border-radius: var(--radius-md);
+  }
+}

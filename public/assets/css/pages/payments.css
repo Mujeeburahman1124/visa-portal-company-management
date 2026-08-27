@@ -1,0 +1,69 @@
+.payment-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #f8fbff;
+  border-bottom: 1px solid var(--mh-blue-border);
+}
+
+.payment-summary-item {
+  text-align: center;
+  padding: 0.75rem;
+  background: #ffffff;
+  border-radius: var(--radius-sm);
+  border: 1px solid #dce8f5;
+}
+
+.payment-summary-item .label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.payment-summary-item .value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--mh-blue-dark);
+}
+
+.payment-summary-item.outstanding .value { color: #dc2626; }
+.payment-summary-item.paid .value        { color: #16a34a; }
+.payment-summary-item.balance .value     { color: var(--mh-teal-dark); }
+
+/* Ledger / transaction timeline */
+.ledger-timeline {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.ledger-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid #f0f6ff;
+  transition: background var(--vt-transition-fast);
+}
+
+.ledger-entry:hover { background: #f8fbff; }
+.ledger-entry:last-child { border-bottom: none; }
+
+.ledger-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.ledger-dot-credit  { background: var(--mh-green); box-shadow: 0 0 0 3px rgba(34,197,94,0.2); }
+.ledger-dot-debit   { background: #ef4444;         box-shadow: 0 0 0 3px rgba(239,68,68,0.2); }
+.ledger-dot-pending { background: #f59e0b;          box-shadow: 0 0 0 3px rgba(245,158,11,0.2); }
+
+.ledger-amount-credit { color: #16a34a; font-weight: 700; }
+.ledger-amount-debit  { color: #dc2626; font-weight: 700; }
