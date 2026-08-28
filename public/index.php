@@ -240,6 +240,12 @@ switch ($uri) {
         (new App\Controllers\PaymentController())->history();
         break;
 
+    case '/payments/export-csv':
+    case '/payments/export':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts', 'visa-manager']);
+        (new App\Controllers\PaymentController())->exportCsv();
+        break;
+
     case '/payments/store':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
         (new App\Controllers\PaymentController())->store();

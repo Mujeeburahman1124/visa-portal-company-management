@@ -29,7 +29,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       <button type="button" class="btn btn-outline-primary btn-sm px-3 fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#generateLinkModal">
         <i class="fa-solid fa-link me-1"></i> Generate Link
       </button>
-      <button type="button" class="btn btn-success btn-sm px-3 fw-semibold shadow-sm">
+      <button type="button" class="btn btn-success btn-sm px-3 fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#recordPaymentModal">
         <i class="fa-solid fa-credit-card me-1"></i> Record Payment
       </button>
     </div>

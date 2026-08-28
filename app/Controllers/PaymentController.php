@@ -615,4 +615,105 @@ class PaymentController
 
         require_once dirname(__DIR__) . '/Views/payments/history.php';
     }
+
+    public function exportCsv(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+
+        $search = trim($_GET['search'] ?? '');
+        $status = trim($_GET['status'] ?? '');
+        $method = trim($_GET['method'] ?? '');
+        $countryId = (int)($_GET['country_id'] ?? 0);
+        $dateFrom = trim($_GET['date_from'] ?? '');
+        $dateTo = trim($_GET['date_to'] ?? '');
+
+        $sql = "SELECT p.*, 
+                    a.application_number, a.passport_number,
+                    c.full_name as customer_name, c.customer_code, c.mobile as customer_mobile, c.email as customer_email,
+                    vs.name as service_name,
+                    ct.name as country_name,
+                    u.name as received_by_name
+                FROM payments p
+                JOIN applications a ON p.application_id = a.id
+                JOIN customers c ON p.customer_id = c.id
+                LEFT JOIN visa_services vs ON a.visa_service_id = vs.id
+                LEFT JOIN countries ct ON vs.country_id = ct.id
+                LEFT JOIN users u ON p.received_by = u.id
+                WHERE 1=1";
+
+        $params = [];
+        if ($search !== '') {
+            $sql .= " AND (p.payment_number LIKE ? OR p.invoice_number LIKE ? OR c.full_name LIKE ? OR c.customer_code LIKE ? OR a.application_number LIKE ? OR a.passport_number LIKE ? OR p.transaction_reference LIKE ?)";
+            $term = "%{$search}%";
+            $params = array_fill(0, 7, $term);
+        }
+
+        if ($status !== '') {
+            $sql .= " AND p.status = ?";
+            $params[] = $status;
+        }
+
+        if ($method !== '') {
+            $sql .= " AND p.payment_method = ?";
+            $params[] = $method;
+        }
+
+        if ($countryId > 0) {
+            $sql .= " AND ct.id = ?";
+            $params[] = $countryId;
+        }
+
+        if (!empty($dateFrom)) {
+            $sql .= " AND p.payment_date >= ?";
+            $params[] = $dateFrom;
+        }
+
+        if (!empty($dateTo)) {
+            $sql .= " AND p.payment_date <= ?";
+            $params[] = $dateTo;
+        }
+
+        $sql .= " ORDER BY p.payment_date DESC, p.id DESC";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!defined('IN_TEST_MODE')) {
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename=payments_export_' . date('Ymd_His') . '.csv');
+        }
+
+        $out = fopen('php://output', 'w');
+        fputcsv($out, [
+            'Receipt Number', 'Invoice Number', 'Application Number', 'Customer Code', 'Customer Name',
+            'Passport Number', 'Country', 'Visa Service', 'Amount', 'Currency', 'Payment Date',
+            'Payment Method', 'Transaction Reference', 'Status', 'Received By'
+        ]);
+
+        foreach ($payments as $p) {
+            fputcsv($out, [
+                $p['payment_number'],
+                $p['invoice_number'],
+                $p['application_number'],
+                $p['customer_code'],
+                $p['customer_name'],
+                $p['passport_number'] ?: 'N/A',
+                $p['country_name'] ?? 'N/A',
+                $p['service_name'] ?? 'N/A',
+                number_format((float)$p['amount'], 2, '.', ''),
+                $p['currency'] ?? 'USD',
+                $p['payment_date'],
+                $p['payment_method'],
+                $p['transaction_reference'] ?: 'N/A',
+                $p['status'],
+                $p['received_by_name'] ?? 'System'
+            ]);
+        }
+        fclose($out);
+        if (!defined('IN_TEST_MODE')) {
+            exit;
+        }
+    }
 }
