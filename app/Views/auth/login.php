@@ -226,7 +226,6 @@ $flash = get_flash();
       .login-card .brand-name { font-size: 1.25rem; }
     }
   </style>
->>>>>>> 1b1738a (refactor(views): update staff layout and auth views to reference main.css)
 </head>
 <body class="auth-page-body">
 
