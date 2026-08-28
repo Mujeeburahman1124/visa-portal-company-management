@@ -55,8 +55,19 @@ class CustomerController
     {
         AuthMiddleware::handle();
         $pdo = Database::getConnection();
-        $countries = $pdo->query("SELECT id, name, iso_code, flag_emoji FROM countries ORDER BY name ASC")->fetchAll();
-        $docTypes = $pdo->query("SELECT id, name, code, category FROM document_types WHERE is_active = 1 ORDER BY name ASC")->fetchAll();
+        $countries = $pdo->query("SELECT id, name, iso_code, flag_emoji FROM countries WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $categories = $pdo->query("SELECT id, name, slug FROM visa_categories WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $services = $pdo->query("SELECT vs.*, ct.name as country_name, ct.flag_emoji, vc.name as category_name 
+            FROM visa_services vs 
+            JOIN countries ct ON vs.country_id = ct.id 
+            LEFT JOIN visa_categories vc ON vs.category_id = vc.id 
+            WHERE vs.is_active = 1 
+            ORDER BY ct.name ASC, vs.name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $docTypes = $pdo->query("SELECT id, name, code, category FROM document_types WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $suppliers = $pdo->query("SELECT id, company_name, contact_person FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $branches = $pdo->query("SELECT id, name, city FROM branches WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $staffMembers = $pdo->query("SELECT id, name, designation FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+
         require_once dirname(__DIR__) . '/Views/customers/create.php';
     }
 
@@ -244,6 +255,231 @@ class CustomerController
 
         AuditService::log('CREATE', 'Customers', $customerId, "Registered new customer {$customerCode} - {$fullName}");
 
+        // Handle Optional Visa Application Creation in New Applicant Form
+        $hasVisaDetails = !empty($_POST['visa_service_id']) || !empty($_POST['custom_visa_type']) || !empty($_POST['country_id']) || !empty($_POST['custom_destination_country']) || !empty($_POST['destination_country']);
+        $appId = null;
+        $appNumber = null;
+
+        if ($hasVisaDetails) {
+            $serviceId = !empty($_POST['visa_service_id']) ? (int)$_POST['visa_service_id'] : null;
+            $countryId = !empty($_POST['country_id']) ? (int)$_POST['country_id'] : null;
+            $categoryId = !empty($_POST['category_id']) ? (int)$_POST['category_id'] : null;
+
+            // Fetch Service / Country / Category meta if selected
+            $serviceData = null;
+            if ($serviceId) {
+                $sStmt = $pdo->prepare("SELECT vs.*, ct.name as country_name, vc.name as category_name FROM visa_services vs JOIN countries ct ON vs.country_id = ct.id LEFT JOIN visa_categories vc ON vs.category_id = vc.id WHERE vs.id = ?");
+                $sStmt->execute([$serviceId]);
+                $serviceData = $sStmt->fetch(PDO::FETCH_ASSOC);
+            }
+
+            $countryName = '';
+            if (!empty($_POST['custom_destination_country'])) {
+                $countryName = trim($_POST['custom_destination_country']);
+            } elseif ($countryId) {
+                $cStmt = $pdo->prepare("SELECT name FROM countries WHERE id = ?");
+                $cStmt->execute([$countryId]);
+                $countryName = (string)($cStmt->fetchColumn() ?: '');
+            } elseif (!empty($_POST['destination_country'])) {
+                $countryName = trim($_POST['destination_country']);
+            } elseif ($serviceData) {
+                $countryName = (string)($serviceData['country_name'] ?? '');
+            }
+
+            $categoryName = '';
+            if (!empty($_POST['custom_visa_category'])) {
+                $categoryName = trim($_POST['custom_visa_category']);
+            } elseif ($categoryId) {
+                $catStmt = $pdo->prepare("SELECT name FROM visa_categories WHERE id = ?");
+                $catStmt->execute([$categoryId]);
+                $categoryName = (string)($catStmt->fetchColumn() ?: '');
+            } elseif (!empty($_POST['visa_category'])) {
+                $categoryName = trim($_POST['visa_category']);
+            } elseif ($serviceData) {
+                $categoryName = (string)($serviceData['category_name'] ?? 'General');
+            }
+
+            $visaTypeName = '';
+            if (!empty($_POST['custom_visa_type'])) {
+                $visaTypeName = trim($_POST['custom_visa_type']);
+            } elseif (!empty($_POST['visa_type'])) {
+                $visaTypeName = trim($_POST['visa_type']);
+            } elseif ($serviceData) {
+                $visaTypeName = (string)($serviceData['name'] ?? 'Standard Visa');
+            } else {
+                $visaTypeName = 'Standard Visa';
+            }
+
+            $duration = trim($_POST['custom_visa_duration'] ?? '') ?: trim($_POST['visa_duration'] ?? ($serviceData['duration'] ?? '30 Days'));
+            $entryType = trim($_POST['custom_entry_type'] ?? '') ?: trim($_POST['entry_type'] ?? ($serviceData['entry_type'] ?? 'Single Entry'));
+            $processingType = trim($_POST['custom_processing_type'] ?? '') ?: trim($_POST['processing_type'] ?? ($serviceData['processing_type'] ?? 'Normal'));
+            $travelDate = !empty($_POST['travel_date']) ? $_POST['travel_date'] : null;
+            $returnDate = !empty($_POST['return_date']) ? $_POST['return_date'] : null;
+            $priority = in_array($_POST['priority'] ?? '', ['Critical', 'Urgent', 'High', 'Normal'], true) ? $_POST['priority'] : 'Normal';
+            $branchId = !empty($_POST['branch_id']) ? (int)$_POST['branch_id'] : ($currentUser['branch_id'] ?? 1);
+            $assignedStaffId = !empty($_POST['assigned_staff_id']) ? (int)$_POST['assigned_staff_id'] : ($currentUser['id'] ?? null);
+            $supplierId = !empty($_POST['supplier_id']) ? (int)$_POST['supplier_id'] : null;
+            $internalNotes = trim($_POST['internal_notes'] ?? '');
+            $customerNotes = trim($_POST['customer_notes'] ?? '');
+            $supplierRef = trim($_POST['supplier_reference'] ?? '');
+            $embassyRef = trim($_POST['embassy_reference'] ?? '');
+
+            // Financial Calculations
+            $sellingPrice = (float)($_POST['selling_price'] ?? ($serviceData['selling_price'] ?? 0.0));
+            $supplierCost = (float)($_POST['supplier_cost'] ?? ($serviceData['supplier_cost'] ?? 0.0));
+            $discount = (float)($_POST['discount'] ?? 0.0);
+            $otherExpenses = (float)($_POST['other_expenses'] ?? 0.0);
+            $taxRate = (float)($serviceData['tax_rate'] ?? 5.0);
+            $netSellingPrice = max(0.0, $sellingPrice - $discount);
+            $taxAmount = (float)($_POST['tax_amount'] ?? ($netSellingPrice * ($taxRate / 100.0)));
+            $totalAmount = max(0.0, $netSellingPrice + $taxAmount);
+            $grossProfit = max(0.0, $totalAmount - $supplierCost - $otherExpenses);
+
+            // Payment Option (Default Pay Later)
+            $isPayNow = !empty($_POST['pay_now']) && (string)$_POST['pay_now'] === '1';
+            $paymentType = $isPayNow ? 'Pay Now' : 'Pay Later';
+            $paymentStatus = 'Unpaid';
+            $paidAmount = 0.00;
+            $balanceAmount = $totalAmount;
+
+            // Generate Application Number: MSV-YYYY-XXXXXX
+            $year = date('Y');
+            $countStmt = $pdo->query("SELECT COUNT(*) FROM applications");
+            $nextAppNum = ((int)$countStmt->fetchColumn()) + 1;
+            $appNumber = sprintf("MSV-%s-%06d", $year, $nextAppNum);
+
+            // Verify unique application number
+            $chkApp = $pdo->prepare("SELECT id FROM applications WHERE application_number = ?");
+            $chkApp->execute([$appNumber]);
+            if ($chkApp->fetch()) {
+                $appNumber = sprintf("MSV-%s-%06d", $year, $nextAppNum + rand(10, 99));
+            }
+
+            $procDays = (int)($serviceData['estimated_days'] ?? 15);
+            $appDate = date('Y-m-d');
+            $expectedCompletionDate = date('Y-m-d', strtotime("+{$procDays} days"));
+            $nextActionDue = date('Y-m-d', strtotime('+3 days'));
+
+            $insAppStmt = $pdo->prepare("INSERT INTO applications (
+                application_number, customer_id, visa_service_id, branch_id, assigned_staff_id, supplier_id,
+                current_stage, status, priority, calculated_health, health_reason,
+                nationality, residence_country, passport_number,
+                destination_country, visa_category, visa_type, visa_duration, entry_type, processing_type,
+                application_date, expected_completion_date, travel_date, return_date,
+                selling_price, discount, tax_amount, total_amount, paid_amount, balance_amount,
+                supplier_cost, other_expenses, gross_profit, supplier_reference, embassy_reference,
+                internal_notes, customer_notes, next_action, next_action_due_date, payment_type, payment_status, created_by
+            ) VALUES (
+                ?, ?, ?, ?, ?, ?,
+                'New Application', 'Draft', ?, 100, 'Applicant registered with visa requirements.',
+                ?, ?, ?,
+                ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?,
+                ?, ?, 'Collect and verify initial required documents', ?, ?, ?, ?
+            )");
+
+            $insAppStmt->execute([
+                $appNumber, $customerId, $serviceId, $branchId, $assignedStaffId, $supplierId,
+                $priority,
+                $nationality, $currentCountry, $passportNumber,
+                $countryName, $categoryName, $visaTypeName, $duration, $entryType, $processingType,
+                $appDate, $expectedCompletionDate, $travelDate, $returnDate,
+                $sellingPrice, $discount, $taxAmount, $totalAmount, $paidAmount, $balanceAmount,
+                $supplierCost, $otherExpenses, $grossProfit, $supplierRef, $embassyRef,
+                $internalNotes, $customerNotes, $nextActionDue, $paymentType, $paymentStatus, $currentUser['id'] ?? null
+            ]);
+
+            $appId = (int)$pdo->lastInsertId();
+
+            // Link uploaded documents to application_id as well
+            if (!empty($appId)) {
+                $pdo->prepare("UPDATE documents SET application_id = ? WHERE customer_id = ? AND application_id IS NULL")->execute([$appId, $customerId]);
+            }
+
+            // Insert initial status history record
+            $histStmt = $pdo->prepare("INSERT INTO application_status_history (
+                application_id, from_stage, to_stage, from_status, to_status, comments, changed_by
+            ) VALUES (?, 'Initiation', 'Application Registered', 'Draft', 'Registered', 'Applicant profile and visa application case registered.', ?)");
+            $histStmt->execute([$appId, $currentUser['id'] ?? null]);
+
+            // Auto-generate Invoice: INV-YYYY-XXXXXX
+            $invCount = (int)$pdo->query("SELECT COUNT(*) FROM invoices")->fetchColumn() + 1;
+            $invNumber = sprintf("INV-%s-%06d", $year, $invCount);
+            $invDueDate = date('Y-m-d', strtotime('+7 days'));
+
+            $insInv = $pdo->prepare("INSERT INTO invoices (
+                invoice_number, application_id, customer_id, issue_date, due_date,
+                subtotal, discount, tax_rate, tax_amount, total_amount, paid_amount, balance_amount,
+                status, notes, created_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0.00, ?, 'Unpaid', ?, ?)");
+
+            $insInv->execute([
+                $invNumber, $appId, $customerId, $appDate, $invDueDate,
+                $sellingPrice, $discount, $taxRate, $taxAmount, $totalAmount, $totalAmount,
+                "Visa Application Invoice for {$visaTypeName} ({$countryName})", $currentUser['id'] ?? null
+            ]);
+            $invoiceId = (int)$pdo->lastInsertId();
+
+            // Process Immediate Payment if Pay Now was selected
+            if ($isPayNow && $totalAmount > 0) {
+                $payMethod = trim($_POST['pay_method'] ?? 'Cash');
+                $payRef = trim($_POST['pay_reference'] ?? '');
+                $payAmount = $totalAmount;
+
+                if ($payMethod === 'Customer Wallet') {
+                    $walletResult = \App\Services\WalletService::debit(
+                        $customerId,
+                        $payAmount,
+                        "Visa Registration Payment for {$appNumber} ({$visaTypeName})",
+                        $appId
+                    );
+
+                    if ($walletResult['success']) {
+                        $wtxId = $walletResult['transaction_id'] ?? 'WALLET_TXN';
+                        $rcpCount = (int)$pdo->query("SELECT COUNT(*) FROM payments")->fetchColumn() + 1;
+                        $rcpNum = sprintf("RCP-%s-%06d", $year, $rcpCount);
+
+                        $pdo->prepare("INSERT INTO payments (
+                            payment_number, invoice_number, application_id, customer_id, supplier_id,
+                            amount, currency, payment_date, payment_method, transaction_reference,
+                            wallet_transaction_id, payment_type, status, received_by, notes
+                        ) VALUES (?, ?, ?, ?, ?, ?, 'USD', ?, 'Customer Wallet', ?, ?, 'Customer Payment', 'Completed', ?, ?)")->execute([
+                            $rcpNum, $invNumber, $appId, $customerId, $supplierId,
+                            $payAmount, $appDate, $wtxId, $wtxId, $currentUser['id'] ?? null, "Settled via Customer Digital Wallet at Registration"
+                        ]);
+                        $paymentId = (int)$pdo->lastInsertId();
+
+                        // Update invoice & application
+                        $pdo->prepare("UPDATE invoices SET paid_amount = ?, balance_amount = 0.00, status = 'Paid' WHERE id = ?")->execute([$payAmount, $invoiceId]);
+                        $pdo->prepare("UPDATE applications SET paid_amount = ?, balance_amount = 0.00, payment_status = 'Paid' WHERE id = ?")->execute([$payAmount, $appId]);
+
+                        AuditService::log('PAYMENT', 'Payments', $paymentId, "Recorded wallet payment {$rcpNum} for {$appNumber}");
+                    }
+                } elseif ($payMethod === 'Cash' || $payMethod === 'Bank Transfer' || $payMethod === 'POS Card' || $payMethod === 'Credit Card') {
+                    $rcpCount = (int)$pdo->query("SELECT COUNT(*) FROM payments")->fetchColumn() + 1;
+                    $rcpNum = sprintf("RCP-%s-%06d", $year, $rcpCount);
+
+                    $pdo->prepare("INSERT INTO payments (
+                        payment_number, invoice_number, application_id, customer_id, supplier_id,
+                        amount, currency, payment_date, payment_method, transaction_reference,
+                        payment_type, status, received_by, notes
+                    ) VALUES (?, ?, ?, ?, ?, ?, 'USD', ?, ?, ?, 'Customer Payment', 'Completed', ?, ?)")->execute([
+                        $rcpNum, $invNumber, $appId, $customerId, $supplierId,
+                        $payAmount, $appDate, $payMethod, $payRef ?: 'BRANCH_DIRECT', $currentUser['id'] ?? null, "Settled at Registration via {$payMethod}"
+                    ]);
+                    $paymentId = (int)$pdo->lastInsertId();
+
+                    // Update invoice & application
+                    $pdo->prepare("UPDATE invoices SET paid_amount = ?, balance_amount = 0.00, status = 'Paid' WHERE id = ?")->execute([$payAmount, $invoiceId]);
+                    $pdo->prepare("UPDATE applications SET paid_amount = ?, balance_amount = 0.00, payment_status = 'Paid' WHERE id = ?")->execute([$payAmount, $appId]);
+
+                    AuditService::log('PAYMENT', 'Payments', $paymentId, "Recorded direct payment {$rcpNum} for {$appNumber}");
+                }
+            }
+        }
+
         // Dispatch Central Real-Time Notification for Applicant Registration
         try {
             \App\Services\NotificationService::trigger('applicant.registered', [
@@ -255,11 +491,16 @@ class CustomerController
                 'mobile' => $mobile,
                 'whatsapp' => $whatsapp,
                 'nationality' => $nationality,
+                'applicationNumber' => $appNumber ?? '',
                 'loginUrl' => (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000') . "/portal/login",
             ]);
         } catch (\Throwable $e) {}
 
-        redirect("/customers/show?id={$customerId}", "Customer {$customerCode} registered successfully.", 'success');
+        if (!empty($appId)) {
+            redirect("/applications/show?id={$appId}", "Applicant {$customerCode} and Visa Application {$appNumber} registered successfully.", 'success');
+        }
+
+        redirect("/customers/show?id={$customerId}", "Applicant {$customerCode} registered successfully.", 'success');
     }
 
     public function show(): void

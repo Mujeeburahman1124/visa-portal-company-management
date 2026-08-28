@@ -176,7 +176,12 @@ function redirect(string $url, ?string $message = null, string $type = 'success'
             'message' => $message,
         ];
     }
-    header("Location: {$url}");
+    if (!headers_sent()) {
+        header("Location: {$url}");
+    }
+    if (defined('IN_TEST_MODE') && IN_TEST_MODE) {
+        return;
+    }
     exit;
 }
 

@@ -509,6 +509,41 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE agent_payments ADD COLUMN application_id INT NULL AFTER agent_id"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE agent_payments ADD COLUMN payment_type VARCHAR(50) DEFAULT 'Payment' AFTER amount"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE agent_payments ADD COLUMN created_by INT NULL AFTER notes"); } catch (\Throwable $e) {}
+
+            // Safe ALTER TABLE migrations for applications table custom visa fields and payment support
+            try { $pdo->exec("ALTER TABLE applications MODIFY COLUMN visa_service_id INT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN destination_country VARCHAR(150) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN visa_category VARCHAR(150) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN visa_type VARCHAR(150) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN visa_duration VARCHAR(100) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN entry_type VARCHAR(100) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN processing_type VARCHAR(100) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN payment_type VARCHAR(50) DEFAULT 'Pay Later'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN payment_status VARCHAR(50) DEFAULT 'Unpaid'"); } catch (\Throwable $e) {}
+
+            // Invoices Table
+            $pdo->exec("CREATE TABLE IF NOT EXISTS invoices (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                invoice_number VARCHAR(100) NOT NULL UNIQUE,
+                application_id INT NULL,
+                customer_id INT NOT NULL,
+                issue_date DATE NOT NULL,
+                due_date DATE NULL,
+                subtotal DECIMAL(12,2) DEFAULT 0.00,
+                discount DECIMAL(12,2) DEFAULT 0.00,
+                tax_rate DECIMAL(5,2) DEFAULT 0.00,
+                tax_amount DECIMAL(12,2) DEFAULT 0.00,
+                total_amount DECIMAL(12,2) DEFAULT 0.00,
+                paid_amount DECIMAL(12,2) DEFAULT 0.00,
+                balance_amount DECIMAL(12,2) DEFAULT 0.00,
+                status VARCHAR(50) DEFAULT 'Unpaid',
+                notes TEXT NULL,
+                created_by INT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_inv_app (application_id),
+                INDEX idx_inv_cust (customer_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         } else {
             $pdo->exec("CREATE TABLE IF NOT EXISTS agents (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

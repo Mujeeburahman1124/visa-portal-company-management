@@ -239,24 +239,36 @@ class ApplicationController
         $totalAmount = $netSellingPrice + $taxAmount;
         $grossProfit = max(0.0, $totalAmount - $supplierCost - $otherExpenses);
 
+        $countryName = trim($_POST['custom_destination_country'] ?? '') ?: ($service['country_name'] ?? '');
+        $categoryName = trim($_POST['custom_visa_category'] ?? '') ?: ($service['category_name'] ?? 'General');
+        $visaTypeName = trim($_POST['custom_visa_type'] ?? '') ?: ($service['name'] ?? 'Standard Visa');
+        $duration = trim($_POST['custom_visa_duration'] ?? '') ?: trim($_POST['visa_duration'] ?? ($service['duration'] ?? '30 Days'));
+        $entryType = trim($_POST['custom_entry_type'] ?? '') ?: trim($_POST['entry_type'] ?? ($service['entry_type'] ?? 'Single Entry'));
+        $processingType = trim($_POST['custom_processing_type'] ?? '') ?: trim($_POST['processing_type'] ?? ($service['processing_type'] ?? 'Normal'));
+        $isPayNow = !empty($_POST['pay_now']) && (string)$_POST['pay_now'] === '1';
+        $paymentType = $isPayNow ? 'Pay Now' : 'Pay Later';
+        $paymentStatus = 'Unpaid';
+
         $pdo->beginTransaction();
         try {
             $insSql = "INSERT INTO applications (
                 application_number, customer_id, visa_service_id, branch_id, assigned_staff_id, supplier_id,
                 current_stage, status, priority, calculated_health, health_reason,
                 nationality, residence_country, passport_number, passport_expiry_date,
+                destination_country, visa_category, visa_type, visa_duration, entry_type, processing_type,
                 application_date, expected_completion_date, travel_date, return_date,
                 selling_price, discount, tax_amount, total_amount, paid_amount, balance_amount,
                 supplier_cost, other_expenses, gross_profit, supplier_reference, embassy_reference,
-                internal_notes, customer_notes, next_action, next_action_due_date, created_by
+                internal_notes, customer_notes, next_action, next_action_due_date, payment_type, payment_status, created_by
             ) VALUES (
                 ?, ?, ?, ?, ?, ?,
                 'New Application', 'Draft', ?, 100, 'Application freshly initiated. Document checklist initialized.',
                 ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?,
                 ?, ?, ?, ?, 0.00, ?,
                 ?, ?, ?, ?, ?,
-                ?, ?, 'Collect and verify initial required documents', ?, ?
+                ?, ?, 'Collect and verify initial required documents', ?, ?, ?, ?
             )";
 
             $nextActionDue = date('Y-m-d', strtotime('+3 days'));
@@ -266,10 +278,11 @@ class ApplicationController
                 $appNumber, $customerId, $serviceId, $branchId, $assignedStaffId, $supplierId,
                 $priority,
                 $customer['nationality'] ?? 'Unknown', $customer['current_country'] ?? 'United Arab Emirates', $customer['passport_number'] ?? '', $customer['passport_expiry'] ?? null,
+                $countryName, $categoryName, $visaTypeName, $duration, $entryType, $processingType,
                 $appDate, $expectedCompletionDate, $travelDate, $returnDate,
                 $sellingPrice, $discount, $taxAmount, $totalAmount, $totalAmount,
                 $supplierCost, $otherExpenses, $grossProfit, $supplierRef, $embassyRef,
-                $internalNotes, $customerNotes, $nextActionDue, $user['id'] ?? null
+                $internalNotes, $customerNotes, $nextActionDue, $paymentType, $paymentStatus, $user['id'] ?? null
             ]);
 
             $appId = (int)$pdo->lastInsertId();
