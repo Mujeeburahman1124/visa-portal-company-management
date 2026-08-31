@@ -1,13 +1,71 @@
-/* --- MOBILE (iPhone/Android: ≤767px) --- */
-@media (max-width: 767.98px) {
-  :root { --topbar-height: 60px; }
+/* ==========================================================================
+   VISA TRACK — CENTRAL RESPONSIVE ENGINE (100% FLUID ACROSS ALL DEVICES)
+   ========================================================================== */
 
-  body.app-body { font-size: 14px; }
+/* Root & Global Layout Resets */
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.app-wrapper {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.app-main-content {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: margin-left var(--vt-transition-normal, 0.25s ease), width var(--vt-transition-normal, 0.25s ease);
+}
+
+.content-body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* Base Table Overflow Protection */
+.table-responsive {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-sm, 10px);
+}
+
+.table-responsive th {
+  white-space: nowrap !important;
+}
+
+/* --- MOBILE & HANDHELD DEVICES (≤767.98px) --- */
+@media (max-width: 767.98px) {
+  :root {
+    --topbar-height: 60px;
+  }
+
+  body.app-body {
+    font-size: 14px;
+  }
 
   .app-sidebar {
+    position: fixed;
+    top: 0; bottom: 0; left: 0;
+    width: min(290px, 85vw);
     transform: translateX(-100%);
-    width: 290px;
+    z-index: 1050;
     box-shadow: 12px 0 40px rgba(0,0,0,0.7);
+    transition: transform var(--vt-transition-normal, 0.25s ease);
   }
 
   .app-sidebar.show-mobile,
@@ -16,54 +74,86 @@
   }
 
   .app-main-content {
-    margin-left: 0;
-    width: 100%;
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
-  .app-topbar { padding: 0 0.85rem; }
+  .app-topbar {
+    padding: 0 0.75rem;
+  }
 
-  .content-body { padding: 0.85rem 0.75rem 2rem; }
+  .content-body {
+    padding: 0.85rem 0.75rem 2rem;
+  }
 
-  .topbar-breadcrumb-container { display: none !important; }
+  .topbar-breadcrumb-container {
+    display: none !important;
+  }
 
   .topbar-search {
-    max-width: 150px;
-    margin: 0 0.4rem;
+    max-width: 160px;
+    margin: 0 0.3rem;
   }
 
   .topbar-search input {
     font-size: 0.78rem;
-    padding: 0.4rem 1rem 0.4rem 2rem !important;
+    padding: 0.4rem 1.8rem 0.4rem 2rem !important;
+    height: 36px;
   }
 
-  /* Touch targets */
+  .topbar-quick-action-btn {
+    padding: 0.35rem 0.65rem !important;
+  }
+
+  /* Fixed overlays on mobile to prevent clipping or viewport overflows */
+  .notification-dropdown,
+  .global-search-dropdown {
+    position: fixed !important;
+    top: calc(var(--topbar-height) + 5px) !important;
+    left: 10px !important;
+    right: 10px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: calc(100vw - 20px) !important;
+    z-index: 1080 !important;
+    transform: none !important;
+  }
+
+  /* Touch targets for mobile */
   .form-control, .form-select, .btn {
     min-height: 44px;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
   }
 
   .form-control-sm, .form-select-sm, .btn-sm {
     min-height: 36px;
-    font-size: 0.85rem;
-  }
-
-  /* Horizontal scrolling tables */
-  .table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    border-radius: var(--radius-sm);
+    font-size: 0.84rem;
   }
 
   .stat-card {
-    padding: 0.85rem 1rem;
-    gap: 0.65rem;
+    padding: 0.85rem 0.9rem;
+    gap: 0.5rem;
   }
-  .stat-icon-wrapper { width: 40px; height: 40px; font-size: 1.1rem; }
-  .stat-value        { font-size: 1.3rem; }
 
-  .dashboard-hero-banner { padding: 1.2rem 1rem; }
+  .stat-icon-wrapper {
+    width: 38px;
+    height: 38px;
+    font-size: 1rem;
+  }
 
-  .modal-dialog { margin: 0.5rem; }
+  .stat-value {
+    font-size: 1.25rem;
+  }
+
+  .dashboard-hero-banner {
+    padding: 1.2rem 1rem;
+  }
+
+  .modal-dialog {
+    margin: 0.5rem;
+    max-width: calc(100vw - 1rem);
+  }
 
   .page-header-bar {
     padding: 1rem 1.1rem;
@@ -73,49 +163,70 @@
   }
 
   .payment-summary-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.75rem;
+    padding: 0.85rem;
   }
 
   .content-body .row > [class*="col-"] {
-    margin-bottom: 0.85rem;
+    margin-bottom: 0.75rem;
   }
 
-  /* Mobile notification dropdown adjustments to prevent screen overflows */
-  .notification-dropdown {
-    width: auto !important;
-    min-width: 0 !important;
-    max-width: calc(100vw - 20px) !important;
-    position: fixed !important;
-    top: calc(var(--topbar-height) + 5px) !important;
-    left: 10px !important;
-    right: 10px !important;
-    transform: none !important;
-  }
-
-  /* Mobile search dropdown adjustments to prevent screen overflows */
-  .global-search-dropdown {
-    position: fixed !important;
-    top: calc(var(--topbar-height) + 5px) !important;
-    left: 10px !important;
-    right: 10px !important;
-    width: auto !important;
-    min-width: 0 !important;
-    max-width: calc(100vw - 20px) !important;
-    transform: none !important;
-  }
-
-  /* Form action footer adjustment to prevent horizontal overflow */
   .form-sticky-actions {
-    margin: 0 -0.85rem !important;
-    padding: 0.85rem 1rem !important;
+    margin: 0 -0.75rem !important;
+    padding: 0.85rem 0.85rem !important;
+  }
+
+  .timeline-step {
+    min-width: 130px;
+    padding: 0.5rem 0.75rem;
   }
 }
 
-/* --- TABLETS/IPADS (768px–991.98px) --- */
+/* --- SMALL MOBILE / RETINA PHONES (≤575.98px) --- */
+@media (max-width: 575.98px) {
+  .topbar-user-btn .user-name-label,
+  .topbar-user-btn .user-role-label,
+  .topbar-user-btn .fa-chevron-down {
+    display: none !important;
+  }
+
+  .topbar-user-avatar {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .topbar-search {
+    max-width: 120px;
+  }
+
+  .topbar-search .search-shortcut-badge {
+    display: none !important;
+  }
+
+  .btn-group-responsive {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-group-responsive > .btn {
+    border-radius: var(--radius-xs) !important;
+    width: 100%;
+    margin-bottom: 0.25rem;
+  }
+}
+
+/* --- TABLETS / IPADS (768px – 991.98px) --- */
 @media (min-width: 768px) and (max-width: 991.98px) {
   .app-sidebar {
-    transform: translateX(-100%);
+    position: fixed;
+    top: 0; bottom: 0; left: 0;
     width: 280px;
+    transform: translateX(-100%);
+    z-index: 1050;
+    box-shadow: 12px 0 40px rgba(0,0,0,0.6);
+    transition: transform var(--vt-transition-normal, 0.25s ease);
   }
 
   .app-sidebar.show-mobile,
@@ -124,26 +235,44 @@
   }
 
   .app-main-content {
-    margin-left: 0;
-    width: 100%;
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
-  .content-body { padding: 1.25rem 1.25rem; }
+  .content-body {
+    padding: 1.25rem 1.25rem;
+  }
 
-  .topbar-search { max-width: 250px; }
+  .topbar-search {
+    max-width: 260px;
+  }
 
-  /* Form action footer adjustment to prevent horizontal overflow on tablet */
   .form-sticky-actions {
     margin: 0 -1.25rem !important;
     padding: 1rem 1.25rem !important;
   }
 }
 
-/* --- DESKTOP / MACBOOK (≥992px) --- */
+/* --- DESKTOP / MACBOOK / PC (≥992px) --- */
 @media (min-width: 992px) {
+  .app-sidebar {
+    width: var(--sidebar-width, 270px);
+    position: fixed;
+    top: 0; bottom: 0; left: 0;
+    z-index: 1045;
+    transform: translateX(0) !important;
+  }
+
+  .app-main-content {
+    margin-left: var(--sidebar-width, 270px);
+    width: calc(100% - var(--sidebar-width, 270px));
+  }
+
+  /* Desktop Sidebar Collapsed state */
   .app-sidebar.collapsed,
   body.sidebar-collapsed .app-sidebar {
-    width: var(--sidebar-collapsed-width);
+    width: var(--sidebar-collapsed-width, 76px);
   }
 
   .app-sidebar.collapsed .sidebar-brand-text,
@@ -174,18 +303,23 @@
 
   .app-main-content.sidebar-collapsed,
   body.sidebar-collapsed .app-main-content {
-    margin-left: var(--sidebar-collapsed-width);
-    width: calc(100% - var(--sidebar-collapsed-width));
+    margin-left: var(--sidebar-collapsed-width, 76px);
+    width: calc(100% - var(--sidebar-collapsed-width, 76px));
   }
 }
 
 /* --- LARGE SCREENS / 4K (≥1400px) --- */
 @media (min-width: 1400px) {
-  .content-body { padding: 1.85rem 2.5rem; }
-  .stat-value   { font-size: 1.75rem; }
+  .content-body {
+    padding: 1.85rem 2.5rem;
+    max-width: 1800px;
+  }
+  .stat-value {
+    font-size: 1.75rem;
+  }
 }
 
-/* Print */
+/* Print Styles */
 @media print {
   .app-sidebar, .app-topbar, .btn, .no-print, .form-sticky-actions {
     display: none !important;
@@ -194,6 +328,10 @@
     margin-left: 0 !important;
     width: 100% !important;
   }
-  .content-body { padding: 0 !important; }
-  body { background: #ffffff !important; }
+  .content-body {
+    padding: 0 !important;
+  }
+  body {
+    background: #ffffff !important;
+  }
 }

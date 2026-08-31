@@ -33,13 +33,13 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   <div class="card border-0 shadow-sm mb-4">
     <div class="card-body p-3">
       <form action="/payments/links" method="GET" class="row g-2 align-items-center">
-        <div class="col-md-5">
+        <div class="col-12 col-md-5">
           <div class="input-group">
             <span class="input-group-text bg-light border-0"><i class="fa-solid fa-search text-muted"></i></span>
             <input type="text" name="search" class="form-control bg-light border-0" placeholder="Search by customer, application, invoice, or token..." value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-sm-6 col-md-3">
           <select name="status" class="form-select bg-light border-0">
             <option value="">All Statuses</option>
             <option value="Pending" <?= ($_GET['status'] ?? '') === 'Pending' ? 'selected' : '' ?>>Pending</option>
@@ -49,10 +49,10 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <option value="Cancelled" <?= ($_GET['status'] ?? '') === 'Cancelled' ? 'selected' : '' ?>>Cancelled</option>
           </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-6 col-md-2">
           <button type="submit" class="btn btn-dark w-100 fw-semibold">Filter</button>
         </div>
-        <div class="col-md-2">
+        <div class="col-6 col-md-2">
           <a href="/payments/links" class="btn btn-light w-100">Reset</a>
         </div>
       </form>
@@ -61,18 +61,18 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
   <!-- Links Table -->
   <div class="card border-0 shadow-sm">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
+    <div class="table-responsive" style="-webkit-overflow-scrolling: touch;">
+      <table class="table table-hover align-middle mb-0" style="min-width: 950px;">
         <thead class="table-light">
           <tr class="small text-muted text-uppercase">
-            <th>Link &amp; Token</th>
-            <th>Customer / Applicant</th>
-            <th>Application</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Created</th>
-            <th>Expiry / Due</th>
-            <th class="text-end">Actions</th>
+            <th class="text-nowrap">Link &amp; Token</th>
+            <th class="text-nowrap">Customer / Applicant</th>
+            <th class="text-nowrap">Application</th>
+            <th class="text-nowrap">Amount</th>
+            <th class="text-nowrap">Status</th>
+            <th class="text-nowrap">Created</th>
+            <th class="text-nowrap">Expiry / Due</th>
+            <th class="text-end text-nowrap">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -90,25 +90,25 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               $isPending = ($l['status'] === 'Pending');
             ?>
               <tr>
-                <td>
+                <td class="text-nowrap">
                   <div class="fw-bold font-monospace text-primary" style="font-size: 0.85rem;"><?= htmlspecialchars(substr($l['link_token'], 0, 12)) ?>...</div>
                   <div class="small text-muted"><?= htmlspecialchars($l['invoice_number']) ?></div>
                 </td>
                 <td>
-                  <div class="fw-bold"><?= htmlspecialchars($l['customer_name']) ?></div>
-                  <div class="small text-muted"><?= htmlspecialchars($l['customer_code']) ?> &bull; <?= htmlspecialchars($l['customer_mobile'] ?? '') ?></div>
+                  <div class="fw-bold text-nowrap"><?= htmlspecialchars($l['customer_name']) ?></div>
+                  <div class="small text-muted text-nowrap"><?= htmlspecialchars($l['customer_code']) ?> &bull; <?= htmlspecialchars($l['customer_mobile'] ?? '') ?></div>
                 </td>
                 <td>
-                  <a href="/applications/show?id=<?= $l['application_id'] ?>" class="badge bg-light text-dark text-decoration-none border">
+                  <a href="/applications/show?id=<?= $l['application_id'] ?>" class="badge bg-light text-dark text-decoration-none border text-nowrap">
                     <?= htmlspecialchars($l['application_number']) ?>
                   </a>
-                  <div class="small text-muted"><?= htmlspecialchars($l['service_name']) ?> (<?= htmlspecialchars($l['country_name']) ?>)</div>
+                  <div class="small text-muted text-nowrap"><?= htmlspecialchars($l['service_name']) ?> (<?= htmlspecialchars($l['country_name']) ?>)</div>
                 </td>
-                <td>
+                <td class="text-nowrap">
                   <div class="fw-bold text-dark fs-6">$<?= number_format((float)$l['amount'], 2) ?></div>
                   <div class="small text-muted"><?= htmlspecialchars($l['currency']) ?></div>
                 </td>
-                <td>
+                <td class="text-nowrap">
                   <?php if ($l['status'] === 'Paid'): ?>
                     <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1">
                       <i class="fa-solid fa-check me-1"></i> Paid
@@ -131,13 +131,13 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     </span>
                   <?php endif; ?>
                 </td>
-                <td class="small text-muted">
+                <td class="small text-muted text-nowrap">
                   <?= date('M d, Y', strtotime($l['created_at'])) ?>
                 </td>
-                <td class="small text-muted">
+                <td class="small text-muted text-nowrap">
                   <?= date('M d, Y', strtotime($l['expires_at'])) ?>
                 </td>
-                <td class="text-end">
+                <td class="text-end text-nowrap">
                   <div class="btn-group btn-group-sm">
                     <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText('<?= $linkUrl ?>'); alert('Payment link copied to clipboard:\n<?= $linkUrl ?>');" title="Copy Link">
                       <i class="fa-solid fa-copy"></i>
@@ -147,7 +147,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     </a>
                     <?php if ($isPending): ?>
                       <form action="/payments/links/cancel" method="POST" class="d-inline" onsubmit="return confirm('Cancel this payment link?');">
-                        <?= \App\Middleware\CsrfMiddleware::field() ?>
+                        <?= csrf_field() ?>
                         <input type="hidden" name="link_id" value="<?= $l['id'] ?>">
                         <button type="submit" class="btn btn-outline-danger" title="Cancel Link">
                           <i class="fa-solid fa-ban"></i>

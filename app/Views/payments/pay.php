@@ -221,7 +221,7 @@
         <?php else: ?>
             <!-- Payment Action Form (Stripe Gateway Checkout) -->
             <form action="/pay/checkout" method="POST" id="stripePayForm">
-                <?= \App\Middleware\CsrfMiddleware::field() ?>
+                <?= csrf_field() ?>
                 <input type="hidden" name="token" value="<?= htmlspecialchars($link['link_token']) ?>">
                 
                 <button type="submit" class="btn-pay" id="payNowBtn">
@@ -232,7 +232,7 @@
             <?php if (!empty($customerWallet) && (float)$customerWallet['current_balance'] >= (float)$link['amount']): ?>
                 <!-- Wallet Payment Option -->
                 <form action="/pay/wallet" method="POST" onsubmit="return confirm('Confirm debit of $<?= number_format((float)$link['amount'], 2) ?> from your digital wallet balance ($<?= number_format((float)$customerWallet['current_balance'], 2) ?>)?');">
-                    <?= \App\Middleware\CsrfMiddleware::field() ?>
+                    <?= csrf_field() ?>
                     <input type="hidden" name="token" value="<?= htmlspecialchars($link['link_token']) ?>">
                     <button type="submit" class="btn-pay btn-wallet">
                         <i class="fa-solid fa-wallet"></i> Pay from Digital Wallet (Balance: $<?= number_format((float)$customerWallet['current_balance'], 2) ?>)
