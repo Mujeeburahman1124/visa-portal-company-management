@@ -92,9 +92,21 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                   <?php endif; ?>
                 </td>
                 <td class="text-end">
-                  <a href="/customers/show?id=<?= $c['id'] ?>" class="btn btn-outline-primary btn-sm py-1 px-2">
-                    <i class="fa-solid fa-user me-1"></i> View Profile
-                  </a>
+                  <div class="btn-group btn-group-sm">
+                    <a href="/customers/show?id=<?= $c['id'] ?>" class="btn btn-outline-primary py-1 px-2" title="View Profile">
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
+                    <a href="/customers/edit?id=<?= $c['id'] ?>" class="btn btn-outline-secondary py-1 px-2" title="Edit Profile">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </a>
+                    <form action="/customers/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to permanently delete customer <?= e($c['customer_code']) ?> (<?= e($c['full_name']) ?>) and all linked records?');">
+                      <?= csrf_field() ?>
+                      <input type="hidden" name="customer_id" value="<?= $c['id'] ?>">
+                      <button type="submit" class="btn btn-outline-danger py-1 px-2" title="Delete Profile">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             <?php endforeach; ?>

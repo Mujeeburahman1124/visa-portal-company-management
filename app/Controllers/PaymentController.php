@@ -512,6 +512,17 @@ class PaymentController
         $stmt->execute($params);
         $paymentLinks = $stmt->fetchAll();
 
+        // Meta applications list for generating new links
+        $applicationsList = $pdo->query("SELECT a.id, a.application_number, a.total_amount, a.balance_amount, a.passport_number, 
+                c.id as customer_id, c.customer_code, c.full_name as customer_name, c.mobile as customer_mobile, c.email as customer_email,
+                ct.name as country_name, ct.flag_emoji, vs.name as service_name
+            FROM applications a 
+            JOIN customers c ON a.customer_id = c.id 
+            JOIN visa_services vs ON a.visa_service_id = vs.id
+            JOIN countries ct ON vs.country_id = ct.id
+            WHERE a.is_archived = 0 
+            ORDER BY a.created_at DESC LIMIT 150")->fetchAll();
+
         require_once dirname(__DIR__) . '/Views/payments/links.php';
     }
 

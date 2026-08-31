@@ -1108,4 +1108,130 @@ class ApplicationController
 
         redirect("/applications/show?id={$appId}#communication", 'Communication record saved.', 'success');
     }
+
+    public function edit(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+
+        $id = (int)($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            redirect('/applications', 'Application not found.', 'danger');
+        }
+
+        $stmt = $pdo->prepare("SELECT a.*, c.full_name as customer_name, c.customer_code, c.email as customer_email, c.mobile as customer_mobile 
+            FROM applications a 
+            JOIN customers c ON a.customer_id = c.id 
+            WHERE a.id = ?");
+        $stmt->execute([$id]);
+        $app = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$app) {
+            redirect('/applications', 'Application not found.', 'danger');
+        }
+
+        $countries = $pdo->query("SELECT id, name, iso_code, flag_emoji FROM countries WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $services = $pdo->query("SELECT vs.*, ct.name as country_name, ct.flag_emoji FROM visa_services vs JOIN countries ct ON vs.country_id = ct.id WHERE vs.is_active = 1 ORDER BY ct.name ASC, vs.name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $suppliers = $pdo->query("SELECT id, company_name, contact_person FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $branches = $pdo->query("SELECT id, name, city FROM branches WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $staffMembers = $pdo->query("SELECT id, name, designation FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        require_once dirname(__DIR__) . '/Views/applications/edit.php';
+    }
+
+    public function update(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $user = auth_user();
+
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id <= 0) {
+            redirect('/applications', 'Application not found.', 'danger');
+        }
+
+        $visaServiceId = (int)($_POST['visa_service_id'] ?? 0);
+        $passportNumber = trim($_POST['passport_number'] ?? '');
+        $travelDate = !empty($_POST['travel_date']) ? $_POST['travel_date'] : null;
+        $returnDate = !empty($_POST['return_date']) ? $_POST['return_date'] : null;
+        $submissionDate = !empty($_POST['submission_date']) ? $_POST['submission_date'] : null;
+        $expectedDate = !empty($_POST['expected_completion_date']) ? $_POST['expected_completion_date'] : null;
+        $priority = trim($_POST['priority'] ?? 'Standard');
+        $branchId = (int)($_POST['branch_id'] ?? 1);
+        $supplierId = !empty($_POST['supplier_id']) ? (int)$_POST['supplier_id'] : null;
+        $assignedStaffId = !empty($_POST['assigned_staff_id']) ? (int)$_POST['assigned_staff_id'] : null;
+        $sellingPrice = (float)($_POST['selling_price'] ?? 0.00);
+        $supplierCost = (float)($_POST['supplier_cost'] ?? 0.00);
+        $embassyFee = (float)($_POST['embassy_fee'] ?? 0.00);
+        $serviceFee = (float)($_POST['service_fee'] ?? 0.00);
+        $discountAmount = (float)($_POST['discount_amount'] ?? 0.00);
+        $taxAmount = (float)($_POST['tax_amount'] ?? 0.00);
+        $notes = trim($_POST['notes'] ?? '');
+
+        $totalAmount = $sellingPrice > 0 ? $sellingPrice : ($supplierCost + $embassyFee + $serviceFee + $taxAmount - $discountAmount);
+
+        $stmt = $pdo->prepare("UPDATE applications SET 
+            visa_service_id = ?, passport_number = ?, travel_date = ?, return_date = ?, 
+            submission_date = ?, expected_completion_date = ?, priority = ?, 
+            branch_id = ?, supplier_id = ?, assigned_staff_id = ?, 
+            selling_price = ?, supplier_cost = ?, embassy_fee = ?, service_fee = ?, 
+            discount_amount = ?, tax_amount = ?, total_amount = ?, notes = ?, 
+            updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?");
+        $stmt->execute([
+            $visaServiceId, $passportNumber, $travelDate, $returnDate,
+            $submissionDate, $expectedDate, $priority,
+            $branchId, $supplierId, $assignedStaffId,
+            $sellingPrice, $supplierCost, $embassyFee, $serviceFee,
+            $discountAmount, $taxAmount, $totalAmount, $notes,
+            $id
+        ]);
+
+        FinanceService::recalculateApplication($id);
+        AuditService::log('APPLICATION_UPDATED', 'Applications', $id, "Updated application #{$id}", [], $user['id'] ?? null);
+
+        redirect("/applications/show?id={$id}", "Application updated successfully.", 'success');
+    }
+
+    public function delete(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $user = auth_user();
+
+        $id = (int)($_POST['application_id'] ?? $_POST['id'] ?? 0);
+        if ($id <= 0) {
+            redirect('/applications', 'Application not found.', 'danger');
+        }
+
+        $app = $pdo->query("SELECT application_number FROM applications WHERE id = {$id}")->fetch();
+        if (!$app) {
+            redirect('/applications', 'Application not found.', 'danger');
+        }
+
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare("DELETE FROM application_stages WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM application_notes WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM application_tasks WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM application_returns WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM visa_approvals WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM visa_rejections WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM payment_links WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM payments WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM refunds WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM documents WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM document_requests WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM communications WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM applications WHERE id = ?")->execute([$id]);
+            $pdo->commit();
+
+            AuditService::log('APPLICATION_DELETED', 'Applications', $id, "Deleted visa application {$app['application_number']}", [], $user['id'] ?? null);
+
+            redirect('/applications', "Application {$app['application_number']} deleted successfully.", 'success');
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            redirect('/applications', "Error deleting application: " . $e->getMessage(), 'danger');
+        }
+    }
 }

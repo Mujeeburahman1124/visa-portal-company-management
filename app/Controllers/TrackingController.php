@@ -41,13 +41,7 @@ class TrackingController
         $perPage = 25;
         $offset = ($page - 1) * $perPage;
 
-        $sql = "SELECT a.*, 
-                    c.full_name as customer_name, c.customer_code, c.mobile as customer_mobile, c.email as customer_email,
-                    vs.name as service_name, vs.entry_type, vs.duration,
-                    ct.name as country_name, ct.flag_emoji,
-                    u.name as staff_name,
-                    s.company_name as supplier_name
-                FROM applications a
+        $baseFromWhere = " FROM applications a
                 JOIN customers c ON a.customer_id = c.id
                 JOIN visa_services vs ON a.visa_service_id = vs.id
                 JOIN countries ct ON vs.country_id = ct.id
@@ -55,94 +49,102 @@ class TrackingController
                 LEFT JOIN suppliers s ON a.supplier_id = s.id
                 WHERE a.is_archived = 0";
 
+        $filterSql = "";
         $params = [];
 
         if ($search !== '') {
-            $sql .= " AND (a.application_number LIKE ? OR c.full_name LIKE ? OR a.passport_number LIKE ? OR c.mobile LIKE ? OR c.email LIKE ? OR a.visa_number LIKE ? OR a.supplier_reference LIKE ?)";
+            $filterSql .= " AND (a.application_number LIKE ? OR c.full_name LIKE ? OR a.passport_number LIKE ? OR c.mobile LIKE ? OR c.email LIKE ? OR a.visa_number LIKE ? OR a.supplier_reference LIKE ?)";
             $term = "%{$search}%";
             $params = array_merge($params, array_fill(0, 7, $term));
         }
 
         if ($name !== '') {
-            $sql .= " AND c.full_name LIKE ?";
+            $filterSql .= " AND c.full_name LIKE ?";
             $params[] = "%{$name}%";
         }
 
         if ($passport !== '') {
-            $sql .= " AND a.passport_number LIKE ?";
+            $filterSql .= " AND a.passport_number LIKE ?";
             $params[] = "%{$passport}%";
         }
 
         if ($phone !== '') {
-            $sql .= " AND (c.mobile LIKE ? OR c.whatsapp LIKE ?)";
+            $filterSql .= " AND (c.mobile LIKE ? OR c.whatsapp LIKE ?)";
             $params[] = "%{$phone}%";
             $params[] = "%{$phone}%";
         }
 
         if ($email !== '') {
-            $sql .= " AND c.email LIKE ?";
+            $filterSql .= " AND c.email LIKE ?";
             $params[] = "%{$email}%";
         }
 
         if ($visaNumber !== '') {
-            $sql .= " AND a.visa_number LIKE ?";
+            $filterSql .= " AND a.visa_number LIKE ?";
             $params[] = "%{$visaNumber}%";
         }
 
         if ($appNumber !== '') {
-            $sql .= " AND a.application_number LIKE ?";
+            $filterSql .= " AND a.application_number LIKE ?";
             $params[] = "%{$appNumber}%";
         }
 
         if ($stage !== '' && $stage !== 'All') {
-            $sql .= " AND a.current_stage = ?";
+            $filterSql .= " AND a.current_stage = ?";
             $params[] = $stage;
         }
 
         if ($status !== '' && $status !== 'All') {
-            $sql .= " AND a.status = ?";
+            $filterSql .= " AND a.status = ?";
             $params[] = $status;
         }
 
         if ($countryId > 0) {
-            $sql .= " AND vs.country_id = ?";
+            $filterSql .= " AND vs.country_id = ?";
             $params[] = $countryId;
         }
 
         if ($serviceId > 0) {
-            $sql .= " AND a.visa_service_id = ?";
+            $filterSql .= " AND a.visa_service_id = ?";
             $params[] = $serviceId;
         }
 
         if ($staffId > 0) {
-            $sql .= " AND a.assigned_staff_id = ?";
+            $filterSql .= " AND a.assigned_staff_id = ?";
             $params[] = $staffId;
         }
 
         if ($supplierId > 0) {
-            $sql .= " AND a.supplier_id = ?";
+            $filterSql .= " AND a.supplier_id = ?";
             $params[] = $supplierId;
         }
 
         if ($dateFrom !== '') {
-            $sql .= " AND a.application_date >= ?";
+            $filterSql .= " AND a.application_date >= ?";
             $params[] = $dateFrom;
         }
 
         if ($dateTo !== '') {
-            $sql .= " AND a.application_date <= ?";
+            $filterSql .= " AND a.application_date <= ?";
             $params[] = $dateTo;
         }
 
         // Count query for pagination
-        $countSql = "SELECT COUNT(*) FROM (" . $sql . ") as count_table";
+        $countSql = "SELECT COUNT(a.id)" . $baseFromWhere . $filterSql;
         $countStmt = $pdo->prepare($countSql);
         $countStmt->execute($params);
         $totalRecords = (int)$countStmt->fetchColumn();
         $totalPages = ceil($totalRecords / $perPage);
 
         // Fetch data
-        $sql .= " ORDER BY a.priority = 'Critical' DESC, a.priority = 'Urgent' DESC, a.created_at DESC LIMIT {$perPage} OFFSET {$offset}";
+        $sql = "SELECT a.*, 
+                    c.full_name as customer_name, c.customer_code, c.mobile as customer_mobile, c.email as customer_email,
+                    vs.name as service_name, vs.entry_type as service_entry_type, vs.duration as service_duration,
+                    ct.name as country_name, ct.flag_emoji,
+                    u.name as staff_name,
+                    s.company_name as supplier_name" 
+                . $baseFromWhere . $filterSql 
+                . " ORDER BY a.priority = 'Critical' DESC, a.priority = 'Urgent' DESC, a.created_at DESC LIMIT {$perPage} OFFSET {$offset}";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);

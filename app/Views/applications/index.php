@@ -278,9 +278,21 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
                 <!-- Action Button -->
                 <td class="text-end">
-                  <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-sm btn-primary py-1 px-3 fw-semibold shadow-sm" style="font-size: 0.78rem;">
-                    View <i class="fa-solid fa-arrow-right ms-1"></i>
-                  </a>
+                  <div class="btn-group btn-group-sm">
+                    <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-primary py-1 px-2.5 fw-semibold shadow-sm" title="View Application Details">
+                      <i class="fa-solid fa-eye"></i>
+                    </a>
+                    <a href="/applications/edit?id=<?= $app['id'] ?>" class="btn btn-outline-secondary py-1 px-2" title="Edit Application">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </a>
+                    <form action="/applications/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to permanently delete application <?= e($app['application_number']) ?>?');">
+                      <?= csrf_field() ?>
+                      <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
+                      <button type="submit" class="btn btn-outline-danger py-1 px-2" title="Delete Application">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             <?php endforeach; ?>

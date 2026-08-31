@@ -61,6 +61,11 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
 
         <!-- Master Operational Action Buttons -->
         <div class="d-flex flex-wrap align-items-center gap-2">
+          <!-- Edit Application Button -->
+          <a href="/applications/edit?id=<?= $app['id'] ?>" class="btn btn-outline-secondary btn-sm px-3 shadow-sm">
+            <i class="fa-solid fa-pen-to-square me-1"></i> Edit Application
+          </a>
+
           <!-- Update Stage Button -->
           <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#stageTransitionModal">
             <i class="fa-solid fa-forward-step me-1"></i> Update Stage
@@ -76,7 +81,7 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
             <button class="btn btn-outline-dark btn-sm px-3 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
               <i class="fa-solid fa-gavel me-1"></i> Decisions
             </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem;">
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; z-index: 1070;">
               <li><button type="button" class="dropdown-item py-2 text-success fw-semibold" data-bs-toggle="modal" data-bs-target="#approveVisaModal"><i class="fa-solid fa-circle-check me-2"></i> Approve (Grant Visa)</button></li>
               <li><button type="button" class="dropdown-item py-2 text-warning fw-semibold" data-bs-toggle="modal" data-bs-target="#returnVisaModal"><i class="fa-solid fa-rotate-left me-2"></i> Return for Modifications</button></li>
               <li><button type="button" class="dropdown-item py-2 text-danger fw-semibold" data-bs-toggle="modal" data-bs-target="#rejectVisaModal"><i class="fa-solid fa-circle-xmark me-2"></i> Reject Application</button></li>
@@ -91,17 +96,25 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
             <button class="btn btn-outline-secondary btn-sm px-2 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
               <i class="fa-solid fa-ellipsis-vertical"></i>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem;">
-              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#reassignStaffModal"><i class="fa-solid fa-user-gear text-primary me-2"></i> Reassign Staff</button></li>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; z-index: 1070;">
+              <li><a class="dropdown-item py-2" href="/applications/edit?id=<?= $app['id'] ?>"><i class="fa-solid fa-pen-to-square text-primary me-2"></i> Edit Details</a></li>
+              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#reassignStaffModal"><i class="fa-solid fa-user-gear text-info me-2"></i> Reassign Staff</button></li>
               <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#priorityModal"><i class="fa-solid fa-flag text-warning me-2"></i> Change Priority</button></li>
-              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#addNoteModal"><i class="fa-solid fa-note-sticky text-info me-2"></i> Add Internal Note</button></li>
+              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#addNoteModal"><i class="fa-solid fa-note-sticky text-secondary me-2"></i> Add Internal Note</button></li>
               <li><hr class="dropdown-divider my-1"></li>
               <li><a class="dropdown-item py-2" href="/payments/invoice?app_id=<?= $app['id'] ?>" target="_blank"><i class="fa-solid fa-file-invoice text-success me-2"></i> Print Invoice</a></li>
               <li>
                 <form action="/applications/archive" method="POST" onsubmit="return confirm('Archive this visa application record?');">
                   <?= csrf_field() ?>
                   <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
-                  <button type="submit" class="dropdown-item py-2 text-danger"><i class="fa-solid fa-box-archive text-danger me-2"></i> Archive Application</button>
+                  <button type="submit" class="dropdown-item py-2 text-warning"><i class="fa-solid fa-box-archive text-warning me-2"></i> Archive Application</button>
+                </form>
+              </li>
+              <li>
+                <form action="/applications/delete" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete this application (<?= e($app['application_number']) ?>) and all related records?');">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
+                  <button type="submit" class="dropdown-item py-2 text-danger"><i class="fa-solid fa-trash-can text-danger me-2"></i> Delete Application</button>
                 </form>
               </li>
             </ul>
@@ -2004,7 +2017,7 @@ function openAppDocReplaceModal(docId, docName) {
   <div class="modal-dialog">
     <div class="modal-content border-0 shadow">
       <form action="/payments/generate-link" method="POST">
-        <?= \App\Middleware\CsrfMiddleware::field() ?>
+        <?= csrf_field() ?>
         <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
         <div class="modal-header bg-primary text-white">
           <h5 class="modal-title fw-bold"><i class="fa-solid fa-link me-2"></i>Generate Online Payment Link</h5>

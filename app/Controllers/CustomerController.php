@@ -582,4 +582,158 @@ class CustomerController
             'duplicates' => $results,
         ]);
     }
+
+    public function edit(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+
+        $id = (int)($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            redirect('/customers', 'Customer not found.', 'danger');
+        }
+
+        $stmt = $pdo->prepare("SELECT * FROM customers WHERE id = ?");
+        $stmt->execute([$id]);
+        $customer = $stmt->fetch();
+
+        if (!$customer) {
+            redirect('/customers', 'Customer not found.', 'danger');
+        }
+
+        $primaryPassport = $pdo->query("SELECT * FROM customer_passports WHERE customer_id = {$id} AND is_primary = 1 LIMIT 1")->fetch(PDO::FETCH_ASSOC) ?: [];
+        $family = $pdo->query("SELECT * FROM customer_family WHERE customer_id = {$id} LIMIT 1")->fetch(PDO::FETCH_ASSOC) ?: [];
+        $countries = $pdo->query("SELECT id, name, iso_code, flag_emoji FROM countries WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $branches = $pdo->query("SELECT id, name, city FROM branches WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        require_once dirname(__DIR__) . '/Views/customers/edit.php';
+    }
+
+    public function update(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $user = auth_user();
+
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id <= 0) {
+            redirect('/customers', 'Customer not found.', 'danger');
+        }
+
+        $firstName = trim($_POST['first_name'] ?? '');
+        $middleName = trim($_POST['middle_name'] ?? '');
+        $lastName = trim($_POST['last_name'] ?? '');
+        $fullName = trim($firstName . ($middleName ? ' ' . $middleName : '') . ' ' . $lastName);
+        $gender = trim($_POST['gender'] ?? 'Male');
+        $dob = !empty($_POST['dob']) ? $_POST['dob'] : null;
+        $nationality = trim($_POST['nationality'] ?? '');
+        $placeOfBirth = trim($_POST['place_of_birth'] ?? '');
+        $maritalStatus = trim($_POST['marital_status'] ?? 'Single');
+        $occupation = trim($_POST['occupation'] ?? '');
+        $mobile = trim($_POST['mobile'] ?? '');
+        $whatsapp = trim($_POST['whatsapp'] ?? $mobile);
+        $email = trim($_POST['email'] ?? '');
+        $currentCountry = trim($_POST['current_country'] ?? 'United Arab Emirates');
+        $address = trim($_POST['address'] ?? '');
+        $religion = trim($_POST['religion'] ?? '');
+        $notes = trim($_POST['notes'] ?? '');
+
+        $stmt = $pdo->prepare("UPDATE customers SET 
+            first_name = ?, middle_name = ?, last_name = ?, full_name = ?, 
+            gender = ?, dob = ?, nationality = ?, place_of_birth = ?, 
+            marital_status = ?, occupation = ?, mobile = ?, whatsapp = ?, 
+            email = ?, current_country = ?, address = ?, religion = ?, 
+            notes = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?");
+        $stmt->execute([
+            $firstName, $middleName, $lastName, $fullName,
+            $gender, $dob, $nationality, $placeOfBirth,
+            $maritalStatus, $occupation, $mobile, $whatsapp,
+            $email, $currentCountry, $address, $religion,
+            $notes, $id
+        ]);
+
+        // Update primary passport
+        $passportNumber = trim($_POST['passport_number'] ?? '');
+        if (!empty($passportNumber)) {
+            $passportExpiry = !empty($_POST['passport_expiry']) ? $_POST['passport_expiry'] : null;
+            $passportIssue = !empty($_POST['passport_issue_date']) ? $_POST['passport_issue_date'] : null;
+            $passportCountry = trim($_POST['passport_country'] ?? $nationality);
+
+            $existingPass = $pdo->query("SELECT id FROM customer_passports WHERE customer_id = {$id} AND is_primary = 1 LIMIT 1")->fetch();
+            if ($existingPass) {
+                $pdo->prepare("UPDATE customer_passports SET passport_number = ?, expiry_date = ?, issue_date = ?, country_of_issue = ? WHERE id = ?")
+                    ->execute([$passportNumber, $passportExpiry, $passportIssue, $passportCountry, $existingPass['id']]);
+            } else {
+                $pdo->prepare("INSERT INTO customer_passports (customer_id, passport_number, expiry_date, issue_date, country_of_issue, is_primary) VALUES (?, ?, ?, ?, ?, 1)")
+                    ->execute([$id, $passportNumber, $passportExpiry, $passportIssue, $passportCountry]);
+            }
+        }
+
+        // Update family details
+        $fatherName = trim($_POST['father_name'] ?? '');
+        $fatherDob = !empty($_POST['father_dob']) ? $_POST['father_dob'] : null;
+        $fatherNationality = trim($_POST['father_nationality'] ?? '');
+        $motherName = trim($_POST['mother_name'] ?? '');
+        $motherDob = !empty($_POST['mother_dob']) ? $_POST['mother_dob'] : null;
+        $motherNationality = trim($_POST['mother_nationality'] ?? '');
+
+        $existingFamily = $pdo->query("SELECT id FROM customer_family WHERE customer_id = {$id} LIMIT 1")->fetch();
+        if ($existingFamily) {
+            $pdo->prepare("UPDATE customer_family SET father_name = ?, father_dob = ?, father_nationality = ?, mother_name = ?, mother_dob = ?, mother_nationality = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+                ->execute([$fatherName, $fatherDob, $fatherNationality, $motherName, $motherDob, $motherNationality, $existingFamily['id']]);
+        } elseif ($fatherName || $motherName) {
+            $pdo->prepare("INSERT INTO customer_family (customer_id, father_name, father_dob, father_nationality, mother_name, mother_dob, mother_nationality) VALUES (?, ?, ?, ?, ?, ?, ?)")
+                ->execute([$id, $fatherName, $fatherDob, $fatherNationality, $motherName, $motherDob, $motherNationality]);
+        }
+
+        AuditService::log('CUSTOMER_UPDATED', 'Customers', $id, "Updated customer profile: {$fullName}", [], $user['id'] ?? null);
+
+        redirect("/customers/show?id={$id}", "Customer profile updated successfully.", 'success');
+    }
+
+    public function delete(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $user = auth_user();
+
+        $id = (int)($_POST['customer_id'] ?? $_POST['id'] ?? 0);
+        if ($id <= 0) {
+            redirect('/customers', 'Customer not found.', 'danger');
+        }
+
+        $cust = $pdo->query("SELECT full_name, customer_code FROM customers WHERE id = {$id}")->fetch();
+        if (!$cust) {
+            redirect('/customers', 'Customer not found.', 'danger');
+        }
+
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare("DELETE FROM applications WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM customer_passports WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM customer_national_ids WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM customer_residences WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM customer_family WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM customer_wallets WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM wallet_transactions WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM payment_links WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM payments WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM refunds WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM documents WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM document_requests WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM tasks WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM appointments WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM communications WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM customers WHERE id = ?")->execute([$id]);
+            $pdo->commit();
+
+            AuditService::log('CUSTOMER_DELETED', 'Customers', $id, "Deleted customer {$cust['customer_code']} ({$cust['full_name']})", [], $user['id'] ?? null);
+
+            redirect('/customers', "Customer {$cust['customer_code']} deleted successfully.", 'success');
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            redirect('/customers', "Error deleting customer: " . $e->getMessage(), 'danger');
+        }
+    }
 }

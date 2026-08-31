@@ -117,6 +117,18 @@ switch ($uri) {
         (new App\Controllers\ApplicationController())->show();
         break;
 
+    case '/applications/edit':
+        (new App\Controllers\ApplicationController())->edit();
+        break;
+
+    case '/applications/update':
+        (new App\Controllers\ApplicationController())->update();
+        break;
+
+    case '/applications/delete':
+        (new App\Controllers\ApplicationController())->delete();
+        break;
+
     case '/applications/update-stage':
         (new App\Controllers\ApplicationController())->updateStage();
         break;
@@ -185,6 +197,21 @@ switch ($uri) {
     case '/customers/show':
     case '/applicants/show':
         (new App\Controllers\CustomerController())->show();
+        break;
+
+    case '/customers/edit':
+    case '/applicants/edit':
+        (new App\Controllers\CustomerController())->edit();
+        break;
+
+    case '/customers/update':
+    case '/applicants/update':
+        (new App\Controllers\CustomerController())->update();
+        break;
+
+    case '/customers/delete':
+    case '/applicants/delete':
+        (new App\Controllers\CustomerController())->delete();
         break;
 
     case '/customers/check-duplicate':

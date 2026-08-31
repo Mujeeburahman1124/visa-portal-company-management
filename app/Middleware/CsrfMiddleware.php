@@ -5,6 +5,11 @@ namespace App\Middleware;
 
 class CsrfMiddleware
 {
+    public static function field(): string
+    {
+        return csrf_field();
+    }
+
     public static function validate(): void
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {

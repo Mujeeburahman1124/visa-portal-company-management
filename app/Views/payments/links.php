@@ -142,6 +142,14 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText('<?= $linkUrl ?>'); alert('Payment link copied to clipboard:\n<?= $linkUrl ?>');" title="Copy Link">
                       <i class="fa-solid fa-copy"></i>
                     </button>
+                    <?php if (!empty($l['customer_mobile'])): 
+                      $cleanPhone = preg_replace('/[^0-9]/', '', $l['customer_mobile']);
+                      $waText = "Hello " . $l['customer_name'] . ",\n\nPlease use this secure link to pay $" . number_format((float)$l['amount'], 2) . " USD for your visa application (" . $l['application_number'] . "):\n" . $linkUrl;
+                    ?>
+                      <a href="https://api.whatsapp.com/send?phone=<?= $cleanPhone ?>&text=<?= urlencode($waText) ?>" target="_blank" class="btn btn-outline-success" title="Share on WhatsApp">
+                        <i class="fa-brands fa-whatsapp"></i>
+                      </a>
+                    <?php endif; ?>
                     <a href="/pay?token=<?= htmlspecialchars($l['link_token']) ?>" target="_blank" class="btn btn-outline-primary" title="Open Payment Page">
                       <i class="fa-solid fa-arrow-up-right-from-square"></i>
                     </a>
@@ -164,5 +172,107 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </div>
   </div>
 </div>
+
+<!-- Modal: Generate Payment Link -->
+<div class="modal fade" id="createLinkModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <form action="/payments/generate-link" method="POST">
+        <?= csrf_field() ?>
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold"><i class="fa-solid fa-link me-2"></i> Generate Online Payment Link</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary">Select Visa Application <span class="text-danger">*</span></label>
+            <select name="application_id" class="form-select" required onchange="onPaymentLinkAppSelected(this)">
+              <option value="">-- Choose Application / Applicant --</option>
+              <?php if (!empty($applicationsList)): ?>
+                <?php foreach ($applicationsList as $ap): ?>
+                  <option value="<?= $ap['id'] ?>" 
+                    data-balance="<?= $ap['balance_amount'] ?>" 
+                    data-total="<?= $ap['total_amount'] ?>"
+                    data-name="<?= e($ap['customer_name']) ?>"
+                    data-service="<?= e($ap['service_name']) ?>"
+                    data-country="<?= e($ap['country_name']) ?>">
+                    <?= e($ap['application_number']) ?> &mdash; <?= e($ap['customer_name']) ?> [Bal: $<?= number_format((float)$ap['balance_amount'], 2) ?>]
+                  </option>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </select>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-md-7">
+              <label class="form-label small fw-semibold text-secondary">Payment Amount ($ USD) <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="number" step="0.01" min="0.01" name="amount" id="createLinkAmountInput" class="form-control fw-bold" placeholder="0.00" required>
+              </div>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small fw-semibold text-secondary">Due Date / Expiry</label>
+              <input type="date" name="due_date" class="form-control" value="<?= date('Y-m-d', strtotime('+7 days')) ?>">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary">Payment Title / Purpose</label>
+            <input type="text" name="title" id="createLinkTitleInput" class="form-control" placeholder="e.g. Visa Processing Fee Payment">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary">Customer Instructions / Notes</label>
+            <textarea name="description" class="form-control" rows="2" placeholder="Instructions shown on customer checkout page..."></textarea>
+          </div>
+
+          <div class="card bg-light border p-3">
+            <span class="small fw-bold text-secondary text-uppercase mb-2 d-block" style="font-size: 0.72rem;">Dispatch Notification Options:</span>
+            <div class="form-check mb-1">
+              <input class="form-check-input" type="checkbox" name="send_email" value="1" id="linkSendEmail" checked>
+              <label class="form-check-label small fw-semibold" for="linkSendEmail">
+                <i class="fa-solid fa-envelope text-primary me-1"></i> Send payment link automatically via Email
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="send_whatsapp" value="1" id="linkSendWhatsapp" checked>
+              <label class="form-check-label small fw-semibold" for="linkSendWhatsapp">
+                <i class="fa-brands fa-whatsapp text-success me-1"></i> Send payment request instantly via WhatsApp Cloud
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold shadow-sm">
+            <i class="fa-solid fa-paper-plane me-1"></i> Generate &amp; Send Payment Link
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function onPaymentLinkAppSelected(select) {
+  const opt = select.options[select.selectedIndex];
+  if (!opt || !opt.value) return;
+  const balance = parseFloat(opt.getAttribute('data-balance') || 0);
+  const total = parseFloat(opt.getAttribute('data-total') || 0);
+  const name = opt.getAttribute('data-name') || '';
+  const service = opt.getAttribute('data-service') || '';
+
+  const amtInput = document.getElementById('createLinkAmountInput');
+  if (amtInput) {
+    amtInput.value = balance > 0 ? balance.toFixed(2) : total.toFixed(2);
+  }
+
+  const titleInput = document.getElementById('createLinkTitleInput');
+  if (titleInput && (!titleInput.value || titleInput.value.includes('Visa Fee for'))) {
+    titleInput.value = 'Visa Fee for ' + name + (service ? ' (' + service + ')' : '');
+  }
+}
+</script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

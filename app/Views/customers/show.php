@@ -26,9 +26,21 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       </div>
     </div>
 
-    <a href="/applications/create" class="btn btn-primary btn-sm px-3 shadow-sm">
-      <i class="fa-solid fa-plus me-1"></i> New Visa Application
-    </a>
+    <div class="d-flex gap-2">
+      <a href="/customers/edit?id=<?= $customer['id'] ?>" class="btn btn-outline-secondary btn-sm px-3 shadow-sm">
+        <i class="fa-solid fa-pen-to-square me-1"></i> Edit Profile
+      </a>
+      <form action="/customers/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to permanently delete this customer (<?= e($customer['customer_code']) ?>) and all linked applications and documents?');">
+        <?= csrf_field() ?>
+        <input type="hidden" name="customer_id" value="<?= $customer['id'] ?>">
+        <button type="submit" class="btn btn-outline-danger btn-sm px-3 shadow-sm">
+          <i class="fa-solid fa-trash-can me-1"></i> Delete
+        </button>
+      </form>
+      <a href="/applications/create?customer_id=<?= $customer['id'] ?>" class="btn btn-primary btn-sm px-3 shadow-sm">
+        <i class="fa-solid fa-plus me-1"></i> New Visa Application
+      </a>
+    </div>
   </div>
 
   <div class="row g-4">
