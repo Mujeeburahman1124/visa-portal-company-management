@@ -192,7 +192,7 @@ class ApplicationController
         $custStmt->execute([$customerId]);
         $customer = $custStmt->fetch(PDO::FETCH_ASSOC);
 
-        $srvStmt = $pdo->prepare("SELECT vs.*, ct.name as country_name, ct.code as country_code FROM visa_services vs JOIN countries ct ON vs.country_id = ct.id WHERE vs.id = ?");
+        $srvStmt = $pdo->prepare("SELECT vs.*, ct.name as country_name, ct.iso_code as country_code FROM visa_services vs JOIN countries ct ON vs.country_id = ct.id WHERE vs.id = ?");
         $srvStmt->execute([$serviceId]);
         $service = $srvStmt->fetch(PDO::FETCH_ASSOC);
 
