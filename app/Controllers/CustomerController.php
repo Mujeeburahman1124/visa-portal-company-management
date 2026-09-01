@@ -163,6 +163,12 @@ class CustomerController
 
         $customerId = (int)$pdo->lastInsertId();
 
+        // Clean any existing orphan child records for this customer ID
+        $pdo->prepare("DELETE FROM customer_family WHERE customer_id = ?")->execute([$customerId]);
+        $pdo->prepare("DELETE FROM customer_passports WHERE customer_id = ?")->execute([$customerId]);
+        $pdo->prepare("DELETE FROM customer_national_ids WHERE customer_id = ?")->execute([$customerId]);
+        $pdo->prepare("DELETE FROM customer_residences WHERE customer_id = ?")->execute([$customerId]);
+
         // Insert Family Details into customer_family
         if (!empty($fatherName) || !empty($motherName) || !empty($fatherReligion) || !empty($motherReligion)) {
             $famStmt = $pdo->prepare("INSERT INTO customer_family (
@@ -662,10 +668,10 @@ class CustomerController
 
             $existingPass = $pdo->query("SELECT id FROM customer_passports WHERE customer_id = {$id} AND is_primary = 1 LIMIT 1")->fetch();
             if ($existingPass) {
-                $pdo->prepare("UPDATE customer_passports SET passport_number = ?, expiry_date = ?, issue_date = ?, country_of_issue = ? WHERE id = ?")
+                $pdo->prepare("UPDATE customer_passports SET passport_number = ?, expiry_date = ?, issue_date = ?, issuing_country = ? WHERE id = ?")
                     ->execute([$passportNumber, $passportExpiry, $passportIssue, $passportCountry, $existingPass['id']]);
             } else {
-                $pdo->prepare("INSERT INTO customer_passports (customer_id, passport_number, expiry_date, issue_date, country_of_issue, is_primary) VALUES (?, ?, ?, ?, ?, 1)")
+                $pdo->prepare("INSERT INTO customer_passports (customer_id, passport_number, expiry_date, issue_date, issuing_country, is_primary) VALUES (?, ?, ?, ?, ?, 1)")
                     ->execute([$id, $passportNumber, $passportExpiry, $passportIssue, $passportCountry]);
             }
         }
