@@ -136,7 +136,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
             <div class="mb-3">
               <label for="serviceSelect" class="form-label small fw-semibold text-secondary">Visa Service Package / Type <span class="text-danger">*</span></label>
-              <select name="visa_service_id" id="serviceSelect" class="form-select" required onchange="updateServiceInfo(); checkDuplicateApplication();">
+              <select name="visa_service_id" id="serviceSelect" class="form-select" required onchange="onServiceChanged();">
                 <option value="">-- Choose Visa Type / Duration / Entry --</option>
                 <?php foreach ($services as $srv): ?>
                   <option value="<?= $srv['id'] ?>" 
@@ -398,17 +398,104 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 </div>
 
 <script>
+const allServices = <?= json_encode($services, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+const allCategories = <?= json_encode($categories, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+const allCountries = <?= json_encode($countries, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
 function filterVisaPackages() {
   const countryId = document.getElementById('countryFilterSelect').value;
   const categoryId = document.getElementById('categoryFilterSelect').value;
   const srvSelect = document.getElementById('serviceSelect');
+  const previousVal = srvSelect.value;
   
-  for (let i = 1; i < srvSelect.options.length; i++) {
-    const opt = srvSelect.options[i];
-    const matchCountry = !countryId || opt.dataset.countryId == countryId;
-    const matchCat = !categoryId || opt.dataset.categoryId == categoryId;
-    opt.style.display = (matchCountry && matchCat) ? '' : 'none';
+  const selectedCat = allCategories.find(c => String(c.id) === String(categoryId));
+  const catName = selectedCat ? (selectedCat.name || '').toLowerCase() : '';
+
+  let filtered = allServices.filter(s => {
+    let matchCountry = !countryId || String(s.country_id) === String(countryId);
+    let matchCat = true;
+    if (categoryId) {
+      const srvCatId = String(s.category_id || '');
+      const srvName = (s.name || '').toLowerCase();
+      const srvCatName = (s.category_name || '').toLowerCase();
+      matchCat = (srvCatId === String(categoryId)) || 
+                 (catName && (
+                   srvName.includes(catName.replace(' visa', '').trim()) || 
+                   srvCatName.includes(catName.replace(' visa', '').trim()) || 
+                   (catName.includes('work') && (srvName.includes('employment') || srvName.includes('work'))) || 
+                   (catName.includes('employment') && (srvName.includes('work') || srvName.includes('employment'))) ||
+                   (catName.includes('tourist') && (srvName.includes('tourist') || srvName.includes('visit'))) ||
+                   (catName.includes('visit') && (srvName.includes('visit') || srvName.includes('tourist'))) ||
+                   (catName.includes('golden') && (srvName.includes('golden') || srvName.includes('residency') || srvName.includes('investor')))
+                 ));
+    }
+    return matchCountry && matchCat;
+  });
+
+  // If no services matched category but country is selected, fallback gracefully so dropdown is never empty
+  let isFallback = false;
+  if (filtered.length === 0 && countryId) {
+    filtered = allServices.filter(s => String(s.country_id) === String(countryId));
+    isFallback = true;
   }
+
+  // Rebuild select options
+  srvSelect.innerHTML = '';
+  const defaultOpt = document.createElement('option');
+  defaultOpt.value = '';
+  if (filtered.length === 0) {
+    defaultOpt.textContent = '-- No visa packages available --';
+  } else if (isFallback) {
+    defaultOpt.textContent = `-- Showing all ${filtered.length} packages for this destination --`;
+  } else {
+    defaultOpt.textContent = `-- Choose Visa Type / Duration / Entry (${filtered.length} Available) --`;
+  }
+  srvSelect.appendChild(defaultOpt);
+
+  filtered.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.dataset.countryId = s.country_id;
+    opt.dataset.categoryId = s.category_id || '';
+    opt.dataset.price = s.selling_price;
+    opt.dataset.cost = s.supplier_cost;
+    opt.dataset.tax = s.tax_rate || 0;
+    opt.dataset.days = s.estimated_days || 10;
+    opt.dataset.entry = s.entry_type || 'Single Entry';
+    opt.textContent = `${s.flag_emoji || '✈️'} ${s.country_name} — ${s.name} (${s.duration || 'Standard'} • ${s.entry_type || 'Single'} • $${parseFloat(s.selling_price).toFixed(2)})`;
+    if (String(s.id) === String(previousVal)) {
+      opt.selected = true;
+    }
+    srvSelect.appendChild(opt);
+  });
+
+  if (filtered.length === 1) {
+    srvSelect.selectedIndex = 1;
+  }
+
+  updateServiceInfo();
+  checkDuplicateApplication();
+}
+
+function onServiceChanged() {
+  const srvSelect = document.getElementById('serviceSelect');
+  const selectedId = srvSelect.value;
+  if (selectedId) {
+    const srv = allServices.find(s => String(s.id) === String(selectedId));
+    if (srv) {
+      if (srv.country_id) {
+        document.getElementById('countryFilterSelect').value = srv.country_id;
+      }
+      if (srv.category_id) {
+        const catSelect = document.getElementById('categoryFilterSelect');
+        if (catSelect.querySelector(`option[value="${srv.category_id}"]`)) {
+          catSelect.value = srv.category_id;
+        }
+      }
+    }
+  }
+  updateServiceInfo();
+  checkDuplicateApplication();
 }
 
 function addAppDocRow() {
