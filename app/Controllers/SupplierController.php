@@ -135,4 +135,36 @@ class SupplierController
 
         redirect('/suppliers', "Disbursement of $" . number_format($amount, 2) . " recorded successfully.", 'success');
     }
+
+    public function delete(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        $pdo = Database::getConnection();
+
+        $id = (int)($_POST['id'] ?? $_POST['supplier_id'] ?? 0);
+        if ($id <= 0) {
+            redirect('/suppliers', 'Invalid supplier identifier.', 'danger');
+        }
+
+        $appCount = (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE supplier_id = {$id}")->fetchColumn();
+        if ($appCount > 0) {
+            redirect('/suppliers', "Cannot delete supplier with {$appCount} active visa applications. Deactivate portal access instead.", 'warning');
+        }
+
+        $stmt = $pdo->prepare("SELECT * FROM suppliers WHERE id = ?");
+        $stmt->execute([$id]);
+        $supplier = $stmt->fetch();
+
+        if (!$supplier) {
+            redirect('/suppliers', 'Supplier not found.', 'danger');
+        }
+
+        $pdo->prepare("DELETE FROM supplier_payments WHERE supplier_id = ?")->execute([$id]);
+        $pdo->prepare("DELETE FROM suppliers WHERE id = ?")->execute([$id]);
+
+        AuditService::log('DELETE_SUPPLIER', 'Suppliers', $id, "Deleted supplier {$supplier['company_name']} ({$supplier['supplier_code']})");
+
+        redirect('/suppliers', "Supplier '{$supplier['company_name']}' deleted successfully.", 'success');
+    }
 }

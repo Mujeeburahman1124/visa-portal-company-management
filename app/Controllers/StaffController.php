@@ -162,9 +162,97 @@ class StaffController
         $stmt->execute([$roleId, $branchId, $name, $email, $passwordHash, $phone, $designation, $department]);
         $newId = (int)$pdo->lastInsertId();
 
-        AuditService::log('CREATE_STAFF', 'Staff', $newId, "Created staff member {$name} ({$email})");
+        // Fetch Role & Branch Name for Welcome Email
+        $roleName = $pdo->query("SELECT name FROM roles WHERE id = {$roleId}")->fetchColumn() ?: 'Staff Member';
+        $branchName = $pdo->query("SELECT name FROM branches WHERE id = {$branchId}")->fetchColumn() ?: 'Main Office';
+        $appUrl = (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000');
+        $loginUrl = rtrim($appUrl, '/') . '/login';
 
-        redirect('/staff', "Staff officer '{$name}' created successfully.", 'success');
+        // Dispatch Welcome Onboarding Email with Temporary Password
+        try {
+            $emailSubject = "Welcome to " . \App\Config\App::COMPANY_NAME . " — Staff Portal Access Credentials";
+            $emailBody = "
+                <p>Dear <strong>{$name}</strong>,</p>
+                <p>Welcome to <strong>" . \App\Config\App::COMPANY_NAME . "</strong>. Your staff management account has been created by the administrator.</p>
+                <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin: 20px 0;'>
+                    <h4 style='margin-top: 0; color: #1e3a8a; font-size: 1.1em;'>Your Portal Login Credentials</h4>
+                    <p style='margin: 6px 0;'><strong>Official Login Email:</strong> <span style='color: #2563eb;'>{$email}</span></p>
+                    <p style='margin: 6px 0;'><strong>Temporary Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #0f172a; font-size: 1.1em;'>{$password}</code></p>
+                    <p style='margin: 6px 0;'><strong>Assigned Role:</strong> {$roleName}</p>
+                    <p style='margin: 6px 0;'><strong>Designation:</strong> {$designation}</p>
+                    <p style='margin: 6px 0;'><strong>Branch:</strong> {$branchName}</p>
+                </div>
+                <p style='color: #dc2626; font-size: 0.9em;'><strong>Security Requirement:</strong> Please log in and change your temporary password upon your first sign-in.</p>
+                <p style='text-align: center; margin-top: 25px;'>
+                    <a href='{$loginUrl}' style='background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>Access Staff Portal &rarr;</a>
+                </p>
+            ";
+
+            \App\Services\EmailService::send([
+                'to' => $email,
+                'name' => $name,
+                'subject' => $emailSubject,
+                'bodyHtml' => $emailBody,
+                'data' => [
+                    'name' => $name,
+                    'email' => $email,
+                    'temporaryPassword' => $password,
+                    'roleName' => $roleName,
+                    'designation' => $designation,
+                    'branchName' => $branchName,
+                    'loginUrl' => $loginUrl,
+                ]
+            ]);
+
+            // Log notification
+            $pdo->prepare("INSERT INTO notification_logs (event_type, recipient_type, recipient_id, recipient_name, recipient_email, channel, template_name, subject, content_preview, status, sent_at) VALUES ('staff.registered', 'Staff', ?, ?, ?, 'Email', 'staff_welcome_email', ?, ?, 'Sent', NOW())")
+                ->execute([$newId, $name, $email, $emailSubject, "Welcome email with temporary password {$password}"]);
+        } catch (\Throwable $ex) {}
+
+        AuditService::log('CREATE_STAFF', 'Staff', $newId, "Created staff member {$name} ({$email}) with initial temporary password");
+
+        redirect('/staff', "Staff officer '{$name}' created successfully. Onboarding email with temporary credentials has been sent to '{$email}'.", 'success');
+    }
+
+    public function delete(): void
+    {
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        $pdo = Database::getConnection();
+        $currentUser = auth_user();
+
+        $id = (int)($_POST['id'] ?? $_POST['user_id'] ?? 0);
+        if ($id <= 0) {
+            redirect('/staff', 'Invalid staff member identifier.', 'danger');
+        }
+
+        if ($id === (int)($currentUser['id'] ?? 0)) {
+            redirect('/staff', 'You cannot delete your own active administrator account.', 'danger');
+        }
+
+        $stmt = $pdo->prepare("SELECT u.*, r.slug as role_slug FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?");
+        $stmt->execute([$id]);
+        $member = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$member) {
+            redirect('/staff', 'Staff member not found.', 'danger');
+        }
+
+        if (($member['role_slug'] ?? '') === 'super-admin') {
+            $superAdminCount = (int)$pdo->query("SELECT COUNT(*) FROM users u JOIN roles r ON u.role_id = r.id WHERE r.slug = 'super-admin'")->fetchColumn();
+            if ($superAdminCount <= 1) {
+                redirect('/staff', 'Cannot delete the sole Super Admin account in the system.', 'danger');
+            }
+        }
+
+        // Unlink or reassign staff references
+        $pdo->prepare("UPDATE applications SET assigned_staff_id = NULL WHERE assigned_staff_id = ?")->execute([$id]);
+        $pdo->prepare("UPDATE tasks SET assigned_to = NULL WHERE assigned_to = ?")->execute([$id]);
+        $pdo->prepare("DELETE FROM activity_logs WHERE user_id = ?")->execute([$id]);
+        $pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$id]);
+
+        AuditService::log('DELETE_STAFF', 'Staff', $id, "Permanently deleted staff member {$member['name']} ({$member['email']})");
+
+        redirect('/staff', "Staff member '{$member['name']}' has been permanently deleted from the system.", 'success');
     }
 
     public function update(): void

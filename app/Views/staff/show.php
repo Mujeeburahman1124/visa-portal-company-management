@@ -54,6 +54,11 @@ $initials = strtoupper(substr($member['name'], 0, 1));
           <button class="btn btn-outline-warning btn-sm px-3 text-dark" data-bs-toggle="modal" data-bs-target="#resetPasswordModal">
             <i class="fa-solid fa-key me-1"></i> Reset Password
           </button>
+          <?php if ((int)$member['id'] !== (int)($_SESSION['user']['id'] ?? 0)): ?>
+            <button class="btn btn-outline-danger btn-sm px-3" data-bs-toggle="modal" data-bs-target="#deleteStaffModal">
+              <i class="fa-solid fa-trash-can me-1"></i> Delete Officer
+            </button>
+          <?php endif; ?>
         </div>
       </div>
     </div>
@@ -338,5 +343,33 @@ $initials = strtoupper(substr($member['name'], 0, 1));
     </div>
   </div>
 </div>
+
+<!-- MODAL: DELETE STAFF -->
+<?php if ((int)$member['id'] !== (int)($_SESSION['user']['id'] ?? 0)): ?>
+<div class="modal fade" id="deleteStaffModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-danger text-white">
+        <h6 class="modal-title fw-bold"><i class="fa-solid fa-trash-can me-2"></i> Delete Staff Member</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/staff/delete" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="id" value="<?= $member['id'] ?>">
+        <div class="modal-body p-4">
+          <p class="mb-2">Are you sure you want to permanently delete <strong><?= e($member['name']) ?></strong> (<?= e($member['email']) ?>)?</p>
+          <div class="alert alert-danger small mb-0">
+            <i class="fa-solid fa-triangle-exclamation me-1"></i> This action cannot be undone. Assigned visa cases and tasks will be safely unlinked.
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger btn-sm px-3 fw-semibold">Permanently Delete</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

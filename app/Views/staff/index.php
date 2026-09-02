@@ -223,25 +223,33 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 <td class="text-end">
                   <div class="d-inline-flex align-items-center gap-1">
                     <a href="/staff/show?id=<?= $u['id'] ?>" class="btn btn-sm btn-outline-primary py-1 px-2 fw-semibold" title="View Full Profile">
-                      <i class="fa-solid fa-user-gear"></i>
+                      <i class="fa-solid fa-eye"></i>
                     </a>
+
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" data-bs-toggle="modal" data-bs-target="#editStaffModal<?= $u['id'] ?>" title="Edit Staff Member">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
                     
                     <?php if ($u['id'] !== (int)($_SESSION['user']['id'] ?? 0)): ?>
-                      <button type="button" class="btn btn-sm <?= $isActive ? 'btn-outline-danger' : 'btn-outline-success' ?> py-1 px-2" 
+                      <button type="button" class="btn btn-sm <?= $isActive ? 'btn-outline-warning text-dark' : 'btn-outline-success' ?> py-1 px-2" 
                               data-bs-toggle="modal" data-bs-target="#toggleStaffModal<?= $u['id'] ?>" title="<?= $isActive ? 'Deactivate Staff' : 'Activate Staff' ?>">
                         <i class="fa-solid <?= $isActive ? 'fa-user-slash' : 'fa-user-check' ?>"></i>
+                      </button>
+
+                      <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" data-bs-toggle="modal" data-bs-target="#deleteStaffModal<?= $u['id'] ?>" title="Delete Staff Member">
+                        <i class="fa-solid fa-trash-can"></i>
                       </button>
 
                       <!-- DEACTIVATE/ACTIVATE CONFIRMATION MODAL -->
                       <div class="modal fade" id="toggleStaffModal<?= $u['id'] ?>" tabindex="-1">
                         <div class="modal-dialog modal-dialog-centered">
                           <div class="modal-content border-0 shadow">
-                            <div class="modal-header <?= $isActive ? 'bg-danger text-white' : 'bg-success text-white' ?>">
+                            <div class="modal-header <?= $isActive ? 'bg-warning text-dark' : 'bg-success text-white' ?>">
                               <h6 class="modal-title fw-bold">
                                 <i class="fa-solid <?= $isActive ? 'fa-triangle-exclamation' : 'fa-circle-check' ?> me-2"></i>
                                 <?= $isActive ? 'Deactivate Staff Member?' : 'Activate Staff Member?' ?>
                               </h6>
-                              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
                             <form action="/staff/toggle-active" method="POST">
                               <?= csrf_field() ?>
@@ -249,7 +257,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                               <div class="modal-body p-4 text-start">
                                 <p class="mb-2">Are you sure you want to <strong><?= $isActive ? 'deactivate' : 'activate' ?></strong> the account for <strong><?= e($u['name']) ?></strong> (<?= e($u['email']) ?>)?</p>
                                 <?php if ($isActive): ?>
-                                  <div class="alert alert-danger mb-0 small">
+                                  <div class="alert alert-warning mb-0 small text-dark">
                                     <i class="fa-solid fa-triangle-exclamation me-1"></i> This will immediately prevent the user from logging in to the system.
                                   </div>
                                 <?php else: ?>
@@ -260,7 +268,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                               </div>
                               <div class="modal-footer bg-light">
                                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                                <button type="submit" class="btn <?= $isActive ? 'btn-danger' : 'btn-success' ?> btn-sm px-3 fw-semibold">
+                                <button type="submit" class="btn <?= $isActive ? 'btn-warning text-dark' : 'btn-success' ?> btn-sm px-3 fw-semibold">
                                   <?= $isActive ? 'Confirm Deactivation' : 'Confirm Activation' ?>
                                 </button>
                               </div>
@@ -268,7 +276,104 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                           </div>
                         </div>
                       </div>
+
+                      <!-- DELETE CONFIRMATION MODAL -->
+                      <div class="modal fade" id="deleteStaffModal<?= $u['id'] ?>" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered">
+                          <div class="modal-content border-0 shadow">
+                            <div class="modal-header bg-danger text-white">
+                              <h6 class="modal-title fw-bold">
+                                <i class="fa-solid fa-trash-can me-2"></i> Delete Staff Member
+                              </h6>
+                              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form action="/staff/delete" method="POST">
+                              <?= csrf_field() ?>
+                              <input type="hidden" name="id" value="<?= $u['id'] ?>">
+                              <div class="modal-body p-4 text-start">
+                                <p class="mb-2">Are you sure you want to permanently delete <strong><?= e($u['name']) ?></strong> (<?= e($u['email']) ?>)?</p>
+                                <div class="alert alert-danger mb-0 small">
+                                  <i class="fa-solid fa-triangle-exclamation me-1"></i> This action is permanent. Assigned applications and tasks will be safely unlinked.
+                                </div>
+                              </div>
+                              <div class="modal-footer bg-light">
+                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger btn-sm px-3 fw-semibold">
+                                  Permanently Delete
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+                      </div>
                     <?php endif; ?>
+
+                    <!-- EDIT STAFF MODAL -->
+                    <div class="modal fade" id="editStaffModal<?= $u['id'] ?>" tabindex="-1">
+                      <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow text-start">
+                          <div class="modal-header bg-primary text-white">
+                            <h6 class="modal-title fw-bold"><i class="fa-solid fa-user-pen me-2"></i> Edit Staff Officer Profile</h6>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                          </div>
+                          <form action="/staff/update" method="POST">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="id" value="<?= $u['id'] ?>">
+                            <div class="modal-body p-4">
+                              <div class="mb-3">
+                                <label class="form-label small fw-semibold">Full Official Name <span class="text-danger">*</span></label>
+                                <input type="text" name="name" class="form-control" value="<?= e($u['name']) ?>" required>
+                              </div>
+                              <div class="mb-3">
+                                <label class="form-label small fw-semibold">Work Email Address <span class="text-danger">*</span></label>
+                                <input type="email" name="email" class="form-control" value="<?= e($u['email']) ?>" required>
+                              </div>
+                              <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                  <label class="form-label small fw-semibold">Security Role <span class="text-danger">*</span></label>
+                                  <select name="role_id" class="form-select" required>
+                                    <?php foreach ($roles as $r): ?>
+                                      <option value="<?= $r['id'] ?>" <?= (int)$u['role_id'] === (int)$r['id'] ? 'selected' : '' ?>>
+                                        <?= e($r['name']) ?>
+                                      </option>
+                                    <?php endforeach; ?>
+                                  </select>
+                                </div>
+                                <div class="col-6">
+                                  <label class="form-label small fw-semibold">Operating Branch <span class="text-danger">*</span></label>
+                                  <select name="branch_id" class="form-select" required>
+                                    <?php foreach ($branches as $b): ?>
+                                      <option value="<?= $b['id'] ?>" <?= (int)($u['branch_id'] ?? 1) === (int)$b['id'] ? 'selected' : '' ?>>
+                                        <?= e($b['name']) ?>
+                                      </option>
+                                    <?php endforeach; ?>
+                                  </select>
+                                </div>
+                              </div>
+                              <div class="mb-3">
+                                <label class="form-label small fw-semibold">Direct Phone / Mobile</label>
+                                <input type="text" name="phone" class="form-control" value="<?= e($u['phone'] ?? '') ?>">
+                              </div>
+                              <div class="row g-2 mb-0">
+                                <div class="col-6">
+                                  <label class="form-label small fw-semibold">Designation</label>
+                                  <input type="text" name="designation" class="form-control" value="<?= e($u['designation'] ?? '') ?>">
+                                </div>
+                                <div class="col-6">
+                                  <label class="form-label small fw-semibold">Department</label>
+                                  <input type="text" name="department" class="form-control" value="<?= e($u['department'] ?? '') ?>">
+                                </div>
+                              </div>
+                            </div>
+                            <div class="modal-footer bg-light">
+                              <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                              <button type="submit" class="btn btn-primary btn-sm px-3 fw-semibold">Save Profile Changes</button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </td>
               </tr>
@@ -337,14 +442,23 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             </div>
           </div>
 
-          <div class="mb-0">
+          <div class="mb-3">
             <label class="form-label small fw-semibold">Contact Phone / WhatsApp</label>
             <input type="text" name="phone" class="form-control" placeholder="+971 50 123 4567">
+          </div>
+
+          <div class="alert alert-info small mb-0 mt-3 d-flex align-items-start gap-2">
+            <i class="fa-solid fa-paper-plane text-primary mt-0.5"></i>
+            <div>
+              <strong>Automated Onboarding Email:</strong> An official welcome email containing these credentials and the direct portal login link will be automatically sent to the work email.
+            </div>
           </div>
         </div>
         <div class="modal-footer bg-light">
           <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-sm px-3 fw-semibold">Create Staff Account</button>
+          <button type="submit" class="btn btn-primary btn-sm px-3 fw-semibold">
+            <i class="fa-solid fa-user-plus me-1"></i> Create Staff &amp; Send Credentials
+          </button>
         </div>
       </form>
     </div>

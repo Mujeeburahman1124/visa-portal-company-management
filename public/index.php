@@ -373,6 +373,11 @@ switch ($uri) {
         (new App\Controllers\SupplierController())->pay();
         break;
 
+    case '/suppliers/delete':
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        (new App\Controllers\SupplierController())->delete();
+        break;
+
     // Administration: Agents & Partners (Protected)
     case '/agents':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
@@ -415,6 +420,11 @@ switch ($uri) {
         (new App\Controllers\BranchController())->update();
         break;
 
+    case '/branches/delete':
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        (new App\Controllers\BranchController())->delete();
+        break;
+
     case '/branches/toggle-status':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
         (new App\Controllers\BranchController())->toggleStatus();
@@ -422,31 +432,43 @@ switch ($uri) {
 
     // Administration: Staff & Roles (Protected: Admin Only)
     case '/staff':
+    case '/users':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
         (new App\Controllers\StaffController())->index();
         break;
 
     case '/staff/show':
+    case '/users/show':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
         (new App\Controllers\StaffController())->show();
         break;
 
     case '/staff/store':
+    case '/users/store':
         RoleMiddleware::authorize(['super-admin', 'admin']);
         (new App\Controllers\StaffController())->store();
         break;
 
     case '/staff/update':
+    case '/users/update':
         RoleMiddleware::authorize(['super-admin', 'admin']);
         (new App\Controllers\StaffController())->update();
         break;
 
+    case '/staff/delete':
+    case '/users/delete':
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        (new App\Controllers\StaffController())->delete();
+        break;
+
     case '/staff/toggle-active':
+    case '/users/toggle-active':
         RoleMiddleware::authorize(['super-admin', 'admin']);
         (new App\Controllers\StaffController())->toggleActive();
         break;
 
     case '/staff/reset-password':
+    case '/users/reset-password':
         RoleMiddleware::authorize(['super-admin', 'admin']);
         (new App\Controllers\StaffController())->resetPassword();
         break;

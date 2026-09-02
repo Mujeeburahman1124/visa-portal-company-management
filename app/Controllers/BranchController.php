@@ -118,4 +118,36 @@ class BranchController
 
         redirect('/branches', "Branch '{$branch['name']}' {$statusText}.", 'success');
     }
+
+    public function delete(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        $pdo = Database::getConnection();
+
+        $id = (int)($_POST['id'] ?? $_POST['branch_id'] ?? 0);
+        if ($id <= 0) {
+            redirect('/branches', 'Invalid branch identifier.', 'danger');
+        }
+
+        $appCount = (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE branch_id = {$id}")->fetchColumn();
+        if ($appCount > 0) {
+            redirect('/branches', "Cannot delete branch with {$appCount} linked visa applications. Deactivate it instead.", 'warning');
+        }
+
+        $stmt = $pdo->prepare("SELECT * FROM branches WHERE id = ?");
+        $stmt->execute([$id]);
+        $branch = $stmt->fetch();
+
+        if (!$branch) {
+            redirect('/branches', 'Branch not found.', 'danger');
+        }
+
+        $pdo->prepare("UPDATE users SET branch_id = NULL WHERE branch_id = ?")->execute([$id]);
+        $pdo->prepare("DELETE FROM branches WHERE id = ?")->execute([$id]);
+
+        AuditService::log('DELETE_BRANCH', 'Branches', $id, "Deleted branch {$branch['name']} ({$branch['code']})");
+
+        redirect('/branches', "Branch '{$branch['name']}' deleted successfully.", 'success');
+    }
 }
