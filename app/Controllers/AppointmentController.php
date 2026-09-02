@@ -91,12 +91,12 @@ class AppointmentController
 
         $stmt = $pdo->prepare("INSERT INTO appointments (
             application_id, customer_id, appointment_type, center_name, location_address,
-            appointment_date, appointment_time, reference_number, assigned_staff_id, status, document_file, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Scheduled', ?, ?)");
+            appointment_date, appointment_time, reference_number, assigned_staff_id, status, document_file, notes, created_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Scheduled', ?, ?, ?)");
 
         $stmt->execute([
             $appId, $customerId, $type, $centerName, $location,
-            $date, $time, $refNumber, $staffId, $docFileName, $notes
+            $date, $time, $refNumber, $staffId, $docFileName, $notes, $currentUser['id'] ?? 1
         ]);
         $aptId = (int)$pdo->lastInsertId();
 
