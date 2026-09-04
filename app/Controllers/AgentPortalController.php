@@ -248,6 +248,42 @@ class AgentPortalController
         redirect('/agent/applications');
     }
 
+    public function updateApplication(): void
+    {
+        $agent   = $this->guard();
+        $pdo     = Database::getConnection();
+        $agentId = (int)$agent['id'];
+
+        $appId    = (int)($_POST['application_id'] ?? 0);
+        $agentRef = trim($_POST['agent_reference'] ?? '');
+        $notes    = trim($_POST['notes'] ?? '');
+
+        // Verify application belongs to this agent
+        $check = $pdo->prepare("SELECT a.id, a.application_number, a.internal_notes FROM applications a JOIN agent_applications aa ON aa.application_id = a.id WHERE a.id = ? AND aa.agent_id = ?");
+        $check->execute([$appId, $agentId]);
+        $app = $check->fetch(PDO::FETCH_ASSOC);
+
+        if (!$app) {
+            set_flash('Application not found or unauthorized access.', 'danger');
+            redirect('/agent/applications');
+        }
+
+        // Update agent reference in agent_applications
+        $pdo->prepare("UPDATE agent_applications SET agent_reference = ? WHERE application_id = ? AND agent_id = ?")->execute([$agentRef, $appId, $agentId]);
+
+        // Append note to application if provided
+        if (!empty($notes)) {
+            $existingNotes = $app['internal_notes'] ?? '';
+            $timestamp = date('d M Y H:i');
+            $newNote = "[Agent Note - {$timestamp}]: {$notes}";
+            $combinedNotes = !empty($existingNotes) ? "{$existingNotes}\n{$newNote}" : $newNote;
+            $pdo->prepare("UPDATE applications SET internal_notes = ? WHERE id = ?")->execute([$combinedNotes, $appId]);
+        }
+
+        set_flash("Application {$app['application_number']} updated successfully.", 'success');
+        redirect('/agent/applications');
+    }
+
     public function profile(): void
     {
         $agent   = $this->guard();

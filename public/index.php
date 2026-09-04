@@ -746,6 +746,10 @@ switch ($uri) {
         (new App\Controllers\AgentPortalController())->applications();
         break;
 
+    case '/agent/applications/update':
+        (new App\Controllers\AgentPortalController())->updateApplication();
+        break;
+
     case '/agent/create-application':
         $agentCtrl = new App\Controllers\AgentPortalController();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
