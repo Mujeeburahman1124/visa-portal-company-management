@@ -37,15 +37,16 @@
         <label class="form-label small fw-semibold">Supplier Email</label>
         <div class="input-group">
           <span class="input-group-text"><i class="fa-solid fa-envelope text-muted"></i></span>
-          <input type="email" name="email" class="form-control" placeholder="supplier@embassyprocessing.com" required autofocus>
+          <input type="email" name="email" class="form-control" placeholder="processing@emiratesclearing.ae" value="processing@emiratesclearing.ae" required autofocus>
         </div>
       </div>
       <div class="mb-3">
         <label class="form-label small fw-semibold">Password</label>
         <div class="input-group">
           <span class="input-group-text"><i class="fa-solid fa-lock text-muted"></i></span>
-          <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+          <input type="password" name="password" class="form-control" placeholder="••••••••" value="password123" required>
         </div>
+        <div class="text-muted small mt-1" style="font-size: 0.72rem;">Demo password: <code>password123</code></div>
       </div>
       <button type="submit" class="btn btn-dark w-100 fw-semibold py-2">
         <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In to Supplier Portal

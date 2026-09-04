@@ -497,6 +497,7 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE agents ADD COLUMN whatsapp VARCHAR(50) NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE agents ADD COLUMN city VARCHAR(100) NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE agents ADD COLUMN country VARCHAR(100) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agents ADD COLUMN address TEXT NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE agents ADD COLUMN password_hash VARCHAR(255) NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE agents ADD COLUMN credit_limit DECIMAL(12,2) DEFAULT 0.00"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE agents ADD COLUMN current_balance DECIMAL(12,2) DEFAULT 0.00"); } catch (\Throwable $e) {}
@@ -504,6 +505,13 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE agents ADD COLUMN payment_terms VARCHAR(100) DEFAULT 'Net 30'"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE agents ADD COLUMN bank_details TEXT NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE agents ADD COLUMN last_login_at DATETIME NULL"); } catch (\Throwable $e) {}
+
+            // Safe ALTER TABLE migrations for agent_applications table
+            try { $pdo->exec("ALTER TABLE agent_applications ADD COLUMN agent_price DECIMAL(12,2) DEFAULT 0.00"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agent_applications ADD COLUMN agent_commission DECIMAL(12,2) DEFAULT 0.00"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agent_applications ADD COLUMN agent_reference VARCHAR(100) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agent_applications ADD COLUMN status VARCHAR(50) DEFAULT 'Active'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agent_applications ADD COLUMN notes TEXT NULL"); } catch (\Throwable $e) {}
 
             // Safe ALTER TABLE migrations for agent_payments table
             try { $pdo->exec("ALTER TABLE agent_payments ADD COLUMN application_id INT NULL AFTER agent_id"); } catch (\Throwable $e) {}

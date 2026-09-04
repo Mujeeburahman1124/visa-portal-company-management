@@ -84,6 +84,7 @@ $flash = get_flash();
             <tbody>
               <?php foreach ($checklist as $item): ?>
                 <?php
+                  if (!is_array($item)) continue;
                   $status = $item['status'] ?? 'PENDING';
                   $statusClass = 'bg-secondary-subtle text-dark';
                   $statusIcon = 'fa-clock';
@@ -97,10 +98,12 @@ $flash = get_flash();
                       $statusClass = 'bg-danger-subtle text-danger';
                       $statusIcon = 'fa-triangle-exclamation';
                   }
+                  $docName = $item['document_name'] ?? ($item['name'] ?? 'Required Document');
+                  $docTypeId = (int)($item['document_type_id'] ?? ($item['id'] ?? 0));
                 ?>
                 <tr>
                   <td>
-                    <div class="fw-bold text-dark"><?= e($item['document_name'] ?? $item['name']) ?></div>
+                    <div class="fw-bold text-dark"><?= e($docName) ?></div>
                     <?php if (!empty($item['file_name'])): ?>
                       <div class="text-muted font-monospace" style="font-size: 0.72rem;">
                         <i class="fa-solid fa-paperclip text-primary me-1"></i><?= e($item['file_name']) ?>
@@ -132,7 +135,7 @@ $flash = get_flash();
                   <td class="text-end">
                     <?php if ($status === 'REJECTED' || $status === 'ACTION_REQUIRED' || empty($item['file_path'])): ?>
                       <button type="button" class="btn btn-sm btn-primary py-1 px-3 fw-semibold shadow-sm" 
-                              onclick="openUploadForDoc(<?= (int)$item['document_type_id'] ?>, '<?= e(addslashes($item['document_name'] ?? $item['name'])) ?>')">
+                              onclick="openUploadForDoc(<?= $docTypeId ?>, '<?= e(addslashes($docName)) ?>')">
                         <i class="fa-solid fa-upload me-1"></i> Upload
                       </button>
                     <?php else: ?>
