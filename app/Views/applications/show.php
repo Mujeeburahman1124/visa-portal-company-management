@@ -44,7 +44,7 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
               <span class="badge badge-priority-<?= strtolower($app['priority']) ?>">
                 <?= e($app['priority']) ?> PRIORITY
               </span>
-              <button type="button" class="btn btn-light btn-sm health-meter <?= $healthClass ?> py-1 px-2" data-bs-toggle="modal" data-bs-target="#healthModal" title="Click to view health diagnosis">
+              <button type="button" class="btn btn-light btn-sm health-meter <?= $healthClass ?> py-1 px-2" data-bs-toggle="modal" data-bs-target="#healthModal" onclick="openModalById('healthModal')" title="Click to view health diagnosis">
                 <i class="fa-solid fa-heart-pulse me-1"></i> Health: <?= (int)$app['calculated_health'] ?>%
               </button>
             </div>
@@ -67,12 +67,12 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
           </a>
 
           <!-- Update Stage Button -->
-          <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#stageTransitionModal">
+          <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#stageTransitionModal" onclick="openModalById('stageTransitionModal')">
             <i class="fa-solid fa-forward-step me-1"></i> Update Stage
           </button>
 
           <!-- Approve Visa Button -->
-          <button type="button" class="btn btn-success btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#approveVisaModal">
+          <button type="button" class="btn btn-success btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#approveVisaModal" onclick="openModalById('approveVisaModal')">
             <i class="fa-solid fa-circle-check me-1"></i> Approve Visa
           </button>
 
@@ -82,12 +82,12 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
               <i class="fa-solid fa-gavel me-1"></i> Decisions
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; z-index: 1070;">
-              <li><button type="button" class="dropdown-item py-2 text-success fw-semibold" data-bs-toggle="modal" data-bs-target="#approveVisaModal"><i class="fa-solid fa-circle-check me-2"></i> Approve (Grant Visa)</button></li>
-              <li><button type="button" class="dropdown-item py-2 text-warning fw-semibold" data-bs-toggle="modal" data-bs-target="#returnVisaModal"><i class="fa-solid fa-rotate-left me-2"></i> Return for Modifications</button></li>
-              <li><button type="button" class="dropdown-item py-2 text-danger fw-semibold" data-bs-toggle="modal" data-bs-target="#rejectVisaModal"><i class="fa-solid fa-circle-xmark me-2"></i> Reject Application</button></li>
+              <li><button type="button" class="dropdown-item py-2 text-success fw-semibold" data-bs-toggle="modal" data-bs-target="#approveVisaModal" onclick="openModalById('approveVisaModal')"><i class="fa-solid fa-circle-check me-2"></i> Approve (Grant Visa)</button></li>
+              <li><button type="button" class="dropdown-item py-2 text-warning fw-semibold" data-bs-toggle="modal" data-bs-target="#returnVisaModal" onclick="openModalById('returnVisaModal')"><i class="fa-solid fa-rotate-left me-2"></i> Return for Modifications</button></li>
+              <li><button type="button" class="dropdown-item py-2 text-danger fw-semibold" data-bs-toggle="modal" data-bs-target="#rejectVisaModal" onclick="openModalById('rejectVisaModal')"><i class="fa-solid fa-circle-xmark me-2"></i> Reject Application</button></li>
               <li><hr class="dropdown-divider my-1"></li>
-              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#requestDocModal"><i class="fa-solid fa-file-circle-question text-primary me-2"></i> Request Additional Document</button></li>
-              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#addCommModal"><i class="fa-solid fa-phone text-info me-2"></i> Log Client Communication</button></li>
+              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#requestDocModal" onclick="openModalById('requestDocModal')"><i class="fa-solid fa-file-circle-question text-primary me-2"></i> Request Additional Document</button></li>
+              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#addCommModal" onclick="openModalById('addCommModal')"><i class="fa-solid fa-phone text-info me-2"></i> Log Client Communication</button></li>
             </ul>
           </div>
 
@@ -98,9 +98,9 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; z-index: 1070;">
               <li><a class="dropdown-item py-2" href="/applications/edit?id=<?= $app['id'] ?>"><i class="fa-solid fa-pen-to-square text-primary me-2"></i> Edit Details</a></li>
-              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#reassignStaffModal"><i class="fa-solid fa-user-gear text-info me-2"></i> Reassign Staff</button></li>
-              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#priorityModal"><i class="fa-solid fa-flag text-warning me-2"></i> Change Priority</button></li>
-              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#addNoteModal"><i class="fa-solid fa-note-sticky text-secondary me-2"></i> Add Internal Note</button></li>
+              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#reassignStaffModal" onclick="openModalById('reassignStaffModal')"><i class="fa-solid fa-user-gear text-info me-2"></i> Reassign Staff</button></li>
+              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#priorityModal" onclick="openModalById('priorityModal')"><i class="fa-solid fa-flag text-warning me-2"></i> Change Priority</button></li>
+              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#addNoteModal" onclick="openModalById('addNoteModal')"><i class="fa-solid fa-note-sticky text-secondary me-2"></i> Add Internal Note</button></li>
               <li><hr class="dropdown-divider my-1"></li>
               <li><a class="dropdown-item py-2" href="/payments/invoice?app_id=<?= $app['id'] ?>" target="_blank"><i class="fa-solid fa-file-invoice text-success me-2"></i> Print Invoice</a></li>
               <li>
@@ -168,7 +168,7 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
         </div>
         <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded">
           <span class="small text-muted"><i class="fa-solid fa-info-circle me-1"></i> Fulfill pending checklist items to advance</span>
-          <button type="button" class="btn btn-sm btn-warning text-dark py-1 px-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#stageTransitionModal">
+          <button type="button" class="btn btn-sm btn-warning text-dark py-1 px-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#stageTransitionModal" onclick="openModalById('stageTransitionModal')">
             <i class="fa-solid fa-circle-check me-1"></i> Advance Stage &rarr;
           </button>
         </div>
@@ -982,10 +982,10 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
               <?php if (!empty($supplierDetails)): ?>
                 <div class="row g-2 small">
                   <div class="col-sm-5 text-muted">Supplier / Vendor:</div>
-                  <div class="col-sm-7 fw-bold text-dark"><?= e($supplierDetails['name']) ?></div>
+                  <div class="col-sm-7 fw-bold text-dark"><?= e($supplierDetails['company_name'] ?? ($supplierDetails['name'] ?? '—')) ?></div>
 
                   <div class="col-sm-5 text-muted">Supplier Code:</div>
-                  <div class="col-sm-7"><span class="badge bg-light text-dark border"><?= e($supplierDetails['code']) ?></span></div>
+                  <div class="col-sm-7"><span class="badge bg-light text-dark border"><?= e($supplierDetails['supplier_code'] ?? ($supplierDetails['code'] ?? '—')) ?></span></div>
 
                   <div class="col-sm-5 text-muted">Country &amp; City:</div>
                   <div class="col-sm-7"><?= e($supplierDetails['country'] ?? '—') ?>, <?= e($supplierDetails['city'] ?? '—') ?></div>
@@ -1543,7 +1543,7 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
             <label class="form-label small fw-semibold">Select Document Requirement <span class="text-danger">*</span></label>
             <select name="document_type_id" class="form-select" required>
               <?php foreach ($documentChecklist as $dc): ?>
-                <option value="<?= $dc['document_type_id'] ?>"><?= e($dc['type_name']) ?></option>
+                <option value="<?= $dc['document_type_id'] ?? ($dc['id'] ?? 0) ?>"><?= e($dc['document_name'] ?? ($dc['type_name'] ?? ($dc['name'] ?? 'Document Requirement'))) ?></option>
               <?php endforeach; ?>
             </select>
           </div>
@@ -1961,6 +1961,31 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
 </div>
 
 <script>
+window.openModalById = function(modalId) {
+  const el = document.getElementById(modalId);
+  if (!el) {
+    console.error('Modal element not found: ' + modalId);
+    return;
+  }
+  try {
+    if (window.bootstrap && bootstrap.Modal) {
+      let modalInstance = bootstrap.Modal.getInstance(el);
+      if (!modalInstance) {
+        modalInstance = new bootstrap.Modal(el);
+      }
+      modalInstance.show();
+    } else {
+      el.classList.add('show');
+      el.style.display = 'block';
+    }
+  } catch (err) {
+    console.warn('Bootstrap modal trigger fallback:', err);
+    if (window.bootstrap && bootstrap.Modal) {
+      new bootstrap.Modal(el).show();
+    }
+  }
+};
+
 function toggleDecisionFields() {
   const dec = document.getElementById('decisionSelect').value;
   const appFields = document.getElementById('approvedFields');
