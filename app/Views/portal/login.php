@@ -50,7 +50,7 @@ $flash = get_flash();
         <label class="form-label small fw-semibold text-secondary mb-1" style="font-size: 0.85rem;">Email or Customer Code</label>
         <div class="input-group">
           <span class="input-group-text bg-light border-end-0 text-muted" style="font-size: 0.85rem;"><i class="fa-solid fa-envelope"></i></span>
-          <input type="text" name="email" id="custLoginEmail" class="form-control border-start-0 ps-0" placeholder="e.g. rahul.sharma@cloudtech.ae" value="rahul.sharma@cloudtech.ae" required style="font-size: 0.9rem; height: 40px;">
+          <input type="text" name="email" id="custLoginEmail" class="form-control border-start-0 ps-0" placeholder="e.g. mujeeburahman@gmail.com" value="mujeeburahman@gmail.com" required style="font-size: 0.9rem; height: 40px;">
         </div>
       </div>
 
@@ -58,9 +58,9 @@ $flash = get_flash();
         <label class="form-label small fw-semibold text-secondary mb-1" style="font-size: 0.85rem;">Password</label>
         <div class="input-group">
           <span class="input-group-text bg-light border-end-0 text-muted" style="font-size: 0.85rem;"><i class="fa-solid fa-lock"></i></span>
-          <input type="password" name="password" id="custLoginPass" class="form-control border-start-0 px-0" placeholder="••••••••" value="password123" required style="font-size: 0.9rem; height: 40px;">
+          <input type="password" name="password" id="custLoginPass" class="form-control border-start-0 px-0" placeholder="••••••••" value="customer123" required style="font-size: 0.9rem; height: 40px;">
         </div>
-        <div class="text-muted small mt-1" style="font-size: 0.72rem;">Demo password: <code>password123</code></div>
+        <div class="text-muted small mt-1" style="font-size: 0.72rem;">Demo password: <code>customer123</code></div>
       </div>
 
       <button type="submit" class="btn btn-primary w-100 fw-semibold shadow-sm rounded-2 mb-2.5" style="height: 42px; font-size: 0.92rem;">
