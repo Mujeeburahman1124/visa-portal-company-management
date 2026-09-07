@@ -67,40 +67,40 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
           </a>
 
           <!-- Update Stage Button -->
-          <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" onclick="_safeOpenModal('stageTransitionModal')">
+          <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#stageTransitionModal" onclick="openModalById('stageTransitionModal')">
             <i class="fa-solid fa-forward-step me-1"></i> Update Stage
           </button>
 
           <!-- Approve Visa Button -->
-          <button type="button" class="btn btn-success btn-sm px-3 shadow-sm" onclick="_safeOpenModal('approveVisaModal')">
+          <button type="button" class="btn btn-success btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#approveVisaModal" onclick="openModalById('approveVisaModal')">
             <i class="fa-solid fa-circle-check me-1"></i> Approve Visa
           </button>
 
           <!-- Reject / Return Decision Dropdown -->
           <div class="dropdown">
-            <button class="btn btn-outline-dark btn-sm px-3" type="button" onclick="_toggleDropdown(this)">
-              <i class="fa-solid fa-gavel me-1"></i> Decisions <i class="fa-solid fa-caret-down ms-1"></i>
+            <button class="btn btn-outline-dark btn-sm px-3 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fa-solid fa-gavel me-1"></i> Decisions
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; z-index: 1070;">
-              <li><button type="button" class="dropdown-item py-2 text-success fw-semibold" onclick="_safeOpenModal('approveVisaModal'); _closeAllDropdowns()"><i class="fa-solid fa-circle-check me-2"></i> Approve (Grant Visa)</button></li>
-              <li><button type="button" class="dropdown-item py-2 text-warning fw-semibold" onclick="_safeOpenModal('returnVisaModal'); _closeAllDropdowns()"><i class="fa-solid fa-rotate-left me-2"></i> Return for Modifications</button></li>
-              <li><button type="button" class="dropdown-item py-2 text-danger fw-semibold" onclick="_safeOpenModal('rejectVisaModal'); _closeAllDropdowns()"><i class="fa-solid fa-circle-xmark me-2"></i> Reject Application</button></li>
+              <li><button type="button" class="dropdown-item py-2 text-success fw-semibold" data-bs-toggle="modal" data-bs-target="#approveVisaModal" onclick="openModalById('approveVisaModal')"><i class="fa-solid fa-circle-check me-2"></i> Approve (Grant Visa)</button></li>
+              <li><button type="button" class="dropdown-item py-2 text-warning fw-semibold" data-bs-toggle="modal" data-bs-target="#returnVisaModal" onclick="openModalById('returnVisaModal')"><i class="fa-solid fa-rotate-left me-2"></i> Return for Modifications</button></li>
+              <li><button type="button" class="dropdown-item py-2 text-danger fw-semibold" data-bs-toggle="modal" data-bs-target="#rejectVisaModal" onclick="openModalById('rejectVisaModal')"><i class="fa-solid fa-circle-xmark me-2"></i> Reject Application</button></li>
               <li><hr class="dropdown-divider my-1"></li>
-              <li><button type="button" class="dropdown-item py-2" onclick="_safeOpenModal('requestDocModal'); _closeAllDropdowns()"><i class="fa-solid fa-file-circle-question text-primary me-2"></i> Request Additional Document</button></li>
-              <li><button type="button" class="dropdown-item py-2" onclick="_safeOpenModal('addCommModal'); _closeAllDropdowns()"><i class="fa-solid fa-phone text-info me-2"></i> Log Client Communication</button></li>
+              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#requestDocModal" onclick="openModalById('requestDocModal')"><i class="fa-solid fa-file-circle-question text-primary me-2"></i> Request Additional Document</button></li>
+              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#addCommModal" onclick="openModalById('addCommModal')"><i class="fa-solid fa-phone text-info me-2"></i> Log Client Communication</button></li>
             </ul>
           </div>
 
           <!-- Quick Actions Dropdown -->
           <div class="dropdown">
-            <button class="btn btn-outline-secondary btn-sm px-2" type="button" onclick="_toggleDropdown(this)">
+            <button class="btn btn-outline-secondary btn-sm px-2 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
               <i class="fa-solid fa-ellipsis-vertical"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; z-index: 1070;">
               <li><a class="dropdown-item py-2" href="/applications/edit?id=<?= $app['id'] ?>"><i class="fa-solid fa-pen-to-square text-primary me-2"></i> Edit Details</a></li>
-              <li><button type="button" class="dropdown-item py-2" onclick="_safeOpenModal('reassignStaffModal'); _closeAllDropdowns()"><i class="fa-solid fa-user-gear text-info me-2"></i> Reassign Staff</button></li>
-              <li><button type="button" class="dropdown-item py-2" onclick="_safeOpenModal('priorityModal'); _closeAllDropdowns()"><i class="fa-solid fa-flag text-warning me-2"></i> Change Priority</button></li>
-              <li><button type="button" class="dropdown-item py-2" onclick="_safeOpenModal('addNoteModal'); _closeAllDropdowns()"><i class="fa-solid fa-note-sticky text-secondary me-2"></i> Add Internal Note</button></li>
+              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#reassignStaffModal" onclick="openModalById('reassignStaffModal')"><i class="fa-solid fa-user-gear text-info me-2"></i> Reassign Staff</button></li>
+              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#priorityModal" onclick="openModalById('priorityModal')"><i class="fa-solid fa-flag text-warning me-2"></i> Change Priority</button></li>
+              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#addNoteModal" onclick="openModalById('addNoteModal')"><i class="fa-solid fa-note-sticky text-secondary me-2"></i> Add Internal Note</button></li>
               <li><hr class="dropdown-divider my-1"></li>
               <li><a class="dropdown-item py-2" href="/payments/invoice?app_id=<?= $app['id'] ?>" target="_blank"><i class="fa-solid fa-file-invoice text-success me-2"></i> Print Invoice</a></li>
               <li>
@@ -168,7 +168,7 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
         </div>
         <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded">
           <span class="small text-muted"><i class="fa-solid fa-info-circle me-1"></i> Fulfill pending checklist items to advance</span>
-          <button type="button" class="btn btn-sm btn-warning text-dark py-1 px-3 fw-semibold" onclick="_safeOpenModal('stageTransitionModal')">
+          <button type="button" class="btn btn-sm btn-warning text-dark py-1 px-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#stageTransitionModal" onclick="openModalById('stageTransitionModal')">
             <i class="fa-solid fa-circle-check me-1"></i> Advance Stage &rarr;
           </button>
         </div>
@@ -1961,173 +1961,51 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
 </div>
 
 <script>
-/* ===================================================================
-   APPLICATION SHOW PAGE — SELF-CONTAINED MODAL & BUTTON ENGINE
-   Works with or without Bootstrap's JS successfully initialising
-   =================================================================== */
-
-// Safe modal open: tries Bootstrap API, falls back to manual CSS toggle
-function _safeOpenModal(modalId) {
-  var el = document.getElementById(modalId);
-  if (!el) { console.error('[Modal] Element not found:', modalId); return; }
-
-  // Try native Bootstrap 5 first
-  if (window.bootstrap && window.bootstrap.Modal) {
-    try {
-      var inst = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
-      inst.show();
-      return;
-    } catch(e) { console.warn('[Modal] Bootstrap error, using fallback', e); }
-  }
-
-  // Pure-CSS / Vanilla fallback — no Bootstrap JS needed
-  document.querySelectorAll('.modal.show').forEach(function(m) {
-    if (m !== el) {
-      m.classList.remove('show');
-      m.style.display = 'none';
-    }
-  });
-  el.style.display = 'block';
-  el.classList.add('show');
-  el.removeAttribute('aria-hidden');
-  el.setAttribute('aria-modal', 'true');
-  document.body.classList.add('modal-open');
-  document.body.style.overflow = 'hidden';
-
-  var bd = document.getElementById('_appModalBackdrop');
-  if (!bd) {
-    bd = document.createElement('div');
-    bd.id = '_appModalBackdrop';
-    bd.className = 'modal-backdrop fade show';
-    document.body.appendChild(bd);
-  }
-
-  // Close on backdrop click
-  el.onclick = function(ev) {
-    if (ev.target === el) { _safeCloseModal(modalId); }
-  };
-}
-
-// Safe modal close
-function _safeCloseModal(modalId) {
-  var el = document.getElementById(modalId);
-  if (!el) return;
-  if (window.bootstrap && window.bootstrap.Modal) {
-    try { var inst = bootstrap.Modal.getInstance(el); if(inst) { inst.hide(); return; } } catch(e) {}
-  }
-  el.classList.remove('show');
-  el.style.display = 'none';
-  el.setAttribute('aria-hidden', 'true');
-  el.removeAttribute('aria-modal');
-  document.body.classList.remove('modal-open');
-  document.body.style.overflow = '';
-  var bd = document.getElementById('_appModalBackdrop');
-  if (bd) bd.remove();
-}
-
-// Expose globally
-window.openModalById = _safeOpenModal;
-window.closeModalById = _safeCloseModal;
-
-/* ---- data-bs-dismiss="modal" delegation ---- */
-document.addEventListener('click', function(e) {
-  // Close button inside a modal
-  var dismissBtn = e.target.closest('[data-bs-dismiss="modal"]');
-  if (dismissBtn) {
-    var parentModal = dismissBtn.closest('.modal');
-    if (parentModal) _safeCloseModal(parentModal.id);
-    return;
-  }
-});
-
-/* ---- ESC key closes open modal ---- */
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    var open = document.querySelector('.modal.show');
-    if (open) _safeCloseModal(open.id);
-  }
-});
-
-/* ---- Document functions used by this page ---- */
 function toggleDecisionFields() {
-  var dec = document.getElementById('decisionSelect').value;
-  var appFields = document.getElementById('approvedFields');
-  var rejFields = document.getElementById('rejectedFields');
-  var rejInput  = document.getElementById('rejectionReasonInput');
+  const dec = document.getElementById('decisionSelect')?.value;
+  const appFields = document.getElementById('approvedFields');
+  const rejFields = document.getElementById('rejectedFields');
+  const rejInput = document.getElementById('rejectionReasonInput');
+
   if (dec === 'Approved') {
-    appFields.classList.remove('d-none');
-    rejFields.classList.add('d-none');
-    rejInput.removeAttribute('required');
+    appFields?.classList.remove('d-none');
+    rejFields?.classList.add('d-none');
+    rejInput?.removeAttribute('required');
   } else {
-    appFields.classList.add('d-none');
-    rejFields.classList.remove('d-none');
-    rejInput.setAttribute('required', 'required');
+    appFields?.classList.add('d-none');
+    rejFields?.classList.remove('d-none');
+    rejInput?.setAttribute('required', 'required');
   }
 }
 
 function showStageDetails(name, state, officer, date, comments) {
-  document.getElementById('modalStageName').innerText    = name;
-  document.getElementById('modalStageState').innerText   = state;
-  document.getElementById('modalStageOfficer').innerText = officer  || 'Unassigned';
-  document.getElementById('modalStageDate').innerText    = date     || 'Pending';
-  document.getElementById('modalStageComments').innerText= comments || 'No specific notes recorded for this stage.';
-  _safeOpenModal('stageDetailModal');
+  const n = document.getElementById('modalStageName'); if (n) n.innerText = name;
+  const s = document.getElementById('modalStageState'); if (s) s.innerText = state;
+  const o = document.getElementById('modalStageOfficer'); if (o) o.innerText = officer || 'Unassigned';
+  const d = document.getElementById('modalStageDate'); if (d) d.innerText = date || 'Pending';
+  const c = document.getElementById('modalStageComments'); if (c) c.innerText = comments || 'No specific notes recorded for this stage.';
+
+  openModalById('stageDetailModal');
 }
 
 function openAppDocUploadModal(appId, typeId, typeName) {
-  document.getElementById('appDocAppId').value = appId;
-  document.getElementById('appDocTypeId').value = typeId;
-  document.getElementById('appDocTypeNameDisplay').value = typeName;
-  _safeOpenModal('appDocUploadModal');
+  const a = document.getElementById('appDocAppId'); if (a) a.value = appId;
+  const t = document.getElementById('appDocTypeId'); if (t) t.value = typeId;
+  const d = document.getElementById('appDocTypeNameDisplay'); if (d) d.value = typeName;
+  openModalById('appDocUploadModal');
 }
 
 function openAppDocRejectModal(docId, docName) {
-  document.getElementById('appDocRejectDocId').value = docId;
-  document.getElementById('appDocRejectDocName').innerText = docName;
-  _safeOpenModal('appDocRejectModal');
+  const d = document.getElementById('appDocRejectDocId'); if (d) d.value = docId;
+  const n = document.getElementById('appDocRejectDocName'); if (n) n.innerText = docName;
+  openModalById('appDocRejectModal');
 }
 
 function openAppDocReplaceModal(docId, docName) {
-  document.getElementById('appDocReplaceDocId').value = docId;
-  document.getElementById('appDocReplaceDocName').innerText = docName;
-  _safeOpenModal('appDocReplaceModal');
+  const d = document.getElementById('appDocReplaceDocId'); if (d) d.value = docId;
+  const n = document.getElementById('appDocReplaceDocName'); if (n) n.innerText = docName;
+  openModalById('appDocReplaceModal');
 }
-
-/* ---- Standalone Dropdown Toggle (no Bootstrap JS needed) ---- */
-function _toggleDropdown(btn) {
-  var parent = btn.closest('.dropdown') || btn.parentElement;
-  var menu = parent ? parent.querySelector('.dropdown-menu') : null;
-  if (!menu) return;
-
-  // Close other dropdowns
-  _closeAllDropdowns(menu);
-
-  var isOpen = menu.classList.contains('show');
-  if (isOpen) {
-    menu.classList.remove('show');
-    btn.setAttribute('aria-expanded', 'false');
-  } else {
-    menu.classList.add('show');
-    btn.setAttribute('aria-expanded', 'true');
-  }
-}
-
-function _closeAllDropdowns(except) {
-  document.querySelectorAll('.dropdown-menu.show').forEach(function(m) {
-    if (m !== except) {
-      m.classList.remove('show');
-      var btn = m.previousElementSibling;
-      if (btn) btn.setAttribute('aria-expanded', 'false');
-    }
-  });
-}
-
-// Close dropdowns on outside click
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.dropdown')) {
-    _closeAllDropdowns();
-  }
-});
 </script>
 
 <!-- Generate Payment Link Modal -->

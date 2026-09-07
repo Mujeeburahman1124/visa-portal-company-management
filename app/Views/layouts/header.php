@@ -11,7 +11,6 @@
   <link rel="apple-touch-icon" href="/assets/images/logo.png">
   
   <!-- Bootstrap 5 CSS -->
-  <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- FontAwesome 6 Icons -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
@@ -22,6 +21,9 @@
   
   <!-- Application CSS -->
   <link rel="stylesheet" href="/assets/css/main.css?v=7.0.0">
+
+  <!-- Core Bootstrap 5 Bundle JS (Loaded early so modal/dropdown APIs exist everywhere) -->
+  <script src="/assets/js/bootstrap.bundle.min.js"></script>
 </head>
 <body class="app-body">
 <div class="app-wrapper" id="appWrapper">

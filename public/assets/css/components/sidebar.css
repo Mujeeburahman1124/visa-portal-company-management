@@ -141,6 +141,7 @@
   -webkit-backdrop-filter: blur(6px);
   z-index: 1040;
   opacity: 0;
+  pointer-events: none !important;
   transition: opacity var(--vt-transition-normal);
 }
 
@@ -148,4 +149,5 @@
 body.sidebar-mobile-open .sidebar-overlay {
   display: block !important;
   opacity: 1 !important;
+  pointer-events: auto !important;
 }
