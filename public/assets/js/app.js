@@ -1,21 +1,92 @@
 /**
  * VISA TRACK — Staff Visa Tracking & Management System
- * Core JavaScript Application Shell Logic
+ * Core JavaScript Application Shell & Interactive Component Engine
  */
+
+// 1. Global Standalone Modal Utilities (Usable anywhere in the application)
+window.openModalById = function (modalId) {
+  const el = document.getElementById(modalId);
+  if (!el) {
+    console.error('Modal element not found:', modalId);
+    return;
+  }
+
+  // Try Bootstrap 5 API first if available
+  if (window.bootstrap && window.bootstrap.Modal) {
+    try {
+      let modalInstance = bootstrap.Modal.getInstance(el);
+      if (!modalInstance) {
+        modalInstance = new bootstrap.Modal(el);
+      }
+      modalInstance.show();
+      return;
+    } catch (e) {
+      console.warn('Bootstrap Modal instance warning, using fallback:', e);
+    }
+  }
+
+  // Pure Standalone Vanilla JS Modal Fallback
+  el.classList.add('show');
+  el.style.display = 'block';
+  el.removeAttribute('aria-hidden');
+  el.setAttribute('aria-modal', 'true');
+  el.setAttribute('role', 'dialog');
+  document.body.classList.add('modal-open');
+
+  // Backdrop Manager
+  let backdrop = document.getElementById('custom-modal-backdrop');
+  if (!backdrop) {
+    backdrop = document.createElement('div');
+    backdrop.id = 'custom-modal-backdrop';
+    backdrop.className = 'modal-backdrop fade show';
+    document.body.appendChild(backdrop);
+  }
+};
+
+window.closeModalById = function (modalId) {
+  const el = document.getElementById(modalId);
+  if (!el) return;
+
+  if (window.bootstrap && window.bootstrap.Modal) {
+    try {
+      const modalInstance = bootstrap.Modal.getInstance(el);
+      if (modalInstance) {
+        modalInstance.hide();
+        return;
+      }
+    } catch (e) {}
+  }
+
+  // Standalone Vanilla JS Close Fallback
+  el.classList.remove('show');
+  el.style.display = 'none';
+  el.setAttribute('aria-hidden', 'true');
+  el.removeAttribute('aria-modal');
+  document.body.classList.remove('modal-open');
+
+  const backdrop = document.getElementById('custom-modal-backdrop');
+  if (backdrop) backdrop.remove();
+};
 
 document.addEventListener('DOMContentLoaded', function () {
   'use strict';
 
-  // 1. Initialize Bootstrap Tooltips
-  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-  tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl, {
-      trigger: 'hover',
-      container: 'body'
-    });
-  });
+  // 2. Initialize Bootstrap Tooltips safely
+  if (window.bootstrap && window.bootstrap.Tooltip) {
+    try {
+      const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+          trigger: 'hover',
+          container: 'body'
+        });
+      });
+    } catch (err) {
+      console.warn('Tooltip initialization notice:', err);
+    }
+  }
 
-  // 2. Desktop Sidebar Collapse / Expand with LocalStorage Persistence
+  // 3. Desktop Sidebar Collapse / Expand with LocalStorage Persistence
   const desktopSidebarBtn = document.getElementById('desktopSidebarToggleBtn');
   const isCollapsed = localStorage.getItem('vt_sidebar_collapsed') === 'true';
 
@@ -29,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function () {
     localStorage.setItem('vt_sidebar_collapsed', currentlyCollapsed);
   });
 
-  // 3. Mobile Sidebar Drawer Toggle & Overlay Click
+  // 4. Mobile Sidebar Drawer Toggle & Overlay Click
   const mobileToggleBtn = document.getElementById('sidebarToggleBtn');
   const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
   const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -53,14 +124,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // 4. Global Search Live Database Query & Shortcut (Ctrl + K)
+  // 5. Global Search Live Database Query & Shortcut (Ctrl + K)
   const searchInput = document.getElementById('globalSearchInput');
   const searchResultsDropdown = document.getElementById('globalSearchResults');
   const searchResultsContent = document.getElementById('searchResultsContent');
   const closeSearchBtn = document.getElementById('closeSearchDropdown');
   let searchDebounceTimer = null;
 
-  // Keyboard shortcut (Ctrl+K or Cmd+K)
   document.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
@@ -135,14 +205,76 @@ document.addEventListener('DOMContentLoaded', function () {
     searchResultsDropdown?.classList.add('d-none');
   });
 
-  // Close search on clicking outside
+  // 6. Global Event Delegation for Modals, Dropdowns & Backdrops
   document.addEventListener('click', function (e) {
-    if (!searchInput?.contains(e.target) && !searchResultsDropdown?.contains(e.target)) {
-      searchResultsDropdown?.classList.add('d-none');
+    // 6A. Handle Dropdown Toggles (Decisions button, Quick Actions button, etc.)
+    const dropdownToggle = e.target.closest('[data-bs-toggle="dropdown"]');
+    if (dropdownToggle) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const dropdownParent = dropdownToggle.closest('.dropdown') || dropdownToggle.parentElement;
+      const dropdownMenu = dropdownParent ? dropdownParent.querySelector('.dropdown-menu') : dropdownToggle.nextElementSibling;
+
+      // Close all other open dropdowns
+      document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+        if (menu !== dropdownMenu) {
+          menu.classList.remove('show');
+        }
+      });
+
+      if (dropdownMenu) {
+        const isCurrentlyOpen = dropdownMenu.classList.contains('show');
+        if (isCurrentlyOpen) {
+          dropdownMenu.classList.remove('show');
+          dropdownToggle.setAttribute('aria-expanded', 'false');
+        } else {
+          dropdownMenu.classList.add('show');
+          dropdownToggle.setAttribute('aria-expanded', 'true');
+        }
+      }
+      return;
+    } else {
+      // Close dropdowns when clicking outside
+      if (!e.target.closest('.dropdown-menu')) {
+        document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+          menu.classList.remove('show');
+        });
+        document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(btn => {
+          btn.setAttribute('aria-expanded', 'false');
+        });
+      }
+    }
+
+    // 6B. Handle Modal Opening via data-bs-toggle="modal"
+    const modalTrigger = e.target.closest('[data-bs-toggle="modal"]');
+    if (modalTrigger) {
+      const targetAttr = modalTrigger.getAttribute('data-bs-target') || modalTrigger.getAttribute('href');
+      if (targetAttr && targetAttr.startsWith('#')) {
+        e.preventDefault();
+        const modalId = targetAttr.substring(1);
+        window.openModalById(modalId);
+        return;
+      }
+    }
+
+    // 6C. Handle Modal Closing via data-bs-dismiss="modal" or backdrop click
+    const dismissTrigger = e.target.closest('[data-bs-dismiss="modal"]');
+    if (dismissTrigger) {
+      const targetModal = dismissTrigger.closest('.modal');
+      if (targetModal) {
+        window.closeModalById(targetModal.id);
+      }
+      return;
+    }
+
+    // Backdrop click close fallback
+    if (e.target.classList.contains('modal') && e.target.classList.contains('show')) {
+      window.closeModalById(e.target.id);
     }
   });
 
-  // 5. Global Toast Notification Utility
+  // 7. Global Toast Notification Utility
   window.showToast = function (message, type = 'info', duration = 4000) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
@@ -153,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const toastEl = document.createElement('div');
     toastEl.id = toastId;
-    toastEl.className = `toast align-items-center ${bgClass} border-0 shadow`;
+    toastEl.className = `toast align-items-center ${bgClass} border-0 shadow show`;
     toastEl.setAttribute('role', 'alert');
     toastEl.setAttribute('aria-live', 'assertive');
     toastEl.setAttribute('aria-atomic', 'true');
@@ -163,17 +295,16 @@ document.addEventListener('DOMContentLoaded', function () {
           <i class="fa-solid ${iconClass}"></i>
           <span>${escapeHtml(message)}</span>
         </div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.closest('.toast').remove()" aria-label="Close"></button>
       </div>
     `;
 
     container.appendChild(toastEl);
-    const bsToast = new bootstrap.Toast(toastEl, { delay: duration });
-    bsToast.show();
-
-    toastEl.addEventListener('hidden.bs.toast', function () {
-      toastEl.remove();
-    });
+    setTimeout(() => {
+      if (toastEl && toastEl.parentElement) {
+        toastEl.remove();
+      }
+    }, duration);
   };
 
   function escapeHtml(str) {

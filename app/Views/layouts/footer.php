@@ -50,7 +50,8 @@
 </div>
 
 <!-- Core JS Dependencies -->
+<script src="/assets/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="/assets/js/app.js?v=1.3.0"></script>
+<script src="/assets/js/app.js?v=2.0.0"></script>
 </body>
 </html>
