@@ -957,10 +957,24 @@ class ApplicationController
         }
 
         // Upsert into visa_approvals
-        $pdo->prepare("INSERT INTO visa_approvals (application_id, visa_number, issue_date, expiry_date, entry_before_date, maximum_stay, validity, approved_visa_file, approval_notes, approved_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE visa_number=VALUES(visa_number), issue_date=VALUES(issue_date), expiry_date=VALUES(expiry_date), entry_before_date=VALUES(entry_before_date), maximum_stay=VALUES(maximum_stay), validity=VALUES(validity), approved_visa_file=COALESCE(VALUES(approved_visa_file), approved_visa_file), approval_notes=VALUES(approval_notes)")
-            ->execute([$appId, $visaNumber, $issueDate, $expiryDate, $entryBefore, $maxStay, $validity, $filePath, $notes, $user['id'] ?? null]);
+        try {
+            $pdo->prepare("INSERT INTO visa_approvals (application_id, visa_number, issue_date, expiry_date, entry_before_date, max_stay, validity, visa_file, notes, approved_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE visa_number=VALUES(visa_number), issue_date=VALUES(issue_date), expiry_date=VALUES(expiry_date), entry_before_date=VALUES(entry_before_date), max_stay=VALUES(max_stay), validity=VALUES(validity), visa_file=COALESCE(VALUES(visa_file), visa_file), notes=VALUES(notes)")
+                ->execute([$appId, $visaNumber, $issueDate, $expiryDate, $entryBefore, $maxStay, $validity, $filePath, $notes, $user['id'] ?? null]);
+        } catch (\Throwable $e) {
+            try {
+                $pdo->prepare("INSERT INTO visa_approvals (application_id, visa_number, issue_date, expiry_date, entry_before_date, maximum_stay, validity, approved_visa_file, approval_notes, approved_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE visa_number=VALUES(visa_number), issue_date=VALUES(issue_date), expiry_date=VALUES(expiry_date), entry_before_date=VALUES(entry_before_date), maximum_stay=VALUES(maximum_stay), validity=VALUES(validity), approved_visa_file=COALESCE(VALUES(approved_visa_file), approved_visa_file), approval_notes=VALUES(approval_notes)")
+                    ->execute([$appId, $visaNumber, $issueDate, $expiryDate, $entryBefore, $maxStay, $validity, $filePath, $notes, $user['id'] ?? null]);
+            } catch (\Throwable $e2) {
+                $pdo->prepare("INSERT INTO visa_approvals (application_id, visa_number, issue_date, expiry_date, approved_by)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE visa_number=VALUES(visa_number), issue_date=VALUES(issue_date), expiry_date=VALUES(expiry_date)")
+                    ->execute([$appId, $visaNumber, $issueDate, $expiryDate, $user['id'] ?? null]);
+            }
+        }
 
         // Transition status
         StageTransitionService::transition($appId, 'Visa Issued & Completed', 'Approved', "Visa officially granted. Visa Number: {$visaNumber}", (int)($user['id'] ?? 0));

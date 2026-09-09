@@ -822,6 +822,16 @@ class DatabaseBootstrapper
         try { $pdo->exec("ALTER TABLE applications ADD COLUMN notes TEXT NULL"); } catch (\Throwable $e) {}
         try { $pdo->exec("ALTER TABLE applications ADD COLUMN discount_amount DECIMAL(10,2) DEFAULT 0.00"); } catch (\Throwable $e) {}
 
+        // Safe column migrations for visa_approvals
+        try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN maximum_stay VARCHAR(100) DEFAULT '30 Days'"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN max_stay VARCHAR(100) DEFAULT '30 Days'"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN approved_visa_file VARCHAR(255) NULL"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN visa_file VARCHAR(255) NULL"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN approval_notes TEXT NULL"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN notes TEXT NULL"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN validity VARCHAR(100) DEFAULT '60 Days'"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN entry_before_date DATE NULL"); } catch (\Throwable $e) {}
+
         try {
             $pdo->exec("ALTER TABLE visa_requirements ADD COLUMN is_critical INTEGER DEFAULT 0");
         } catch (\Throwable $e) {}

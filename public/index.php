@@ -278,6 +278,12 @@ switch ($uri) {
         (new App\Controllers\PaymentController())->store();
         break;
 
+    case '/payments/wallet-deposit':
+    case '/customers/wallet-deposit':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
+        (new App\Controllers\PaymentController())->walletDeposit();
+        break;
+
     case '/payments/refund':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
         (new App\Controllers\PaymentController())->refund();

@@ -3,7 +3,7 @@ $currentUri = $_SERVER['REQUEST_URI'] ?? '/portal/dashboard';
 $customer = auth_customer();
 $pdo = \App\Config\Database::getConnection();
 $customerId = (int)($customer['id'] ?? 0);
-$unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE (customer_id = {$customerId} OR (recipient_type = 'Customer' AND customer_id IS NULL)) AND is_read = 0")->fetchColumn();
+$unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE customer_id = {$customerId} AND is_read = 0")->fetchColumn();
 ?>
 
 <!-- Customer Portal Header Navbar (MS Luxury Obsidian, Emerald & Sapphire Gradient) -->

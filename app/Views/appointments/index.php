@@ -71,11 +71,17 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                   <span class="badge <?= $badge ?>"><?= e($apt['status']) ?></span>
                 </td>
                 <td class="text-end">
-                  <div class="dropdown">
-                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle py-1 px-2" data-bs-toggle="dropdown">Status</button>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-outline-primary btn-sm py-1 px-2.5 fw-semibold" 
+                      onclick="openAptStatusModal(<?= (int)$apt['id'] ?>, '<?= e($apt['status']) ?>', '<?= e($apt['application_number']) ?>', '<?= e($apt['customer_name']) ?>')">
+                      Status <i class="fa-solid fa-pen-to-square ms-1"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle dropdown-toggle-split py-1 px-2" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
+                      <span class="visually-hidden">Toggle Dropdown</span>
+                    </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 small">
                       <li>
-                        <form action="/appointments/status" method="POST">
+                        <form action="/appointments/status" method="POST" id="aptFormConf_<?= $apt['id'] ?>">
                           <?= csrf_field() ?>
                           <input type="hidden" name="appointment_id" value="<?= $apt['id'] ?>">
                           <input type="hidden" name="status" value="Confirmed">
@@ -83,7 +89,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                         </form>
                       </li>
                       <li>
-                        <form action="/appointments/status" method="POST">
+                        <form action="/appointments/status" method="POST" id="aptFormComp_<?= $apt['id'] ?>">
                           <?= csrf_field() ?>
                           <input type="hidden" name="appointment_id" value="<?= $apt['id'] ?>">
                           <input type="hidden" name="status" value="Completed">
@@ -91,11 +97,19 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                         </form>
                       </li>
                       <li>
-                        <form action="/appointments/status" method="POST">
+                        <form action="/appointments/status" method="POST" id="aptFormMiss_<?= $apt['id'] ?>">
                           <?= csrf_field() ?>
                           <input type="hidden" name="appointment_id" value="<?= $apt['id'] ?>">
                           <input type="hidden" name="status" value="Missed">
                           <button type="submit" class="dropdown-item py-2 text-danger"><i class="fa-solid fa-circle-xmark text-danger me-2"></i> Mark Missed</button>
+                        </form>
+                      </li>
+                      <li>
+                        <form action="/appointments/status" method="POST" id="aptFormCanc_<?= $apt['id'] ?>">
+                          <?= csrf_field() ?>
+                          <input type="hidden" name="appointment_id" value="<?= $apt['id'] ?>">
+                          <input type="hidden" name="status" value="Cancelled">
+                          <button type="submit" class="dropdown-item py-2 text-secondary"><i class="fa-solid fa-ban text-secondary me-2"></i> Mark Cancelled</button>
                         </form>
                       </li>
                     </ul>
@@ -106,6 +120,43 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <?php endif; ?>
         </tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: UPDATE APPOINTMENT STATUS -->
+<div class="modal fade" id="updateAptStatusModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-primary text-white">
+        <h6 class="modal-title fw-bold"><i class="fa-solid fa-calendar-check me-2"></i> Update Appointment Status</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/appointments/status" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="appointment_id" id="modalAptId" value="0">
+        <div class="modal-body p-4">
+          <div class="mb-3 p-3 bg-light rounded-3 border">
+            <div class="small text-muted">Application &amp; Applicant:</div>
+            <div class="fw-bold text-dark fs-6" id="modalAptAppInfo">—</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Select New Status <span class="text-danger">*</span></label>
+            <select name="status" id="modalAptStatusSelect" class="form-select form-select-lg" required>
+              <option value="Confirmed">Confirmed (Biometrics/Interview Confirmed)</option>
+              <option value="Completed">Completed (Applicant Attended Successfully)</option>
+              <option value="Scheduled">Scheduled (Upcoming / Pending)</option>
+              <option value="Missed">Missed (Applicant Did Not Attend)</option>
+              <option value="Cancelled">Cancelled (Appointment Withdrawn)</option>
+              <option value="Rescheduled">Rescheduled</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold shadow-sm">Save Status</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -174,5 +225,22 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </div>
   </div>
 </div>
+
+<script>
+function openAptStatusModal(aptId, currentStatus, appNo, custName) {
+  document.getElementById('modalAptId').value = aptId;
+  document.getElementById('modalAptAppInfo').innerText = appNo + ' (' + custName + ')';
+  const sel = document.getElementById('modalAptStatusSelect');
+  for (let i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === currentStatus) {
+      sel.selectedIndex = i;
+      break;
+    }
+  }
+  const modalEl = document.getElementById('updateAptStatusModal');
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  modal.show();
+}
+</script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

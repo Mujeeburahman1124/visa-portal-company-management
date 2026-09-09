@@ -244,10 +244,26 @@ class StaffController
             }
         }
 
-        // Unlink or reassign staff references
-        $pdo->prepare("UPDATE applications SET assigned_staff_id = NULL WHERE assigned_staff_id = ?")->execute([$id]);
-        $pdo->prepare("UPDATE tasks SET assigned_to = NULL WHERE assigned_to = ?")->execute([$id]);
-        $pdo->prepare("DELETE FROM activity_logs WHERE user_id = ?")->execute([$id]);
+        // Unlink or clean up staff foreign key references
+        try { $pdo->prepare("DELETE FROM application_assignments WHERE assigned_to = ? OR assigned_by = ?")->execute([$id, $id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("UPDATE applications SET assigned_staff_id = NULL WHERE assigned_staff_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("UPDATE tasks SET assigned_to = NULL WHERE assigned_to = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("UPDATE tasks SET created_by = NULL WHERE created_by = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("UPDATE tasks SET completed_by = NULL WHERE completed_by = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("UPDATE appointments SET assigned_staff_id = NULL WHERE assigned_staff_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("UPDATE appointments SET assigned_to = NULL WHERE assigned_to = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("UPDATE appointments SET created_by = NULL WHERE created_by = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("UPDATE visa_approvals SET approved_by = NULL WHERE approved_by = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("UPDATE visa_rejections SET rejected_by = NULL WHERE rejected_by = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("UPDATE visa_returns SET returned_by = NULL WHERE returned_by = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("UPDATE application_stages SET changed_by = NULL WHERE changed_by = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("UPDATE application_status_history SET changed_by = NULL WHERE changed_by = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("UPDATE documents SET verified_by = NULL WHERE verified_by = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("UPDATE documents SET uploaded_by = NULL WHERE uploaded_by = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("DELETE FROM notifications WHERE user_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("DELETE FROM user_sessions WHERE user_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("DELETE FROM activity_logs WHERE user_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+        try { $pdo->prepare("DELETE FROM audit_logs WHERE user_id = ?")->execute([$id]); } catch (\Throwable $e) {}
         $pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$id]);
 
         AuditService::log('DELETE_STAFF', 'Staff', $id, "Permanently deleted staff member {$member['name']} ({$member['email']})");

@@ -157,6 +157,20 @@ class PaymentController
         $receiptNumber = FinanceService::generateReceiptNumber();
         $invoiceNumber = FinanceService::generateInvoiceNumber($appId);
 
+        $currentBalance = (float)($app['balance_amount'] ?? 0.00);
+        $totalAppAmount = (float)($app['total_amount'] ?? 0.00);
+        $dueAmount = $currentBalance > 0 ? $currentBalance : $totalAppAmount;
+        $overpaidExcess = ($dueAmount > 0 && $amount > $dueAmount) ? ($amount - $dueAmount) : 0.00;
+
+        // If paid via customer wallet, debit wallet
+        if ($paymentMethod === 'Customer Wallet') {
+            try {
+                \App\Services\WalletService::debit($customerId, $amount, "Payment for {$app['application_number']} (Receipt: {$receiptNumber})", $appId, $currentUser['id'] ?? null);
+            } catch (\Throwable $e) {
+                redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Wallet payment failed: ' . $e->getMessage(), 'danger');
+            }
+        }
+
         $payStmt = $pdo->prepare("INSERT INTO payments (
             payment_number, invoice_number, application_id, customer_id, amount, currency,
             payment_date, payment_method, transaction_reference, payment_type, status, received_by, notes
@@ -170,6 +184,20 @@ class PaymentController
 
         // Recalculate Application Financials
         FinanceService::recalculateApplication($appId);
+
+        // Auto-topup customer wallet if customer paid excess/remaining balance at office
+        if ($overpaidExcess > 0 && $paymentMethod !== 'Customer Wallet') {
+            try {
+                \App\Services\WalletService::credit(
+                    $customerId,
+                    $overpaidExcess,
+                    "Automatic Wallet Top-up from office overpayment on {$app['application_number']} (Receipt: {$receiptNumber})",
+                    $paymentId,
+                    $appId,
+                    $currentUser['id'] ?? null
+                );
+            } catch (\Throwable $e) {}
+        }
 
         // Dispatch Central Real-Time Notification (Email + WhatsApp + In-App)
         try {
@@ -188,13 +216,59 @@ class PaymentController
             ]);
         } catch (\Throwable $e) {}
 
-        AuditService::log('PAYMENT_RECEIVED', 'Payments', $paymentId, "Received payment of $" . number_format($amount, 2) . " (Receipt {$receiptNumber}) for {$app['application_number']}", [
+        AuditService::log('PAYMENT_RECEIVED', 'Payments', $paymentId, "Received payment of $" . number_format($amount, 2) . " (Receipt {$receiptNumber}) for {$app['application_number']}" . ($overpaidExcess > 0 ? " (Excess $" . number_format($overpaidExcess, 2) . " credited to wallet)" : ''), [
             'amount' => $amount,
             'method' => $paymentMethod,
             'receipt' => $receiptNumber,
+            'wallet_topup' => $overpaidExcess,
         ]);
 
-        redirect("/payments/receipt?id={$paymentId}", "Payment recorded successfully. Receipt generated.", 'success');
+        redirect("/payments/receipt?id={$paymentId}", "Payment recorded successfully." . ($overpaidExcess > 0 ? " Excess $" . number_format($overpaidExcess, 2) . " was automatically credited to customer's wallet." : '') . " Receipt generated.", 'success');
+    }
+
+    /**
+     * Admin Direct Customer Wallet Deposit
+     */
+    public function walletDeposit(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $currentUser = auth_user();
+
+        $customerId = (int)($_POST['customer_id'] ?? 0);
+        $amount = (float)($_POST['amount'] ?? 0.00);
+        $paymentMethod = trim($_POST['payment_method'] ?? 'Cash at Office');
+        $txnRef = trim($_POST['transaction_reference'] ?? '');
+        $notes = trim($_POST['notes'] ?? '');
+
+        if ($customerId <= 0 || $amount <= 0) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Please specify a valid customer and deposit amount.', 'danger');
+        }
+
+        $custStmt = $pdo->prepare("SELECT id, full_name, customer_code FROM customers WHERE id = ?");
+        $custStmt->execute([$customerId]);
+        $customer = $custStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$customer) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Customer not found.', 'danger');
+        }
+
+        try {
+            $desc = "Office Wallet Deposit via {$paymentMethod}" . ($txnRef ? " (Ref: {$txnRef})" : '') . ($notes ? " - {$notes}" : '');
+            $res = \App\Services\WalletService::credit($customerId, $amount, $desc, null, null, $currentUser['id'] ?? null);
+
+            // Also record a payment receipt record for accounting
+            $receiptNumber = FinanceService::generateReceiptNumber();
+            $pdo->prepare("INSERT INTO payments (
+                payment_number, customer_id, amount, currency, payment_date, payment_method,
+                transaction_reference, wallet_transaction_id, payment_type, status, received_by, notes
+            ) VALUES (?, ?, ?, 'USD', CURRENT_DATE, ?, ?, ?, 'Wallet Topup', 'Completed', ?, ?)")
+            ->execute([$receiptNumber, $customerId, $amount, $paymentMethod, $txnRef, $res['transaction_id'] ?? null, $currentUser['id'] ?? null, $notes]);
+
+            redirect($_SERVER['HTTP_REFERER'] ?? '/payments', "Successfully deposited $" . number_format($amount, 2) . " into {$customer['full_name']}'s digital wallet.", 'success');
+        } catch (\Throwable $e) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Deposit failed: ' . $e->getMessage(), 'danger');
+        }
     }
 
     /**

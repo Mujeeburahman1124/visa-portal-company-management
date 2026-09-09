@@ -223,11 +223,11 @@ class PortalController
 
         // Mark read if requested
         if (isset($_GET['mark_all_read'])) {
-            $pdo->prepare("UPDATE notifications SET is_read = 1, read_at = CURRENT_TIMESTAMP WHERE customer_id = ? OR recipient_type = 'Customer'")->execute([$customerId]);
+            $pdo->prepare("UPDATE notifications SET is_read = 1, read_at = CURRENT_TIMESTAMP WHERE customer_id = ?")->execute([$customerId]);
             redirect('/portal/notifications', 'All notifications marked as read.', 'success');
         }
 
-        $stmt = $pdo->prepare("SELECT * FROM notifications WHERE customer_id = ? OR recipient_type = 'Customer' ORDER BY created_at DESC LIMIT 50");
+        $stmt = $pdo->prepare("SELECT * FROM notifications WHERE customer_id = ? ORDER BY created_at DESC LIMIT 50");
         $stmt->execute([$customerId]);
         $notifications = $stmt->fetchAll();
 
