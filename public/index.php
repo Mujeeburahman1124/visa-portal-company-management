@@ -100,6 +100,12 @@ switch ($uri) {
         (new App\Controllers\TrackingController())->index();
         break;
 
+    case '/tracking/show':
+    case '/tracking/view':
+    case '/tracking/details':
+        (new App\Controllers\TrackingController())->show();
+        break;
+
     // Core Operations: Visa Applications
     case '/applications':
         (new App\Controllers\ApplicationController())->index();

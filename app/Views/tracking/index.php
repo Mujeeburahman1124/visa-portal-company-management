@@ -41,6 +41,37 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
     </div>
   </div>
 
+  <!-- Quick Track Search Bar (High Visibility) -->
+  <div class="card card-enterprise mb-4 border-0 shadow-sm bg-light">
+    <div class="card-body p-3">
+      <form action="/tracking" method="GET" class="row g-2 align-items-center">
+        <div class="col-12 col-md-auto">
+          <label class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+            <i class="fa-solid fa-magnifying-glass-location text-primary fs-5"></i>
+            <span>Quick Track Visa:</span>
+          </label>
+        </div>
+        <div class="col-12 col-md-6 col-lg-5">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-search text-muted"></i></span>
+            <input type="text" name="quick_track" class="form-control border-start-0 font-monospace" placeholder="Enter App Ref (e.g. MSV-2026-000001), Passport #, Visa #, or Customer Mobile..." value="<?= htmlspecialchars($_GET['quick_track'] ?? '') ?>" required>
+          </div>
+        </div>
+        <div class="col-12 col-md-auto d-flex gap-2">
+          <button type="submit" class="btn btn-primary btn-sm px-3 fw-bold">
+            <i class="fa-solid fa-route me-1"></i> Track Visa
+          </button>
+          <?php if (!empty($_GET['quick_track'])): ?>
+            <a href="/tracking" class="btn btn-outline-secondary btn-sm">Clear</a>
+          <?php endif; ?>
+        </div>
+        <div class="col-12 text-muted small mt-1">
+          Quickly track any applicant's complete visa journey, live lifecycle status, and verification progress.
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Multi-Criteria Advanced Filter Panel (100% Responsive) -->
   <div class="card card-enterprise mb-4 border-0 shadow-sm">
     <div class="card-body p-3">
@@ -159,7 +190,7 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
       <!-- TABULAR TRACKING VIEW (100% Responsive) -->
       <div class="card card-enterprise border-0 shadow-sm mb-4">
         <div class="table-responsive" style="-webkit-overflow-scrolling: touch;">
-          <table class="table table-custom table-hover align-middle mb-0" style="min-width: 1050px;">
+          <table class="table table-custom table-hover align-middle mb-0" style="min-width: 1100px;">
             <thead class="table-light">
               <tr class="small text-muted text-uppercase">
                 <th style="min-width: 130px;">App Ref &amp; Date</th>
@@ -169,9 +200,9 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
                 <th style="min-width: 180px;">Destination &amp; Visa Type</th>
                 <th style="min-width: 120px;">Visa Number</th>
                 <th style="min-width: 160px;">Current Status / Stage</th>
-                <th style="min-width: 160px;">Staff &amp; Supplier</th>
-                <th style="min-width: 80px;">Health</th>
-                <th class="text-end" style="min-width: 90px;">Actions</th>
+                <th style="min-width: 150px;">Staff &amp; Supplier</th>
+                <th style="min-width: 75px;">Health</th>
+                <th class="text-end" style="min-width: 160px;">Track Action</th>
               </tr>
             </thead>
             <tbody>
@@ -182,7 +213,7 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
               ?>
                 <tr>
                   <td>
-                    <a href="/applications/show?id=<?= $app['id'] ?>" class="fw-bold text-primary text-decoration-none text-nowrap">
+                    <a href="/tracking/show?id=<?= $app['id'] ?>" class="fw-bold text-primary text-decoration-none text-nowrap">
                       <?= e($app['application_number']) ?>
                     </a>
                     <div class="small text-muted text-nowrap"><?= date('M d, Y', strtotime($app['application_date'] ?? $app['created_at'])) ?></div>
@@ -227,12 +258,12 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
                     </span>
                   </td>
                   <td class="text-end">
-                    <div class="btn-group btn-group-sm">
-                      <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-outline-primary" title="View Application Details">
-                        <i class="fa-solid fa-folder-open"></i>
+                    <div class="d-flex align-items-center justify-content-end gap-1">
+                      <a href="/tracking/show?id=<?= $app['id'] ?>" class="btn btn-sm btn-primary fw-semibold px-2.5 py-1 text-nowrap shadow-sm" title="Track Visa Complete Journey">
+                        <i class="fa-solid fa-magnifying-glass-location me-1"></i> Track Visa
                       </a>
-                      <a href="/applications/show?id=<?= $app['id'] ?>#history-pane" class="btn btn-outline-secondary" title="View Status Timeline">
-                        <i class="fa-solid fa-timeline"></i>
+                      <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-sm btn-outline-secondary px-2 py-1" title="Open Workspace">
+                        <i class="fa-solid fa-folder-open"></i>
                       </a>
                     </div>
                   </td>
@@ -255,7 +286,7 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
         <div class="card card-enterprise mb-4 border-0 shadow-sm">
           <div class="card-header bg-white d-flex flex-wrap align-items-center justify-content-between gap-3 py-3 border-bottom">
             <div class="d-flex align-items-center gap-3">
-              <a href="/applications/show?id=<?= $app['id'] ?>" class="fw-bold fs-6 text-primary text-decoration-none">
+              <a href="/tracking/show?id=<?= $app['id'] ?>" class="fw-bold fs-6 text-primary text-decoration-none">
                 <?= e($app['application_number']) ?>
               </a>
               <span class="fs-5"><?= $app['flag_emoji'] ?></span>
@@ -264,8 +295,11 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
             </div>
             <div class="d-flex align-items-center gap-2">
               <span class="badge bg-primary bg-opacity-10 text-primary border"><?= e($app['current_stage']) ?></span>
-              <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-sm btn-outline-primary">
-                <i class="fa-solid fa-arrow-right me-1"></i> Open Workspace
+              <a href="/tracking/show?id=<?= $app['id'] ?>" class="btn btn-sm btn-primary fw-semibold">
+                <i class="fa-solid fa-magnifying-glass-location me-1"></i> Track Visa
+              </a>
+              <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-sm btn-outline-secondary">
+                <i class="fa-solid fa-folder-open me-1"></i> Workspace
               </a>
             </div>
           </div>
