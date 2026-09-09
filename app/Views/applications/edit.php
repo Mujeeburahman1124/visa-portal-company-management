@@ -80,7 +80,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
               <div class="col-md-6">
                 <label class="form-label small fw-semibold text-secondary">Embassy Submission Date</label>
-                <input type="date" name="submission_date" class="form-control" value="<?= e($app['submission_date'] ?? '') ?>">
+                <input type="date" name="submission_date" class="form-control" value="<?= e($app['submission_date'] ?? $app['application_date'] ?? '') ?>">
               </div>
               <div class="col-md-6">
                 <label class="form-label small fw-semibold text-secondary">Target Completion Date</label>
@@ -116,7 +116,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               </div>
               <div class="col-md-4">
                 <label class="form-label small fw-semibold text-secondary">Discount Amount ($)</label>
-                <input type="number" step="0.01" name="discount_amount" class="form-control" value="<?= e($app['discount_amount'] ?? '0.00') ?>">
+                <input type="number" step="0.01" name="discount_amount" class="form-control" value="<?= e($app['discount_amount'] ?? $app['discount'] ?? '0.00') ?>">
               </div>
               <div class="col-md-4">
                 <label class="form-label small fw-semibold text-secondary">Tax / VAT ($)</label>
@@ -132,7 +132,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <h6 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-note-sticky me-2"></i> Application Case Notes</h6>
           </div>
           <div class="card-body p-4">
-            <textarea name="notes" class="form-control" rows="3" placeholder="Case notes, embassy appointment reference, etc..."><?= e($app['notes'] ?? '') ?></textarea>
+            <textarea name="notes" class="form-control" rows="3" placeholder="Case notes, embassy appointment reference, etc..."><?= e($app['internal_notes'] ?? $app['notes'] ?? '') ?></textarea>
           </div>
         </div>
       </div>

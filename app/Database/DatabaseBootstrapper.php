@@ -814,13 +814,13 @@ class DatabaseBootstrapper
         }
 
         // Safe column migrations for application operational tracking
-        try {
-            $pdo->exec("ALTER TABLE applications ADD COLUMN next_action TEXT NULL");
-        } catch (\Throwable $e) {}
-
-        try {
-            $pdo->exec("ALTER TABLE applications ADD COLUMN next_action_due_date DATE NULL");
-        } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE applications ADD COLUMN next_action TEXT NULL"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE applications ADD COLUMN next_action_due_date DATE NULL"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE applications ADD COLUMN submission_date DATE NULL"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE applications ADD COLUMN embassy_fee DECIMAL(10,2) DEFAULT 0.00"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE applications ADD COLUMN service_fee DECIMAL(10,2) DEFAULT 0.00"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE applications ADD COLUMN notes TEXT NULL"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE applications ADD COLUMN discount_amount DECIMAL(10,2) DEFAULT 0.00"); } catch (\Throwable $e) {}
 
         try {
             $pdo->exec("ALTER TABLE visa_requirements ADD COLUMN is_critical INTEGER DEFAULT 0");

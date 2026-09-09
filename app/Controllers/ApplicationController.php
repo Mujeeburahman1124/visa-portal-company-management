@@ -1154,7 +1154,7 @@ class ApplicationController
         $passportNumber = trim($_POST['passport_number'] ?? '');
         $travelDate = !empty($_POST['travel_date']) ? $_POST['travel_date'] : null;
         $returnDate = !empty($_POST['return_date']) ? $_POST['return_date'] : null;
-        $submissionDate = !empty($_POST['submission_date']) ? $_POST['submission_date'] : null;
+        $applicationDate = !empty($_POST['submission_date']) ? $_POST['submission_date'] : (!empty($_POST['application_date']) ? $_POST['application_date'] : date('Y-m-d'));
         $expectedDate = !empty($_POST['expected_completion_date']) ? $_POST['expected_completion_date'] : null;
         $priority = trim($_POST['priority'] ?? 'Standard');
         $branchId = (int)($_POST['branch_id'] ?? 1);
@@ -1164,26 +1164,64 @@ class ApplicationController
         $supplierCost = (float)($_POST['supplier_cost'] ?? 0.00);
         $embassyFee = (float)($_POST['embassy_fee'] ?? 0.00);
         $serviceFee = (float)($_POST['service_fee'] ?? 0.00);
-        $discountAmount = (float)($_POST['discount_amount'] ?? 0.00);
+        $discountAmount = (float)($_POST['discount_amount'] ?? ($_POST['discount'] ?? 0.00));
         $taxAmount = (float)($_POST['tax_amount'] ?? 0.00);
-        $notes = trim($_POST['notes'] ?? '');
+        $otherExpenses = $embassyFee + $serviceFee;
+        $notes = trim($_POST['notes'] ?? ($_POST['internal_notes'] ?? ''));
 
-        $totalAmount = $sellingPrice > 0 ? $sellingPrice : ($supplierCost + $embassyFee + $serviceFee + $taxAmount - $discountAmount);
+        // Fetch current paid amount
+        $currStmt = $pdo->prepare("SELECT paid_amount, destination_country, visa_category, visa_type, visa_duration, entry_type, processing_type FROM applications WHERE id = ?");
+        $currStmt->execute([$id]);
+        $currentApp = $currStmt->fetch(PDO::FETCH_ASSOC);
+        $paidAmount = (float)($currentApp['paid_amount'] ?? 0.00);
+
+        // Fetch selected visa service details to sync metadata if changed
+        $destinationCountry = $currentApp['destination_country'] ?? '';
+        $visaCategory = $currentApp['visa_category'] ?? 'General';
+        $visaType = $currentApp['visa_type'] ?? 'Standard Visa';
+        $visaDuration = $currentApp['visa_duration'] ?? '30 Days';
+        $entryType = $currentApp['entry_type'] ?? 'Single Entry';
+        $processingType = $currentApp['processing_type'] ?? 'Normal';
+
+        if ($visaServiceId > 0) {
+            $srvStmt = $pdo->prepare("SELECT vs.*, ct.name as country_name, ct.iso_code as country_code, vc.name as category_name 
+                FROM visa_services vs 
+                JOIN countries ct ON vs.country_id = ct.id 
+                LEFT JOIN visa_categories vc ON vs.category_id = vc.id 
+                WHERE vs.id = ?");
+            $srvStmt->execute([$visaServiceId]);
+            $service = $srvStmt->fetch(PDO::FETCH_ASSOC);
+            if ($service) {
+                $destinationCountry = $service['country_name'] ?? $destinationCountry;
+                $visaCategory = $service['category_name'] ?? $visaCategory;
+                $visaType = $service['name'] ?? $visaType;
+                $visaDuration = $service['duration'] ?? $visaDuration;
+                $entryType = $service['entry_type'] ?? $entryType;
+                $processingType = $service['processing_type'] ?? $processingType;
+            }
+        }
+
+        $totalAmount = $sellingPrice > 0 ? max(0.0, $sellingPrice - $discountAmount + $taxAmount) : max(0.0, $supplierCost + $otherExpenses + $taxAmount - $discountAmount);
+        $balanceAmount = max(0.0, $totalAmount - $paidAmount);
+        $grossProfit = max(0.0, $totalAmount - $supplierCost - $otherExpenses);
 
         $stmt = $pdo->prepare("UPDATE applications SET 
             visa_service_id = ?, passport_number = ?, travel_date = ?, return_date = ?, 
-            submission_date = ?, expected_completion_date = ?, priority = ?, 
+            application_date = ?, expected_completion_date = ?, priority = ?, 
             branch_id = ?, supplier_id = ?, assigned_staff_id = ?, 
-            selling_price = ?, supplier_cost = ?, embassy_fee = ?, service_fee = ?, 
-            discount_amount = ?, tax_amount = ?, total_amount = ?, notes = ?, 
-            updated_at = CURRENT_TIMESTAMP
+            destination_country = ?, visa_category = ?, visa_type = ?, visa_duration = ?, entry_type = ?, processing_type = ?,
+            selling_price = ?, supplier_cost = ?, other_expenses = ?, discount = ?, 
+            discount_amount = ?, tax_amount = ?, total_amount = ?, balance_amount = ?, gross_profit = ?,
+            internal_notes = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?");
         $stmt->execute([
             $visaServiceId, $passportNumber, $travelDate, $returnDate,
-            $submissionDate, $expectedDate, $priority,
+            $applicationDate, $expectedDate, $priority,
             $branchId, $supplierId, $assignedStaffId,
-            $sellingPrice, $supplierCost, $embassyFee, $serviceFee,
-            $discountAmount, $taxAmount, $totalAmount, $notes,
+            $destinationCountry, $visaCategory, $visaType, $visaDuration, $entryType, $processingType,
+            $sellingPrice, $supplierCost, $otherExpenses, $discountAmount,
+            $discountAmount, $taxAmount, $totalAmount, $balanceAmount, $grossProfit,
+            $notes,
             $id
         ]);
 
