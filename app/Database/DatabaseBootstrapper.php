@@ -9,8 +9,15 @@ use PDO;
 
 class DatabaseBootstrapper
 {
+    private static bool $initialized = false;
+
     public static function init(): void
     {
+        if (self::$initialized) {
+            return;
+        }
+        self::$initialized = true;
+
         $pdo = Database::getConnection();
         
         // Check if schema is initialized
@@ -600,7 +607,90 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN password_hash TEXT NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN last_login_at DATETIME NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN portal_enabled INTEGER DEFAULT 0"); } catch (\Throwable $e) {}
+
+            // Safe ALTER TABLE migrations for SQLite agents table
+            try { $pdo->exec("ALTER TABLE agents ADD COLUMN current_balance REAL DEFAULT 0.00"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agents ADD COLUMN credit_limit REAL DEFAULT 0.00"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agents ADD COLUMN commission_rate REAL DEFAULT 0.00"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agents ADD COLUMN whatsapp TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agents ADD COLUMN city TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agents ADD COLUMN country TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agents ADD COLUMN address TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agents ADD COLUMN password_hash TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agents ADD COLUMN payment_terms TEXT DEFAULT 'Net 30'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agents ADD COLUMN bank_details TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agents ADD COLUMN notes TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agents ADD COLUMN is_active INTEGER DEFAULT 1"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agents ADD COLUMN last_login_at DATETIME NULL"); } catch (\Throwable $e) {}
         }
+
+        // Ensure payment_links table exists for both drivers
+        if ($driver === 'mysql') {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS payment_links (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                link_token VARCHAR(100) NOT NULL UNIQUE,
+                link_code VARCHAR(50) NOT NULL,
+                customer_id INT NULL,
+                application_id INT NULL,
+                title VARCHAR(255) NOT NULL,
+                description TEXT NULL,
+                amount DECIMAL(12,2) NOT NULL,
+                currency VARCHAR(10) DEFAULT 'USD',
+                recipient_name VARCHAR(150) NULL,
+                recipient_email VARCHAR(150) NULL,
+                recipient_mobile VARCHAR(50) NULL,
+                status VARCHAR(30) DEFAULT 'ACTIVE',
+                expires_at DATETIME NOT NULL,
+                paid_at DATETIME NULL,
+                payment_method VARCHAR(50) NULL,
+                transaction_reference VARCHAR(150) NULL,
+                payer_notes TEXT NULL,
+                allow_partial_payment TINYINT(1) DEFAULT 0,
+                created_by INT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_pl_token (link_token),
+                INDEX idx_pl_cust (customer_id),
+                INDEX idx_pl_app (application_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+        } else {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS payment_links (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                link_token TEXT NOT NULL UNIQUE,
+                link_code TEXT NOT NULL,
+                customer_id INTEGER NULL,
+                application_id INTEGER NULL,
+                title TEXT NOT NULL,
+                description TEXT NULL,
+                amount REAL NOT NULL,
+                currency TEXT DEFAULT 'USD',
+                recipient_name TEXT NULL,
+                recipient_email TEXT NULL,
+                recipient_mobile TEXT NULL,
+                status TEXT DEFAULT 'ACTIVE',
+                expires_at DATETIME NOT NULL,
+                paid_at DATETIME NULL,
+                payment_method TEXT NULL,
+                transaction_reference TEXT NULL,
+                payer_notes TEXT NULL,
+                allow_partial_payment INTEGER DEFAULT 0,
+                created_by INTEGER NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );");
+        }
+
+        // Seed default demo agent if table is empty
+        try {
+            $agCount = (int)$pdo->query("SELECT COUNT(*) FROM agents")->fetchColumn();
+            if ($agCount === 0) {
+                $ins = $driver === 'mysql' ? 'INSERT IGNORE INTO' : 'INSERT OR IGNORE INTO';
+                $agentPassHash = password_hash('agent123', PASSWORD_DEFAULT);
+                $pdo->prepare("{$ins} agents (agent_code, company_name, contact_person, mobile, email, password_hash, country, city, is_active) 
+                    VALUES ('AGT-001', 'Skyline Travel Partners', 'Sarah Agent', '+971507776655', 'agent@example.com', ?, 'United Arab Emirates', 'Dubai', 1)")
+                    ->execute([$agentPassHash]);
+            }
+        } catch (\Throwable $e) {}
 
         // Ensure communications table exists for SQLite
         if ($driver === 'sqlite') {
@@ -784,14 +874,16 @@ class DatabaseBootstrapper
             ['Zimbabwe','ZW','ZWE','🇿🇼','+263','ZWG','Africa'],
         ];
         // Insert with name, iso_code, flag_emoji, currency, region
-        $stCountry = $pdo->prepare("{$insIgnore} countries (name, iso_code, flag_emoji, currency, region) VALUES (?, ?, ?, ?, ?)");
-        foreach ($worldCountries as $c) {
-            $stCountry->execute([$c[0], $c[1], $c[3], $c[5], $c[6]]);
-        }
-        // Always back-fill/update currency, region, iso3_code, phone_code for all countries
-        $stUpdate = $pdo->prepare("UPDATE countries SET iso3_code = ?, phone_code = ?, currency = ?, region = ? WHERE iso_code = ?");
-        foreach ($worldCountries as $c) {
-            $stUpdate->execute([$c[2], $c[4], $c[5], $c[6], $c[1]]);
+        $countryCount = (int)$pdo->query("SELECT COUNT(*) FROM countries")->fetchColumn();
+        if ($countryCount === 0) {
+            $stCountry = $pdo->prepare("{$insIgnore} countries (name, iso_code, flag_emoji, currency, region) VALUES (?, ?, ?, ?, ?)");
+            foreach ($worldCountries as $c) {
+                $stCountry->execute([$c[0], $c[1], $c[3], $c[5], $c[6]]);
+            }
+            $stUpdate = $pdo->prepare("UPDATE countries SET iso3_code = ?, phone_code = ?, currency = ?, region = ? WHERE iso_code = ?");
+            foreach ($worldCountries as $c) {
+                $stUpdate->execute([$c[2], $c[4], $c[5], $c[6], $c[1]]);
+            }
         }
 
         // Seed system_settings default keys
