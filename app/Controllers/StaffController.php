@@ -136,7 +136,7 @@ class StaffController
 
         $name = trim($_POST['name'] ?? '');
         $email = trim($_POST['email'] ?? '');
-        $password = $_POST['password'] ?? 'password123';
+        $password = !empty($_POST['password']) ? trim($_POST['password']) : \App\Services\PasswordGeneratorService::generate(10, 'STAFF@');
         $roleId = (int)($_POST['role_id'] ?? 4);
         $branchId = !empty($_POST['branch_id']) ? (int)$_POST['branch_id'] : 1;
         $phone = trim($_POST['phone'] ?? '');
@@ -168,7 +168,7 @@ class StaffController
         $appUrl = (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000');
         $loginUrl = rtrim($appUrl, '/') . '/login';
 
-        // Dispatch Welcome Onboarding Email with Temporary Password
+        // Dispatch Welcome Onboarding Email with Auto-Generated Password
         try {
             $emailSubject = "Welcome to " . \App\Config\App::COMPANY_NAME . " — Staff Portal Access Credentials";
             $emailBody = "
@@ -177,12 +177,12 @@ class StaffController
                 <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin: 20px 0;'>
                     <h4 style='margin-top: 0; color: #1e3a8a; font-size: 1.1em;'>Your Portal Login Credentials</h4>
                     <p style='margin: 6px 0;'><strong>Official Login Email:</strong> <span style='color: #2563eb;'>{$email}</span></p>
-                    <p style='margin: 6px 0;'><strong>Temporary Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #0f172a; font-size: 1.1em;'>{$password}</code></p>
+                    <p style='margin: 6px 0;'><strong>Auto-Generated Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #0f172a; font-size: 1.1em;'>{$password}</code></p>
                     <p style='margin: 6px 0;'><strong>Assigned Role:</strong> {$roleName}</p>
                     <p style='margin: 6px 0;'><strong>Designation:</strong> {$designation}</p>
                     <p style='margin: 6px 0;'><strong>Branch:</strong> {$branchName}</p>
                 </div>
-                <p style='color: #dc2626; font-size: 0.9em;'><strong>Security Requirement:</strong> Please log in and change your temporary password upon your first sign-in.</p>
+                <p style='color: #dc2626; font-size: 0.9em;'><strong>Security Requirement:</strong> Please log in and change your auto-generated temporary password upon your first sign-in.</p>
                 <p style='text-align: center; margin-top: 25px;'>
                     <a href='{$loginUrl}' style='background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>Access Staff Portal &rarr;</a>
                 </p>
@@ -211,7 +211,7 @@ class StaffController
 
         AuditService::log('CREATE_STAFF', 'Staff', $newId, "Created staff member {$name} ({$email}) with initial temporary password");
 
-        redirect('/staff', "Staff officer '{$name}' created successfully. Onboarding email with temporary credentials has been sent to '{$email}'.", 'success');
+        redirect('/staff', "Staff officer '{$name}' created successfully. Auto password: {$password}", 'success');
     }
 
     public function delete(): void
@@ -347,10 +347,10 @@ class StaffController
         $pdo = Database::getConnection();
 
         $id = (int)($_POST['id'] ?? 0);
-        $newPassword = $_POST['new_password'] ?? 'password123';
+        $newPassword = !empty($_POST['new_password']) ? trim($_POST['new_password']) : \App\Services\PasswordGeneratorService::generate(10, 'STAFF@');
 
-        if ($id <= 0 || empty($newPassword)) {
-            redirect('/staff', 'Password cannot be empty.', 'danger');
+        if ($id <= 0) {
+            redirect('/staff', 'Staff ID cannot be empty.', 'danger');
         }
 
         $stmt = $pdo->prepare("SELECT name, email FROM users WHERE id = ?");
@@ -365,8 +365,33 @@ class StaffController
         $stmt = $pdo->prepare("UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
         $stmt->execute([$passwordHash, $id]);
 
+        // Dispatch Email Notification to Staff
+        if (!empty($member['email'])) {
+            try {
+                $appUrl = (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000');
+                $loginUrl = rtrim($appUrl, '/') . '/login';
+                \App\Services\EmailService::send([
+                    'to' => $member['email'],
+                    'name' => $member['name'],
+                    'subject' => 'MS Travel Hub — Your Staff Portal Password Has Been Reset',
+                    'bodyHtml' => "
+                        <p>Dear <strong>{$member['name']}</strong>,</p>
+                        <p>Your staff portal password has been reset by the administrator.</p>
+                        <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin: 20px 0;'>
+                            <h4 style='margin-top: 0; color: #1e3a8a;'>Your New Staff Login Password</h4>
+                            <p style='margin: 6px 0;'><strong>Login Email:</strong> {$member['email']}</p>
+                            <p style='margin: 6px 0;'><strong>New Temporary Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #0f172a; font-size: 1.1em;'>{$newPassword}</code></p>
+                        </div>
+                        <p style='text-align: center; margin-top: 25px;'>
+                            <a href='{$loginUrl}' style='background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>Login to Staff Portal &rarr;</a>
+                        </p>
+                    "
+                ]);
+            } catch (\Throwable $e) {}
+        }
+
         AuditService::log('RESET_PASSWORD', 'Staff', $id, "Administrative password reset for {$member['name']} ({$member['email']})");
 
-        redirect($_SERVER['HTTP_REFERER'] ?? "/staff/show?id={$id}", "Password for {$member['name']} has been reset successfully.", 'success');
+        redirect($_SERVER['HTTP_REFERER'] ?? "/staff/show?id={$id}", "Password for {$member['name']} has been reset to: {$newPassword}", 'success');
     }
 }

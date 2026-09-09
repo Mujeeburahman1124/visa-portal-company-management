@@ -141,6 +141,12 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                       <button class="btn btn-light btn-sm dropdown-toggle border shadow-sm" data-bs-toggle="dropdown">Actions</button>
                       <ul class="dropdown-menu dropdown-menu-end shadow border-0 small">
                         <li>
+                          <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#resetAgentPasswordModal<?= $a['id'] ?>">
+                            <i class="fa-solid fa-key text-warning me-2"></i>Reset Password
+                          </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
                           <form action="/agents/toggle-status" method="POST">
                             <?= csrf_field() ?>
                             <input type="hidden" name="agent_id" value="<?= $a['id'] ?>">
@@ -151,6 +157,40 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     </div>
                   </td>
                 </tr>
+
+                <!-- MODAL: RESET AGENT PASSWORD -->
+                <div class="modal fade" id="resetAgentPasswordModal<?= $a['id'] ?>" tabindex="-1">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow">
+                      <div class="modal-header bg-warning text-dark">
+                        <h6 class="modal-title fw-bold"><i class="fa-solid fa-key me-2"></i> Reset Agent Portal Password</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <form action="/agents/reset-password" method="POST">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="agent_id" value="<?= $a['id'] ?>">
+                        <div class="modal-body p-4 text-start">
+                          <div class="p-3 bg-light rounded border mb-3">
+                            <div class="small text-muted">Agent Agency:</div>
+                            <div class="fw-bold fs-6 text-dark"><?= e($a['company_name']) ?> (<?= e($a['agent_code']) ?>)</div>
+                            <div class="small text-primary"><i class="fa-solid fa-envelope me-1"></i><?= e($a['email'] ?: 'No email registered') ?></div>
+                          </div>
+                          <div class="mb-3">
+                            <label class="form-label small fw-semibold">Custom Password (leave blank to auto-generate temporary password)</label>
+                            <input type="text" name="new_password" class="form-control font-monospace" placeholder="e.g. Leave blank for auto-generated password">
+                            <div class="form-text small text-muted">If left blank, the system will generate a secure temporary password (e.g. <code>AGENT@...</code>) and email it to the agent partner.</div>
+                          </div>
+                        </div>
+                        <div class="modal-footer bg-light p-3">
+                          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                          <button type="submit" class="btn btn-warning btn-sm fw-bold">
+                            <i class="fa-solid fa-arrows-rotate me-1"></i> Reset Password Now
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
               <?php endforeach; ?>
             <?php endif; ?>
           </tbody>

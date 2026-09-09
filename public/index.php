@@ -220,6 +220,12 @@ switch ($uri) {
         (new App\Controllers\CustomerController())->delete();
         break;
 
+    case '/customers/reset-password':
+    case '/applicants/reset-password':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
+        (new App\Controllers\CustomerController())->resetPassword();
+        break;
+
     case '/customers/check-duplicate':
     case '/applicants/check-duplicate':
         (new App\Controllers\CustomerController())->checkDuplicate();
@@ -390,6 +396,11 @@ switch ($uri) {
         (new App\Controllers\SupplierController())->delete();
         break;
 
+    case '/suppliers/reset-password':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
+        (new App\Controllers\SupplierController())->resetPassword();
+        break;
+
     // Administration: Agents & Partners (Protected)
     case '/agents':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
@@ -414,6 +425,11 @@ switch ($uri) {
     case '/agents/pay':
         RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
         (new App\Controllers\AgentController())->recordPayment();
+        break;
+
+    case '/agents/reset-password':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
+        (new App\Controllers\AgentController())->resetPassword();
         break;
 
     // Administration: Branches (Protected)

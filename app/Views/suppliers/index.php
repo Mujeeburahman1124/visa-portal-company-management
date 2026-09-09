@@ -80,6 +80,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 </td>
                 <td class="text-end">
                   <div class="d-inline-flex align-items-center gap-1">
+                    <button type="button" class="btn btn-sm btn-outline-warning py-1 px-2" data-bs-toggle="modal" data-bs-target="#resetSupplierPasswordModal<?= $sup['id'] ?>" title="Reset Portal Password">
+                      <i class="fa-solid fa-key"></i>
+                    </button>
                     <button type="button" class="btn btn-sm btn-outline-success py-1 px-2.5 fw-semibold" data-bs-toggle="modal" data-bs-target="#paySupplierModal<?= $sup['id'] ?>">
                       <i class="fa-solid fa-money-bill-transfer me-1"></i> Pay
                     </button>
@@ -89,6 +92,40 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                   </div>
                 </td>
               </tr>
+
+              <!-- MODAL: RESET SUPPLIER PASSWORD -->
+              <div class="modal fade" id="resetSupplierPasswordModal<?= $sup['id'] ?>" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                  <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-warning text-dark">
+                      <h6 class="modal-title fw-bold"><i class="fa-solid fa-key me-2"></i> Reset Supplier Portal Password</h6>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="/suppliers/reset-password" method="POST">
+                      <?= csrf_field() ?>
+                      <input type="hidden" name="supplier_id" value="<?= $sup['id'] ?>">
+                      <div class="modal-body p-4 text-start">
+                        <div class="p-3 bg-light rounded border mb-3">
+                          <div class="small text-muted">Supplier Company:</div>
+                          <div class="fw-bold fs-6 text-dark"><?= e($sup['company_name']) ?> (<?= e($sup['supplier_code']) ?>)</div>
+                          <div class="small text-primary"><i class="fa-solid fa-envelope me-1"></i><?= e($sup['email'] ?: 'No email registered') ?></div>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label small fw-semibold">Custom Password (leave blank to auto-generate temporary password)</label>
+                          <input type="text" name="new_password" class="form-control font-monospace" placeholder="e.g. Leave blank for auto-generated password">
+                          <div class="form-text small text-muted">If left blank, the system will generate a secure temporary password (e.g. <code>SUP@...</code>) and email it to the partner.</div>
+                        </div>
+                      </div>
+                      <div class="modal-footer bg-light p-3">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning btn-sm fw-bold">
+                          <i class="fa-solid fa-arrows-rotate me-1"></i> Reset Password Now
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
 
               <!-- MODAL: PAY SUPPLIER -->
               <div class="modal fade" id="paySupplierModal<?= $sup['id'] ?>" tabindex="-1">

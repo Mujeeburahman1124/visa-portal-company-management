@@ -59,15 +59,44 @@ class SupplierController
             redirect('/suppliers', "Supplier code '{$code}' already exists.", 'danger');
         }
 
+        $rawPassword = !empty($_POST['password']) ? trim($_POST['password']) : \App\Services\PasswordGeneratorService::generate(10, 'SUP@');
+        $passwordHash = password_hash($rawPassword, PASSWORD_DEFAULT);
+
         $stmt = $pdo->prepare("INSERT INTO suppliers (
-            supplier_code, company_name, contact_person, email, mobile, whatsapp, country, address, services_provided, bank_details
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$code, $name, $contact, $email, $mobile, $whatsapp, $country, $address, $services, $bankDetails]);
+            supplier_code, company_name, contact_person, email, mobile, whatsapp, country, address, services_provided, bank_details, password_hash, portal_enabled
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
+        $stmt->execute([$code, $name, $contact, $email, $mobile, $whatsapp, $country, $address, $services, $bankDetails, $passwordHash]);
         $supplierId = (int)$pdo->lastInsertId();
 
-        AuditService::log('CREATE_SUPPLIER', 'Suppliers', $supplierId, "Created supplier {$name} ({$code})");
+        // Dispatch Welcome Onboarding Email to Supplier with Auto-Generated Password
+        if (!empty($email)) {
+            try {
+                $appUrl = (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000');
+                $portalUrl = rtrim($appUrl, '/') . '/supplier/login';
+                \App\Services\EmailService::send([
+                    'to' => $email,
+                    'name' => $contact ?: $name,
+                    'subject' => 'Welcome to ' . \App\Config\App::COMPANY_NAME . ' — Supplier Portal Access Credentials',
+                    'bodyHtml' => "
+                        <p>Dear <strong>" . htmlspecialchars($contact ?: $name) . "</strong>,</p>
+                        <p>Welcome to <strong>" . \App\Config\App::COMPANY_NAME . "</strong>. Your supplier partner account has been configured with portal access.</p>
+                        <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin: 20px 0;'>
+                            <h4 style='margin-top: 0; color: #1e3a8a;'>Your Portal Login Credentials</h4>
+                            <p style='margin: 6px 0;'><strong>Supplier Code:</strong> <span style='font-family: monospace; font-weight: bold;'>{$code}</span></p>
+                            <p style='margin: 6px 0;'><strong>Login Email:</strong> {$email}</p>
+                            <p style='margin: 6px 0;'><strong>Auto-Generated Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #0f172a;'>{$rawPassword}</code></p>
+                        </div>
+                        <p style='text-align: center; margin-top: 25px;'>
+                            <a href='{$portalUrl}' style='background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>Access Supplier Portal &rarr;</a>
+                        </p>
+                    "
+                ]);
+            } catch (\Throwable $e) {}
+        }
 
-        redirect('/suppliers', "Supplier '{$name}' created successfully.", 'success');
+        AuditService::log('CREATE_SUPPLIER', 'Suppliers', $supplierId, "Created supplier {$name} ({$code}) with auto password");
+
+        redirect('/suppliers', "Supplier '{$name}' created with auto password: {$rawPassword}", 'success');
     }
 
     public function update(): void
@@ -166,5 +195,50 @@ class SupplierController
         AuditService::log('DELETE_SUPPLIER', 'Suppliers', $id, "Deleted supplier {$supplier['company_name']} ({$supplier['supplier_code']})");
 
         redirect('/suppliers', "Supplier '{$supplier['company_name']}' deleted successfully.", 'success');
+    }
+
+    public function resetPassword(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
+        $pdo = Database::getConnection();
+
+        $id = (int)($_POST['supplier_id'] ?? $_POST['id'] ?? 0);
+        $newPassword = !empty($_POST['new_password']) ? trim($_POST['new_password']) : \App\Services\PasswordGeneratorService::generate(10, 'SUP@');
+
+        if ($id <= 0) {
+            redirect('/suppliers', 'Supplier identifier is missing.', 'danger');
+        }
+
+        $stmt = $pdo->prepare("SELECT id, company_name, contact_person, email, supplier_code FROM suppliers WHERE id = ?");
+        $stmt->execute([$id]);
+        $supplier = $stmt->fetch();
+
+        if (!$supplier) {
+            redirect('/suppliers', 'Supplier not found.', 'danger');
+        }
+
+        $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $pdo->prepare("UPDATE suppliers SET password_hash = ?, portal_enabled = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$passwordHash, $id]);
+
+        // Dispatch email notification if email exists
+        if (!empty($supplier['email'])) {
+            try {
+                \App\Services\EmailService::send([
+                    'to' => $supplier['email'],
+                    'name' => $supplier['contact_person'] ?: $supplier['company_name'],
+                    'subject' => 'MS Travel Hub — Your Supplier Portal Password Has Been Reset',
+                    'bodyHtml' => "
+                        <p>Dear <strong>" . htmlspecialchars($supplier['contact_person'] ?: $supplier['company_name']) . "</strong>,</p>
+                        <p>Your Supplier Portal password has been reset by the administrator.</p>
+                        <p><strong>Your New Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold;'>{$newPassword}</code></p>
+                    "
+                ]);
+            } catch (\Throwable $e) {}
+        }
+
+        AuditService::log('RESET_SUPPLIER_PASSWORD', 'Suppliers', $id, "Admin password reset for supplier {$supplier['company_name']}");
+
+        redirect($_SERVER['HTTP_REFERER'] ?? '/suppliers', "Password for {$supplier['company_name']} reset to: {$newPassword}", 'success');
     }
 }

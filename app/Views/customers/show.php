@@ -27,6 +27,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </div>
 
     <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-warning btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#resetCustomerPasswordModal">
+        <i class="fa-solid fa-key me-1"></i> Reset Portal Password
+      </button>
       <a href="/customers/edit?id=<?= $customer['id'] ?>" class="btn btn-outline-secondary btn-sm px-3 shadow-sm">
         <i class="fa-solid fa-pen-to-square me-1"></i> Edit Profile
       </a>
@@ -430,6 +433,40 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: RESET CUSTOMER PASSWORD -->
+<div class="modal fade" id="resetCustomerPasswordModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-warning text-dark">
+        <h6 class="modal-title fw-bold"><i class="fa-solid fa-key me-2"></i> Reset Customer Portal Password</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/customers/reset-password" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="customer_id" value="<?= $customer['id'] ?>">
+        <div class="modal-body p-4">
+          <div class="p-3 bg-light rounded border mb-3">
+            <div class="small text-muted">Customer:</div>
+            <div class="fw-bold fs-6 text-dark"><?= e($customer['full_name']) ?> (<?= e($customer['customer_code']) ?>)</div>
+            <div class="small text-primary"><i class="fa-solid fa-envelope me-1"></i><?= e($customer['email'] ?: 'No email registered') ?></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Custom Password (leave blank to auto-generate secure temporary password)</label>
+            <input type="text" name="new_password" class="form-control font-monospace" placeholder="e.g. Leave blank for auto-generated password">
+            <div class="form-text small text-muted">If left blank, the system will generate a secure temporary password (e.g. <code>CUST@...</code>) and email it to the applicant.</div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light p-3">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning btn-sm fw-bold">
+            <i class="fa-solid fa-arrows-rotate me-1"></i> Reset Password Now
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>

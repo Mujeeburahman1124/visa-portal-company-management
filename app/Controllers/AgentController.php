@@ -72,7 +72,8 @@ class AgentController
             redirect('/agents', "Agent code '{$code}' or email already exists.", 'danger');
         }
 
-        $hash = !empty($password) ? password_hash($password, PASSWORD_DEFAULT) : null;
+        $rawPassword = !empty($_POST['password']) ? trim($_POST['password']) : \App\Services\PasswordGeneratorService::generate(10, 'AGENT@');
+        $hash        = password_hash($rawPassword, PASSWORD_DEFAULT);
 
         $stmt = $pdo->prepare("INSERT INTO agents
             (agent_code, company_name, contact_person, mobile, whatsapp, email, password_hash,
@@ -82,8 +83,34 @@ class AgentController
                         $country, $city, $address, $creditLimit, $commission, $terms, $bank, $notes]);
         $agentId = (int)$pdo->lastInsertId();
 
-        AuditService::log('CREATE_AGENT', 'Agents', $agentId, "New agent created: {$company} ({$code})");
-        redirect('/agents', "Agent {$code} — {$company} created successfully.", 'success');
+        // Dispatch Welcome Onboarding Email to Agent with Auto-Generated Password
+        if (!empty($email)) {
+            try {
+                $appUrl = (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000');
+                $portalUrl = rtrim($appUrl, '/') . '/agent/login';
+                \App\Services\EmailService::send([
+                    'to' => $email,
+                    'name' => $contact ?: $company,
+                    'subject' => 'Welcome to ' . \App\Config\App::COMPANY_NAME . ' — B2B Agent Portal Access Credentials',
+                    'bodyHtml' => "
+                        <p>Dear <strong>" . htmlspecialchars($contact ?: $company) . "</strong>,</p>
+                        <p>Welcome to <strong>" . \App\Config\App::COMPANY_NAME . "</strong>. Your B2B travel agent partner account has been created.</p>
+                        <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin: 20px 0;'>
+                            <h4 style='margin-top: 0; color: #1e3a8a;'>Your Agent Portal Login Credentials</h4>
+                            <p style='margin: 6px 0;'><strong>Agent Code:</strong> <span style='font-family: monospace; font-weight: bold;'>{$code}</span></p>
+                            <p style='margin: 6px 0;'><strong>Login Email:</strong> {$email}</p>
+                            <p style='margin: 6px 0;'><strong>Auto-Generated Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #0f172a;'>{$rawPassword}</code></p>
+                        </div>
+                        <p style='text-align: center; margin-top: 25px;'>
+                            <a href='{$portalUrl}' style='background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>Access Agent Portal &rarr;</a>
+                        </p>
+                    "
+                ]);
+            } catch (\Throwable $e) {}
+        }
+
+        AuditService::log('CREATE_AGENT', 'Agents', $agentId, "New agent created: {$company} ({$code}) with auto password");
+        redirect('/agents', "Agent {$code} — {$company} created with auto password: {$rawPassword}", 'success');
     }
 
     public function update(): void
@@ -174,5 +201,50 @@ class AgentController
 
         AuditService::log('AGENT_PAYMENT', 'Agents', $agentId, "Recorded agent payment {$ref}: \${$amount}");
         redirect('/agents', "Agent payment {$ref} recorded.", 'success');
+    }
+
+    public function resetPassword(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
+        $pdo = Database::getConnection();
+
+        $id = (int)($_POST['agent_id'] ?? $_POST['id'] ?? 0);
+        $newPassword = !empty($_POST['new_password']) ? trim($_POST['new_password']) : \App\Services\PasswordGeneratorService::generate(10, 'AGENT@');
+
+        if ($id <= 0) {
+            redirect('/agents', 'Agent identifier is missing.', 'danger');
+        }
+
+        $stmt = $pdo->prepare("SELECT id, company_name, contact_person, email, agent_code FROM agents WHERE id = ?");
+        $stmt->execute([$id]);
+        $agent = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$agent) {
+            redirect('/agents', 'Agent not found.', 'danger');
+        }
+
+        $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $pdo->prepare("UPDATE agents SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$passwordHash, $id]);
+
+        // Dispatch email notification if email exists
+        if (!empty($agent['email'])) {
+            try {
+                \App\Services\EmailService::send([
+                    'to' => $agent['email'],
+                    'name' => $agent['contact_person'] ?: $agent['company_name'],
+                    'subject' => 'MS Travel Hub — Your Agent Portal Password Has Been Reset',
+                    'bodyHtml' => "
+                        <p>Dear <strong>" . htmlspecialchars($agent['contact_person'] ?: $agent['company_name']) . "</strong>,</p>
+                        <p>Your Agent Portal password has been reset by the administrator.</p>
+                        <p><strong>Your New Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold;'>{$newPassword}</code></p>
+                    "
+                ]);
+            } catch (\Throwable $e) {}
+        }
+
+        AuditService::log('RESET_AGENT_PASSWORD', 'Agents', $id, "Admin password reset for agent {$agent['company_name']}");
+
+        redirect($_SERVER['HTTP_REFERER'] ?? '/agents', "Password for {$agent['company_name']} reset to: {$newPassword}", 'success');
     }
 }

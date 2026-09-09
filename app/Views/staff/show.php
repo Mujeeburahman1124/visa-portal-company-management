@@ -326,13 +326,13 @@ $initials = strtoupper(substr($member['name'], 0, 1));
         <?= csrf_field() ?>
         <input type="hidden" name="id" value="<?= $member['id'] ?>">
         <div class="modal-body p-4">
-          <p class="small text-muted mb-3">Set a new temporary or permanent password for <strong><?= e($member['name']) ?></strong> (<?= e($member['email']) ?>).</p>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">New Password <span class="text-danger">*</span></label>
-            <input type="password" name="new_password" class="form-control" placeholder="Enter new password" required>
+            <label class="form-label small fw-semibold">New Password (leave blank to auto-generate secure temporary password)</label>
+            <input type="text" name="new_password" class="form-control font-monospace" placeholder="e.g. Leave blank for auto-generated password">
+            <div class="form-text small text-muted">If left blank, the system will auto-generate a secure temporary password (e.g. <code>STAFF@...</code>) and email it to the staff officer.</div>
           </div>
           <div class="alert alert-info small mb-0">
-            <i class="fa-solid fa-circle-info me-1"></i> The user will be able to log in with this new password immediately.
+            <i class="fa-solid fa-circle-info me-1"></i> The user will receive an email notification and can log in with this new password immediately.
           </div>
         </div>
         <div class="modal-footer bg-light">

@@ -147,7 +147,8 @@ class CustomerController
         // Generate Customer Code: MSC-XXXXXX
         $count = (int)$pdo->query("SELECT COUNT(*) FROM customers")->fetchColumn() + 1;
         $customerCode = sprintf("MSC-%06d", $count);
-        $passwordHash = password_hash('customer123', PASSWORD_DEFAULT);
+        $rawPassword = !empty($_POST['password']) ? trim($_POST['password']) : \App\Services\PasswordGeneratorService::generate(10, 'CUST@');
+        $passwordHash = password_hash($rawPassword, PASSWORD_DEFAULT);
 
         $stmt = $pdo->prepare("INSERT INTO customers (
             customer_code, first_name, middle_name, last_name, full_name, gender, dob,
@@ -162,6 +163,33 @@ class CustomerController
         ]);
 
         $customerId = (int)$pdo->lastInsertId();
+
+        // Dispatch Welcome Onboarding Email to Customer with Auto-Generated Password
+        if (!empty($email)) {
+            try {
+                $appUrl = (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000');
+                $portalUrl = rtrim($appUrl, '/') . '/portal/login';
+                \App\Services\EmailService::send([
+                    'to' => $email,
+                    'name' => $fullName,
+                    'subject' => 'Welcome to ' . \App\Config\App::COMPANY_NAME . ' — Customer Portal Access Credentials',
+                    'bodyHtml' => "
+                        <p>Dear <strong>{$fullName}</strong>,</p>
+                        <p>Welcome to <strong>" . \App\Config\App::COMPANY_NAME . "</strong>. Your applicant account has been registered in our portal.</p>
+                        <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin: 20px 0;'>
+                            <h4 style='margin-top: 0; color: #1e3a8a;'>Your Portal Login Credentials</h4>
+                            <p style='margin: 6px 0;'><strong>Customer Code:</strong> <span style='font-family: monospace; font-weight: bold;'>{$customerCode}</span></p>
+                            <p style='margin: 6px 0;'><strong>Registered Email / Username:</strong> {$email}</p>
+                            <p style='margin: 6px 0;'><strong>Auto-Generated Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #0f172a;'>{$rawPassword}</code></p>
+                        </div>
+                        <p>You can use these credentials to log in to the Customer Portal to track your visa applications, upload documents, view invoices, and manage your wallet.</p>
+                        <p style='text-align: center; margin-top: 25px;'>
+                            <a href='{$portalUrl}' style='background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>Access Customer Portal &rarr;</a>
+                        </p>
+                    "
+                ]);
+            } catch (\Throwable $e) {}
+        }
 
         // Clean any existing orphan child records for this customer ID
         $pdo->prepare("DELETE FROM customer_family WHERE customer_id = ?")->execute([$customerId]);
@@ -741,5 +769,50 @@ class CustomerController
             $pdo->rollBack();
             redirect('/customers', "Error deleting customer: " . $e->getMessage(), 'danger');
         }
+    }
+
+    public function resetPassword(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $user = auth_user();
+
+        $id = (int)($_POST['customer_id'] ?? $_POST['id'] ?? 0);
+        $newPassword = !empty($_POST['new_password']) ? trim($_POST['new_password']) : \App\Services\PasswordGeneratorService::generate(10, 'CUST@');
+
+        if ($id <= 0) {
+            redirect('/customers', 'Customer identifier is missing.', 'danger');
+        }
+
+        $stmt = $pdo->prepare("SELECT id, full_name, email, customer_code FROM customers WHERE id = ?");
+        $stmt->execute([$id]);
+        $customer = $stmt->fetch();
+
+        if (!$customer) {
+            redirect('/customers', 'Customer not found.', 'danger');
+        }
+
+        $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $pdo->prepare("UPDATE customers SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$passwordHash, $id]);
+
+        // Dispatch email notification if email exists
+        if (!empty($customer['email'])) {
+            try {
+                \App\Services\EmailService::send([
+                    'to' => $customer['email'],
+                    'name' => $customer['full_name'],
+                    'subject' => 'MS Travel Hub — Your Portal Password Has Been Reset',
+                    'bodyHtml' => "
+                        <p>Dear <strong>{$customer['full_name']}</strong>,</p>
+                        <p>Your Customer Portal password has been reset by the administrator.</p>
+                        <p><strong>Your New Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold;'>{$newPassword}</code></p>
+                    "
+                ]);
+            } catch (\Throwable $e) {}
+        }
+
+        AuditService::log('RESET_CUSTOMER_PASSWORD', 'Customers', $id, "Admin password reset for customer {$customer['full_name']} ({$customer['customer_code']})", null, $user['id'] ?? null);
+
+        redirect($_SERVER['HTTP_REFERER'] ?? "/customers/show?id={$id}", "Password for {$customer['full_name']} reset to: {$newPassword}", 'success');
     }
 }
