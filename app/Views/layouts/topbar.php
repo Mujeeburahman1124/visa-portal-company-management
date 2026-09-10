@@ -100,9 +100,11 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
         <li class="dropdown-header small text-uppercase text-muted" style="font-size: 0.7rem;">Visa Operations</li>
         <li><a class="dropdown-item py-2" href="/applications/create"><i class="fa-solid fa-folder-plus text-primary me-2"></i> New Visa Application</a></li>
         <li><a class="dropdown-item py-2" href="/customers/create"><i class="fa-solid fa-user-plus text-success me-2"></i> Register Applicant</a></li>
-        <li><a class="dropdown-item py-2" href="/documents"><i class="fa-solid fa-file-arrow-up text-info me-2"></i> Upload Document</a></li>
+        <li><a class="dropdown-item py-2" href="/tracking"><i class="fa-solid fa-magnifying-glass-location text-info me-2"></i> Track Visa Status</a></li>
+        <li><a class="dropdown-item py-2" href="/documents"><i class="fa-solid fa-file-arrow-up text-secondary me-2"></i> Upload Document</a></li>
         <li><hr class="dropdown-divider my-1"></li>
-        <li class="dropdown-header small text-uppercase text-muted" style="font-size: 0.7rem;">Workflow</li>
+        <li class="dropdown-header small text-uppercase text-muted" style="font-size: 0.7rem;">Workflow &amp; Finance</li>
+        <li><a class="dropdown-item py-2" href="/payments"><i class="fa-solid fa-receipt text-success me-2"></i> Record Payment / Invoices</a></li>
         <li><a class="dropdown-item py-2" href="/tasks"><i class="fa-solid fa-list-check text-warning me-2"></i> Create Task</a></li>
         <li><a class="dropdown-item py-2" href="/appointments"><i class="fa-solid fa-calendar-plus text-danger me-2"></i> Schedule Appointment</a></li>
       </ul>

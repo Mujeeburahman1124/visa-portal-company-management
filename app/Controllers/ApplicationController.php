@@ -1263,27 +1263,29 @@ class ApplicationController
 
         $pdo->beginTransaction();
         try {
-            // Child stages and lifecycle records
-            $pdo->prepare("DELETE FROM application_stages WHERE application_id = ?")->execute([$id]);
-            $pdo->prepare("DELETE FROM application_notes WHERE application_id = ?")->execute([$id]);
+            // Child stages, status history, assignments and lifecycle records
+            try { $pdo->prepare("DELETE FROM application_stages WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+            try { $pdo->prepare("DELETE FROM application_status_history WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+            try { $pdo->prepare("DELETE FROM application_assignments WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+            try { $pdo->prepare("DELETE FROM application_notes WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM application_tasks WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            $pdo->prepare("DELETE FROM application_returns WHERE application_id = ?")->execute([$id]);
-            $pdo->prepare("DELETE FROM visa_approvals WHERE application_id = ?")->execute([$id]);
-            $pdo->prepare("DELETE FROM visa_rejections WHERE application_id = ?")->execute([$id]);
+            try { $pdo->prepare("DELETE FROM application_returns WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+            try { $pdo->prepare("DELETE FROM visa_approvals WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+            try { $pdo->prepare("DELETE FROM visa_rejections WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM supplier_payments WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM agent_applications WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM agent_payments WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
 
             // Financial records (refunds before payments, wallet tx, invoices, links)
-            $pdo->prepare("DELETE FROM refunds WHERE application_id = ?")->execute([$id]);
+            try { $pdo->prepare("DELETE FROM refunds WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM wallet_transactions WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            $pdo->prepare("DELETE FROM payments WHERE application_id = ?")->execute([$id]);
+            try { $pdo->prepare("DELETE FROM payments WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM invoices WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM payment_links WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
 
             // Documents, tasks, appointments, communications
-            $pdo->prepare("DELETE FROM documents WHERE application_id = ?")->execute([$id]);
-            $pdo->prepare("DELETE FROM document_requests WHERE application_id = ?")->execute([$id]);
+            try { $pdo->prepare("DELETE FROM documents WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+            try { $pdo->prepare("DELETE FROM document_requests WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM tasks WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM appointments WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM communications WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}

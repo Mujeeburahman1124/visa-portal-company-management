@@ -152,6 +152,16 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // If clicking a dropdown button
     if (dropdownToggle) {
+      if (window.bootstrap && typeof bootstrap.Dropdown !== 'undefined') {
+        try {
+          const instance = bootstrap.Dropdown.getOrCreateInstance(dropdownToggle);
+          if (instance) {
+            instance.toggle();
+            return;
+          }
+        } catch (err) {}
+      }
+
       e.preventDefault();
       e.stopPropagation();
       const parentDropdown = dropdownToggle.closest('.dropdown, .dropup, .btn-group');

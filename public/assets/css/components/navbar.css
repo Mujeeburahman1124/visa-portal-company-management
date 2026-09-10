@@ -149,3 +149,19 @@
   font-size: 0.85rem;
   margin-top: 0.15rem;
 }
+
+/* Dropdown Menu Enhancements */
+.dropdown-menu {
+  z-index: 1060 !important;
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+}
+
+.topbar-quick-action-menu {
+  min-width: 230px;
+}
+
+.dropdown-menu-end {
+  right: 0 !important;
+  left: auto !important;
+}

@@ -532,6 +532,12 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE applications ADD COLUMN visa_type VARCHAR(150) NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE applications ADD COLUMN visa_duration VARCHAR(100) NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE applications ADD COLUMN entry_type VARCHAR(100) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN passport_expiry_date DATE NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN processing_type VARCHAR(100) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN next_action TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN next_action_due_date DATE NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN payment_type VARCHAR(50) DEFAULT 'Pay Later'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN payment_status VARCHAR(50) DEFAULT 'Unpaid'"); } catch (\Throwable $e) {}
             // Safe ALTER TABLE migrations for customers table
             try { $pdo->exec("ALTER TABLE customers ADD COLUMN religion VARCHAR(100) NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE customers ADD COLUMN password_hash VARCHAR(255) NULL"); } catch (\Throwable $e) {}
@@ -642,6 +648,12 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE applications ADD COLUMN visa_type TEXT NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE applications ADD COLUMN visa_duration TEXT NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE applications ADD COLUMN entry_type TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN passport_expiry_date DATE NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN processing_type TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN next_action TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN next_action_due_date DATE NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN payment_type TEXT DEFAULT 'Pay Later'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN payment_status TEXT DEFAULT 'Unpaid'"); } catch (\Throwable $e) {}
 
             // Safe ALTER TABLE migrations for SQLite visa_eligibility_rules table
             try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN destination_country_id INTEGER NULL"); } catch (\Throwable $e) {}
