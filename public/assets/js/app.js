@@ -146,22 +146,19 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // 5. Universal Dropdown Click & Auto-Close Handler
+  // 5. Universal Dropdown Click & Auto-Close Handler (Bootstrap compatible + Non-interfering Fallback)
   document.addEventListener('click', function (e) {
     const dropdownToggle = e.target.closest('[data-bs-toggle="dropdown"], .dropdown-toggle');
-    
-    // If clicking a dropdown button
+    const insideMenu = e.target.closest('.dropdown-menu');
+
+    // If clicking a dropdown toggle button
     if (dropdownToggle) {
+      // If Bootstrap is loaded, let Bootstrap's native event listener handle it smoothly
       if (window.bootstrap && typeof bootstrap.Dropdown !== 'undefined') {
-        try {
-          const instance = bootstrap.Dropdown.getOrCreateInstance(dropdownToggle);
-          if (instance) {
-            instance.toggle();
-            return;
-          }
-        } catch (err) {}
+        return;
       }
 
+      // Fallback only if Bootstrap JS is not active
       e.preventDefault();
       e.stopPropagation();
       const parentDropdown = dropdownToggle.closest('.dropdown, .dropup, .btn-group');
@@ -172,11 +169,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
       const isOpen = menu.classList.contains('show') || parentDropdown.classList.contains('show');
 
-      // Close all open dropdowns first
+      // Close all other dropdowns first
       document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
       document.querySelectorAll('.dropdown.show, .dropup.show, .btn-group.show').forEach(d => d.classList.remove('show'));
 
-      // If it wasn't open before, open it now
       if (!isOpen) {
         parentDropdown.classList.add('show');
         menu.classList.add('show');
@@ -187,20 +183,20 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
 
-    // If clicking inside a dropdown menu (e.g. on an item that opens a modal)
-    if (e.target.closest('.dropdown-menu')) {
+    // If clicking inside a dropdown menu (e.g. on an item that opens a modal or navigates)
+    if (insideMenu) {
       const clickedItem = e.target.closest('.dropdown-item');
       if (clickedItem && !clickedItem.classList.contains('dropdown-toggle')) {
-        // Close parent dropdown menu
-        document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
-        document.querySelectorAll('.dropdown.show, .dropup.show, .btn-group.show').forEach(d => d.classList.remove('show'));
+        // Let event propagate
       }
       return;
     }
 
-    // If clicking outside, close all open dropdowns
-    document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
-    document.querySelectorAll('.dropdown.show, .dropup.show, .btn-group.show').forEach(d => d.classList.remove('show'));
+    // If clicking outside and not using Bootstrap, close fallback open menus
+    if (!window.bootstrap || typeof bootstrap.Dropdown === 'undefined') {
+      document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
+      document.querySelectorAll('.dropdown.show, .dropup.show, .btn-group.show').forEach(d => d.classList.remove('show'));
+    }
   });
 
   // 6. Global Search Live Database Query & Shortcut (Ctrl + K)

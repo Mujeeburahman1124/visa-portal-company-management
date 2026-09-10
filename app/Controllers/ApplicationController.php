@@ -295,10 +295,11 @@ class ApplicationController
 
             // If staff assigned, record initial assignment record
             if ($assignedStaffId) {
+                $assignedBy = !empty($user['id']) ? (int)$user['id'] : 1;
                 $assignStmt = $pdo->prepare("INSERT INTO application_assignments (
-                    application_id, staff_id, assigned_by, notes, is_current
-                ) VALUES (?, ?, ?, 'Initial case worker assignment upon registration', 1)");
-                $assignStmt->execute([$appId, $assignedStaffId, $user['id'] ?? null]);
+                    application_id, staff_id, assigned_to, assigned_by, assigned_at, notes, is_current
+                ) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, 'Initial case worker assignment upon registration', 1)");
+                $assignStmt->execute([$appId, $assignedStaffId, $assignedStaffId, $assignedBy]);
             }
 
             // Auto-generate document checklist matrix from visa requirements

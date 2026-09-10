@@ -550,6 +550,14 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN override_processing_days INT NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN preferred_supplier_id INT NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN special_conditions TEXT NULL"); } catch (\Throwable $e) {}
+            // Safe ALTER TABLE migrations for MySQL application_assignments table
+            try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN staff_id INT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN assigned_to INT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN assigned_by INT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN assigned_at DATETIME NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN unassigned_at DATETIME NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN is_current TINYINT(1) DEFAULT 1"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN notes TEXT NULL"); } catch (\Throwable $e) {}
 
             // Invoices Table
             $pdo->exec("CREATE TABLE IF NOT EXISTS invoices (
@@ -662,7 +670,14 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN override_supplier_cost REAL NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN override_processing_days INTEGER NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN preferred_supplier_id INTEGER NULL"); } catch (\Throwable $e) {}
-            try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN special_conditions TEXT NULL"); } catch (\Throwable $e) {}
+            // Safe ALTER TABLE migrations for SQLite application_assignments table
+            try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN staff_id INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN assigned_to INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN assigned_by INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN assigned_at DATETIME NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN unassigned_at DATETIME NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN is_current INTEGER DEFAULT 1"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN notes TEXT NULL"); } catch (\Throwable $e) {}
         }
 
         // Ensure payment_links table exists for both drivers
