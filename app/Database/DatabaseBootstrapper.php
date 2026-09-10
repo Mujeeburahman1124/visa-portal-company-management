@@ -676,8 +676,10 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN assigned_by INTEGER NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN assigned_at DATETIME NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN unassigned_at DATETIME NULL"); } catch (\Throwable $e) {}
-            try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN is_current INTEGER DEFAULT 1"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN notes TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN supplier_id INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN wallet_transaction_id INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN payment_link_id INTEGER NULL"); } catch (\Throwable $e) {}
 
             // Invoices Table for SQLite
             $pdo->exec("CREATE TABLE IF NOT EXISTS invoices (

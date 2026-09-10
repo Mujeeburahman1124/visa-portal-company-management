@@ -476,11 +476,11 @@ class CustomerController
                         $rcpNum = sprintf("RCP-%s-%06d", $year, $rcpCount);
 
                         $pdo->prepare("INSERT INTO payments (
-                            payment_number, invoice_number, application_id, customer_id, supplier_id,
+                            payment_number, invoice_number, application_id, customer_id,
                             amount, currency, payment_date, payment_method, transaction_reference,
                             wallet_transaction_id, payment_type, status, received_by, notes
-                        ) VALUES (?, ?, ?, ?, ?, ?, 'USD', ?, 'Customer Wallet', ?, ?, 'Customer Payment', 'Completed', ?, ?)")->execute([
-                            $rcpNum, $invNumber, $appId, $customerId, $supplierId,
+                        ) VALUES (?, ?, ?, ?, ?, 'USD', ?, 'Customer Wallet', ?, ?, 'Customer Payment', 'Completed', ?, ?)")->execute([
+                            $rcpNum, $invNumber, $appId, $customerId,
                             $payAmount, $appDate, $wtxId, $wtxId, $currentUser['id'] ?? null, "Settled via Customer Digital Wallet at Registration"
                         ]);
                         $paymentId = (int)$pdo->lastInsertId();
@@ -496,11 +496,11 @@ class CustomerController
                     $rcpNum = sprintf("RCP-%s-%06d", $year, $rcpCount);
 
                     $pdo->prepare("INSERT INTO payments (
-                        payment_number, invoice_number, application_id, customer_id, supplier_id,
+                        payment_number, invoice_number, application_id, customer_id,
                         amount, currency, payment_date, payment_method, transaction_reference,
                         payment_type, status, received_by, notes
-                    ) VALUES (?, ?, ?, ?, ?, ?, 'USD', ?, ?, ?, 'Customer Payment', 'Completed', ?, ?)")->execute([
-                        $rcpNum, $invNumber, $appId, $customerId, $supplierId,
+                    ) VALUES (?, ?, ?, ?, ?, 'USD', ?, ?, ?, 'Customer Payment', 'Completed', ?, ?)")->execute([
+                        $rcpNum, $invNumber, $appId, $customerId,
                         $payAmount, $appDate, $payMethod, $payRef ?: 'BRANCH_DIRECT', $currentUser['id'] ?? null, "Settled at Registration via {$payMethod}"
                     ]);
                     $paymentId = (int)$pdo->lastInsertId();

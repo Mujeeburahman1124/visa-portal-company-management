@@ -198,17 +198,16 @@ class PaymentLinkService
         try {
             // 2. Record payment in `payments` table
             $payStmt = $pdo->prepare("INSERT INTO payments (
-                payment_number, invoice_number, application_id, customer_id, supplier_id,
+                payment_number, invoice_number, application_id, customer_id,
                 amount, currency, payment_date, payment_method, transaction_reference,
                 wallet_transaction_id, payment_link_id, payment_type, status, notes
-            ) VALUES (?, ?, ?, ?, ?, ?, 'USD', CURRENT_DATE, ?, ?, ?, ?, 'Online Payment', 'Completed', ?)");
+            ) VALUES (?, ?, ?, ?, ?, 'USD', CURRENT_DATE, ?, ?, ?, ?, 'Online Payment', 'Completed', ?)");
 
             $payStmt->execute([
                 $receiptNumber,
                 $link['invoice_number'] ?: ('INV-LINK-' . $link['link_code']),
                 $appId,
                 $customerId,
-                $link['supplier_id'],
                 $amount,
                 $paymentMethod,
                 $transactionRef,
