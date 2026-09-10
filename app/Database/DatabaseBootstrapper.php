@@ -678,6 +678,30 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN unassigned_at DATETIME NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN is_current INTEGER DEFAULT 1"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN notes TEXT NULL"); } catch (\Throwable $e) {}
+
+            // Invoices Table for SQLite
+            $pdo->exec("CREATE TABLE IF NOT EXISTS invoices (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                invoice_number TEXT NOT NULL UNIQUE,
+                application_id INTEGER NULL,
+                customer_id INTEGER NOT NULL,
+                issue_date DATE NOT NULL,
+                due_date DATE NULL,
+                subtotal REAL DEFAULT 0.00,
+                discount REAL DEFAULT 0.00,
+                tax_rate REAL DEFAULT 0.00,
+                tax_amount REAL DEFAULT 0.00,
+                total_amount REAL DEFAULT 0.00,
+                paid_amount REAL DEFAULT 0.00,
+                balance_amount REAL DEFAULT 0.00,
+                status TEXT DEFAULT 'Unpaid',
+                notes TEXT NULL,
+                created_by INTEGER NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE SET NULL,
+                FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+            );");
         }
 
         // Ensure payment_links table exists for both drivers

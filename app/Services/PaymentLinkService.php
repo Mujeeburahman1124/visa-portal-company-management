@@ -205,7 +205,7 @@ class PaymentLinkService
 
             $payStmt->execute([
                 $receiptNumber,
-                $link['invoice_number'],
+                $link['invoice_number'] ?: ('INV-LINK-' . $link['link_code']),
                 $appId,
                 $customerId,
                 $link['supplier_id'],

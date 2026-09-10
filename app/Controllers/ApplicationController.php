@@ -338,13 +338,26 @@ class ApplicationController
                 }
             }
 
-            // Optional Immediate Payment Processing (Part 9, 10)
-            $payNow = trim($_POST['pay_now'] ?? '0');
-            $paymentRedirectUrl = null;
+            // Generate Application Invoice (Always create proper invoice sequence)
+            $invCount = (int)$pdo->query("SELECT COUNT(*) FROM invoices")->fetchColumn() + 1;
+            $invNumber = sprintf("INV-%s-%06d", date('Y'), $invCount);
+            $dueDate = date('Y-m-d', strtotime('+7 days'));
 
             if ($payNow === '1' && $totalAmount > 0) {
                 $payMethod = trim($_POST['pay_method'] ?? 'Cash');
                 $payRef = trim($_POST['pay_reference'] ?? '');
+
+                // Insert Paid Invoice
+                $insInv = $pdo->prepare("INSERT INTO invoices (
+                    invoice_number, application_id, customer_id, issue_date, due_date,
+                    subtotal, discount, tax_rate, tax_amount, total_amount, paid_amount, balance_amount,
+                    status, notes, created_by, created_at
+                ) VALUES (?, ?, ?, CURRENT_DATE, CURRENT_DATE, ?, ?, 0.00, ?, ?, ?, 0.00, 'Paid', 'Registration Invoice', ?, CURRENT_TIMESTAMP)");
+                $insInv->execute([
+                    $invNumber, $appId, $customerId,
+                    $sellingPrice, $discount, $taxAmount, $totalAmount, $totalAmount,
+                    $user['id'] ?? null
+                ]);
 
                 if ($payMethod === 'Customer Wallet') {
                     $wallet = \App\Services\WalletService::getOrCreateWallet($customerId);
@@ -352,16 +365,16 @@ class ApplicationController
                     if ($wBal >= $totalAmount) {
                         $wDebit = \App\Services\WalletService::debit($customerId, $totalAmount, "Visa fee for {$appNumber} via Wallet", $appId, $user['id'] ?? null);
                         
-                        // Record payment
+                        // Record payment with valid invoice_number
                         $rcpCount = (int)$pdo->query("SELECT COUNT(*) FROM payments")->fetchColumn() + 1;
                         $rcpNum = sprintf("RCP-%s-%06d", date('Y'), $rcpCount);
 
                         $pdo->prepare("INSERT INTO payments (
-                            payment_number, application_id, customer_id, amount, payment_method, payment_date, transaction_reference, status, received_by, wallet_transaction_id, notes, created_at
-                        ) VALUES (?, ?, ?, ?, 'Customer Wallet', CURRENT_DATE, ?, 'Completed', ?, ?, 'Immediate registration payment via wallet', CURRENT_TIMESTAMP)")
-                        ->execute([$rcpNum, $appId, $customerId, $totalAmount, $wDebit['transaction_id'], $user['id'] ?? null, $wDebit['id'] ?? null]);
+                            payment_number, invoice_number, application_id, customer_id, amount, payment_method, payment_date, transaction_reference, payment_type, status, received_by, wallet_transaction_id, notes, created_at
+                        ) VALUES (?, ?, ?, ?, ?, 'Customer Wallet', CURRENT_DATE, ?, 'Customer Payment', 'Completed', ?, ?, 'Immediate registration payment via wallet', CURRENT_TIMESTAMP)")
+                        ->execute([$rcpNum, $invNumber, $appId, $customerId, $totalAmount, $wDebit['transaction_id'] ?? 'WALLET_TXN', $user['id'] ?? null, $wDebit['id'] ?? null]);
 
-                        $pdo->prepare("UPDATE applications SET paid_amount = ?, balance_amount = 0.00 WHERE id = ?")->execute([$totalAmount, $appId]);
+                        $pdo->prepare("UPDATE applications SET paid_amount = ?, balance_amount = 0.00, payment_status = 'Paid' WHERE id = ?")->execute([$totalAmount, $appId]);
                     }
                 } elseif ($payMethod === 'Stripe') {
                     $linkRes = \App\Services\PaymentLinkService::createLink($appId, $totalAmount, "Visa Application Fee for {$customer['full_name']}", "Immediate Registration Checkout", $user['id'] ?? null);
@@ -374,12 +387,24 @@ class ApplicationController
                     $rcpNum = sprintf("RCP-%s-%06d", date('Y'), $rcpCount);
 
                     $pdo->prepare("INSERT INTO payments (
-                        payment_number, application_id, customer_id, amount, payment_method, payment_date, transaction_reference, status, received_by, notes, created_at
-                    ) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, ?, 'Completed', ?, 'Immediate registration payment', CURRENT_TIMESTAMP)")
-                    ->execute([$rcpNum, $appId, $customerId, $totalAmount, $payMethod, $payRef ?: 'CASH_REC', $user['id'] ?? null]);
+                        payment_number, invoice_number, application_id, customer_id, amount, payment_method, payment_date, transaction_reference, payment_type, status, received_by, notes, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, 'Customer Payment', 'Completed', ?, 'Immediate registration payment', CURRENT_TIMESTAMP)")
+                    ->execute([$rcpNum, $invNumber, $appId, $customerId, $totalAmount, $payMethod, $payRef ?: 'CASH_REC', $user['id'] ?? null]);
 
-                    $pdo->prepare("UPDATE applications SET paid_amount = ?, balance_amount = 0.00 WHERE id = ?")->execute([$totalAmount, $appId]);
+                    $pdo->prepare("UPDATE applications SET paid_amount = ?, balance_amount = 0.00, payment_status = 'Paid' WHERE id = ?")->execute([$totalAmount, $appId]);
                 }
+            } else {
+                // Insert Initial Unpaid Invoice
+                $insInv = $pdo->prepare("INSERT INTO invoices (
+                    invoice_number, application_id, customer_id, issue_date, due_date,
+                    subtotal, discount, tax_rate, tax_amount, total_amount, paid_amount, balance_amount,
+                    status, notes, created_by, created_at
+                ) VALUES (?, ?, ?, CURRENT_DATE, ?, ?, ?, 0.00, ?, ?, 0.00, ?, 'Unpaid', 'Initial Application Invoice', ?, CURRENT_TIMESTAMP)");
+                $insInv->execute([
+                    $invNumber, $appId, $customerId, $dueDate,
+                    $sellingPrice, $discount, $taxAmount, $totalAmount, $totalAmount,
+                    $user['id'] ?? null
+                ]);
             }
 
             // Calculate initial health score

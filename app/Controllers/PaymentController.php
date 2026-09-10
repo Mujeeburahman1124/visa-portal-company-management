@@ -259,11 +259,12 @@ class PaymentController
 
             // Also record a payment receipt record for accounting
             $receiptNumber = FinanceService::generateReceiptNumber();
+            $invNumber = 'INV-WAL-' . $receiptNumber;
             $pdo->prepare("INSERT INTO payments (
-                payment_number, customer_id, amount, currency, payment_date, payment_method,
+                payment_number, invoice_number, customer_id, amount, currency, payment_date, payment_method,
                 transaction_reference, wallet_transaction_id, payment_type, status, received_by, notes
-            ) VALUES (?, ?, ?, 'USD', CURRENT_DATE, ?, ?, ?, 'Wallet Topup', 'Completed', ?, ?)")
-            ->execute([$receiptNumber, $customerId, $amount, $paymentMethod, $txnRef, $res['transaction_id'] ?? null, $currentUser['id'] ?? null, $notes]);
+            ) VALUES (?, ?, ?, ?, 'USD', CURRENT_DATE, ?, ?, ?, 'Wallet Topup', 'Completed', ?, ?)")
+            ->execute([$receiptNumber, $invNumber, $customerId, $amount, $paymentMethod, $txnRef, $res['transaction_id'] ?? null, $currentUser['id'] ?? null, $notes]);
 
             redirect($_SERVER['HTTP_REFERER'] ?? '/payments', "Successfully deposited $" . number_format($amount, 2) . " into {$customer['full_name']}'s digital wallet.", 'success');
         } catch (\Throwable $e) {
