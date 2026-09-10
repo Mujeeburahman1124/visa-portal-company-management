@@ -680,6 +680,7 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE payments ADD COLUMN supplier_id INTEGER NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE payments ADD COLUMN wallet_transaction_id INTEGER NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE payments ADD COLUMN payment_link_id INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE appointments ADD COLUMN created_by INTEGER NULL"); } catch (\Throwable $e) {}
 
             // Invoices Table for SQLite
             $pdo->exec("CREATE TABLE IF NOT EXISTS invoices (
