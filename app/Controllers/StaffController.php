@@ -205,7 +205,7 @@ class StaffController
             ]);
 
             // Log notification
-            $pdo->prepare("INSERT INTO notification_logs (event_type, recipient_type, recipient_id, recipient_name, recipient_email, channel, template_name, subject, content_preview, status, sent_at) VALUES ('staff.registered', 'Staff', ?, ?, ?, 'Email', 'staff_welcome_email', ?, ?, 'Sent', NOW())")
+            $pdo->prepare("INSERT INTO notification_logs (event_type, recipient_type, recipient_id, recipient_name, recipient_email, channel, template_name, subject, content_preview, status, sent_at) VALUES ('staff.registered', 'Staff', ?, ?, ?, 'Email', 'staff_welcome_email', ?, ?, 'Sent', CURRENT_TIMESTAMP)")
                 ->execute([$newId, $name, $email, $emailSubject, "Welcome email with temporary password {$password}"]);
         } catch (\Throwable $ex) {}
 

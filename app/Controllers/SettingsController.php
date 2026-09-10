@@ -212,7 +212,7 @@ class SettingsController
 
         $id = (int)($_POST['id'] ?? 0);
         if ($id > 0) {
-            $stmt = $pdo->prepare("UPDATE application_statuses SET is_active = IF(is_active=1, 0, 1) WHERE id = ? AND is_system = 0");
+            $stmt = $pdo->prepare("UPDATE application_statuses SET is_active = 1 - is_active WHERE id = ? AND is_system = 0");
             $stmt->execute([$id]);
             AuditService::log('TOGGLE_STATUS', 'Settings', $id, "Toggled status #{$id}");
             redirect('/settings?tab=statuses', "Status state updated.", 'success');

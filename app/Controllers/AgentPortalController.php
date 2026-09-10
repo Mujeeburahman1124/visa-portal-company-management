@@ -57,7 +57,7 @@ class AgentPortalController
             'email'        => $agent['email'],
         ];
 
-        $pdo->prepare("UPDATE agents SET last_login_at = NOW() WHERE id = ?")->execute([$agent['id']]);
+        $pdo->prepare("UPDATE agents SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$agent['id']]);
         redirect('/agent/dashboard');
     }
 
@@ -234,7 +234,7 @@ class AgentPortalController
         $aStmt = $pdo->prepare("INSERT INTO applications
             (application_number, customer_id, visa_service_id, selling_price, total_amount, balance_amount,
              agent_id, agent_price, current_stage, status, travel_date, return_date, application_date, internal_notes)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW(),?)");
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?)");
         $sellingPrice = $agentPrice > 0 ? $agentPrice : (float)$service['selling_price'];
         $aStmt->execute([$appNumber, $customerId, $serviceId, $sellingPrice, $sellingPrice, $sellingPrice,
                          $agentId, $agentPrice, 'Application Registered', 'Pending', $travelDate ?: null, $returnDate ?: null,

@@ -55,7 +55,7 @@ class RoleController
             redirect('/roles', "Role '{$name}' already exists.", 'danger');
         }
 
-        $stmt = $pdo->prepare("INSERT INTO roles (name, slug, description, is_active, created_at) VALUES (?, ?, ?, 1, NOW())");
+        $stmt = $pdo->prepare("INSERT INTO roles (name, slug, description, is_active, created_at) VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)");
         $stmt->execute([$name, $slug, $description]);
         $newRoleId = (int)$pdo->lastInsertId();
 
@@ -167,7 +167,7 @@ class RoleController
             redirect('/roles', 'Super Admin role status cannot be altered.', 'danger');
         }
 
-        $stmt = $pdo->prepare("UPDATE roles SET is_active = IF(is_active = 1, 0, 1) WHERE id = ?");
+        $stmt = $pdo->prepare("UPDATE roles SET is_active = 1 - is_active WHERE id = ?");
         $stmt->execute([$id]);
 
         AuditService::log('TOGGLE_ROLE_STATUS', 'Roles', $id, "Toggled status for role #{$id}");

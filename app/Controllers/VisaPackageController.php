@@ -95,7 +95,7 @@ class VisaPackageController
             country_id, category_id, name, slug, duration, max_stay, validity,
             entry_type, processing_type, estimated_days, supplier_cost, service_fee,
             tax_rate, selling_price, cancellation_policy, is_active, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())");
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
 
         $stmt->execute([
             $countryId, $categoryId, $name, $slug, $duration, $maxStay, $validity,
@@ -139,7 +139,7 @@ class VisaPackageController
             country_id = ?, category_id = ?, name = ?, duration = ?, max_stay = ?,
             validity = ?, entry_type = ?, processing_type = ?, estimated_days = ?,
             supplier_cost = ?, service_fee = ?, tax_rate = ?, selling_price = ?,
-            cancellation_policy = ?, is_active = ?, updated_at = NOW()
+            cancellation_policy = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?");
 
         $stmt->execute([
@@ -167,7 +167,7 @@ class VisaPackageController
         $appCount = (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE visa_service_id = {$id}")->fetchColumn();
         if ($appCount > 0) {
             // Safe archive
-            $pdo->prepare("UPDATE visa_services SET is_active = 0, updated_at = NOW() WHERE id = ?")->execute([$id]);
+            $pdo->prepare("UPDATE visa_services SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$id]);
             AuditService::log('DEACTIVATE', 'VisaServices', $id, "Deactivated Visa Package #{$id} because it has {$appCount} linked applications");
             redirect('/visa-packages', "Visa Package has linked applications. It has been deactivated instead of deleted.", 'warning');
         } else {
@@ -184,7 +184,7 @@ class VisaPackageController
         $id = (int)($_POST['id'] ?? 0);
 
         if ($id > 0) {
-            $stmt = $pdo->prepare("UPDATE visa_services SET is_active = IF(is_active=1, 0, 1), updated_at = NOW() WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE visa_services SET is_active = 1 - is_active, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
             $stmt->execute([$id]);
             AuditService::log('UPDATE', 'VisaServices', $id, "Toggled status for visa package #{$id}");
         }
@@ -207,7 +207,7 @@ class VisaPackageController
 
         $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));
 
-        $stmt = $pdo->prepare("INSERT INTO visa_categories (name, slug, description, icon, is_active, created_at) VALUES (?, ?, ?, ?, 1, NOW())");
+        $stmt = $pdo->prepare("INSERT INTO visa_categories (name, slug, description, icon, is_active, created_at) VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP)");
         $stmt->execute([$name, $slug, $description, $icon]);
 
         $catId = (int)$pdo->lastInsertId();
@@ -231,7 +231,7 @@ class VisaPackageController
 
         $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));
 
-        $stmt = $pdo->prepare("INSERT INTO visa_types (name, slug, description, icon, is_active, created_at) VALUES (?, ?, ?, ?, 1, NOW())");
+        $stmt = $pdo->prepare("INSERT INTO visa_types (name, slug, description, icon, is_active, created_at) VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP)");
         $stmt->execute([$name, $slug, $description, $icon]);
 
         $typeId = (int)$pdo->lastInsertId();

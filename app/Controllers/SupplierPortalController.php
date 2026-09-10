@@ -57,7 +57,7 @@ class SupplierPortalController
             'email'        => $supplier['email'],
         ];
 
-        $pdo->prepare("UPDATE suppliers SET last_login_at = NOW() WHERE id = ?")->execute([$supplier['id']]);
+        $pdo->prepare("UPDATE suppliers SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$supplier['id']]);
         redirect('/supplier/dashboard');
     }
 
@@ -164,7 +164,7 @@ class SupplierPortalController
 
         if (!empty($statusNote)) {
             // Log the note in application_status_history
-            $pdo->prepare("INSERT INTO application_status_history (application_id, from_stage, to_stage, changed_by, comments, created_at) SELECT id, current_stage, current_stage, 0, ?, NOW() FROM applications WHERE id=?")->execute(["[Supplier Update] " . $statusNote, $appId]);
+            $pdo->prepare("INSERT INTO application_status_history (application_id, from_stage, to_stage, changed_by, comments, created_at) SELECT id, current_stage, current_stage, 0, ?, CURRENT_TIMESTAMP FROM applications WHERE id=?")->execute(["[Supplier Update] " . $statusNote, $appId]);
         }
 
         set_flash('Application updated successfully.', 'success');

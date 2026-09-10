@@ -315,7 +315,7 @@ class ApplicationController
 
                 $docStmt = $pdo->prepare("INSERT INTO documents (
                     application_id, customer_id, document_type_id, document_title, file_path, file_name, file_size, mime_type, version, status, uploaded_by_type, uploaded_by_id, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'Verified', 'Staff', ?, NOW())");
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'Verified', 'Staff', ?, CURRENT_TIMESTAMP)");
 
                 foreach ($_FILES['application_documents']['name'] as $idx => $origName) {
                     if (!empty($origName) && $_FILES['application_documents']['error'][$idx] === UPLOAD_ERR_OK) {
@@ -357,7 +357,7 @@ class ApplicationController
 
                         $pdo->prepare("INSERT INTO payments (
                             payment_number, application_id, customer_id, amount, payment_method, payment_date, transaction_reference, status, received_by, wallet_transaction_id, notes, created_at
-                        ) VALUES (?, ?, ?, ?, 'Customer Wallet', CURDATE(), ?, 'Completed', ?, ?, 'Immediate registration payment via wallet', NOW())")
+                        ) VALUES (?, ?, ?, ?, 'Customer Wallet', CURRENT_DATE, ?, 'Completed', ?, ?, 'Immediate registration payment via wallet', CURRENT_TIMESTAMP)")
                         ->execute([$rcpNum, $appId, $customerId, $totalAmount, $wDebit['transaction_id'], $user['id'] ?? null, $wDebit['id'] ?? null]);
 
                         $pdo->prepare("UPDATE applications SET paid_amount = ?, balance_amount = 0.00 WHERE id = ?")->execute([$totalAmount, $appId]);
@@ -374,7 +374,7 @@ class ApplicationController
 
                     $pdo->prepare("INSERT INTO payments (
                         payment_number, application_id, customer_id, amount, payment_method, payment_date, transaction_reference, status, received_by, notes, created_at
-                    ) VALUES (?, ?, ?, ?, ?, CURDATE(), ?, 'Completed', ?, 'Immediate registration payment', NOW())")
+                    ) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, ?, 'Completed', ?, 'Immediate registration payment', CURRENT_TIMESTAMP)")
                     ->execute([$rcpNum, $appId, $customerId, $totalAmount, $payMethod, $payRef ?: 'CASH_REC', $user['id'] ?? null]);
 
                     $pdo->prepare("UPDATE applications SET paid_amount = ?, balance_amount = 0.00 WHERE id = ?")->execute([$totalAmount, $appId]);
