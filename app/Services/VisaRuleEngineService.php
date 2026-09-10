@@ -45,19 +45,24 @@ class VisaRuleEngineService
         // Match 2: service_id + nationality + ANY residence
         // Match 3: country_id + nationality + residence
         // Match 4: country_id + nationality + ANY residence
-        $ruleStmt = $pdo->prepare("SELECT * FROM visa_eligibility_rules 
-            WHERE destination_country_id = ?
-            AND (visa_service_id = ? OR visa_service_id IS NULL)
-            AND (applicant_nationality = ? OR applicant_nationality = 'ANY')
-            AND (residence_country = ? OR residence_country = 'ANY' OR residence_country IS NULL)
-            ORDER BY 
-                (CASE WHEN visa_service_id IS NOT NULL THEN 2 ELSE 0 END) +
-                (CASE WHEN applicant_nationality != 'ANY' THEN 2 ELSE 0 END) +
-                (CASE WHEN residence_country IS NOT NULL AND residence_country != 'ANY' THEN 1 ELSE 0 END) DESC
-            LIMIT 1");
+        $matchedRule = null;
+        try {
+            $ruleStmt = $pdo->prepare("SELECT * FROM visa_eligibility_rules 
+                WHERE destination_country_id = ?
+                AND (visa_service_id = ? OR visa_service_id IS NULL)
+                AND (applicant_nationality = ? OR applicant_nationality = 'ANY')
+                AND (residence_country = ? OR residence_country = 'ANY' OR residence_country IS NULL)
+                ORDER BY 
+                    (CASE WHEN visa_service_id IS NOT NULL THEN 2 ELSE 0 END) +
+                    (CASE WHEN applicant_nationality != 'ANY' THEN 2 ELSE 0 END) +
+                    (CASE WHEN residence_country IS NOT NULL AND residence_country != 'ANY' THEN 1 ELSE 0 END) DESC
+                LIMIT 1");
 
-        $ruleStmt->execute([$countryId, $serviceId, $nationality, $residence]);
-        $matchedRule = $ruleStmt->fetch(PDO::FETCH_ASSOC);
+            $ruleStmt->execute([$countryId, $serviceId, $nationality, $residence]);
+            $matchedRule = $ruleStmt->fetch(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            $matchedRule = null;
+        }
 
         $sellingPrice = (float)($matchedRule['override_selling_price'] ?? $baseService['selling_price']);
         $supplierCost = (float)($matchedRule['override_supplier_cost'] ?? $baseService['supplier_cost']);

@@ -141,6 +141,11 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                       <button class="btn btn-light btn-sm dropdown-toggle border shadow-sm" data-bs-toggle="dropdown">Actions</button>
                       <ul class="dropdown-menu dropdown-menu-end shadow border-0 small">
                         <li>
+                          <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editAgentModal<?= $a['id'] ?>">
+                            <i class="fa-solid fa-pen-to-square text-primary me-2"></i>Edit Agent
+                          </a>
+                        </li>
+                        <li>
                           <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#resetAgentPasswordModal<?= $a['id'] ?>">
                             <i class="fa-solid fa-key text-warning me-2"></i>Reset Password
                           </a>
@@ -150,13 +155,101 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                           <form action="/agents/toggle-status" method="POST">
                             <?= csrf_field() ?>
                             <input type="hidden" name="agent_id" value="<?= $a['id'] ?>">
-                            <button type="submit" class="dropdown-item"><?= $active ? '<i class="fa-solid fa-ban text-danger me-2"></i>Suspend' : '<i class="fa-solid fa-check text-success me-2"></i>Activate' ?></button>
+                            <button type="submit" class="dropdown-item"><?= $active ? '<i class="fa-solid fa-ban text-warning me-2"></i>Suspend' : '<i class="fa-solid fa-check text-success me-2"></i>Activate' ?></button>
+                          </form>
+                        </li>
+                        <li>
+                          <form action="/agents/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete agent <?= e($a['company_name']) ?> (<?= e($a['agent_code']) ?>)?');">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="agent_id" value="<?= $a['id'] ?>">
+                            <button type="submit" class="dropdown-item text-danger">
+                              <i class="fa-solid fa-trash-can text-danger me-2"></i>Delete Agent
+                            </button>
                           </form>
                         </li>
                       </ul>
                     </div>
                   </td>
                 </tr>
+
+                <!-- MODAL: EDIT AGENT -->
+                <div class="modal fade" id="editAgentModal<?= $a['id'] ?>" tabindex="-1">
+                  <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content border-0 shadow">
+                      <div class="modal-header bg-primary text-white">
+                        <h6 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i> Edit Agent — <?= e($a['company_name']) ?></h6>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                      </div>
+                      <form action="/agents/update" method="POST">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="agent_id" value="<?= $a['id'] ?>">
+                        <div class="modal-body p-4 text-start">
+                          <div class="row g-3">
+                            <div class="col-md-6">
+                              <label class="form-label small fw-semibold">Company / Agency Name <span class="text-danger">*</span></label>
+                              <input type="text" name="company_name" class="form-control" value="<?= e($a['company_name']) ?>" required>
+                            </div>
+                            <div class="col-md-6">
+                              <label class="form-label small fw-semibold">Contact Person <span class="text-danger">*</span></label>
+                              <input type="text" name="contact_person" class="form-control" value="<?= e($a['contact_person']) ?>" required>
+                            </div>
+                            <div class="col-md-6">
+                              <label class="form-label small fw-semibold">Email <span class="text-danger">*</span></label>
+                              <input type="email" name="email" class="form-control" value="<?= e($a['email']) ?>" required>
+                            </div>
+                            <div class="col-md-6">
+                              <label class="form-label small fw-semibold">Mobile <span class="text-danger">*</span></label>
+                              <input type="text" name="mobile" class="form-control" value="<?= e($a['mobile']) ?>" required>
+                            </div>
+                            <div class="col-md-4">
+                              <label class="form-label small fw-semibold">WhatsApp</label>
+                              <input type="text" name="whatsapp" class="form-control" value="<?= e($a['whatsapp'] ?? '') ?>">
+                            </div>
+                            <div class="col-md-4">
+                              <label class="form-label small fw-semibold">City</label>
+                              <input type="text" name="city" class="form-control" value="<?= e($a['city'] ?? '') ?>">
+                            </div>
+                            <div class="col-md-4">
+                              <label class="form-label small fw-semibold">Country</label>
+                              <input type="text" name="country" class="form-control" value="<?= e($a['country'] ?? '') ?>">
+                            </div>
+                            <div class="col-md-4">
+                              <label class="form-label small fw-semibold">Credit Limit ($)</label>
+                              <input type="number" step="0.01" name="credit_limit" class="form-control" value="<?= (float)$a['credit_limit'] ?>">
+                            </div>
+                            <div class="col-md-4">
+                              <label class="form-label small fw-semibold">Commission Rate (%)</label>
+                              <input type="number" step="0.1" name="commission_rate" class="form-control" value="<?= (float)$a['commission_rate'] ?>">
+                            </div>
+                            <div class="col-md-4">
+                              <label class="form-label small fw-semibold">Payment Terms</label>
+                              <select name="payment_terms" class="form-select">
+                                <option value="Prepaid" <?= ($a['payment_terms'] ?? '') === 'Prepaid' ? 'selected' : '' ?>>Prepaid</option>
+                                <option value="Net 7" <?= ($a['payment_terms'] ?? '') === 'Net 7' ? 'selected' : '' ?>>Net 7 Days</option>
+                                <option value="Net 15" <?= ($a['payment_terms'] ?? '') === 'Net 15' ? 'selected' : '' ?>>Net 15 Days</option>
+                                <option value="Net 30" <?= ($a['payment_terms'] ?? '') === 'Net 30' ? 'selected' : '' ?>>Net 30 Days</option>
+                              </select>
+                            </div>
+                            <div class="col-md-12">
+                              <label class="form-label small fw-semibold">Address</label>
+                              <textarea name="address" class="form-control" rows="2"><?= e($a['address'] ?? '') ?></textarea>
+                            </div>
+                            <div class="col-md-12">
+                              <label class="form-label small fw-semibold">Notes</label>
+                              <textarea name="notes" class="form-control" rows="2"><?= e($a['notes'] ?? '') ?></textarea>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="modal-footer bg-light p-3">
+                          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                          <button type="submit" class="btn btn-primary btn-sm fw-bold">
+                            <i class="fa-solid fa-save me-1"></i> Save Changes
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
 
                 <!-- MODAL: RESET AGENT PASSWORD -->
                 <div class="modal fade" id="resetAgentPasswordModal<?= $a['id'] ?>" tabindex="-1">

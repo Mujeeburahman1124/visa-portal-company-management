@@ -247,4 +247,36 @@ class AgentController
 
         redirect($_SERVER['HTTP_REFERER'] ?? '/agents', "Password for {$agent['company_name']} reset to: {$newPassword}", 'success');
     }
+
+    public function delete(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        $pdo = Database::getConnection();
+
+        $id = (int)($_POST['agent_id'] ?? $_POST['id'] ?? 0);
+        if ($id <= 0) {
+            redirect('/agents', 'Invalid agent identifier.', 'danger');
+        }
+
+        $appCount = (int)$pdo->query("SELECT COUNT(*) FROM agent_applications WHERE agent_id = {$id}")->fetchColumn();
+        if ($appCount > 0) {
+            redirect('/agents', "Cannot delete agent with {$appCount} linked visa applications. Suspend account instead.", 'warning');
+        }
+
+        $stmt = $pdo->prepare("SELECT * FROM agents WHERE id = ?");
+        $stmt->execute([$id]);
+        $agent = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$agent) {
+            redirect('/agents', 'Agent not found.', 'danger');
+        }
+
+        $pdo->prepare("DELETE FROM agent_payments WHERE agent_id = ?")->execute([$id]);
+        $pdo->prepare("DELETE FROM agents WHERE id = ?")->execute([$id]);
+
+        AuditService::log('DELETE_AGENT', 'Agents', $id, "Deleted agent {$agent['company_name']} ({$agent['agent_code']})");
+        redirect('/agents', "Agent {$agent['company_name']} deleted successfully.", 'success');
+    }
 }
+

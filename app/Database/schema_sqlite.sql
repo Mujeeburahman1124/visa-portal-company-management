@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS customers (
     password_hash TEXT,
     current_country TEXT NOT NULL,
     address TEXT,
+    religion TEXT,
     created_by INTEGER,
     notes TEXT,
     is_active INTEGER DEFAULT 1,
@@ -182,16 +183,21 @@ CREATE TABLE IF NOT EXISTS visa_services (
 
 CREATE TABLE IF NOT EXISTS visa_eligibility_rules (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    service_id INTEGER NOT NULL,
-    applicant_nationality TEXT NOT NULL,
-    residence_country TEXT,
-    price_override REAL,
-    supplier_cost_override REAL,
-    processing_days_override INTEGER,
+    destination_country_id INTEGER NOT NULL,
+    visa_service_id INTEGER NULL,
+    applicant_nationality TEXT NOT NULL DEFAULT 'ANY',
+    residence_country TEXT DEFAULT 'ANY',
     is_eligible INTEGER DEFAULT 1,
+    override_selling_price REAL NULL,
+    override_supplier_cost REAL NULL,
+    override_processing_days INTEGER NULL,
+    preferred_supplier_id INTEGER NULL,
+    special_conditions TEXT NULL,
     notes TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (service_id) REFERENCES visa_services(id) ON DELETE CASCADE
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (destination_country_id) REFERENCES countries(id) ON DELETE CASCADE,
+    FOREIGN KEY (visa_service_id) REFERENCES visa_services(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS document_types (

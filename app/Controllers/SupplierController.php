@@ -189,6 +189,7 @@ class SupplierController
             redirect('/suppliers', 'Supplier not found.', 'danger');
         }
 
+        $pdo->prepare("DELETE FROM supplier_services WHERE supplier_id = ?")->execute([$id]);
         $pdo->prepare("DELETE FROM supplier_payments WHERE supplier_id = ?")->execute([$id]);
         $pdo->prepare("DELETE FROM suppliers WHERE id = ?")->execute([$id]);
 

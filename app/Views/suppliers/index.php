@@ -89,6 +89,13 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" data-bs-toggle="modal" data-bs-target="#editSupplierModal<?= $sup['id'] ?>" title="Edit Supplier">
                       <i class="fa-solid fa-pen-to-square"></i>
                     </button>
+                    <form action="/suppliers/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete supplier <?= e($sup['company_name']) ?> (<?= e($sup['supplier_code']) ?>)?');">
+                      <?= csrf_field() ?>
+                      <input type="hidden" name="supplier_id" value="<?= $sup['id'] ?>">
+                      <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" title="Delete Supplier">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    </form>
                   </div>
                 </td>
               </tr>

@@ -309,6 +309,15 @@ switch ($uri) {
         (new App\Controllers\PaymentController())->invoice();
         break;
 
+    case '/invoices':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts', 'visa-manager', 'visa-consultant']);
+        (new App\Controllers\PaymentController())->index();
+        break;
+
+    case '/profile':
+        (new App\Controllers\SettingsController())->index();
+        break;
+
     case '/payments/links':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts', 'visa-manager', 'visa-consultant']);
         (new App\Controllers\PaymentController())->links();
@@ -430,6 +439,11 @@ switch ($uri) {
     case '/agents/reset-password':
         RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
         (new App\Controllers\AgentController())->resetPassword();
+        break;
+
+    case '/agents/delete':
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        (new App\Controllers\AgentController())->delete();
         break;
 
     // Administration: Branches (Protected)

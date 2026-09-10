@@ -744,21 +744,51 @@ class CustomerController
 
         $pdo->beginTransaction();
         try {
-            $pdo->prepare("DELETE FROM applications WHERE customer_id = ?")->execute([$id]);
+            // Get all applications for this customer
+            $appStmt = $pdo->prepare("SELECT id FROM applications WHERE customer_id = ?");
+            $appStmt->execute([$id]);
+            $appIds = $appStmt->fetchAll(PDO::FETCH_COLUMN);
+
+            if (!empty($appIds)) {
+                $placeholders = implode(',', array_fill(0, count($appIds), '?'));
+
+                // Application sub-tables
+                $pdo->prepare("DELETE FROM application_stages WHERE application_id IN ($placeholders)")->execute($appIds);
+                $pdo->prepare("DELETE FROM application_notes WHERE application_id IN ($placeholders)")->execute($appIds);
+                try { $pdo->prepare("DELETE FROM application_tasks WHERE application_id IN ($placeholders)")->execute($appIds); } catch (\Throwable $e) {}
+                $pdo->prepare("DELETE FROM application_returns WHERE application_id IN ($placeholders)")->execute($appIds);
+                $pdo->prepare("DELETE FROM visa_approvals WHERE application_id IN ($placeholders)")->execute($appIds);
+                $pdo->prepare("DELETE FROM visa_rejections WHERE application_id IN ($placeholders)")->execute($appIds);
+                try { $pdo->prepare("DELETE FROM supplier_payments WHERE application_id IN ($placeholders)")->execute($appIds); } catch (\Throwable $e) {}
+                try { $pdo->prepare("DELETE FROM agent_applications WHERE application_id IN ($placeholders)")->execute($appIds); } catch (\Throwable $e) {}
+                try { $pdo->prepare("DELETE FROM agent_payments WHERE application_id IN ($placeholders)")->execute($appIds); } catch (\Throwable $e) {}
+            }
+
+            // Financial records in correct FK order (refunds -> payments -> links -> wallets)
+            $pdo->prepare("DELETE FROM refunds WHERE customer_id = ?")->execute([$id]);
+            try { $pdo->prepare("DELETE FROM invoices WHERE customer_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+            $pdo->prepare("DELETE FROM payments WHERE customer_id = ?")->execute([$id]);
+            try { $pdo->prepare("DELETE FROM payment_links WHERE customer_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+            $pdo->prepare("DELETE FROM wallet_transactions WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM customer_wallets WHERE customer_id = ?")->execute([$id]);
+
+            // Documents, tasks, appointments, communications
+            $pdo->prepare("DELETE FROM documents WHERE customer_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM document_requests WHERE customer_id = ?")->execute([$id]);
+            try { $pdo->prepare("DELETE FROM tasks WHERE customer_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+            try { $pdo->prepare("DELETE FROM appointments WHERE customer_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+            try { $pdo->prepare("DELETE FROM communications WHERE customer_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+
+            // Customer profile sub-tables
             $pdo->prepare("DELETE FROM customer_passports WHERE customer_id = ?")->execute([$id]);
             $pdo->prepare("DELETE FROM customer_national_ids WHERE customer_id = ?")->execute([$id]);
             $pdo->prepare("DELETE FROM customer_residences WHERE customer_id = ?")->execute([$id]);
-            $pdo->prepare("DELETE FROM customer_family WHERE customer_id = ?")->execute([$id]);
-            $pdo->prepare("DELETE FROM customer_wallets WHERE customer_id = ?")->execute([$id]);
-            $pdo->prepare("DELETE FROM wallet_transactions WHERE customer_id = ?")->execute([$id]);
-            $pdo->prepare("DELETE FROM payment_links WHERE customer_id = ?")->execute([$id]);
-            $pdo->prepare("DELETE FROM payments WHERE customer_id = ?")->execute([$id]);
-            $pdo->prepare("DELETE FROM refunds WHERE customer_id = ?")->execute([$id]);
-            $pdo->prepare("DELETE FROM documents WHERE customer_id = ?")->execute([$id]);
-            $pdo->prepare("DELETE FROM document_requests WHERE customer_id = ?")->execute([$id]);
-            $pdo->prepare("DELETE FROM tasks WHERE customer_id = ?")->execute([$id]);
-            $pdo->prepare("DELETE FROM appointments WHERE customer_id = ?")->execute([$id]);
-            $pdo->prepare("DELETE FROM communications WHERE customer_id = ?")->execute([$id]);
+            try { $pdo->prepare("DELETE FROM customer_family WHERE customer_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+
+            // Applications
+            $pdo->prepare("DELETE FROM applications WHERE customer_id = ?")->execute([$id]);
+
+            // Finally, customer
             $pdo->prepare("DELETE FROM customers WHERE id = ?")->execute([$id]);
             $pdo->commit();
 

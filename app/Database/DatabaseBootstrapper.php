@@ -532,9 +532,18 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE applications ADD COLUMN visa_type VARCHAR(150) NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE applications ADD COLUMN visa_duration VARCHAR(100) NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE applications ADD COLUMN entry_type VARCHAR(100) NULL"); } catch (\Throwable $e) {}
-            try { $pdo->exec("ALTER TABLE applications ADD COLUMN processing_type VARCHAR(100) NULL"); } catch (\Throwable $e) {}
-            try { $pdo->exec("ALTER TABLE applications ADD COLUMN payment_type VARCHAR(50) DEFAULT 'Pay Later'"); } catch (\Throwable $e) {}
-            try { $pdo->exec("ALTER TABLE applications ADD COLUMN payment_status VARCHAR(50) DEFAULT 'Unpaid'"); } catch (\Throwable $e) {}
+            // Safe ALTER TABLE migrations for customers table
+            try { $pdo->exec("ALTER TABLE customers ADD COLUMN religion VARCHAR(100) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE customers ADD COLUMN password_hash VARCHAR(255) NULL"); } catch (\Throwable $e) {}
+
+            // Safe ALTER TABLE migrations for visa_eligibility_rules table
+            try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN destination_country_id INT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN visa_service_id INT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN override_selling_price DECIMAL(10,2) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN override_supplier_cost DECIMAL(10,2) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN override_processing_days INT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN preferred_supplier_id INT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN special_conditions TEXT NULL"); } catch (\Throwable $e) {}
 
             // Invoices Table
             $pdo->exec("CREATE TABLE IF NOT EXISTS invoices (
@@ -622,6 +631,26 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE agents ADD COLUMN notes TEXT NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE agents ADD COLUMN is_active INTEGER DEFAULT 1"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE agents ADD COLUMN last_login_at DATETIME NULL"); } catch (\Throwable $e) {}
+
+            // Safe ALTER TABLE migrations for SQLite customers table
+            try { $pdo->exec("ALTER TABLE customers ADD COLUMN religion TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE customers ADD COLUMN password_hash TEXT NULL"); } catch (\Throwable $e) {}
+
+            // Safe ALTER TABLE migrations for SQLite applications table
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN destination_country TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN visa_category TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN visa_type TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN visa_duration TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN entry_type TEXT NULL"); } catch (\Throwable $e) {}
+
+            // Safe ALTER TABLE migrations for SQLite visa_eligibility_rules table
+            try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN destination_country_id INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN visa_service_id INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN override_selling_price REAL NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN override_supplier_cost REAL NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN override_processing_days INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN preferred_supplier_id INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN special_conditions TEXT NULL"); } catch (\Throwable $e) {}
         }
 
         // Ensure payment_links table exists for both drivers
