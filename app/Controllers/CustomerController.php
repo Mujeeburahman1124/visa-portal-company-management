@@ -774,7 +774,8 @@ class CustomerController
             try { $pdo->prepare("DELETE FROM wallet_transactions WHERE customer_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM customer_wallets WHERE customer_id = ?")->execute([$id]); } catch (\Throwable $e) {}
 
-            // Documents, tasks, appointments, communications
+            // Documents, tasks, appointments, communications, notifications
+            try { $pdo->prepare("DELETE FROM notifications WHERE customer_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM documents WHERE customer_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM document_requests WHERE customer_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM tasks WHERE customer_id = ?")->execute([$id]); } catch (\Throwable $e) {}

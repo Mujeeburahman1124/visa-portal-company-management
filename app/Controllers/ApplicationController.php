@@ -316,7 +316,7 @@ class ApplicationController
 
                 $docStmt = $pdo->prepare("INSERT INTO documents (
                     application_id, customer_id, document_type_id, document_title, file_path, file_name, file_size, mime_type, version, status, uploaded_by_type, uploaded_by_id, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'Verified', 'Staff', ?, CURRENT_TIMESTAMP)");
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'Verified', 'Staff', ?, CURRENT_TIMESTAMP)");
 
                 foreach ($_FILES['application_documents']['name'] as $idx => $origName) {
                     if (!empty($origName) && $_FILES['application_documents']['error'][$idx] === UPLOAD_ERR_OK) {
@@ -1284,7 +1284,8 @@ class ApplicationController
             try { $pdo->prepare("DELETE FROM invoices WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM payment_links WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
 
-            // Documents, tasks, appointments, communications
+            // Documents, tasks, appointments, communications, notifications
+            try { $pdo->prepare("DELETE FROM notifications WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM documents WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM document_requests WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
             try { $pdo->prepare("DELETE FROM tasks WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}

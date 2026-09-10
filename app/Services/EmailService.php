@@ -324,10 +324,10 @@ class EmailService
      */
     public static function wrapEmailTemplate(string $title, string $contentHtml, array $data = []): string
     {
-        $companyName = htmlspecialchars($data['companyName'] ?? App::COMPANY_NAME, ENT_QUOTES, 'UTF-8');
-        $companyEmail = htmlspecialchars($data['companyEmail'] ?? 'notifications@mstravelhub.com', ENT_QUOTES, 'UTF-8');
-        $companyPhone = htmlspecialchars($data['companyPhone'] ?? '+94 11 234 5678', ENT_QUOTES, 'UTF-8');
-        $companyWebsite = htmlspecialchars($data['companyWebsite'] ?? 'https://visatrack.mstravelhub.com', ENT_QUOTES, 'UTF-8');
+        $companyName = htmlspecialchars((string)($data['companyName'] ?? App::COMPANY_NAME), ENT_QUOTES, 'UTF-8');
+        $companyEmail = htmlspecialchars((string)($data['companyEmail'] ?? 'notifications@mstravelhub.com'), ENT_QUOTES, 'UTF-8');
+        $companyPhone = htmlspecialchars((string)($data['companyPhone'] ?? '+94 11 234 5678'), ENT_QUOTES, 'UTF-8');
+        $companyWebsite = htmlspecialchars((string)($data['companyWebsite'] ?? 'https://visatrack.mstravelhub.com'), ENT_QUOTES, 'UTF-8');
         $currentYear = date('Y');
 
         return <<<HTML
