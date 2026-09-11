@@ -266,7 +266,7 @@ class PaymentController
             JOIN suppliers s ON sw.supplier_id = s.id 
             ORDER BY sw.current_balance DESC, s.company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-        $agentWallets = $pdo->query("SELECT aw.*, COALESCE(ag.name, u.name, 'Agent') as agent_name, COALESCE(ag.email, u.email, '') as agent_email 
+        $agentWallets = $pdo->query("SELECT aw.*, COALESCE(ag.company_name, ag.contact_person, u.name, 'Agent') as agent_name, COALESCE(ag.email, u.email, '') as agent_email 
             FROM agent_wallets aw 
             LEFT JOIN agents ag ON aw.agent_id = ag.id 
             LEFT JOIN users u ON aw.agent_id = u.id 
@@ -281,9 +281,9 @@ class PaymentController
         $customersList = $pdo->query("SELECT id, full_name, customer_code FROM customers WHERE is_active = 1 ORDER BY full_name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $suppliersList = $pdo->query("SELECT id, company_name as name, company_name FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
         
-        $agentsList = $pdo->query("SELECT id, name FROM agents WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $agentsList = $pdo->query("SELECT id, company_name as name, company_name, contact_person FROM agents WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
         if (empty($agentsList)) {
-            $agentsList = $pdo->query("SELECT u.id, u.name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.is_active = 1 ORDER BY u.name ASC")->fetchAll(PDO::FETCH_ASSOC);
+            $agentsList = $pdo->query("SELECT u.id, u.name, u.name as company_name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.is_active = 1 ORDER BY u.name ASC")->fetchAll(PDO::FETCH_ASSOC);
         }
 
         require_once dirname(__DIR__) . '/Views/payments/wallets.php';
