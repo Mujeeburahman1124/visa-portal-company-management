@@ -351,6 +351,11 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE staff_leave_requests ADD COLUMN total_days INTEGER DEFAULT 1"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE staff_leave_requests ADD COLUMN approver_id INTEGER NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE staff_leave_requests ADD COLUMN approver_notes TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE staff_requests ADD COLUMN title TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE staff_requests ADD COLUMN description TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE staff_requests ADD COLUMN resolved_by INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE staff_requests ADD COLUMN resolution_notes TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE staff_requests ADD COLUMN resolved_at DATETIME NULL"); } catch (\Throwable $e) {}
         } else {
             // Ensure password_resets table exists for MySQL
             $pdo->exec("CREATE TABLE IF NOT EXISTS password_resets (

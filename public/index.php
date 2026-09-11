@@ -687,6 +687,11 @@ switch ($uri) {
         (new App\Controllers\VisaPackageController())->priceHistory();
         break;
 
+    case '/visa-packages/inventory/adjust':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
+        (new App\Controllers\VisaPackageController())->adjustInventory();
+        break;
+
     case '/countries':
         redirect('/settings?tab=countries');
         break;

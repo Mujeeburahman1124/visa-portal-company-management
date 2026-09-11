@@ -152,7 +152,7 @@ class ActionCenterController
         $actionHistory = $pdo->query($historySql)->fetchAll(PDO::FETCH_ASSOC);
 
         // Supporting data for modals
-        $staffList = $pdo->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $staffList = $pdo->query("SELECT u.id, u.name, COALESCE(r.name, '') as role FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.is_active = 1 ORDER BY u.name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $applications = $pdo->query("SELECT a.id, a.application_number, c.full_name as customer_name 
             FROM applications a 
             JOIN customers c ON a.customer_id = c.id 

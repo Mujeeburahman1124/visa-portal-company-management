@@ -261,15 +261,16 @@ class PaymentController
             JOIN customers c ON cw.customer_id = c.id 
             ORDER BY cw.current_balance DESC, c.full_name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-        $supplierWallets = $pdo->query("SELECT sw.*, s.name as supplier_name, s.company_name, s.country 
+        $supplierWallets = $pdo->query("SELECT sw.*, s.company_name as supplier_name, s.company_name, s.country 
             FROM supplier_wallets sw 
             JOIN suppliers s ON sw.supplier_id = s.id 
-            ORDER BY sw.current_balance DESC, s.name ASC")->fetchAll(PDO::FETCH_ASSOC);
+            ORDER BY sw.current_balance DESC, s.company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-        $agentWallets = $pdo->query("SELECT aw.*, u.name as agent_name, u.email as agent_email 
+        $agentWallets = $pdo->query("SELECT aw.*, COALESCE(ag.name, u.name, 'Agent') as agent_name, COALESCE(ag.email, u.email, '') as agent_email 
             FROM agent_wallets aw 
-            JOIN users u ON aw.agent_id = u.id 
-            ORDER BY aw.current_balance DESC, u.name ASC")->fetchAll(PDO::FETCH_ASSOC);
+            LEFT JOIN agents ag ON aw.agent_id = ag.id 
+            LEFT JOIN users u ON aw.agent_id = u.id 
+            ORDER BY aw.current_balance DESC")->fetchAll(PDO::FETCH_ASSOC);
 
         $recentTransactions = $pdo->query("SELECT wt.*, c.full_name as customer_name, u.name as created_by_name 
             FROM wallet_transactions wt 
@@ -278,8 +279,12 @@ class PaymentController
             ORDER BY wt.created_at DESC LIMIT 50")->fetchAll(PDO::FETCH_ASSOC);
 
         $customersList = $pdo->query("SELECT id, full_name, customer_code FROM customers WHERE is_active = 1 ORDER BY full_name ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $suppliersList = $pdo->query("SELECT id, name FROM suppliers WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $agentsList = $pdo->query("SELECT id, name FROM users WHERE is_active = 1 AND role IN ('agent', 'staff', 'visa-consultant') ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $suppliersList = $pdo->query("SELECT id, company_name as name, company_name FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        
+        $agentsList = $pdo->query("SELECT id, name FROM agents WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($agentsList)) {
+            $agentsList = $pdo->query("SELECT u.id, u.name FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.is_active = 1 ORDER BY u.name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        }
 
         require_once dirname(__DIR__) . '/Views/payments/wallets.php';
     }

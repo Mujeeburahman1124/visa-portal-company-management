@@ -22,6 +22,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       <p class="text-muted small mb-0">Manage global visa packages, destination country rules, categories, supplier costs, service fees, currencies &amp; immutable price audit history.</p>
     </div>
     <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-warning px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#adjustInventoryModal">
+        <i class="fa-solid fa-boxes-packing me-1"></i> Adjust Inventory
+      </button>
       <button type="button" class="btn btn-outline-primary px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
         <i class="fa-solid fa-layer-group me-1"></i> Add Category
       </button>
@@ -225,6 +228,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     <div class="btn-group btn-group-sm">
                       <button type="button" class="btn btn-outline-info py-1 px-2" title="View Price History" onclick="viewPriceHistory(<?= $pkg['id'] ?>, '<?= e(addslashes($pkg['name'])) ?>')">
                         <i class="fa-solid fa-clock-rotate-left"></i>
+                      </button>
+                      <button type="button" class="btn btn-outline-warning py-1 px-2" title="Adjust Inventory / Log Transaction" onclick="openAdjustInventoryModal(<?= $pkg['id'] ?>, '<?= e(addslashes($pkg['name'])) ?>')">
+                        <i class="fa-solid fa-boxes-packing"></i>
                       </button>
                       <button type="button" class="btn btn-outline-primary py-1 px-2" title="Edit Package" onclick="openEditPackageModal(<?= htmlspecialchars(json_encode($pkg), ENT_QUOTES, 'UTF-8') ?>)">
                         <i class="fa-solid fa-pen-to-square"></i>
@@ -931,7 +937,65 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   </div>
 </div>
 
+<!-- Modal: Adjust Inventory / Log Transaction -->
+<div class="modal fade" id="adjustInventoryModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-light border-bottom">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-boxes-packing text-warning me-2"></i> Adjust Visa Package Inventory</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/visa-packages/inventory/adjust" method="POST">
+        <?= csrf_field() ?>
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Visa Package <span class="text-danger">*</span></label>
+            <select name="visa_service_id" id="adjPkgId" class="form-select" required>
+              <option value="">-- Select Visa Package --</option>
+              <?php foreach ($packages as $p): ?>
+                <option value="<?= $p['id'] ?>">
+                  <?= e($p['country_name'] ?? '') ?> — <?= e($p['name']) ?> (<?= e($p['currency'] ?? 'USD') ?> <?= number_format((float)$p['selling_price'], 2) ?>)
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Action / Transaction Type <span class="text-danger">*</span></label>
+            <select name="action_type" class="form-select" required>
+              <option value="Stock Allocation">Stock Allocation (Supplier Slots Added)</option>
+              <option value="Stock Reduction">Stock Reduction (Quota Reduced)</option>
+              <option value="Manual Adjustment">Manual Audit Adjustment</option>
+              <option value="Cancellation Return">Application Cancellation Return</option>
+              <option value="Supplier Rate Revision">Supplier Rate Revision</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Effective Date</label>
+            <input type="date" name="effective_date" class="form-control" value="<?= date('Y-m-d') ?>">
+          </div>
+          <div class="mb-0">
+            <label class="form-label small fw-semibold">Audit Notes / Reason <span class="text-danger">*</span></label>
+            <textarea name="notes" class="form-control" rows="3" placeholder="Reason for inventory transaction or allocation..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-top">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning px-4 fw-semibold"><i class="fa-solid fa-check me-1"></i> Save Transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
+function openAdjustInventoryModal(pkgId, pkgName) {
+  if (pkgId && document.getElementById('adjPkgId')) {
+    document.getElementById('adjPkgId').value = pkgId;
+  }
+  const modal = new bootstrap.Modal(document.getElementById('adjustInventoryModal'));
+  modal.show();
+}
+
 function calcSellingPrice(mode) {
   const pfx = mode === 'create' ? 'pkg' : 'editPkg';
   const cost = parseFloat(document.getElementById(pfx + 'SupplierCost').value) || 0;

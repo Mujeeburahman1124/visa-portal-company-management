@@ -20,10 +20,13 @@ class VisaPackageController
         $supplierId = !empty($_GET['supplier_id']) ? (int)$_GET['supplier_id'] : 0;
         $search = trim($_GET['search'] ?? '');
         $activeTab = trim($_GET['tab'] ?? 'packages');
+        if ($activeTab === 'history') {
+            $activeTab = 'inventory';
+        }
 
         // Fetch Packages with Supplier Info
         $sql = "SELECT vs.*, c.name as country_name, c.flag_emoji, vc.name as category_name,
-                s.name as supplier_company_name,
+                s.company_name as supplier_company_name,
                 (SELECT COUNT(*) FROM applications a WHERE a.visa_service_id = vs.id) as total_applications,
                 (SELECT COUNT(*) FROM visa_package_price_history vph WHERE vph.visa_service_id = vs.id) as price_changes_count
                 FROM visa_services vs
@@ -65,7 +68,7 @@ class VisaPackageController
         $countries = $pdo->query("SELECT id, name, flag_emoji FROM countries ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $categories = $pdo->query("SELECT vc.*, (SELECT COUNT(*) FROM visa_services vs WHERE vs.category_id = vc.id) as packages_count FROM visa_categories vc ORDER BY vc.name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $visaTypes = $pdo->query("SELECT * FROM visa_types ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $suppliers = $pdo->query("SELECT id, name, contact_person, country FROM suppliers WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $suppliers = $pdo->query("SELECT id, company_name as name, company_name, contact_person, country FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         // Inventory / Transaction History with Combinable Filters
         $invFilterDate = trim($_GET['inv_date_preset'] ?? '');
@@ -93,7 +96,7 @@ class VisaPackageController
             $invDateTo = date('Y-m-d');
         }
 
-        $invSql = "SELECT it.*, vs.name as package_name, c.name as country_name, s.name as supplier_name_ref,
+        $invSql = "SELECT it.*, vs.name as package_name, c.name as country_name, s.company_name as supplier_name_ref,
                    u.name as user_name, a.application_number
                    FROM visa_package_inventory_transactions it
                    JOIN visa_services vs ON it.visa_service_id = vs.id
@@ -183,7 +186,7 @@ class VisaPackageController
         // Fetch supplier name if supplier ID provided
         $supplierName = trim($_POST['supplier_name'] ?? '');
         if ($supplierId && empty($supplierName)) {
-            $supplierName = (string)($pdo->query("SELECT name FROM suppliers WHERE id = {$supplierId}")->fetchColumn() ?: '');
+            $supplierName = (string)($pdo->query("SELECT company_name FROM suppliers WHERE id = {$supplierId}")->fetchColumn() ?: '');
         }
 
         if ($countryId <= 0 || $categoryId <= 0 || empty($name) || $sellingPrice <= 0) {
@@ -270,7 +273,7 @@ class VisaPackageController
 
         $supplierName = trim($_POST['supplier_name'] ?? '');
         if ($supplierId && empty($supplierName)) {
-            $supplierName = (string)($pdo->query("SELECT name FROM suppliers WHERE id = {$supplierId}")->fetchColumn() ?: '');
+            $supplierName = (string)($pdo->query("SELECT company_name FROM suppliers WHERE id = {$supplierId}")->fetchColumn() ?: '');
         }
 
         $priceChanged = (
@@ -344,7 +347,7 @@ class VisaPackageController
         $pdo = Database::getConnection();
         $serviceId = (int)($_GET['id'] ?? 0);
 
-        $stmt = $pdo->prepare("SELECT vph.*, vs.name as service_name, s.name as supplier_name, u.name as created_by_name
+        $stmt = $pdo->prepare("SELECT vph.*, vs.name as service_name, s.company_name as supplier_name, u.name as created_by_name
                                FROM visa_package_price_history vph
                                JOIN visa_services vs ON vph.visa_service_id = vs.id
                                LEFT JOIN suppliers s ON vph.supplier_id = s.id
@@ -452,5 +455,39 @@ class VisaPackageController
         AuditService::log('CREATE', 'VisaTypes', $typeId, "Created new Visa Type: {$name}");
 
         redirect('/visa-packages?tab=types', "Visa Type '{$name}' created successfully!", 'success');
+    }
+
+    public function adjustInventory(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $currentUser = auth_user();
+
+        $serviceId = (int)($_POST['visa_service_id'] ?? 0);
+        $actionType = trim($_POST['action_type'] ?? 'Stock Adjustment');
+        $notes = trim($_POST['notes'] ?? 'Manual Inventory Adjustment');
+        $effectiveDate = !empty($_POST['effective_date']) ? $_POST['effective_date'] : date('Y-m-d');
+
+        if ($serviceId <= 0) {
+            redirect('/visa-packages?tab=inventory', 'Please select a valid visa package.', 'danger');
+        }
+
+        $pkg = $pdo->query("SELECT * FROM visa_services WHERE id = {$serviceId}")->fetch(PDO::FETCH_ASSOC);
+        if (!$pkg) {
+            redirect('/visa-packages?tab=inventory', 'Visa Package not found.', 'danger');
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO visa_package_inventory_transactions (
+            visa_service_id, action_type, prev_cost, new_cost, prev_price, new_price, currency,
+            supplier_id, user_id, notes, effective_date, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
+        $stmt->execute([
+            $serviceId, $actionType, (float)$pkg['supplier_cost'], (float)$pkg['supplier_cost'],
+            (float)$pkg['selling_price'], (float)$pkg['selling_price'], $pkg['currency'] ?? 'USD',
+            $pkg['supplier_id'], $currentUser['id'] ?? 1, $notes, $effectiveDate
+        ]);
+
+        AuditService::log('INVENTORY_ADJUSTMENT', 'VisaServices', $serviceId, "Recorded inventory adjustment for {$pkg['name']}: {$notes}");
+        redirect('/visa-packages?tab=inventory', "Inventory transaction recorded successfully for '{$pkg['name']}'!", 'success');
     }
 }
