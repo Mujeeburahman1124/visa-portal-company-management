@@ -141,6 +141,21 @@ class PaymentController
         $txnRef = trim($_POST['transaction_reference'] ?? '');
         $notes = trim($_POST['notes'] ?? '');
 
+        // Multi-Currency and Manual Conversion Support
+        $fromCurrency = strtoupper(trim($_POST['from_currency'] ?? 'USD'));
+        $toCurrency = strtoupper(trim($_POST['to_currency'] ?? 'USD'));
+        $exchangeRate = (float)($_POST['exchange_rate'] ?? 1.000000);
+        if ($exchangeRate <= 0) {
+            $exchangeRate = 1.000000;
+        }
+        $originalAmount = (float)($_POST['original_amount'] ?? $amount);
+        $convertedAmount = (float)($_POST['converted_amount'] ?? $amount);
+
+        // If converted amount provided and differs, base payment amount is the converted amount
+        if ($convertedAmount > 0 && abs($convertedAmount - $amount) > 0.001) {
+            $amount = $convertedAmount;
+        }
+
         if ($appId <= 0 || $amount <= 0) {
             redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Please specify a valid application and payment amount.', 'danger');
         }
@@ -165,7 +180,7 @@ class PaymentController
         // If paid via customer wallet, debit wallet
         if ($paymentMethod === 'Customer Wallet') {
             try {
-                \App\Services\WalletService::debit($customerId, $amount, "Payment for {$app['application_number']} (Receipt: {$receiptNumber})", $appId, $currentUser['id'] ?? null);
+                \App\Services\WalletService::debit($customerId, $amount, "Payment for {$app['application_number']} (Receipt: {$receiptNumber})", $appId, $currentUser['id'] ?? null, $toCurrency);
             } catch (\Throwable $e) {
                 redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Wallet payment failed: ' . $e->getMessage(), 'danger');
             }
@@ -173,11 +188,13 @@ class PaymentController
 
         $payStmt = $pdo->prepare("INSERT INTO payments (
             payment_number, invoice_number, application_id, customer_id, amount, currency,
+            from_currency, to_currency, exchange_rate, original_amount, converted_amount,
             payment_date, payment_method, transaction_reference, payment_type, status, received_by, notes
-        ) VALUES (?, ?, ?, ?, ?, 'USD', ?, ?, ?, 'Customer Payment', 'Completed', ?, ?)");
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Customer Payment', 'Completed', ?, ?)");
 
         $payStmt->execute([
-            $receiptNumber, $invoiceNumber, $appId, $customerId, $amount,
+            $receiptNumber, $invoiceNumber, $appId, $customerId, $amount, $toCurrency,
+            $fromCurrency, $toCurrency, $exchangeRate, $originalAmount, $amount,
             $paymentDate, $paymentMethod, $txnRef, $currentUser['id'], $notes
         ]);
         $paymentId = (int)$pdo->lastInsertId();
@@ -194,7 +211,8 @@ class PaymentController
                     "Automatic Wallet Top-up from office overpayment on {$app['application_number']} (Receipt: {$receiptNumber})",
                     $paymentId,
                     $appId,
-                    $currentUser['id'] ?? null
+                    $currentUser['id'] ?? null,
+                    $toCurrency
                 );
             } catch (\Throwable $e) {}
         }
@@ -207,7 +225,7 @@ class PaymentController
                 'application_number' => $app['application_number'] ?? '',
                 'paymentNumber' => $receiptNumber,
                 'amount' => number_format($amount, 2),
-                'currency' => 'USD',
+                'currency' => $toCurrency,
                 'paymentMethod' => $paymentMethod,
                 'paymentDate' => $paymentDate,
                 'receiptUrl' => (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000') . "/portal/invoices",
@@ -216,14 +234,106 @@ class PaymentController
             ]);
         } catch (\Throwable $e) {}
 
-        AuditService::log('PAYMENT_RECEIVED', 'Payments', $paymentId, "Received payment of $" . number_format($amount, 2) . " (Receipt {$receiptNumber}) for {$app['application_number']}" . ($overpaidExcess > 0 ? " (Excess $" . number_format($overpaidExcess, 2) . " credited to wallet)" : ''), [
+        AuditService::log('PAYMENT_RECEIVED', 'Payments', $paymentId, "Received payment of {$toCurrency} " . number_format($amount, 2) . " (Receipt {$receiptNumber}) for {$app['application_number']}" . ($fromCurrency !== $toCurrency ? " [Converted from {$fromCurrency} " . number_format($originalAmount, 2) . " @ {$exchangeRate}]" : '') . ($overpaidExcess > 0 ? " (Excess {$toCurrency} " . number_format($overpaidExcess, 2) . " credited to wallet)" : ''), [
             'amount' => $amount,
+            'from_currency' => $fromCurrency,
+            'to_currency' => $toCurrency,
+            'exchange_rate' => $exchangeRate,
+            'original_amount' => $originalAmount,
             'method' => $paymentMethod,
             'receipt' => $receiptNumber,
             'wallet_topup' => $overpaidExcess,
         ]);
 
-        redirect("/payments/receipt?id={$paymentId}", "Payment recorded successfully." . ($overpaidExcess > 0 ? " Excess $" . number_format($overpaidExcess, 2) . " was automatically credited to customer's wallet." : '') . " Receipt generated.", 'success');
+        redirect("/payments/receipt?id={$paymentId}", "Payment recorded successfully." . ($overpaidExcess > 0 ? " Excess {$toCurrency} " . number_format($overpaidExcess, 2) . " was automatically credited to customer's wallet." : '') . " Receipt generated.", 'success');
+    }
+
+    /**
+     * Central Wallets Management View for Super Admin / Accounts
+     */
+    public function walletsOverview(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+
+        $customerWallets = $pdo->query("SELECT cw.*, c.full_name, c.customer_code, c.email, c.mobile 
+            FROM customer_wallets cw 
+            JOIN customers c ON cw.customer_id = c.id 
+            ORDER BY cw.current_balance DESC, c.full_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        $supplierWallets = $pdo->query("SELECT sw.*, s.name as supplier_name, s.company_name, s.country 
+            FROM supplier_wallets sw 
+            JOIN suppliers s ON sw.supplier_id = s.id 
+            ORDER BY sw.current_balance DESC, s.name ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        $agentWallets = $pdo->query("SELECT aw.*, u.name as agent_name, u.email as agent_email 
+            FROM agent_wallets aw 
+            JOIN users u ON aw.agent_id = u.id 
+            ORDER BY aw.current_balance DESC, u.name ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        $recentTransactions = $pdo->query("SELECT wt.*, c.full_name as customer_name, u.name as created_by_name 
+            FROM wallet_transactions wt 
+            LEFT JOIN customers c ON wt.customer_id = c.id 
+            LEFT JOIN users u ON wt.created_by = u.id 
+            ORDER BY wt.created_at DESC LIMIT 50")->fetchAll(PDO::FETCH_ASSOC);
+
+        $customersList = $pdo->query("SELECT id, full_name, customer_code FROM customers WHERE is_active = 1 ORDER BY full_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $suppliersList = $pdo->query("SELECT id, name FROM suppliers WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $agentsList = $pdo->query("SELECT id, name FROM users WHERE is_active = 1 AND role IN ('agent', 'staff', 'visa-consultant') ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        require_once dirname(__DIR__) . '/Views/payments/wallets.php';
+    }
+
+    /**
+     * Admin Direct Supplier Wallet Top-up
+     */
+    public function supplierWalletDeposit(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $currentUser = auth_user();
+
+        $supplierId = (int)($_POST['supplier_id'] ?? 0);
+        $amount = (float)($_POST['amount'] ?? 0.00);
+        $currency = strtoupper(trim($_POST['currency'] ?? 'USD'));
+        $notes = trim($_POST['notes'] ?? 'Supplier Advance Deposit');
+
+        if ($supplierId <= 0 || $amount <= 0) {
+            redirect('/payments/wallets?tab=suppliers', 'Please specify valid supplier and amount.', 'danger');
+        }
+
+        try {
+            \App\Services\WalletService::creditSupplier($supplierId, $amount, $notes, $currentUser['id'] ?? null, $currency);
+            redirect('/payments/wallets?tab=suppliers', "Successfully credited {$currency} " . number_format($amount, 2) . " to supplier wallet.", 'success');
+        } catch (\Throwable $e) {
+            redirect('/payments/wallets?tab=suppliers', 'Supplier top-up failed: ' . $e->getMessage(), 'danger');
+        }
+    }
+
+    /**
+     * Admin Direct Agent Wallet Top-up
+     */
+    public function agentWalletDeposit(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $currentUser = auth_user();
+
+        $agentId = (int)($_POST['agent_id'] ?? 0);
+        $amount = (float)($_POST['amount'] ?? 0.00);
+        $currency = strtoupper(trim($_POST['currency'] ?? 'USD'));
+        $notes = trim($_POST['notes'] ?? 'Agent Credit Top-up');
+
+        if ($agentId <= 0 || $amount <= 0) {
+            redirect('/payments/wallets?tab=agents', 'Please specify valid agent and amount.', 'danger');
+        }
+
+        try {
+            \App\Services\WalletService::creditAgent($agentId, $amount, $notes, $currentUser['id'] ?? null, $currency);
+            redirect('/payments/wallets?tab=agents', "Successfully credited {$currency} " . number_format($amount, 2) . " to agent wallet.", 'success');
+        } catch (\Throwable $e) {
+            redirect('/payments/wallets?tab=agents', 'Agent top-up failed: ' . $e->getMessage(), 'danger');
+        }
     }
 
     /**
@@ -237,6 +347,7 @@ class PaymentController
 
         $customerId = (int)($_POST['customer_id'] ?? 0);
         $amount = (float)($_POST['amount'] ?? 0.00);
+        $currency = strtoupper(trim($_POST['currency'] ?? 'USD'));
         $paymentMethod = trim($_POST['payment_method'] ?? 'Cash at Office');
         $txnRef = trim($_POST['transaction_reference'] ?? '');
         $notes = trim($_POST['notes'] ?? '');
@@ -255,7 +366,7 @@ class PaymentController
 
         try {
             $desc = "Office Wallet Deposit via {$paymentMethod}" . ($txnRef ? " (Ref: {$txnRef})" : '') . ($notes ? " - {$notes}" : '');
-            $res = \App\Services\WalletService::credit($customerId, $amount, $desc, null, null, $currentUser['id'] ?? null);
+            $res = \App\Services\WalletService::credit($customerId, $amount, $desc, null, null, $currentUser['id'] ?? null, $currency);
 
             // Also record a payment receipt record for accounting
             $receiptNumber = FinanceService::generateReceiptNumber();
@@ -263,10 +374,10 @@ class PaymentController
             $pdo->prepare("INSERT INTO payments (
                 payment_number, invoice_number, customer_id, amount, currency, payment_date, payment_method,
                 transaction_reference, wallet_transaction_id, payment_type, status, received_by, notes
-            ) VALUES (?, ?, ?, ?, 'USD', CURRENT_DATE, ?, ?, ?, 'Wallet Topup', 'Completed', ?, ?)")
-            ->execute([$receiptNumber, $invNumber, $customerId, $amount, $paymentMethod, $txnRef, $res['transaction_id'] ?? null, $currentUser['id'] ?? null, $notes]);
+            ) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, ?, ?, ?, 'Wallet Topup', 'Completed', ?, ?)")
+            ->execute([$receiptNumber, $invNumber, $customerId, $amount, $currency, $paymentMethod, $txnRef, $res['transaction_id'] ?? null, $currentUser['id'] ?? null, $notes]);
 
-            redirect($_SERVER['HTTP_REFERER'] ?? '/payments', "Successfully deposited $" . number_format($amount, 2) . " into {$customer['full_name']}'s digital wallet.", 'success');
+            redirect($_SERVER['HTTP_REFERER'] ?? '/payments', "Successfully deposited {$currency} " . number_format($amount, 2) . " into {$customer['full_name']}'s digital wallet.", 'success');
         } catch (\Throwable $e) {
             redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Deposit failed: ' . $e->getMessage(), 'danger');
         }

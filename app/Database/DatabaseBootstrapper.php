@@ -162,6 +162,195 @@ class DatabaseBootstrapper
                 FOREIGN KEY (wallet_id) REFERENCES customer_wallets(id) ON DELETE CASCADE,
                 FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
             );");
+
+            // Visa Package Price History
+            $pdo->exec("CREATE TABLE IF NOT EXISTS visa_package_price_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                visa_service_id INTEGER NOT NULL,
+                supplier_id INTEGER NULL,
+                supplier_cost REAL DEFAULT 0.00,
+                service_fee REAL DEFAULT 0.00,
+                tax_rate REAL DEFAULT 5.00,
+                selling_price REAL NOT NULL,
+                currency TEXT DEFAULT 'USD',
+                effective_from DATETIME NOT NULL,
+                effective_to DATETIME NULL,
+                notes TEXT,
+                created_by INTEGER NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (visa_service_id) REFERENCES visa_services(id) ON DELETE CASCADE
+            );");
+
+            // Visa Package Inventory Transactions
+            $pdo->exec("CREATE TABLE IF NOT EXISTS visa_package_inventory_transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                visa_service_id INTEGER NOT NULL,
+                application_id INTEGER NULL,
+                action_type TEXT NOT NULL,
+                prev_cost REAL NULL,
+                new_cost REAL NULL,
+                prev_price REAL NULL,
+                new_price REAL NULL,
+                currency TEXT DEFAULT 'USD',
+                supplier_id INTEGER NULL,
+                user_id INTEGER NULL,
+                notes TEXT,
+                effective_date DATE,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (visa_service_id) REFERENCES visa_services(id) ON DELETE CASCADE
+            );");
+
+            // Staff Leave Requests
+            $pdo->exec("CREATE TABLE IF NOT EXISTS staff_leave_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                leave_type TEXT NOT NULL,
+                start_date DATE NOT NULL,
+                end_date DATE NOT NULL,
+                total_days INTEGER NOT NULL,
+                reason TEXT NOT NULL,
+                status TEXT DEFAULT 'Pending',
+                approver_id INTEGER NULL,
+                approver_notes TEXT,
+                approved_at DATETIME NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );");
+
+            // Staff Operational Requests
+            $pdo->exec("CREATE TABLE IF NOT EXISTS staff_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                request_type TEXT NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT,
+                priority TEXT DEFAULT 'Normal',
+                status TEXT DEFAULT 'Pending',
+                resolution_notes TEXT,
+                resolved_by INTEGER NULL,
+                resolved_at DATETIME NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );");
+
+            // Supplier Wallets & Transactions
+            $pdo->exec("CREATE TABLE IF NOT EXISTS supplier_wallets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                supplier_id INTEGER NOT NULL UNIQUE,
+                currency TEXT DEFAULT 'USD',
+                current_balance REAL DEFAULT 0.00,
+                total_credited REAL DEFAULT 0.00,
+                total_debited REAL DEFAULT 0.00,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE
+            );");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS supplier_wallet_transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                transaction_id TEXT NOT NULL UNIQUE,
+                wallet_id INTEGER NOT NULL,
+                supplier_id INTEGER NOT NULL,
+                transaction_type TEXT NOT NULL,
+                amount REAL NOT NULL,
+                balance_after REAL NOT NULL,
+                currency TEXT DEFAULT 'USD',
+                original_amount REAL NULL,
+                exchange_rate REAL DEFAULT 1.0,
+                description TEXT,
+                created_by INTEGER NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (wallet_id) REFERENCES supplier_wallets(id) ON DELETE CASCADE
+            );");
+
+            // Agent Wallets & Transactions
+            $pdo->exec("CREATE TABLE IF NOT EXISTS agent_wallets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                agent_id INTEGER NOT NULL UNIQUE,
+                currency TEXT DEFAULT 'USD',
+                current_balance REAL DEFAULT 0.00,
+                total_credited REAL DEFAULT 0.00,
+                total_debited REAL DEFAULT 0.00,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (agent_id) REFERENCES users(id) ON DELETE CASCADE
+            );");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS agent_wallet_transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                transaction_id TEXT NOT NULL UNIQUE,
+                wallet_id INTEGER NOT NULL,
+                agent_id INTEGER NOT NULL,
+                transaction_type TEXT NOT NULL,
+                amount REAL NOT NULL,
+                balance_after REAL NOT NULL,
+                currency TEXT DEFAULT 'USD',
+                original_amount REAL NULL,
+                exchange_rate REAL DEFAULT 1.0,
+                description TEXT,
+                created_by INTEGER NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (wallet_id) REFERENCES agent_wallets(id) ON DELETE CASCADE
+            );");
+
+            // Invoices Table for SQLite
+            $pdo->exec("CREATE TABLE IF NOT EXISTS invoices (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                invoice_number TEXT NOT NULL UNIQUE,
+                application_id INTEGER NULL,
+                customer_id INTEGER NOT NULL,
+                issue_date DATE NOT NULL,
+                due_date DATE NULL,
+                subtotal REAL DEFAULT 0.00,
+                discount REAL DEFAULT 0.00,
+                tax_rate REAL DEFAULT 0.00,
+                tax_amount REAL DEFAULT 0.00,
+                total_amount REAL DEFAULT 0.00,
+                paid_amount REAL DEFAULT 0.00,
+                balance_amount REAL DEFAULT 0.00,
+                from_currency TEXT NULL,
+                to_currency TEXT NULL,
+                exchange_rate REAL DEFAULT 1.0000,
+                original_amount REAL NULL,
+                converted_amount REAL NULL,
+                status TEXT DEFAULT 'Unpaid',
+                notes TEXT NULL,
+                created_by INTEGER NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE,
+                FOREIGN KEY (customer_id) REFERENCES customers(id)
+            );");
+
+            // Safe column additions for SQLite
+            try { $pdo->exec("ALTER TABLE visa_services ADD COLUMN supplier_id INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_services ADD COLUMN supplier_name TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_services ADD COLUMN effective_date DATE NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_services ADD COLUMN currency TEXT DEFAULT 'USD'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_services ADD COLUMN notes TEXT NULL"); } catch (\Throwable $e) {}
+
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN from_currency TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN to_currency TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN exchange_rate REAL DEFAULT 1.0000"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN original_amount REAL NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN converted_amount REAL NULL"); } catch (\Throwable $e) {}
+
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN currency TEXT DEFAULT 'USD'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN original_amount REAL NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN exchange_rate REAL DEFAULT 1.0000"); } catch (\Throwable $e) {}
+
+            try { $pdo->exec("ALTER TABLE supplier_wallet_transactions ADD COLUMN original_amount REAL NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE supplier_wallet_transactions ADD COLUMN exchange_rate REAL DEFAULT 1.0000"); } catch (\Throwable $e) {}
+
+            try { $pdo->exec("ALTER TABLE agent_wallet_transactions ADD COLUMN original_amount REAL NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agent_wallet_transactions ADD COLUMN exchange_rate REAL DEFAULT 1.0000"); } catch (\Throwable $e) {}
+
+            try { $pdo->exec("ALTER TABLE appointments ADD COLUMN created_by INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE staff_leave_requests ADD COLUMN total_days INTEGER DEFAULT 1"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE staff_leave_requests ADD COLUMN approver_id INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE staff_leave_requests ADD COLUMN approver_notes TEXT NULL"); } catch (\Throwable $e) {}
         } else {
             // Ensure password_resets table exists for MySQL
             $pdo->exec("CREATE TABLE IF NOT EXISTS password_resets (
@@ -574,6 +763,11 @@ class DatabaseBootstrapper
                 total_amount DECIMAL(12,2) DEFAULT 0.00,
                 paid_amount DECIMAL(12,2) DEFAULT 0.00,
                 balance_amount DECIMAL(12,2) DEFAULT 0.00,
+                from_currency VARCHAR(10) NULL,
+                to_currency VARCHAR(10) NULL,
+                exchange_rate DECIMAL(12,4) DEFAULT 1.0000,
+                original_amount DECIMAL(12,2) NULL,
+                converted_amount DECIMAL(12,2) NULL,
                 status VARCHAR(50) DEFAULT 'Unpaid',
                 notes TEXT NULL,
                 created_by INT NULL,
@@ -581,6 +775,149 @@ class DatabaseBootstrapper
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 INDEX idx_inv_app (application_id),
                 INDEX idx_inv_cust (customer_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            // Safe ALTER TABLE migrations for MySQL
+            try { $pdo->exec("ALTER TABLE visa_services ADD COLUMN supplier_id INT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_services ADD COLUMN supplier_name VARCHAR(255) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_services ADD COLUMN effective_date DATE NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_services ADD COLUMN currency VARCHAR(10) DEFAULT 'USD'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_services ADD COLUMN notes TEXT NULL"); } catch (\Throwable $e) {}
+
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN from_currency VARCHAR(10) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN to_currency VARCHAR(10) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN exchange_rate DECIMAL(12,4) DEFAULT 1.0000"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN original_amount DECIMAL(12,2) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN converted_amount DECIMAL(12,2) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN rate_type VARCHAR(50) DEFAULT 'Manual'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN rate_date DATE NULL"); } catch (\Throwable $e) {}
+
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN currency VARCHAR(10) DEFAULT 'USD'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN original_amount DECIMAL(12,2) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN original_currency VARCHAR(10) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN exchange_rate DECIMAL(12,4) DEFAULT 1.0000"); } catch (\Throwable $e) {}
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS visa_package_price_history (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                visa_service_id INT NOT NULL,
+                supplier_id INT NULL,
+                supplier_cost DECIMAL(12,2) DEFAULT 0.00,
+                service_fee DECIMAL(12,2) DEFAULT 0.00,
+                tax_rate DECIMAL(5,2) DEFAULT 0.00,
+                selling_price DECIMAL(12,2) DEFAULT 0.00,
+                currency VARCHAR(10) DEFAULT 'USD',
+                effective_from DATETIME NOT NULL,
+                effective_to DATETIME NULL,
+                notes TEXT NULL,
+                created_by INT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_vph_serv (visa_service_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS visa_package_inventory_transactions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                visa_service_id INT NOT NULL,
+                action_type VARCHAR(50) NOT NULL,
+                prev_cost DECIMAL(12,2) NULL,
+                new_cost DECIMAL(12,2) NULL,
+                prev_price DECIMAL(12,2) NULL,
+                new_price DECIMAL(12,2) NULL,
+                currency VARCHAR(10) DEFAULT 'USD',
+                supplier_id INT NULL,
+                application_id INT NULL,
+                user_id INT NULL,
+                notes TEXT NULL,
+                effective_date DATE NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_vpit_serv (visa_service_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS staff_leave_requests (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                leave_type VARCHAR(50) NOT NULL,
+                start_date DATE NOT NULL,
+                end_date DATE NOT NULL,
+                days_count DECIMAL(4,1) NOT NULL DEFAULT 1.0,
+                reason TEXT NOT NULL,
+                status VARCHAR(30) DEFAULT 'Pending',
+                approved_by INT NULL,
+                approved_at DATETIME NULL,
+                comments TEXT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_slr_user (user_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS staff_requests (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                request_type VARCHAR(100) NOT NULL,
+                application_id INT NULL,
+                priority VARCHAR(30) DEFAULT 'Medium',
+                status VARCHAR(30) DEFAULT 'Pending',
+                assigned_to INT NULL,
+                deadline DATE NULL,
+                comments TEXT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_sr_user (user_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS supplier_wallets (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                supplier_id INT NOT NULL UNIQUE,
+                currency VARCHAR(10) DEFAULT 'USD',
+                current_balance DECIMAL(12,2) DEFAULT 0.00,
+                total_credited DECIMAL(12,2) DEFAULT 0.00,
+                total_debited DECIMAL(12,2) DEFAULT 0.00,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS supplier_wallet_transactions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                transaction_id VARCHAR(50) NOT NULL UNIQUE,
+                wallet_id INT NOT NULL,
+                supplier_id INT NOT NULL,
+                transaction_type VARCHAR(50) NOT NULL,
+                amount DECIMAL(12,2) NOT NULL,
+                currency VARCHAR(10) DEFAULT 'USD',
+                balance_after DECIMAL(12,2) NOT NULL,
+                description TEXT NOT NULL,
+                application_id INT NULL,
+                payment_id INT NULL,
+                created_by INT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_swt_supp (supplier_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS agent_wallets (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                agent_id INT NOT NULL UNIQUE,
+                currency VARCHAR(10) DEFAULT 'USD',
+                current_balance DECIMAL(12,2) DEFAULT 0.00,
+                total_credited DECIMAL(12,2) DEFAULT 0.00,
+                total_debited DECIMAL(12,2) DEFAULT 0.00,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS agent_wallet_transactions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                transaction_id VARCHAR(50) NOT NULL UNIQUE,
+                wallet_id INT NOT NULL,
+                agent_id INT NOT NULL,
+                transaction_type VARCHAR(50) NOT NULL,
+                amount DECIMAL(12,2) NOT NULL,
+                currency VARCHAR(10) DEFAULT 'USD',
+                balance_after DECIMAL(12,2) NOT NULL,
+                description TEXT NOT NULL,
+                application_id INT NULL,
+                payment_id INT NULL,
+                created_by INT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_awt_agent (agent_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         } else {
             $pdo->exec("CREATE TABLE IF NOT EXISTS agents (
@@ -682,6 +1019,32 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE payments ADD COLUMN payment_link_id INTEGER NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE appointments ADD COLUMN created_by INTEGER NULL"); } catch (\Throwable $e) {}
 
+            // Safe ALTER TABLE migrations for visa_services, payments, invoices, wallet_transactions
+            try { $pdo->exec("ALTER TABLE visa_services ADD COLUMN supplier_id INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_services ADD COLUMN supplier_name TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_services ADD COLUMN effective_date DATE NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_services ADD COLUMN currency TEXT DEFAULT 'USD'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_services ADD COLUMN notes TEXT NULL"); } catch (\Throwable $e) {}
+
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN from_currency TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN to_currency TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN exchange_rate REAL DEFAULT 1.00"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN original_amount REAL NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN converted_amount REAL NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN rate_type TEXT DEFAULT 'Manual'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE payments ADD COLUMN rate_date DATE NULL"); } catch (\Throwable $e) {}
+
+            try { $pdo->exec("ALTER TABLE invoices ADD COLUMN from_currency TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE invoices ADD COLUMN to_currency TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE invoices ADD COLUMN exchange_rate REAL DEFAULT 1.00"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE invoices ADD COLUMN original_amount REAL NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE invoices ADD COLUMN converted_amount REAL NULL"); } catch (\Throwable $e) {}
+
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN currency TEXT DEFAULT 'USD'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN original_amount REAL NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN original_currency TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN exchange_rate REAL DEFAULT 1.00"); } catch (\Throwable $e) {}
+
             // Invoices Table for SQLite
             $pdo->exec("CREATE TABLE IF NOT EXISTS invoices (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -697,6 +1060,11 @@ class DatabaseBootstrapper
                 total_amount REAL DEFAULT 0.00,
                 paid_amount REAL DEFAULT 0.00,
                 balance_amount REAL DEFAULT 0.00,
+                from_currency TEXT NULL,
+                to_currency TEXT NULL,
+                exchange_rate REAL DEFAULT 1.00,
+                original_amount REAL NULL,
+                converted_amount REAL NULL,
                 status TEXT DEFAULT 'Unpaid',
                 notes TEXT NULL,
                 created_by INTEGER NULL,
@@ -704,6 +1072,145 @@ class DatabaseBootstrapper
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE SET NULL,
                 FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+            );");
+
+            // Visa Package Price History (Immutable Price Snapshots)
+            $pdo->exec("CREATE TABLE IF NOT EXISTS visa_package_price_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                visa_service_id INTEGER NOT NULL,
+                supplier_id INTEGER NULL,
+                supplier_cost REAL DEFAULT 0.00,
+                service_fee REAL DEFAULT 0.00,
+                tax_rate REAL DEFAULT 0.00,
+                selling_price REAL DEFAULT 0.00,
+                currency TEXT DEFAULT 'USD',
+                effective_from DATETIME NOT NULL,
+                effective_to DATETIME NULL,
+                notes TEXT NULL,
+                created_by INTEGER NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (visa_service_id) REFERENCES visa_services(id) ON DELETE CASCADE,
+                FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL
+            );");
+
+            // Visa Package Inventory & Audit Transactions
+            $pdo->exec("CREATE TABLE IF NOT EXISTS visa_package_inventory_transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                visa_service_id INTEGER NOT NULL,
+                action_type TEXT NOT NULL,
+                prev_cost REAL NULL,
+                new_cost REAL NULL,
+                prev_price REAL NULL,
+                new_price REAL NULL,
+                currency TEXT DEFAULT 'USD',
+                supplier_id INTEGER NULL,
+                application_id INTEGER NULL,
+                user_id INTEGER NULL,
+                notes TEXT NULL,
+                effective_date DATE NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (visa_service_id) REFERENCES visa_services(id) ON DELETE CASCADE,
+                FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
+                FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE SET NULL
+            );");
+
+            // Staff Leave Requests Table
+            $pdo->exec("CREATE TABLE IF NOT EXISTS staff_leave_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                leave_type TEXT NOT NULL,
+                start_date DATE NOT NULL,
+                end_date DATE NOT NULL,
+                days_count REAL NOT NULL DEFAULT 1.0,
+                reason TEXT NOT NULL,
+                status TEXT DEFAULT 'Pending',
+                approved_by INTEGER NULL,
+                approved_at DATETIME NULL,
+                comments TEXT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL
+            );");
+
+            // Staff Requests Table
+            $pdo->exec("CREATE TABLE IF NOT EXISTS staff_requests (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                request_type TEXT NOT NULL,
+                application_id INTEGER NULL,
+                priority TEXT DEFAULT 'Medium',
+                status TEXT DEFAULT 'Pending',
+                assigned_to INTEGER NULL,
+                deadline DATE NULL,
+                comments TEXT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE SET NULL,
+                FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL
+            );");
+
+            // Supplier Wallets & Immutable Ledger
+            $pdo->exec("CREATE TABLE IF NOT EXISTS supplier_wallets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                supplier_id INTEGER NOT NULL UNIQUE,
+                currency TEXT DEFAULT 'USD',
+                current_balance REAL DEFAULT 0.00,
+                total_credited REAL DEFAULT 0.00,
+                total_debited REAL DEFAULT 0.00,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE
+            );");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS supplier_wallet_transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                transaction_id TEXT NOT NULL UNIQUE,
+                wallet_id INTEGER NOT NULL,
+                supplier_id INTEGER NOT NULL,
+                transaction_type TEXT NOT NULL,
+                amount REAL NOT NULL,
+                currency TEXT DEFAULT 'USD',
+                balance_after REAL NOT NULL,
+                description TEXT NOT NULL,
+                application_id INTEGER NULL,
+                payment_id INTEGER NULL,
+                created_by INTEGER NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (wallet_id) REFERENCES supplier_wallets(id) ON DELETE CASCADE,
+                FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE
+            );");
+
+            // Agent Wallets & Immutable Ledger
+            $pdo->exec("CREATE TABLE IF NOT EXISTS agent_wallets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                agent_id INTEGER NOT NULL UNIQUE,
+                currency TEXT DEFAULT 'USD',
+                current_balance REAL DEFAULT 0.00,
+                total_credited REAL DEFAULT 0.00,
+                total_debited REAL DEFAULT 0.00,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
+            );");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS agent_wallet_transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                transaction_id TEXT NOT NULL UNIQUE,
+                wallet_id INTEGER NOT NULL,
+                agent_id INTEGER NOT NULL,
+                transaction_type TEXT NOT NULL,
+                amount REAL NOT NULL,
+                currency TEXT DEFAULT 'USD',
+                balance_after REAL NOT NULL,
+                description TEXT NOT NULL,
+                application_id INTEGER NULL,
+                payment_id INTEGER NULL,
+                created_by INTEGER NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (wallet_id) REFERENCES agent_wallets(id) ON DELETE CASCADE,
+                FOREIGN KEY (agent_id) REFERENCES agents(id) ON DELETE CASCADE
             );");
         }
 

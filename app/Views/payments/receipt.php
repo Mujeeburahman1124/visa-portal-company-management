@@ -70,10 +70,15 @@
           <td>
             <div class="fw-semibold">Visa Processing Fee Settlement</div>
             <div class="text-muted small"><?= e($payment['service_name']) ?> (<?= e($payment['country_name']) ?>)</div>
+            <?php if (!empty($payment['from_currency']) && !empty($payment['original_amount']) && ($payment['from_currency'] !== ($payment['currency'] ?? 'USD') || (float)$payment['exchange_rate'] != 1.0)): ?>
+              <div class="badge bg-light text-dark border mt-1">
+                <i class="fa-solid fa-coins me-1 text-primary"></i> Converted: <?= e($payment['from_currency']) ?> <?= number_format((float)$payment['original_amount'], 2) ?> &bull; Exchange Rate: <?= number_format((float)$payment['exchange_rate'], 4) ?>
+              </div>
+            <?php endif; ?>
           </td>
           <td><?= e($payment['payment_method']) ?></td>
           <td><?= e($payment['transaction_reference'] ?: 'CASH_REC') ?></td>
-          <td class="text-end fw-bold fs-6 text-success"><?= format_currency((float)$payment['amount']) ?></td>
+          <td class="text-end fw-bold fs-6 text-success"><?= e($payment['currency'] ?? 'USD') ?> <?= number_format((float)$payment['amount'], 2) ?></td>
         </tr>
       </tbody>
     </table>

@@ -69,9 +69,13 @@ $canViewPayments = user_has_role(['super-admin', 'admin', 'branch-manager', 'acc
     </a>
 
     <?php if ($canViewPayments): ?>
-    <a href="/payments" class="nav-link-custom <?= str_starts_with($currentUri, '/payments') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Payments, Invoicing & Cost Tracking">
+    <a href="/payments" class="nav-link-custom <?= ($currentUri === '/payments' || str_starts_with($currentUri, '/payments/history') || str_starts_with($currentUri, '/payments/links')) ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Payments, Invoicing & Cost Tracking">
       <i class="fa-solid fa-receipt nav-icon"></i>
       <span class="nav-label">Payments &amp; Invoices</span>
+    </a>
+    <a href="/payments/wallets" class="nav-link-custom <?= str_starts_with($currentUri, '/payments/wallets') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Customer, Supplier & Agent Digital Wallets">
+      <i class="fa-solid fa-wallet nav-icon text-success"></i>
+      <span class="nav-label">Wallets &amp; Ledgers</span>
     </a>
     <?php endif; ?>
 

@@ -163,14 +163,133 @@ class SettingsController
         $targetTab = $_POST['target_tab'] ?? 'company';
 
         foreach ($_POST['settings'] ?? [] as $key => $val) {
-            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
-                ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP");
-            $stmt->execute([$key, $val]);
+            $check = $pdo->prepare("SELECT COUNT(*) FROM system_settings WHERE setting_key = ?");
+            $check->execute([$key]);
+            if ((int)$check->fetchColumn() > 0) {
+                $stmt = $pdo->prepare("UPDATE system_settings SET setting_value = ?, updated_at = CURRENT_TIMESTAMP WHERE setting_key = ?");
+                $stmt->execute([$val, $key]);
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)");
+                $stmt->execute([$key, $val]);
+            }
         }
 
         AuditService::log('UPDATE_SETTINGS', 'Settings', null, "Updated system configuration for category: {$targetTab}");
 
         redirect("/settings?tab={$targetTab}", 'Settings updated successfully.', 'success');
+    }
+
+    public function previewTemplate(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $id = (int)($_GET['id'] ?? 0);
+
+        $stmt = $pdo->prepare("SELECT * FROM email_templates WHERE id = ?");
+        $stmt->execute([$id]);
+        $template = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$template) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Template not found']);
+            exit;
+        }
+
+        $sampleData = [
+            'applicantName' => 'Alexander Wright',
+            'customer_name' => 'Alexander Wright',
+            'applicant_name' => 'Alexander Wright',
+            'customer_code' => 'CUST-2026-0042',
+            'applicationNumber' => 'APP-2026-0089',
+            'application_number' => 'APP-2026-0089',
+            'serviceName' => '30 Days Tourist Visa Express',
+            'service_name' => '30 Days Tourist Visa Express',
+            'countryName' => 'United Arab Emirates',
+            'country_name' => 'United Arab Emirates',
+            'currentStage' => 'Document Verification',
+            'current_stage' => 'Document Verification',
+            'status' => 'Under Review',
+            'trackingCode' => 'TRK-98421-UAE',
+            'tracking_code' => 'TRK-98421-UAE',
+            'paymentNumber' => 'REC-2026-00128',
+            'amount' => '350.00',
+            'currency' => 'USD',
+            'paymentMethod' => 'Credit Card',
+            'appointmentDate' => date('d M Y, 10:30 AM', strtotime('+3 days')),
+            'appointmentLocation' => 'VFS Global Visa Application Center, Dubai',
+            'appointmentType' => 'Biometrics & Passport Submission',
+            'login_url' => 'http://localhost:8000/portal/login',
+            'tracking_url' => 'http://localhost:8000/tracking?number=APP-2026-0089',
+            'companyName' => 'MS TRAVEL HUB GLOBAL',
+            'companyEmail' => 'support@mstravelhub.com',
+            'companyPhone' => '+971 4 123 4567',
+            'companyWebsite' => 'https://mstravelhub.com',
+            'currentYear' => date('Y')
+        ];
+
+        $subject = \App\Services\EmailService::interpolate($template['subject'] ?? '', $sampleData);
+        $body = \App\Services\EmailService::interpolate($template['body_html'] ?? '', $sampleData);
+        $fullHtml = \App\Services\EmailService::wrapEmailTemplate($subject, $body, $sampleData);
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'template_name' => $template['title'] ?? $template['name'] ?? 'Template',
+            'subject' => $subject,
+            'html' => $fullHtml
+        ]);
+        exit;
+    }
+
+    public function sendTestEmail(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $id = (int)($_POST['template_id'] ?? 0);
+        $testEmail = trim($_POST['test_email'] ?? '');
+
+        if (empty($testEmail) || !filter_var($testEmail, FILTER_VALIDATE_EMAIL)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Please provide a valid test email address.']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("SELECT * FROM email_templates WHERE id = ?");
+        $stmt->execute([$id]);
+        $template = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$template) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Template not found']);
+            exit;
+        }
+
+        $sampleData = [
+            'applicantName' => 'Test Recipient',
+            'customer_name' => 'Test Recipient',
+            'applicationNumber' => 'APP-TEST-0001',
+            'serviceName' => 'Sample Visa Package',
+            'countryName' => 'Destination Country',
+            'currentStage' => 'Test Notification',
+            'trackingCode' => 'TRK-TEST-001',
+            'amount' => '100.00',
+            'currency' => 'USD'
+        ];
+
+        $res = \App\Services\EmailService::send([
+            'to' => $testEmail,
+            'name' => 'Test User',
+            'subject' => '[TEST] ' . $template['subject'],
+            'bodyHtml' => $template['body_html'],
+            'data' => $sampleData
+        ]);
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $res['success'] ?? true,
+            'message' => ($res['success'] ?? true) ? "Test email dispatched to {$testEmail} via " . ($res['provider'] ?? 'SMTP') : ($res['error'] ?? 'Failed to send')
+        ]);
+        exit;
     }
 
     public function addStatus(): void

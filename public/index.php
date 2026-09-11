@@ -290,10 +290,26 @@ switch ($uri) {
         (new App\Controllers\PaymentController())->store();
         break;
 
+    case '/payments/wallets':
+    case '/wallets':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
+        (new App\Controllers\PaymentController())->walletsOverview();
+        break;
+
     case '/payments/wallet-deposit':
     case '/customers/wallet-deposit':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
         (new App\Controllers\PaymentController())->walletDeposit();
+        break;
+
+    case '/payments/supplier-wallet-deposit':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
+        (new App\Controllers\PaymentController())->supplierWalletDeposit();
+        break;
+
+    case '/payments/agent-wallet-deposit':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
+        (new App\Controllers\PaymentController())->agentWalletDeposit();
         break;
 
     case '/payments/refund':
@@ -358,6 +374,31 @@ switch ($uri) {
 
     case '/appointments/status':
         (new App\Controllers\AppointmentController())->updateStatus();
+        break;
+
+    // Operational Action Center & Priority Triage
+    case '/action-center':
+        (new App\Controllers\ActionCenterController())->index();
+        break;
+
+    case '/action-center/leave/store':
+        (new App\Controllers\ActionCenterController())->storeLeave();
+        break;
+
+    case '/action-center/leave/approve':
+        (new App\Controllers\ActionCenterController())->approveLeave();
+        break;
+
+    case '/action-center/leave/reject':
+        (new App\Controllers\ActionCenterController())->rejectLeave();
+        break;
+
+    case '/action-center/staff-request/store':
+        (new App\Controllers\ActionCenterController())->storeStaffRequest();
+        break;
+
+    case '/action-center/staff-request/update':
+        (new App\Controllers\ActionCenterController())->updateStaffRequest();
         break;
 
     // Management & Workflow: Tasks
@@ -641,6 +682,11 @@ switch ($uri) {
         (new App\Controllers\VisaPackageController())->storeType();
         break;
 
+    case '/visa-packages/price-history':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'visa-manager']);
+        (new App\Controllers\VisaPackageController())->priceHistory();
+        break;
+
     case '/countries':
         redirect('/settings?tab=countries');
         break;
@@ -679,6 +725,16 @@ switch ($uri) {
     case '/settings/update-template':
         RoleMiddleware::authorize(['super-admin', 'admin']);
         (new App\Controllers\SettingsController())->updateTemplate();
+        break;
+
+    case '/settings/template/preview':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
+        (new App\Controllers\SettingsController())->previewTemplate();
+        break;
+
+    case '/settings/template/test':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
+        (new App\Controllers\SettingsController())->sendTestEmail();
         break;
 
     case '/settings/preferences':

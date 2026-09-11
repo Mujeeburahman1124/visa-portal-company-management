@@ -172,13 +172,43 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </select>
         </div>
 
+        <!-- Destination Country Filter -->
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <select name="country_id" class="form-select form-select-sm">
+            <option value="">All Countries</option>
+            <?php foreach ($countries as $c): ?>
+              <option value="<?= $c['id'] ?>" <?= ((int)($_GET['country_id'] ?? 0)) === (int)$c['id'] ? 'selected' : '' ?>>
+                <?= $c['flag_emoji'] ?> <?= e($c['name']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <!-- Uploaded By Filter -->
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <select name="uploaded_by_type" class="form-select form-select-sm">
+            <option value="">Uploaded By (All)</option>
+            <option value="Staff" <?= ($_GET['uploaded_by_type'] ?? '') === 'Staff' ? 'selected' : '' ?>>Staff</option>
+            <option value="Customer" <?= ($_GET['uploaded_by_type'] ?? '') === 'Customer' ? 'selected' : '' ?>>Customer</option>
+            <option value="System" <?= ($_GET['uploaded_by_type'] ?? '') === 'System' ? 'selected' : '' ?>>System</option>
+          </select>
+        </div>
+
+        <!-- Date Range -->
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <input type="date" name="date_from" class="form-control form-control-sm" placeholder="From Date" value="<?= e($_GET['date_from'] ?? '') ?>" title="Uploaded From">
+        </div>
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <input type="date" name="date_to" class="form-control form-control-sm" placeholder="To Date" value="<?= e($_GET['date_to'] ?? '') ?>" title="Uploaded To">
+        </div>
+
         <!-- Action Buttons (Joined Responsive Button Group) -->
         <div class="col-12 col-sm-6 col-md-4 col-xl-auto ms-auto d-flex justify-content-end">
           <div class="btn-group btn-group-sm w-100 w-md-auto shadow-sm" role="group" aria-label="Filter Controls">
             <button type="submit" class="btn btn-primary px-3 fw-semibold">
               <i class="fa-solid fa-filter me-1.5"></i> Filter
             </button>
-            <a href="/documents" class="btn btn-primary border-start border-white border-opacity-25 px-2.5" title="Clear / Reset Filters">
+            <a href="/documents" class="btn btn-light border px-2.5" title="Clear / Reset Filters">
               <i class="fa-solid fa-rotate-left"></i>
             </a>
           </div>

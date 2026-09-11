@@ -93,6 +93,31 @@ class DocumentController
             $sql .= " AND d.expiry_date IS NOT NULL AND d.expiry_date >= '{$today}' AND d.expiry_date <= '{$in30Days}'";
         }
 
+        $countryId = (int)($_GET['country_id'] ?? 0);
+        $uploadedByType = trim($_GET['uploaded_by_type'] ?? '');
+        $dateFrom = trim($_GET['date_from'] ?? '');
+        $dateTo = trim($_GET['date_to'] ?? '');
+
+        if ($countryId > 0) {
+            $sql .= " AND vs.country_id = ?";
+            $params[] = $countryId;
+        }
+
+        if ($uploadedByType !== '') {
+            $sql .= " AND d.uploaded_by_type = ?";
+            $params[] = $uploadedByType;
+        }
+
+        if ($dateFrom !== '') {
+            $sql .= " AND DATE(d.created_at) >= ?";
+            $params[] = $dateFrom;
+        }
+
+        if ($dateTo !== '') {
+            $sql .= " AND DATE(d.created_at) <= ?";
+            $params[] = $dateTo;
+        }
+
         $sql .= " ORDER BY CASE WHEN d.status = 'REJECTED' THEN 1 WHEN d.status = 'UNDER_REVIEW' THEN 2 WHEN d.expiry_date < '{$today}' THEN 3 ELSE 4 END, d.created_at DESC";
 
         $stmt = $pdo->prepare($sql);
@@ -109,6 +134,7 @@ class DocumentController
         $docTypes = $pdo->query("SELECT id, name FROM document_types WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $services = $pdo->query("SELECT id, name FROM visa_services WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $staffMembers = $pdo->query("SELECT id, name FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $countries = $pdo->query("SELECT id, name, flag_emoji FROM countries ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         // Real Database Statistics
         $stats = [

@@ -398,7 +398,13 @@ $activeTab = $_GET['tab'] ?? 'company';
                       </div>
                     </div>
 
-                    <div class="text-end">
+                    <div class="d-flex gap-2 justify-content-end">
+                      <button type="button" class="btn btn-outline-info btn-sm px-3 fw-semibold" onclick="previewEmailTemplate(<?= $tmpl['id'] ?>)">
+                        <i class="fa-solid fa-eye me-1"></i> Live Preview
+                      </button>
+                      <button type="button" class="btn btn-outline-secondary btn-sm px-3 fw-semibold" onclick="openTestEmailModal(<?= $tmpl['id'] ?>, '<?= e(addslashes($tmpl['title'])) ?>')">
+                        <i class="fa-solid fa-paper-plane me-1"></i> Send Test Email
+                      </button>
                       <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold shadow-sm">
                         <i class="fa-solid fa-floppy-disk me-1"></i> Update Template
                       </button>
@@ -844,6 +850,131 @@ $activeTab = $_GET['tab'] ?? 'company';
       </form>
     </div>
   </div>
+<!-- MODAL: EMAIL TEMPLATE LIVE PREVIEW -->
+<div class="modal fade" id="emailPreviewModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-light border-bottom">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-eye text-primary me-2"></i> Email Live Preview: <span id="previewTmplName" class="text-primary"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="mb-3">
+          <div class="text-muted small fw-semibold">Subject Preview:</div>
+          <div class="fw-bold fs-6 text-dark p-2 bg-light rounded border" id="previewSubjectText"></div>
+        </div>
+        <div>
+          <div class="text-muted small fw-semibold mb-1">Rendered Email Layout:</div>
+          <iframe id="previewEmailFrame" style="width: 100%; height: 420px; border: 1px solid #e2e8f0; border-radius: 8px;"></iframe>
+        </div>
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-secondary px-4 fw-semibold" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- MODAL: SEND TEST EMAIL -->
+<div class="modal fade" id="sendTestEmailModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-light border-bottom">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-paper-plane text-info me-2"></i> Send Test Email</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <input type="hidden" id="testEmailTmplId">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Template:</label>
+          <div class="fw-bold text-dark" id="testEmailTmplName"></div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Recipient Email Address <span class="text-danger">*</span></label>
+          <input type="email" id="testEmailAddress" class="form-control" placeholder="your.name@example.com" value="<?= e($currentUser['email'] ?? '') ?>" required>
+        </div>
+        <div id="testEmailResult" style="display:none;" class="alert py-2 px-3 small"></div>
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-info text-white px-4 fw-semibold" id="sendTestEmailBtn" onclick="submitTestEmail()">
+          <i class="fa-solid fa-paper-plane me-1"></i> Send Now
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function previewEmailTemplate(tmplId) {
+  fetch('/settings/template/preview?id=' + encodeURIComponent(tmplId))
+    .then(r => r.json())
+    .then(data => {
+      if (!data.success) {
+        alert(data.error || 'Failed to load preview');
+        return;
+      }
+      document.getElementById('previewTmplName').innerText = data.template_name;
+      document.getElementById('previewSubjectText').innerText = data.subject;
+      const iframe = document.getElementById('previewEmailFrame');
+      iframe.srcdoc = data.html;
+      new bootstrap.Modal(document.getElementById('emailPreviewModal')).show();
+    })
+    .catch(err => {
+      alert('Error fetching email template preview.');
+    });
+}
+
+function openTestEmailModal(tmplId, tmplName) {
+  document.getElementById('testEmailTmplId').value = tmplId;
+  document.getElementById('testEmailTmplName').innerText = tmplName;
+  document.getElementById('testEmailResult').style.display = 'none';
+  new bootstrap.Modal(document.getElementById('sendTestEmailModal')).show();
+}
+
+function submitTestEmail() {
+  const tmplId = document.getElementById('testEmailTmplId').value;
+  const email = document.getElementById('testEmailAddress').value;
+  const btn = document.getElementById('sendTestEmailBtn');
+  const resultDiv = document.getElementById('testEmailResult');
+
+  if (!email) {
+    alert('Please enter a recipient email.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Sending...';
+
+  const formData = new FormData();
+  formData.append('template_id', tmplId);
+  formData.append('test_email', email);
+
+  fetch('/settings/template/test', {
+    method: 'POST',
+    body: formData
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i> Send Now';
+    resultDiv.style.display = 'block';
+    if (data.success) {
+      resultDiv.className = 'alert alert-success py-2 px-3 small';
+      resultDiv.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> ' + (data.message || 'Test email dispatched successfully.');
+    } else {
+      resultDiv.className = 'alert alert-danger py-2 px-3 small';
+      resultDiv.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-1"></i> ' + (data.error || 'Failed to send test email.');
+    }
+  })
+  .catch(err => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i> Send Now';
+    resultDiv.style.display = 'block';
+    resultDiv.className = 'alert alert-danger py-2 px-3 small';
+    resultDiv.innerText = 'Network error while dispatching test email.';
+  });
+}
+</script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>
