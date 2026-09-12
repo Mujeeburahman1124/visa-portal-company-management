@@ -453,12 +453,12 @@ class NotificationService
 
         $data = [
             'companyName' => $companyName,
-            'companyEmail' => (string)Env::get('COMPANY_EMAIL', 'notifications@mstravelhub.com'),
-            'companyPhone' => (string)Env::get('COMPANY_PHONE', '+94 11 234 5678'),
+            'companyEmail' => (string)Env::get('COMPANY_EMAIL', 'mstravelu@gmail.com'),
+            'companyPhone' => (string)Env::get('COMPANY_PHONE', '0585909349'),
             'companyWebsite' => (string)Env::get('COMPANY_WEBSITE', 'https://visatrack.mstravelhub.com'),
             'appUrl' => $appUrl,
             'loginUrl' => $appUrl . '/portal/login',
-            'supportEmail' => 'support@mstravelhub.com',
+            'supportEmail' => 'mstravelu@gmail.com',
         ];
 
         // Customer variables

@@ -51,8 +51,8 @@ class EmailService
 
         // 2. Populate Default Brand Variables
         $data['companyName'] = $data['companyName'] ?? Env::get('COMPANY_NAME', App::COMPANY_NAME);
-        $data['companyEmail'] = $data['companyEmail'] ?? Env::get('COMPANY_EMAIL', 'notifications@mstravelhub.com');
-        $data['companyPhone'] = $data['companyPhone'] ?? Env::get('COMPANY_PHONE', '+94 11 234 5678');
+        $data['companyEmail'] = $data['companyEmail'] ?? Env::get('COMPANY_EMAIL', 'mstravelu@gmail.com');
+        $data['companyPhone'] = $data['companyPhone'] ?? Env::get('COMPANY_PHONE', '0585909349');
         $data['companyWebsite'] = $data['companyWebsite'] ?? Env::get('COMPANY_WEBSITE', 'https://visatrack.mstravelhub.com');
         $data['appUrl'] = $data['appUrl'] ?? Env::get('APP_URL', 'http://localhost:8000');
         $data['currentYear'] = date('Y');
@@ -325,8 +325,8 @@ class EmailService
     public static function wrapEmailTemplate(string $title, string $contentHtml, array $data = []): string
     {
         $companyName = htmlspecialchars((string)($data['companyName'] ?? App::COMPANY_NAME), ENT_QUOTES, 'UTF-8');
-        $companyEmail = htmlspecialchars((string)($data['companyEmail'] ?? 'notifications@mstravelhub.com'), ENT_QUOTES, 'UTF-8');
-        $companyPhone = htmlspecialchars((string)($data['companyPhone'] ?? '+94 11 234 5678'), ENT_QUOTES, 'UTF-8');
+        $companyEmail = htmlspecialchars((string)($data['companyEmail'] ?? 'mstravelu@gmail.com'), ENT_QUOTES, 'UTF-8');
+        $companyPhone = htmlspecialchars((string)($data['companyPhone'] ?? '0585909349'), ENT_QUOTES, 'UTF-8');
         $companyWebsite = htmlspecialchars((string)($data['companyWebsite'] ?? 'https://visatrack.mstravelhub.com'), ENT_QUOTES, 'UTF-8');
         $currentYear = date('Y');
 
