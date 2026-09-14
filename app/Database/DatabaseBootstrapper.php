@@ -1621,6 +1621,9 @@ class DatabaseBootstrapper
 
         // Auto-seed Central Real-Time Notification & WhatsApp/Email infrastructure
         self::ensureNotificationSystem($pdo);
+
+        // Auto-seed Comprehensive Payroll, Staff Attendance, Leaves, Inventory & Supplier Ledger
+        self::ensurePayrollAndInventorySystem($pdo);
     }
 
     private static function ensureNotificationSystem(PDO $pdo): void
@@ -2115,6 +2118,411 @@ class DatabaseBootstrapper
         $tmplStmt = $pdo->prepare("{$insertIgnore} email_templates (template_key, title, subject, body_html, placeholders) VALUES (?, ?, ?, ?, ?)");
         foreach ($emailTemplates as $t) {
             $tmplStmt->execute($t);
+        }
+    }
+
+    private static function ensurePayrollAndInventorySystem(PDO $pdo): void
+    {
+        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $insertIgnore = $driver === 'mysql' ? 'INSERT IGNORE INTO' : 'INSERT OR IGNORE INTO';
+
+        // 1. Safe ALTER TABLE on users for salary baseline
+        try { $pdo->exec("ALTER TABLE users ADD COLUMN basic_salary REAL DEFAULT 5000.00"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE users ADD COLUMN salary_currency TEXT DEFAULT 'AED'"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE users ADD COLUMN joining_date DATE NULL"); } catch (\Throwable $e) {}
+
+        // 2. Safe ALTER TABLE on supplier_payments
+        try { $pdo->exec("ALTER TABLE supplier_payments ADD COLUMN currency TEXT DEFAULT 'AED'"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE supplier_payments ADD COLUMN supplier_invoice_ref TEXT NULL"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE supplier_payments ADD COLUMN payment_status TEXT DEFAULT 'Completed'"); } catch (\Throwable $e) {}
+
+        // 3. Safe ALTER TABLE on applications
+        try { $pdo->exec("ALTER TABLE applications ADD COLUMN service_fee REAL DEFAULT 0.00"); } catch (\Throwable $e) {}
+
+        // 4. Safe ALTER TABLE on invoices
+        try { $pdo->exec("ALTER TABLE invoices ADD COLUMN service_fee REAL DEFAULT 0.00"); } catch (\Throwable $e) {}
+
+        if ($driver === 'sqlite') {
+            // Staff Attendance Table
+            $pdo->exec("CREATE TABLE IF NOT EXISTS staff_attendance (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                branch_id INTEGER NULL,
+                attendance_date DATE NOT NULL,
+                status TEXT NOT NULL DEFAULT 'Present',
+                check_in_time TEXT NULL,
+                check_out_time TEXT NULL,
+                overtime_hours REAL DEFAULT 0.0,
+                notes TEXT NULL,
+                recorded_by INTEGER NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE(user_id, attendance_date)
+            );");
+
+            // Staff Leaves Table
+            $pdo->exec("CREATE TABLE IF NOT EXISTS staff_leaves (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                leave_type TEXT NOT NULL DEFAULT 'Annual',
+                is_paid INTEGER NOT NULL DEFAULT 1,
+                start_date DATE NOT NULL,
+                end_date DATE NOT NULL,
+                days_count REAL NOT NULL DEFAULT 1.0,
+                reason TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'Pending',
+                approved_by INTEGER NULL,
+                approved_at DATETIME NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );");
+
+            // Payroll Records Table
+            $pdo->exec("CREATE TABLE IF NOT EXISTS payroll_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                payroll_code TEXT NOT NULL UNIQUE,
+                user_id INTEGER NOT NULL,
+                branch_id INTEGER NULL,
+                payroll_month TEXT NOT NULL,
+                basic_salary REAL NOT NULL DEFAULT 0.00,
+                working_days INTEGER NOT NULL DEFAULT 26,
+                present_days INTEGER NOT NULL DEFAULT 0,
+                absent_days INTEGER NOT NULL DEFAULT 0,
+                approved_paid_leave_days INTEGER NOT NULL DEFAULT 0,
+                unpaid_leave_days INTEGER NOT NULL DEFAULT 0,
+                overtime_hours REAL NOT NULL DEFAULT 0.0,
+                overtime_rate REAL NOT NULL DEFAULT 0.00,
+                overtime_amount REAL NOT NULL DEFAULT 0.00,
+                allowances REAL NOT NULL DEFAULT 0.00,
+                allowance_breakdown TEXT NULL,
+                deductions REAL NOT NULL DEFAULT 0.00,
+                deduction_breakdown TEXT NULL,
+                unpaid_absence_deductions REAL NOT NULL DEFAULT 0.00,
+                advance_salary REAL NOT NULL DEFAULT 0.00,
+                net_salary REAL NOT NULL DEFAULT 0.00,
+                currency TEXT DEFAULT 'AED',
+                payment_status TEXT NOT NULL DEFAULT 'Pending',
+                payment_date DATE NULL,
+                payment_method TEXT DEFAULT 'Bank Transfer',
+                transaction_reference TEXT NULL,
+                payslip_number TEXT NOT NULL UNIQUE,
+                notes TEXT NULL,
+                generated_by INTEGER NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE(user_id, payroll_month)
+            );");
+
+            // Inventory Categories Table
+            $pdo->exec("CREATE TABLE IF NOT EXISTS inventory_categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                code TEXT NOT NULL UNIQUE,
+                description TEXT NULL,
+                is_active INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );");
+
+            // Inventory Items Table
+            $pdo->exec("CREATE TABLE IF NOT EXISTS inventory_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                item_code TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                category_id INTEGER NOT NULL,
+                supplier_id INTEGER NULL,
+                branch_id INTEGER NULL,
+                unit TEXT DEFAULT 'Pcs',
+                opening_stock INTEGER NOT NULL DEFAULT 0,
+                current_stock INTEGER NOT NULL DEFAULT 0,
+                minimum_stock INTEGER NOT NULL DEFAULT 10,
+                purchase_price REAL NOT NULL DEFAULT 0.00,
+                selling_price REAL NOT NULL DEFAULT 0.00,
+                currency TEXT DEFAULT 'AED',
+                location TEXT NULL,
+                status TEXT NOT NULL DEFAULT 'In Stock',
+                notes TEXT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (category_id) REFERENCES inventory_categories(id),
+                FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
+                FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE SET NULL
+            );");
+
+            // Inventory Transactions (Immutable Audit Ledger)
+            $pdo->exec("CREATE TABLE IF NOT EXISTS inventory_transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                transaction_code TEXT NOT NULL UNIQUE,
+                item_id INTEGER NOT NULL,
+                transaction_type TEXT NOT NULL,
+                quantity INTEGER NOT NULL,
+                prev_stock INTEGER NOT NULL,
+                new_stock INTEGER NOT NULL,
+                unit_price REAL DEFAULT 0.00,
+                total_price REAL DEFAULT 0.00,
+                currency TEXT DEFAULT 'AED',
+                supplier_id INTEGER NULL,
+                supplier_invoice_ref TEXT NULL,
+                source_branch_id INTEGER NULL,
+                destination_branch_id INTEGER NULL,
+                reason_notes TEXT NOT NULL,
+                performed_by INTEGER NULL,
+                transaction_date DATE NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (item_id) REFERENCES inventory_items(id) ON DELETE CASCADE,
+                FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
+                FOREIGN KEY (performed_by) REFERENCES users(id) ON DELETE SET NULL
+            );");
+
+            // Indexes for SQLite
+            $indexes = [
+                "CREATE INDEX IF NOT EXISTS idx_att_user_dt ON staff_attendance(user_id, attendance_date)",
+                "CREATE INDEX IF NOT EXISTS idx_pay_user_mth ON payroll_records(user_id, payroll_month)",
+                "CREATE INDEX IF NOT EXISTS idx_inv_item_cat ON inventory_items(category_id)",
+                "CREATE INDEX IF NOT EXISTS idx_inv_item_supp ON inventory_items(supplier_id)",
+                "CREATE INDEX IF NOT EXISTS idx_inv_txn_item ON inventory_transactions(item_id)",
+                "CREATE INDEX IF NOT EXISTS idx_inv_txn_type ON inventory_transactions(transaction_type)",
+            ];
+            foreach ($indexes as $sql) {
+                try { $pdo->exec($sql); } catch (\Throwable $e) {}
+            }
+        } else {
+            // MySQL Schema
+            $pdo->exec("CREATE TABLE IF NOT EXISTS staff_attendance (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                branch_id INT NULL,
+                attendance_date DATE NOT NULL,
+                status VARCHAR(30) NOT NULL DEFAULT 'Present',
+                check_in_time TIME NULL,
+                check_out_time TIME NULL,
+                overtime_hours DECIMAL(5,2) DEFAULT 0.00,
+                notes TEXT NULL,
+                recorded_by INT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_att_user (user_id),
+                INDEX idx_att_date (attendance_date),
+                UNIQUE KEY uq_user_date (user_id, attendance_date),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS staff_leaves (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                leave_type VARCHAR(50) NOT NULL DEFAULT 'Annual',
+                is_paid TINYINT(1) NOT NULL DEFAULT 1,
+                start_date DATE NOT NULL,
+                end_date DATE NOT NULL,
+                days_count DECIMAL(4,1) NOT NULL DEFAULT 1.0,
+                reason TEXT NOT NULL,
+                status VARCHAR(30) NOT NULL DEFAULT 'Pending',
+                approved_by INT NULL,
+                approved_at DATETIME NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_leaves_user (user_id),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS payroll_records (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                payroll_code VARCHAR(50) NOT NULL UNIQUE,
+                user_id INT NOT NULL,
+                branch_id INT NULL,
+                payroll_month VARCHAR(10) NOT NULL,
+                basic_salary DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                working_days INT NOT NULL DEFAULT 26,
+                present_days INT NOT NULL DEFAULT 0,
+                absent_days INT NOT NULL DEFAULT 0,
+                approved_paid_leave_days INT NOT NULL DEFAULT 0,
+                unpaid_leave_days INT NOT NULL DEFAULT 0,
+                overtime_hours DECIMAL(6,2) NOT NULL DEFAULT 0.00,
+                overtime_rate DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                overtime_amount DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                allowances DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                allowance_breakdown TEXT NULL,
+                deductions DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                deduction_breakdown TEXT NULL,
+                unpaid_absence_deductions DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                advance_salary DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                net_salary DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                currency VARCHAR(10) DEFAULT 'AED',
+                payment_status VARCHAR(30) NOT NULL DEFAULT 'Pending',
+                payment_date DATE NULL,
+                payment_method VARCHAR(50) DEFAULT 'Bank Transfer',
+                transaction_reference VARCHAR(100) NULL,
+                payslip_number VARCHAR(50) NOT NULL UNIQUE,
+                notes TEXT NULL,
+                generated_by INT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_pay_user (user_id),
+                INDEX idx_pay_month (payroll_month),
+                UNIQUE KEY uq_user_month (user_id, payroll_month),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS inventory_categories (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100) NOT NULL UNIQUE,
+                code VARCHAR(50) NOT NULL UNIQUE,
+                description TEXT NULL,
+                is_active TINYINT(1) DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS inventory_items (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                item_code VARCHAR(50) NOT NULL UNIQUE,
+                name VARCHAR(150) NOT NULL,
+                category_id INT NOT NULL,
+                supplier_id INT NULL,
+                branch_id INT NULL,
+                unit VARCHAR(30) DEFAULT 'Pcs',
+                opening_stock INT NOT NULL DEFAULT 0,
+                current_stock INT NOT NULL DEFAULT 0,
+                minimum_stock INT NOT NULL DEFAULT 10,
+                purchase_price DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                selling_price DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                currency VARCHAR(10) DEFAULT 'AED',
+                location VARCHAR(100) NULL,
+                status VARCHAR(30) NOT NULL DEFAULT 'In Stock',
+                notes TEXT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_inv_cat (category_id),
+                INDEX idx_inv_supp (supplier_id),
+                FOREIGN KEY (category_id) REFERENCES inventory_categories(id),
+                FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
+                FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+            $pdo->exec("CREATE TABLE IF NOT EXISTS inventory_transactions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                transaction_code VARCHAR(50) NOT NULL UNIQUE,
+                item_id INT NOT NULL,
+                transaction_type VARCHAR(50) NOT NULL,
+                quantity INT NOT NULL,
+                prev_stock INT NOT NULL,
+                new_stock INT NOT NULL,
+                unit_price DECIMAL(12,2) DEFAULT 0.00,
+                total_price DECIMAL(12,2) DEFAULT 0.00,
+                currency VARCHAR(10) DEFAULT 'AED',
+                supplier_id INT NULL,
+                supplier_invoice_ref VARCHAR(100) NULL,
+                source_branch_id INT NULL,
+                destination_branch_id INT NULL,
+                reason_notes TEXT NOT NULL,
+                performed_by INT NULL,
+                transaction_date DATE NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_it_item (item_id),
+                INDEX idx_it_supp (supplier_id),
+                INDEX idx_it_type (transaction_type),
+                FOREIGN KEY (item_id) REFERENCES inventory_items(id) ON DELETE CASCADE,
+                FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
+                FOREIGN KEY (performed_by) REFERENCES users(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+        }
+
+        // Seed Default Inventory Categories
+        $defaultCategories = [
+            ['Visa Application Forms', 'CAT-VAF', 'Official embassy visa application blank stationery'],
+            ['Passport Covers & Wallets', 'CAT-PCW', 'Branded leather passport protectors & document holders'],
+            ['Consular Security Stamps', 'CAT-CSS', 'Official verification stamps, stickers & security seals'],
+            ['Biometric Tokens & Cards', 'CAT-BTC', 'Smart cards and queue priority tokens for biometrics'],
+            ['Embassy Submission Dossiers', 'CAT-ESD', 'Heavy-duty archival dossiers and embassy submission kits'],
+            ['Express Courier Envelopes', 'CAT-ECE', 'Tamper-proof waterproof diplomatic express envelopes'],
+            ['Office Filing & Consular Stationery', 'CAT-OCS', 'Specialized consular forms and filing supplies'],
+        ];
+
+        $stmtCat = $pdo->prepare("{$insertIgnore} inventory_categories (name, code, description) VALUES (?, ?, ?)");
+        foreach ($defaultCategories as $cat) {
+            try { $stmtCat->execute($cat); } catch (\Throwable $e) {}
+        }
+
+        // Seed Sample Inventory Items if Empty
+        $itemCount = (int)$pdo->query("SELECT COUNT(*) FROM inventory_items")->fetchColumn();
+        if ($itemCount === 0) {
+            $sampleItems = [
+                ['SKU-VAF-001', 'Schengen Standard Visa Application Form (A4)', 1, 1, 1, 'Pcs', 500, 500, 50, 2.50, 10.00, 'AED', 'Shelf A1', 'In Stock', 'Official Schengen format stationery'],
+                ['SKU-PCW-002', 'Premium Leather Passport Cover (MS Travel Branded)', 2, 1, 1, 'Pcs', 250, 250, 25, 15.00, 45.00, 'AED', 'Cabinet B2', 'In Stock', 'Complimentary client travel kit item'],
+                ['SKU-CSS-003', 'Holographic Consular Security Seals (Roll of 100)', 3, 2, 1, 'Roll', 80, 80, 15, 60.00, 120.00, 'AED', 'Safe Vault C', 'In Stock', 'Tamper-evident verification hologram'],
+                ['SKU-ESD-004', 'Embassy Dossier Folders with Fasteners', 5, 2, 1, 'Pack', 120, 120, 30, 8.00, 25.00, 'AED', 'Shelf D4', 'In Stock', 'Standard embassy submission folders'],
+                ['SKU-ECE-005', 'Express Diplomatic Courier Bags (Waterproof)', 6, 3, 1, 'Pcs', 15, 15, 20, 12.00, 30.00, 'AED', 'Shelf E1', 'Low Stock', 'High security passport shipping envelope'],
+            ];
+
+            $stmtItem = $pdo->prepare("INSERT INTO inventory_items (
+                item_code, name, category_id, supplier_id, branch_id, unit, opening_stock, current_stock, minimum_stock, purchase_price, selling_price, currency, location, status, notes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+            $stmtTxn = $pdo->prepare("INSERT INTO inventory_transactions (
+                transaction_code, item_id, transaction_type, quantity, prev_stock, new_stock, unit_price, total_price, currency, supplier_id, reason_notes, performed_by, transaction_date
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+            foreach ($sampleItems as $idx => $it) {
+                try {
+                    $stmtItem->execute($it);
+                    $newId = (int)$pdo->lastInsertId();
+                    $txnCode = 'TXN-INIT-' . str_pad((string)($idx + 1), 4, '0', STR_PAD_LEFT);
+                    $stmtTxn->execute([
+                        $txnCode, $newId, 'STOCK_IN', $it[6], 0, $it[6], $it[9], ($it[6] * $it[9]), $it[11], $it[3], 'Initial opening stock intake', 1, date('Y-m-d')
+                    ]);
+                } catch (\Throwable $e) {}
+            }
+        }
+
+        // Set baseline basic salaries for staff users if 0 or null
+        try {
+            $pdo->exec("UPDATE users SET basic_salary = 12000.00, salary_currency = 'AED' WHERE role_id = 1 AND (basic_salary IS NULL OR basic_salary <= 0)");
+            $pdo->exec("UPDATE users SET basic_salary = 9500.00, salary_currency = 'AED' WHERE role_id = 2 AND (basic_salary IS NULL OR basic_salary <= 0)");
+            $pdo->exec("UPDATE users SET basic_salary = 8000.00, salary_currency = 'AED' WHERE role_id = 3 AND (basic_salary IS NULL OR basic_salary <= 0)");
+            $pdo->exec("UPDATE users SET basic_salary = 6500.00, salary_currency = 'AED' WHERE role_id IN (4, 5, 6, 7) AND (basic_salary IS NULL OR basic_salary <= 0)");
+        } catch (\Throwable $e) {}
+
+        // Seed Sample Attendance & Payroll Records if Empty
+        $payrollCount = (int)$pdo->query("SELECT COUNT(*) FROM payroll_records")->fetchColumn();
+        if ($payrollCount === 0) {
+            $currentMonth = date('Y-m');
+            $users = $pdo->query("SELECT id, branch_id, name, basic_salary, salary_currency FROM users WHERE is_active = 1 LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($users as $u) {
+                $uid = (int)$u['id'];
+                $branchId = (int)($u['branch_id'] ?? 1);
+                $basic = (float)($u['basic_salary'] ?: 6500.00);
+                $curr = $u['salary_currency'] ?: 'AED';
+                $workDays = 26;
+                $presentDays = 24;
+                $absentDays = 1;
+                $paidLeave = 1;
+                $unpaidLeave = 0;
+                $otHours = 6.0;
+                $otRate = round(($basic / $workDays / 8) * 1.5, 2);
+                $otAmount = round($otHours * $otRate, 2);
+                $allowances = 500.00; // Transportation & Telephone
+                $deductions = 0.00;
+                $unpaidDeduction = round(($basic / $workDays) * ($absentDays + $unpaidLeave), 2);
+                $netSalary = max(0.00, round($basic + $otAmount + $allowances - $deductions - $unpaidDeduction, 2));
+
+                $payCode = 'PAY-' . str_replace('-', '', $currentMonth) . '-' . str_pad((string)$uid, 4, '0', STR_PAD_LEFT);
+                $payslipNo = 'SLIP-' . str_replace('-', '', $currentMonth) . '-' . str_pad((string)$uid, 4, '0', STR_PAD_LEFT);
+
+                try {
+                    $pdo->prepare("INSERT INTO payroll_records (
+                        payroll_code, user_id, branch_id, payroll_month, basic_salary, working_days, present_days, absent_days, approved_paid_leave_days, unpaid_leave_days,
+                        overtime_hours, overtime_rate, overtime_amount, allowances, allowance_breakdown, deductions, deduction_breakdown, unpaid_absence_deductions,
+                        advance_salary, net_salary, currency, payment_status, payment_date, payment_method, transaction_reference, payslip_number, notes, generated_by
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Paid', ?, 'Bank Transfer', ?, ?, 'Regular monthly salary processing', 1)")
+                    ->execute([
+                        $payCode, $uid, $branchId, $currentMonth, $basic, $workDays, $presentDays, $absentDays, $paidLeave, $unpaidLeave,
+                        $otHours, $otRate, $otAmount, $allowances, json_encode(['Transport' => 300, 'Mobile' => 200]), $deductions, json_encode([]), $unpaidDeduction,
+                        0.00, $netSalary, $curr, date('Y-m-d'), 'TXN-SAL-' . rand(100000, 999999), $payslipNo
+                    ]);
+                } catch (\Throwable $e) {}
+            }
         }
     }
 }

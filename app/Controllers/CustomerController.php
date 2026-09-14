@@ -307,6 +307,11 @@ class CustomerController
                 $serviceData = $sStmt->fetch(PDO::FETCH_ASSOC);
             }
 
+            if (empty($serviceId)) {
+                $fallbackSvc = $pdo->query("SELECT id FROM visa_services LIMIT 1")->fetchColumn();
+                $serviceId = $fallbackSvc ? (int)$fallbackSvc : 1;
+            }
+
             $countryName = '';
             if (!empty($_POST['custom_destination_country'])) {
                 $countryName = trim($_POST['custom_destination_country']);

@@ -16,19 +16,124 @@ class SupplierController
         AuthMiddleware::handle();
         $pdo = Database::getConnection();
 
-        $suppliers = $pdo->query("SELECT s.*,
-            COUNT(DISTINCT a.id) as total_applications,
-            COALESCE(SUM(sp.payable_amount), 0) as total_payables,
-            COALESCE(SUM(sp.paid_amount), 0) as total_paid
-            FROM suppliers s 
-            LEFT JOIN supplier_payments sp ON sp.supplier_id = s.id 
-            LEFT JOIN applications a ON sp.application_id = a.id 
-            GROUP BY s.id 
-            ORDER BY s.is_active DESC, s.company_name ASC")->fetchAll();
+        $search = trim($_GET['search'] ?? '');
+        $status = trim($_GET['status'] ?? '');
 
-        $applications = $pdo->query("SELECT id, application_number FROM applications ORDER BY id DESC LIMIT 50")->fetchAll();
+        $sql = "SELECT s.*,
+            COUNT(DISTINCT a.id) as total_applications,
+            COALESCE((SELECT SUM(sp.payable_amount) FROM supplier_payments sp WHERE sp.supplier_id = s.id), 0) as total_payables,
+            COALESCE((SELECT SUM(sp.paid_amount) FROM supplier_payments sp WHERE sp.supplier_id = s.id), 0) as total_paid
+            FROM suppliers s 
+            LEFT JOIN applications a ON a.supplier_id = s.id 
+            WHERE 1=1";
+
+        $params = [];
+        if ($search !== '') {
+            $sql .= " AND (s.company_name LIKE ? OR s.supplier_code LIKE ? OR s.contact_person LIKE ? OR s.email LIKE ? OR s.country LIKE ?)";
+            $term = "%{$search}%";
+            $params = array_fill(0, 5, $term);
+        }
+        if ($status === 'active') {
+            $sql .= " AND s.is_active = 1";
+        } elseif ($status === 'inactive') {
+            $sql .= " AND s.is_active = 0";
+        }
+
+        $sql .= " GROUP BY s.id ORDER BY s.is_active DESC, s.company_name ASC";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $suppliers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Calculate Global Aggregates
+        $totalPayableAll = array_reduce($suppliers, fn($sum, $s) => $sum + (float)$s['total_payables'], 0.0);
+        $totalPaidAll = array_reduce($suppliers, fn($sum, $s) => $sum + (float)$s['total_paid'], 0.0);
+        $totalOutstandingAll = max(0.00, $totalPayableAll - $totalPaidAll);
+
+        // Fetch applications for dropdown linking
+        $applications = $pdo->query("SELECT a.id, a.application_number, a.passport_number, c.full_name as customer_name, c.customer_code, vs.name as service_name
+            FROM applications a
+            JOIN customers c ON a.customer_id = c.id
+            JOIN visa_services vs ON a.visa_service_id = vs.id
+            ORDER BY a.id DESC LIMIT 100")->fetchAll(PDO::FETCH_ASSOC);
+
+        // Fetch recent supplier payments with application & applicant traceability
+        $recentPaymentsStmt = $pdo->query("SELECT sp.*, s.company_name, s.supplier_code,
+                   a.application_number, a.passport_number,
+                   c.full_name as applicant_name, c.customer_code,
+                   u.name as created_by_name
+            FROM supplier_payments sp
+            JOIN suppliers s ON sp.supplier_id = s.id
+            LEFT JOIN applications a ON sp.application_id = a.id
+            LEFT JOIN customers c ON a.customer_id = c.id
+            LEFT JOIN users u ON sp.created_by = u.id
+            ORDER BY sp.payment_date DESC, sp.id DESC LIMIT 20");
+        $recentPayments = $recentPaymentsStmt ? $recentPaymentsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
         require_once dirname(__DIR__) . '/Views/suppliers/index.php';
+    }
+
+    public function payments(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager', 'visa-manager']);
+        $pdo = Database::getConnection();
+
+        $search = trim($_GET['search'] ?? '');
+        $supplierId = (int)($_GET['supplier_id'] ?? 0);
+        $paymentMethod = trim($_GET['payment_method'] ?? '');
+        $status = trim($_GET['status'] ?? '');
+        $dateFrom = trim($_GET['date_from'] ?? '');
+        $dateTo = trim($_GET['date_to'] ?? '');
+
+        $sql = "SELECT sp.*, 
+                       s.company_name, s.supplier_code,
+                       a.application_number, a.passport_number,
+                       c.full_name as applicant_name, c.customer_code,
+                       u.name as created_by_name
+                FROM supplier_payments sp
+                JOIN suppliers s ON sp.supplier_id = s.id
+                LEFT JOIN applications a ON sp.application_id = a.id
+                LEFT JOIN customers c ON a.customer_id = c.id
+                LEFT JOIN users u ON sp.created_by = u.id
+                WHERE 1=1";
+
+        $params = [];
+        if ($search !== '') {
+            $sql .= " AND (sp.payment_reference LIKE ? OR sp.supplier_invoice_ref LIKE ? OR sp.transaction_reference LIKE ? OR s.company_name LIKE ? OR a.application_number LIKE ? OR c.full_name LIKE ?)";
+            $term = "%{$search}%";
+            $params = array_fill(0, 6, $term);
+        }
+        if ($supplierId > 0) {
+            $sql .= " AND sp.supplier_id = ?";
+            $params[] = $supplierId;
+        }
+        if ($paymentMethod !== '') {
+            $sql .= " AND sp.payment_method = ?";
+            $params[] = $paymentMethod;
+        }
+        if ($status !== '') {
+            $sql .= " AND sp.payment_status = ?";
+            $params[] = $status;
+        }
+        if (!empty($dateFrom)) {
+            $sql .= " AND sp.payment_date >= ?";
+            $params[] = $dateFrom;
+        }
+        if (!empty($dateTo)) {
+            $sql .= " AND sp.payment_date <= ?";
+            $params[] = $dateTo;
+        }
+
+        $sql .= " ORDER BY sp.payment_date DESC, sp.id DESC";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $suppliers = $pdo->query("SELECT id, company_name, supplier_code FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        require_once dirname(__DIR__) . '/Views/suppliers/payments.php';
     }
 
     public function store(): void
@@ -67,32 +172,6 @@ class SupplierController
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
         $stmt->execute([$code, $name, $contact, $email, $mobile, $whatsapp, $country, $address, $services, $bankDetails, $passwordHash]);
         $supplierId = (int)$pdo->lastInsertId();
-
-        // Dispatch Welcome Onboarding Email to Supplier with Auto-Generated Password
-        if (!empty($email)) {
-            try {
-                $appUrl = (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000');
-                $portalUrl = rtrim($appUrl, '/') . '/supplier/login';
-                \App\Services\EmailService::send([
-                    'to' => $email,
-                    'name' => $contact ?: $name,
-                    'subject' => 'Welcome to ' . \App\Config\App::COMPANY_NAME . ' — Supplier Portal Access Credentials',
-                    'bodyHtml' => "
-                        <p>Dear <strong>" . htmlspecialchars($contact ?: $name) . "</strong>,</p>
-                        <p>Welcome to <strong>" . \App\Config\App::COMPANY_NAME . "</strong>. Your supplier partner account has been configured with portal access.</p>
-                        <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin: 20px 0;'>
-                            <h4 style='margin-top: 0; color: #1e3a8a;'>Your Portal Login Credentials</h4>
-                            <p style='margin: 6px 0;'><strong>Supplier Code:</strong> <span style='font-family: monospace; font-weight: bold;'>{$code}</span></p>
-                            <p style='margin: 6px 0;'><strong>Login Email:</strong> {$email}</p>
-                            <p style='margin: 6px 0;'><strong>Auto-Generated Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #0f172a;'>{$rawPassword}</code></p>
-                        </div>
-                        <p style='text-align: center; margin-top: 25px;'>
-                            <a href='{$portalUrl}' style='background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>Access Supplier Portal &rarr;</a>
-                        </p>
-                    "
-                ]);
-            } catch (\Throwable $e) {}
-        }
 
         AuditService::log('CREATE_SUPPLIER', 'Suppliers', $supplierId, "Created supplier {$name} ({$code}) with auto password");
 
@@ -137,32 +216,39 @@ class SupplierController
 
         $supplierId = (int)($_POST['supplier_id'] ?? 0);
         $applicationId = (int)($_POST['application_id'] ?? 0);
-        $amount = (float)($_POST['amount'] ?? 0.00);
-        $date = $_POST['payment_date'] ?? date('Y-m-d');
+        $payableAmount = (float)($_POST['payable_amount'] ?? 0.00);
+        $paidAmount = (float)($_POST['paid_amount'] ?? $_POST['amount'] ?? 0.00);
+        $currency = strtoupper(trim($_POST['currency'] ?? 'AED'));
+        $date = trim($_POST['payment_date'] ?? date('Y-m-d'));
         $method = trim($_POST['payment_method'] ?? 'Bank Transfer');
-        $ref = trim($_POST['transaction_reference'] ?? '');
+        $invoiceRef = trim($_POST['supplier_invoice_ref'] ?? ('SUP-INV-' . date('Ymd') . '-' . rand(100, 999)));
+        $ref = trim($_POST['transaction_reference'] ?? ('TXN-SPAY-' . rand(100000, 999999)));
         $notes = trim($_POST['notes'] ?? '');
+        $status = trim($_POST['payment_status'] ?? 'Completed');
         $userId = (int)($_SESSION['user']['id'] ?? 1);
 
-        if ($supplierId <= 0 || $amount <= 0) {
+        if ($supplierId <= 0 || ($payableAmount <= 0 && $paidAmount <= 0)) {
             redirect('/suppliers', 'Supplier and valid payment amount are required.', 'danger');
+        }
+
+        if ($payableAmount <= 0) {
+            $payableAmount = $paidAmount;
         }
 
         $payRef = 'SPAY-' . date('Ymd') . '-' . rand(1000, 9999);
 
-        // If no specific application is linked, link to first or 1
         if ($applicationId <= 0) {
             $applicationId = 1;
         }
 
         $stmt = $pdo->prepare("INSERT INTO supplier_payments (
-            payment_reference, supplier_id, application_id, payable_amount, paid_amount, payment_date, payment_method, transaction_reference, notes, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$payRef, $supplierId, $applicationId, $amount, $amount, $date, $method, $ref, $notes, $userId]);
+            payment_reference, supplier_id, application_id, payable_amount, paid_amount, currency, supplier_invoice_ref, payment_date, payment_method, transaction_reference, payment_status, notes, created_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$payRef, $supplierId, $applicationId, $payableAmount, $paidAmount, $currency, $invoiceRef, $date, $method, $ref, $status, $notes, $userId]);
 
-        AuditService::log('SUPPLIER_PAYMENT', 'Suppliers', $supplierId, "Recorded disbursement of $" . number_format($amount, 2) . " (Ref: {$payRef})");
+        AuditService::log('SUPPLIER_PAYMENT', 'Suppliers', $supplierId, "Recorded payment of {$currency} " . number_format($paidAmount, 2) . " (Ref: {$payRef}, Invoice: {$invoiceRef})");
 
-        redirect('/suppliers', "Disbursement of $" . number_format($amount, 2) . " recorded successfully.", 'success');
+        redirect($_SERVER['HTTP_REFERER'] ?? '/suppliers', "Payment of {$currency} " . number_format($paidAmount, 2) . " recorded successfully.", 'success');
     }
 
     public function delete(): void
@@ -183,7 +269,7 @@ class SupplierController
 
         $stmt = $pdo->prepare("SELECT * FROM suppliers WHERE id = ?");
         $stmt->execute([$id]);
-        $supplier = $stmt->fetch();
+        $supplier = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$supplier) {
             redirect('/suppliers', 'Supplier not found.', 'danger');
@@ -213,7 +299,7 @@ class SupplierController
 
         $stmt = $pdo->prepare("SELECT id, company_name, contact_person, email, supplier_code FROM suppliers WHERE id = ?");
         $stmt->execute([$id]);
-        $supplier = $stmt->fetch();
+        $supplier = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$supplier) {
             redirect('/suppliers', 'Supplier not found.', 'danger');
@@ -221,22 +307,6 @@ class SupplierController
 
         $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
         $pdo->prepare("UPDATE suppliers SET password_hash = ?, portal_enabled = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$passwordHash, $id]);
-
-        // Dispatch email notification if email exists
-        if (!empty($supplier['email'])) {
-            try {
-                \App\Services\EmailService::send([
-                    'to' => $supplier['email'],
-                    'name' => $supplier['contact_person'] ?: $supplier['company_name'],
-                    'subject' => 'MS Travel Hub — Your Supplier Portal Password Has Been Reset',
-                    'bodyHtml' => "
-                        <p>Dear <strong>" . htmlspecialchars($supplier['contact_person'] ?: $supplier['company_name']) . "</strong>,</p>
-                        <p>Your Supplier Portal password has been reset by the administrator.</p>
-                        <p><strong>Your New Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold;'>{$newPassword}</code></p>
-                    "
-                ]);
-            } catch (\Throwable $e) {}
-        }
 
         AuditService::log('RESET_SUPPLIER_PASSWORD', 'Suppliers', $id, "Admin password reset for supplier {$supplier['company_name']}");
 

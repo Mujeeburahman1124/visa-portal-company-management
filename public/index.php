@@ -441,6 +441,11 @@ switch ($uri) {
         (new App\Controllers\SupplierController())->pay();
         break;
 
+    case '/suppliers/payments':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
+        (new App\Controllers\SupplierController())->payments();
+        break;
+
     case '/suppliers/delete':
         RoleMiddleware::authorize(['super-admin', 'admin']);
         (new App\Controllers\SupplierController())->delete();
@@ -449,6 +454,88 @@ switch ($uri) {
     case '/suppliers/reset-password':
         RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
         (new App\Controllers\SupplierController())->resetPassword();
+        break;
+
+    // Administration: Payroll & Staff Compensation (Protected: HR / Admin / Accounts)
+    case '/payroll':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
+        (new App\Controllers\PayrollController())->index();
+        break;
+
+    case '/payroll/calculate':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
+        (new App\Controllers\PayrollController())->calculate();
+        break;
+
+    case '/payroll/generate':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
+        (new App\Controllers\PayrollController())->generate();
+        break;
+
+    case '/payroll/payslip':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager', 'case-officer', 'receptionist']);
+        (new App\Controllers\PayrollController())->payslip();
+        break;
+
+    case '/payroll/history':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
+        (new App\Controllers\PayrollController())->history();
+        break;
+
+    case '/payroll/attendance/record':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
+        (new App\Controllers\PayrollController())->recordAttendance();
+        break;
+
+    // Administration: Inventory & Stock Management (Protected: Super-Admin / Admin / Accounts / Branch-Manager)
+    case '/inventory':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
+        (new App\Controllers\InventoryController())->index();
+        break;
+
+    case '/inventory/store':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
+        (new App\Controllers\InventoryController())->store();
+        break;
+
+    case '/inventory/update':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
+        (new App\Controllers\InventoryController())->update();
+        break;
+
+    case '/inventory/stock-in':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
+        (new App\Controllers\InventoryController())->stockIn();
+        break;
+
+    case '/inventory/stock-out':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
+        (new App\Controllers\InventoryController())->stockOut();
+        break;
+
+    case '/inventory/adjust':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
+        (new App\Controllers\InventoryController())->adjust();
+        break;
+
+    case '/inventory/transfer':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
+        (new App\Controllers\InventoryController())->transfer();
+        break;
+
+    case '/inventory/purchase':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
+        (new App\Controllers\InventoryController())->purchase();
+        break;
+
+    case '/inventory/history':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
+        (new App\Controllers\InventoryController())->history();
+        break;
+
+    case '/inventory/delete':
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        (new App\Controllers\InventoryController())->delete();
         break;
 
     // Administration: Agents & Partners (Protected)

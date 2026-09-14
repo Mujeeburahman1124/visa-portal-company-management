@@ -4,6 +4,18 @@ $flash = get_flash();
 require_once dirname(__DIR__) . '/layouts/header.php';
 require_once dirname(__DIR__) . '/layouts/sidebar.php';
 require_once dirname(__DIR__) . '/layouts/topbar.php';
+
+// Calculate summary totals across all suppliers
+$totalPayablesSum = 0;
+$totalSettledSum = 0;
+$totalOutstandingSum = 0;
+foreach ($suppliers as $s) {
+    $pay = (float)($s['total_payables'] ?? 0);
+    $paid = (float)($s['total_paid'] ?? 0);
+    $totalPayablesSum += $pay;
+    $totalSettledSum += $paid;
+    $totalOutstandingSum += max(0, $pay - $paid);
+}
 ?>
 
 <div class="content-body">
@@ -24,9 +36,44 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       <p class="text-muted small mb-0">Manage external visa clearing suppliers, VFS/TLS express partners, and accounts payable balances.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
+      <a href="/suppliers/payments" class="btn btn-outline-primary btn-sm px-3 shadow-sm">
+        <i class="fa-solid fa-receipt me-1"></i> Payment Ledger &amp; History
+      </a>
       <button class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#newSupplierModal">
         <i class="fa-solid fa-handshake-angle me-1"></i> Add Partner Supplier
       </button>
+    </div>
+  </div>
+
+  <!-- Summary KPI Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card card-enterprise border-0 shadow-sm border-start border-primary border-4 p-3">
+        <div class="text-xs fw-bold text-primary text-uppercase mb-1">Active Suppliers</div>
+        <div class="h4 mb-0 fw-bold text-dark"><?= count($suppliers) ?></div>
+        <div class="text-muted small mt-1">Consular &amp; logistics partners</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card card-enterprise border-0 shadow-sm border-start border-danger border-4 p-3">
+        <div class="text-xs fw-bold text-danger text-uppercase mb-1">Total Supplier Payables</div>
+        <div class="h4 mb-0 fw-bold text-dark"><?= format_currency($totalPayablesSum) ?></div>
+        <div class="text-muted small mt-1">Total supplier cost invoiced</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card card-enterprise border-0 shadow-sm border-start border-success border-4 p-3">
+        <div class="text-xs fw-bold text-success text-uppercase mb-1">Total Settled / Paid</div>
+        <div class="h4 mb-0 fw-bold text-dark"><?= format_currency($totalSettledSum) ?></div>
+        <div class="text-muted small mt-1">Disbursements executed</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card card-enterprise border-0 shadow-sm border-start border-warning border-4 p-3">
+        <div class="text-xs fw-bold text-warning text-uppercase mb-1">Outstanding Balance</div>
+        <div class="h4 mb-0 fw-bold text-dark"><?= format_currency($totalOutstandingSum) ?></div>
+        <div class="text-muted small mt-1">Payables pending settlement</div>
+      </div>
     </div>
   </div>
 
@@ -36,21 +83,25 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       <table class="table-modern mb-0">
         <thead>
           <tr>
-            <th style="min-width: 130px;">Partner Code</th>
-            <th style="min-width: 220px;">Company &amp; Service</th>
-            <th style="min-width: 180px;">Contact Person</th>
-            <th style="min-width: 160px;">Country / Location</th>
-            <th style="min-width: 120px;">Applications</th>
-            <th style="min-width: 130px;">Total Payables</th>
-            <th style="min-width: 130px;">Total Settled</th>
+            <th style="min-width: 120px;">Partner Code</th>
+            <th style="min-width: 200px;">Company &amp; Service</th>
+            <th style="min-width: 170px;">Contact Person</th>
+            <th style="min-width: 140px;">Country</th>
+            <th style="min-width: 100px;">Apps</th>
+            <th style="min-width: 120px;">Total Payables</th>
+            <th style="min-width: 120px;">Total Settled</th>
+            <th style="min-width: 120px;">Balance Due</th>
             <th class="text-end" style="min-width: 150px;">Actions</th>
           </tr>
         </thead>
         <tbody>
           <?php if (empty($suppliers)): ?>
-            <tr><td colspan="8" class="text-center py-5 text-muted">No external suppliers registered.</td></tr>
+            <tr><td colspan="9" class="text-center py-5 text-muted">No external suppliers registered.</td></tr>
           <?php else: ?>
             <?php foreach ($suppliers as $sup): ?>
+              <?php
+              $due = max(0, (float)$sup['total_payables'] - (float)$sup['total_paid']);
+              ?>
               <tr>
                 <td>
                   <span class="badge bg-light text-dark border fw-bold px-2 py-1"><?= e($sup['supplier_code']) ?></span>
@@ -77,6 +128,11 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 </td>
                 <td>
                   <span class="fw-bold text-success"><?= format_currency((float)$sup['total_paid']) ?></span>
+                </td>
+                <td>
+                  <span class="fw-bold <?= $due > 0 ? 'text-warning' : 'text-muted' ?>">
+                    <?= format_currency($due) ?>
+                  </span>
                 </td>
                 <td class="text-end">
                   <div class="d-inline-flex align-items-center gap-1">
@@ -149,6 +205,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                         <div class="p-3 bg-light rounded border mb-3">
                           <div class="small text-muted">Supplier / Payee:</div>
                           <div class="fw-bold fs-6 text-dark"><?= e($sup['company_name']) ?> (<?= e($sup['supplier_code']) ?>)</div>
+                          <div class="small text-muted">Current Outstanding: <span class="fw-bold text-danger"><?= format_currency($due) ?></span></div>
                         </div>
 
                         <div class="row g-2 mb-3">
@@ -176,16 +233,26 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                             <label class="form-label small fw-semibold">Linked Application (Optional)</label>
                             <select name="application_id" class="form-select">
                               <option value="0">General Account Settlement</option>
-                              <?php foreach ($applications as $app): ?>
-                                <option value="<?= $app['id'] ?>"><?= e($app['application_number']) ?></option>
-                              <?php endforeach; ?>
+                              <?php if (!empty($applications)): ?>
+                                <?php foreach ($applications as $app): ?>
+                                  <option value="<?= $app['id'] ?>">
+                                    <?= e($app['application_number']) ?> - <?= e($app['applicant_name'] ?? '') ?>
+                                  </option>
+                                <?php endforeach; ?>
+                              <?php endif; ?>
                             </select>
                           </div>
                         </div>
 
-                        <div class="mb-3">
-                          <label class="form-label small fw-semibold">Transaction Reference / Receipt #</label>
-                          <input type="text" name="transaction_reference" class="form-control" placeholder="TXN-WIRE-99210">
+                        <div class="row g-2 mb-3">
+                          <div class="col-6">
+                            <label class="form-label small fw-semibold">Supplier Invoice / Bill Ref</label>
+                            <input type="text" name="supplier_invoice_ref" class="form-control" placeholder="INV-2026-9081">
+                          </div>
+                          <div class="col-6">
+                            <label class="form-label small fw-semibold">Transaction / Wire Ref</label>
+                            <input type="text" name="transaction_reference" class="form-control" placeholder="TXN-WIRE-99210">
+                          </div>
                         </div>
 
                         <div class="mb-0">

@@ -12,6 +12,8 @@ $canViewSuppliers = user_has_role(['super-admin', 'admin', 'branch-manager', 'ac
 $canViewBranches = user_has_role(['super-admin', 'admin', 'branch-manager']);
 $canViewReports = user_has_role(['super-admin', 'admin', 'branch-manager', 'visa-manager', 'accounts']);
 $canViewPayments = user_has_role(['super-admin', 'admin', 'branch-manager', 'accounts', 'visa-manager']);
+$canViewPayroll = user_has_role(['super-admin', 'admin', 'accounts', 'branch-manager']);
+$canViewInventory = user_has_role(['super-admin', 'admin', 'accounts', 'branch-manager']);
 ?>
 <aside class="app-sidebar" id="appSidebar">
   <!-- Sidebar Brand Header -->
@@ -76,6 +78,21 @@ $canViewPayments = user_has_role(['super-admin', 'admin', 'branch-manager', 'acc
     <a href="/payments/wallets" class="nav-link-custom <?= str_starts_with($currentUri, '/payments/wallets') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Customer, Supplier & Agent Digital Wallets">
       <i class="fa-solid fa-wallet nav-icon text-success"></i>
       <span class="nav-label">Wallets &amp; Ledgers</span>
+    </a>
+    <?php endif; ?>
+
+    <?php if ($canViewPayroll): ?>
+    <a href="/payroll" class="nav-link-custom <?= str_starts_with($currentUri, '/payroll') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Staff Payroll, Attendance & Payslips">
+      <i class="fa-solid fa-money-check-dollar nav-icon text-info"></i>
+      <span class="nav-label">Payroll &amp; Attendance</span>
+      <span class="badge bg-success sidebar-badge">HR</span>
+    </a>
+    <?php endif; ?>
+
+    <?php if ($canViewInventory): ?>
+    <a href="/inventory" class="nav-link-custom <?= str_starts_with($currentUri, '/inventory') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Office Inventory, Supplies & Stock Control">
+      <i class="fa-solid fa-boxes-stacked nav-icon text-warning"></i>
+      <span class="nav-label">Inventory &amp; Stock</span>
     </a>
     <?php endif; ?>
 
