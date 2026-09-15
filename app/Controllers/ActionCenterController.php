@@ -144,10 +144,10 @@ class ActionCenterController
         $staffRequests = $pdo->query($staffReqSql)->fetchAll(PDO::FETCH_ASSOC);
 
         // 10. Action Center History (Audit logs for operational activities)
-        $historySql = "SELECT al.*, u.name as user_name
+        $historySql = "SELECT al.*, al.module as entity_type, al.record_id as entity_id, u.name as user_name
             FROM audit_logs al
             LEFT JOIN users u ON al.user_id = u.id
-            WHERE al.entity_type IN ('Tasks', 'Documents', 'Applications', 'StaffLeave', 'StaffRequest', 'ActionCenter')
+            WHERE al.module IN ('Tasks', 'Documents', 'Applications', 'StaffLeave', 'StaffRequest', 'ActionCenter')
             ORDER BY al.created_at DESC LIMIT 100";
         $actionHistory = $pdo->query($historySql)->fetchAll(PDO::FETCH_ASSOC);
 

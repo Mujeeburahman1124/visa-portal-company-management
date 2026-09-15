@@ -468,7 +468,7 @@ CREATE TABLE IF NOT EXISTS supplier_payments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     payment_reference TEXT NOT NULL UNIQUE,
     supplier_id INTEGER NOT NULL,
-    application_id INTEGER NOT NULL,
+    application_id INTEGER,
     payable_amount REAL NOT NULL,
     paid_amount REAL NOT NULL,
     payment_date DATE NOT NULL,
@@ -478,7 +478,7 @@ CREATE TABLE IF NOT EXISTS supplier_payments (
     created_by INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
-    FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE,
+    FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES users(id)
 );
 
