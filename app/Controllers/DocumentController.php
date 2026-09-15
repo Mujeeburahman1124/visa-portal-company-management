@@ -97,6 +97,9 @@ class DocumentController
         $uploadedByType = trim($_GET['uploaded_by_type'] ?? '');
         $dateFrom = trim($_GET['date_from'] ?? '');
         $dateTo = trim($_GET['date_to'] ?? '');
+        $category = trim($_GET['category'] ?? '');
+        $customerId = (int)($_GET['customer_id'] ?? 0);
+        $fileFormat = strtolower(trim($_GET['file_format'] ?? ''));
 
         if ($countryId > 0) {
             $sql .= " AND vs.country_id = ?";
@@ -118,11 +121,41 @@ class DocumentController
             $params[] = $dateTo;
         }
 
+        if ($category !== '') {
+            $sql .= " AND dt.category = ?";
+            $params[] = $category;
+        }
+
+        if ($customerId > 0) {
+            $sql .= " AND d.customer_id = ?";
+            $params[] = $customerId;
+        }
+
+        if ($fileFormat !== '') {
+            $sql .= " AND LOWER(d.file_name) LIKE ?";
+            $params[] = "%.{$fileFormat}";
+        }
+
         $sql .= " ORDER BY CASE WHEN d.status = 'REJECTED' THEN 1 WHEN d.status = 'UNDER_REVIEW' THEN 2 WHEN d.expiry_date < '{$today}' THEN 3 ELSE 4 END, d.created_at DESC";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
-        $documents = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $allDocuments = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // Check if CSV export requested
+        if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+            $this->outputCsv($allDocuments);
+            return;
+        }
+
+        // Pagination
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = max(5, min(100, (int)($_GET['per_page'] ?? 15)));
+        $totalRecords = count($allDocuments);
+        $totalPages = max(1, (int)ceil($totalRecords / $perPage));
+        if ($page > $totalPages) $page = $totalPages;
+
+        $documents = array_slice($allDocuments, ($page - 1) * $perPage, $perPage);
 
         // Attach Expiry Analysis for each document
         foreach ($documents as &$doc) {
@@ -135,6 +168,8 @@ class DocumentController
         $services = $pdo->query("SELECT id, name FROM visa_services WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $staffMembers = $pdo->query("SELECT id, name FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $countries = $pdo->query("SELECT id, name, flag_emoji FROM countries ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $customers = $pdo->query("SELECT id, full_name, customer_code FROM customers ORDER BY full_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $categories = ['Identity', 'Financial', 'Employment', 'Travel', 'Academic', 'Legal', 'Medical', 'Other'];
 
         // Real Database Statistics
         $stats = [
@@ -147,6 +182,41 @@ class DocumentController
         ];
 
         require_once dirname(__DIR__) . '/Views/documents/index.php';
+    }
+
+    public function exportCsv(): void
+    {
+        $_GET['export'] = 'csv';
+        $this->index();
+    }
+
+    private function outputCsv(array $documents): void
+    {
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=documents_export_' . date('Y-m-d_His') . '.csv');
+
+        $output = fopen('php://output', 'w');
+        fputcsv($output, ['ID', 'Document Title', 'Type', 'Category', 'Customer Name', 'Passport Number', 'Application #', 'Service', 'Country', 'Status', 'Expiry Date', 'Uploaded By', 'Created At']);
+
+        foreach ($documents as $d) {
+            fputcsv($output, [
+                $d['id'] ?? '',
+                $d['document_title'] ?: ($d['doc_type_name'] ?? 'Document'),
+                $d['doc_type_name'] ?? '',
+                $d['category'] ?? 'General',
+                $d['customer_name'] ?? '',
+                $d['passport_number'] ?? '',
+                $d['application_number'] ?? '',
+                $d['service_name'] ?? '',
+                $d['country_name'] ?? '',
+                $d['status'] ?? '',
+                $d['expiry_date'] ?? 'N/A',
+                $d['uploaded_by_name'] ?? ($d['uploaded_by_type'] ?? ''),
+                $d['created_at'] ?? ''
+            ]);
+        }
+        fclose($output);
+        exit;
     }
 
     public function upload(): void

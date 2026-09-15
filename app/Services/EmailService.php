@@ -330,6 +330,15 @@ class EmailService
         $companyWebsite = htmlspecialchars((string)($data['companyWebsite'] ?? 'https://visatrack.mstravelhub.com'), ENT_QUOTES, 'UTF-8');
         $currentYear = date('Y');
 
+        $emailHeaderBg = '#0f172a';
+        $emailThemeColor = '#0284c7';
+        try {
+            $emPdo = \App\Config\Database::getConnection();
+            $emSettings = $emPdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('email_theme_header_bg', 'email_theme_color')")->fetchAll(\PDO::FETCH_KEY_PAIR) ?: [];
+            if (!empty($emSettings['email_theme_header_bg'])) $emailHeaderBg = htmlspecialchars($emSettings['email_theme_header_bg'], ENT_QUOTES, 'UTF-8');
+            if (!empty($emSettings['email_theme_color'])) $emailThemeColor = htmlspecialchars($emSettings['email_theme_color'], ENT_QUOTES, 'UTF-8');
+        } catch (\Throwable $e) {}
+
         return <<<HTML
 <!DOCTYPE html>
 <html lang="en">
@@ -343,14 +352,14 @@ class EmailService
     img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
     body { margin: 0; padding: 0; width: 100% !important; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6; }
     .email-container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08); }
-    .email-header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 28px 32px; text-align: left; }
+    .email-header { background: {$emailHeaderBg}; padding: 28px 32px; text-align: left; }
     .header-title { color: #38bdf8; font-size: 19px; font-weight: 700; letter-spacing: 0.5px; margin: 0; text-transform: uppercase; }
     .header-subtitle { color: #94a3b8; font-size: 12px; margin-top: 4px; }
     .email-body { padding: 32px; font-size: 15px; color: #334155; }
     .email-body h2, .email-body h3 { color: #0f172a; margin-top: 0; }
     .email-footer { background-color: #f8fafc; padding: 24px 32px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
-    .email-footer a { color: #0284c7; text-decoration: none; }
-    .btn-primary { display: inline-block; background-color: #0284c7; color: #ffffff !important; font-weight: 600; padding: 12px 24px; border-radius: 6px; text-decoration: none; margin: 16px 0; }
+    .email-footer a { color: {$emailThemeColor}; text-decoration: none; }
+    .btn-primary { display: inline-block; background-color: {$emailThemeColor}; color: #ffffff !important; font-weight: 600; padding: 12px 24px; border-radius: 6px; text-decoration: none; margin: 16px 0; }
     .data-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
     .data-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
     .data-table td:first-child { font-weight: 600; color: #475569; width: 38%; }
@@ -363,7 +372,7 @@ class EmailService
         <table role="presentation" class="email-container" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
           <!-- HEADER -->
           <tr>
-            <td class="email-header" style="background-color: #0f172a; padding: 24px 32px;">
+            <td class="email-header" style="background-color: {$emailHeaderBg}; padding: 24px 32px;">
               <table role="presentation" width="100%">
                 <tr>
                   <td>

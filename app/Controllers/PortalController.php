@@ -423,4 +423,70 @@ class PortalController
             redirect('/portal/wallet', 'Deposit failed: ' . $e->getMessage(), 'danger');
         }
     }
+
+    public function showActivate(): void
+    {
+        $token = trim($_GET['token'] ?? '');
+        if (empty($token)) {
+            redirect('/portal/login', 'Invalid or missing activation token.', 'danger');
+        }
+
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("SELECT pat.*, c.full_name, c.email, c.customer_code 
+            FROM portal_activation_tokens pat 
+            JOIN customers c ON (pat.customer_id = c.id OR pat.entity_id = c.id) 
+            WHERE (pat.token = ? OR pat.token_hash = ?) AND (pat.is_used = 0 OR pat.is_used IS NULL) AND pat.used_at IS NULL AND pat.expires_at > CURRENT_TIMESTAMP");
+        $tokenHash = hash('sha256', $token);
+        $stmt->execute([$token, $tokenHash]);
+        $activation = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$activation) {
+            require_once dirname(__DIR__) . '/Views/portal/activate_expired.php';
+            return;
+        }
+
+        require_once dirname(__DIR__) . '/Views/portal/activate.php';
+    }
+
+    public function processActivate(): void
+    {
+        $token = trim($_POST['token'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        if (empty($token)) {
+            redirect('/portal/login', 'Invalid activation request.', 'danger');
+        }
+
+        if (strlen($password) < 6) {
+            redirect("/portal/activate?token=" . urlencode($token), 'Password must be at least 6 characters.', 'danger');
+        }
+
+        if ($password !== $confirmPassword) {
+            redirect("/portal/activate?token=" . urlencode($token), 'Passwords do not match.', 'danger');
+        }
+
+        $pdo = Database::getConnection();
+        $tokenHash = hash('sha256', $token);
+        $stmt = $pdo->prepare("SELECT * FROM portal_activation_tokens WHERE (token = ? OR token_hash = ?) AND is_used = 0 AND expires_at > CURRENT_TIMESTAMP");
+        $stmt->execute([$token, $tokenHash]);
+        $activation = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$activation) {
+            redirect('/portal/login', 'This activation link is invalid or has expired.', 'danger');
+        }
+
+        $customerId = (int)($activation['customer_id'] ?: $activation['entity_id']);
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+
+        $pdo->prepare("UPDATE customers SET password_hash = ?, is_active = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+            ->execute([$hash, $customerId]);
+
+        $pdo->prepare("UPDATE portal_activation_tokens SET is_used = 1, used_at = CURRENT_TIMESTAMP WHERE id = ?")
+            ->execute([$activation['id']]);
+
+        AuditService::log('PORTAL_ACTIVATED', 'Customers', $customerId, "Customer account activated and password set successfully", null, null, $customerId, 'Customer');
+
+        redirect('/portal/login', 'Your account has been successfully activated! You can now log in with your new password.', 'success');
+    }
 }

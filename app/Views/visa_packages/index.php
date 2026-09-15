@@ -347,12 +347,50 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             </select>
           </div>
 
-          <div class="col-md-4">
+          <div class="col-md-2">
             <label class="form-label small fw-semibold mb-1">Application Ref</label>
-            <input type="text" name="inv_app_ref" class="form-control form-control-sm" placeholder="e.g. APP-2026-0001" value="<?= e($_GET['inv_app_ref'] ?? '') ?>">
+            <input type="text" name="inv_app_ref" class="form-control form-control-sm" placeholder="e.g. APP-2026" value="<?= e($_GET['inv_app_ref'] ?? '') ?>">
           </div>
 
-          <div class="col-md-4 d-flex gap-2">
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold mb-1">Customer / Applicant</label>
+            <input type="text" name="inv_customer" class="form-control form-control-sm" placeholder="Name or code..." value="<?= e($_GET['inv_customer'] ?? '') ?>">
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold mb-1">Entry Type</label>
+            <select name="inv_entry_type" class="form-select form-select-sm">
+              <option value="">-- All Entry Types --</option>
+              <option value="Single Entry" <?= ($_GET['inv_entry_type'] ?? '') === 'Single Entry' ? 'selected' : '' ?>>Single Entry</option>
+              <option value="Multiple Entry" <?= ($_GET['inv_entry_type'] ?? '') === 'Multiple Entry' ? 'selected' : '' ?>>Multiple Entry</option>
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold mb-1">Processing Type</label>
+            <select name="inv_processing_type" class="form-select form-select-sm">
+              <option value="">-- All Types --</option>
+              <option value="Normal" <?= ($_GET['inv_processing_type'] ?? '') === 'Normal' ? 'selected' : '' ?>>Normal</option>
+              <option value="Express" <?= ($_GET['inv_processing_type'] ?? '') === 'Express' ? 'selected' : '' ?>>Express</option>
+              <option value="Super Express" <?= ($_GET['inv_processing_type'] ?? '') === 'Super Express' ? 'selected' : '' ?>>Super Express</option>
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold mb-1">Duration</label>
+            <input type="text" name="inv_duration" class="form-control form-control-sm" placeholder="e.g. 30 Days" value="<?= e($_GET['inv_duration'] ?? '') ?>">
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold mb-1">Price Range</label>
+            <div class="input-group input-group-sm">
+              <input type="number" step="0.01" name="inv_price_min" class="form-control" placeholder="Min" value="<?= e($_GET['inv_price_min'] ?? '') ?>">
+              <span class="input-group-text p-1">-</span>
+              <input type="number" step="0.01" name="inv_price_max" class="form-control" placeholder="Max" value="<?= e($_GET['inv_price_max'] ?? '') ?>">
+            </div>
+          </div>
+
+          <div class="col-md-4 ms-auto d-flex gap-2 pt-2">
             <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="fa-solid fa-filter me-1"></i> Apply Filters</button>
             <a href="/visa-packages?tab=inventory" class="btn btn-light border btn-sm" title="Reset Filters"><i class="fa-solid fa-rotate-left"></i> Reset</a>
           </div>
@@ -442,6 +480,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                       <?= e($it['notes'] ?: '—') ?>
                       <?php if (!empty($it['application_number'])): ?>
                         <span class="badge bg-light text-primary border ms-1">App: <?= e($it['application_number']) ?></span>
+                      <?php endif; ?>
+                      <?php if (!empty($it['customer_name'])): ?>
+                        <span class="badge bg-light text-secondary border ms-1"><i class="fa-solid fa-user me-1"></i><?= e($it['customer_name']) ?></span>
                       <?php endif; ?>
                     </div>
                   </td>

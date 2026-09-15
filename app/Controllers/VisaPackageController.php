@@ -80,6 +80,12 @@ class VisaPackageController
         $invCurrency = trim($_GET['inv_currency'] ?? '');
         $invUser = (int)($_GET['inv_user'] ?? 0);
         $invAppRef = trim($_GET['inv_app_ref'] ?? '');
+        $invCustomer = trim($_GET['inv_customer'] ?? '');
+        $invEntryType = trim($_GET['inv_entry_type'] ?? '');
+        $invProcessingType = trim($_GET['inv_processing_type'] ?? '');
+        $invDuration = trim($_GET['inv_duration'] ?? '');
+        $invPriceMin = !empty($_GET['inv_price_min']) ? (float)$_GET['inv_price_min'] : null;
+        $invPriceMax = !empty($_GET['inv_price_max']) ? (float)$_GET['inv_price_max'] : null;
 
         // Date Presets resolution
         if ($invFilterDate === 'today') {
@@ -96,14 +102,16 @@ class VisaPackageController
             $invDateTo = date('Y-m-d');
         }
 
-        $invSql = "SELECT it.*, vs.name as package_name, c.name as country_name, s.company_name as supplier_name_ref,
-                   u.name as user_name, a.application_number
+        $invSql = "SELECT it.*, vs.name as package_name, vs.entry_type, vs.processing_type, vs.duration,
+                   c.name as country_name, s.company_name as supplier_name_ref,
+                   u.name as user_name, a.application_number, cust.full_name as customer_name, cust.customer_code
                    FROM visa_package_inventory_transactions it
                    JOIN visa_services vs ON it.visa_service_id = vs.id
                    LEFT JOIN countries c ON vs.country_id = c.id
                    LEFT JOIN suppliers s ON it.supplier_id = s.id
                    LEFT JOIN users u ON it.user_id = u.id
                    LEFT JOIN applications a ON it.application_id = a.id
+                   LEFT JOIN customers cust ON a.customer_id = cust.id
                    WHERE 1=1";
         $invParams = [];
 
@@ -139,6 +147,31 @@ class VisaPackageController
         if (!empty($invAppRef)) {
             $invSql .= " AND a.application_number LIKE ?";
             $invParams[] = "%{$invAppRef}%";
+        }
+        if (!empty($invCustomer)) {
+            $invSql .= " AND (cust.full_name LIKE ? OR cust.customer_code LIKE ?)";
+            $invParams[] = "%{$invCustomer}%";
+            $invParams[] = "%{$invCustomer}%";
+        }
+        if (!empty($invEntryType)) {
+            $invSql .= " AND vs.entry_type = ?";
+            $invParams[] = $invEntryType;
+        }
+        if (!empty($invProcessingType)) {
+            $invSql .= " AND vs.processing_type = ?";
+            $invParams[] = $invProcessingType;
+        }
+        if (!empty($invDuration)) {
+            $invSql .= " AND vs.duration LIKE ?";
+            $invParams[] = "%{$invDuration}%";
+        }
+        if ($invPriceMin !== null) {
+            $invSql .= " AND it.new_price >= ?";
+            $invParams[] = $invPriceMin;
+        }
+        if ($invPriceMax !== null) {
+            $invSql .= " AND it.new_price <= ?";
+            $invParams[] = $invPriceMax;
         }
 
         $invSql .= " ORDER BY it.created_at DESC LIMIT 200";

@@ -27,6 +27,15 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </div>
 
     <div class="d-flex gap-2">
+      <?php if (!empty($customer['email'])): ?>
+      <form action="/customers/send-activation" method="POST" class="d-inline" onsubmit="return confirm('Send portal account activation email to <?= e($customer['email']) ?>?');">
+        <?= csrf_field() ?>
+        <input type="hidden" name="customer_id" value="<?= $customer['id'] ?>">
+        <button type="submit" class="btn btn-outline-info btn-sm px-3 shadow-sm">
+          <i class="fa-solid fa-paper-plane me-1"></i> Send Activation Link
+        </button>
+      </form>
+      <?php endif; ?>
       <button type="button" class="btn btn-outline-warning btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#resetCustomerPasswordModal">
         <i class="fa-solid fa-key me-1"></i> Reset Portal Password
       </button>

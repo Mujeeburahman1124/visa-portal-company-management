@@ -24,6 +24,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       <p class="text-muted small mb-0">Manage, verify and monitor visa application documents.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
+      <a href="/documents/export-csv?<?= http_build_query($_GET) ?>" class="btn btn-outline-success btn-sm px-3 shadow-sm" title="Export filtered documents to CSV">
+        <i class="fa-solid fa-file-csv me-1"></i> Export CSV
+      </a>
       <a href="/applications" class="btn btn-outline-secondary btn-sm px-3">
         <i class="fa-solid fa-folder-open me-1"></i> Visa Applications
       </a>
@@ -114,20 +117,26 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </div>
   </div>
 
-  <!-- 3. Advanced Multi-Filter Toolbar (100% Responsive Grid) -->
-  <div class="card card-enterprise mb-4 bg-white">
+  <!-- 3. Advanced Multi-Filter Toolbar (14 Comprehensive Filters) -->
+  <div class="card card-enterprise mb-4 bg-white shadow-sm border">
+    <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
+      <span class="fw-bold small text-dark"><i class="fa-solid fa-filter me-1 text-primary"></i> Advanced Filter Bar (14 Filters)</span>
+      <span class="badge bg-secondary-subtle text-secondary small">Filtered: <?= $totalRecords ?> total records</span>
+    </div>
     <div class="card-body p-3">
       <form action="/documents" method="GET" class="row g-2 align-items-center">
-        <!-- Search Input -->
+        <!-- 1. Search Keyword -->
         <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+          <label class="form-label text-muted" style="font-size:0.75rem; margin-bottom:2px;">Search Keyword</label>
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-magnifying-glass"></i></span>
-            <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Search title, applicant, passport, file..." value="<?= e($_GET['search'] ?? '') ?>">
+            <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Title, applicant, passport, file..." value="<?= e($_GET['search'] ?? '') ?>">
           </div>
         </div>
 
-        <!-- Status Filter -->
+        <!-- 2. Status Filter -->
         <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <label class="form-label text-muted" style="font-size:0.75rem; margin-bottom:2px;">Compliance Status</label>
           <select name="status" class="form-select form-select-sm">
             <option value="">All Statuses</option>
             <option value="UNDER_REVIEW" <?= ($_GET['status'] ?? '') === 'UNDER_REVIEW' ? 'selected' : '' ?>>Under Review</option>
@@ -138,10 +147,11 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </select>
         </div>
 
-        <!-- Document Type Filter -->
+        <!-- 3. Document Type Filter -->
         <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <label class="form-label text-muted" style="font-size:0.75rem; margin-bottom:2px;">Document Type</label>
           <select name="type_id" class="form-select form-select-sm">
-            <option value="">All Document Types</option>
+            <option value="">All Types</option>
             <?php foreach ($docTypes as $dt): ?>
               <option value="<?= $dt['id'] ?>" <?= ((int)($_GET['type_id'] ?? 0)) === (int)$dt['id'] ? 'selected' : '' ?>>
                 <?= e($dt['name']) ?>
@@ -150,8 +160,20 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </select>
         </div>
 
-        <!-- Visa Package Filter -->
+        <!-- 4. Category Filter -->
         <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <label class="form-label text-muted" style="font-size:0.75rem; margin-bottom:2px;">Doc Category</label>
+          <select name="category" class="form-select form-select-sm">
+            <option value="">All Categories</option>
+            <?php foreach ($categories as $cat): ?>
+              <option value="<?= $cat ?>" <?= ($_GET['category'] ?? '') === $cat ? 'selected' : '' ?>><?= $cat ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <!-- 5. Visa Service Package Filter -->
+        <div class="col-6 col-sm-6 col-md-4 col-xl-3">
+          <label class="form-label text-muted" style="font-size:0.75rem; margin-bottom:2px;">Visa Package</label>
           <select name="service_id" class="form-select form-select-sm">
             <option value="">All Visa Packages</option>
             <?php foreach ($services as $srv): ?>
@@ -162,8 +184,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </select>
         </div>
 
-        <!-- Expiry Filter -->
+        <!-- 6. Expiry Filter -->
         <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <label class="form-label text-muted" style="font-size:0.75rem; margin-bottom:2px;">Expiry Alert</label>
           <select name="expiry" class="form-select form-select-sm">
             <option value="">Any Expiry</option>
             <option value="7days" <?= ($_GET['expiry'] ?? '') === '7days' ? 'selected' : '' ?>>Expires in &le;7 days</option>
@@ -172,8 +195,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </select>
         </div>
 
-        <!-- Destination Country Filter -->
+        <!-- 7. Destination Country Filter -->
         <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <label class="form-label text-muted" style="font-size:0.75rem; margin-bottom:2px;">Destination Country</label>
           <select name="country_id" class="form-select form-select-sm">
             <option value="">All Countries</option>
             <?php foreach ($countries as $c): ?>
@@ -184,34 +208,89 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </select>
         </div>
 
-        <!-- Uploaded By Filter -->
+        <!-- 8. Assigned Staff Member -->
         <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <label class="form-label text-muted" style="font-size:0.75rem; margin-bottom:2px;">Assigned Staff</label>
+          <select name="staff_id" class="form-select form-select-sm">
+            <option value="">All Staff</option>
+            <?php foreach ($staffMembers as $sm): ?>
+              <option value="<?= $sm['id'] ?>" <?= ((int)($_GET['staff_id'] ?? 0)) === (int)$sm['id'] ? 'selected' : '' ?>>
+                <?= e($sm['name']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <!-- 9. Specific Customer Filter -->
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <label class="form-label text-muted" style="font-size:0.75rem; margin-bottom:2px;">Customer / Applicant</label>
+          <select name="customer_id" class="form-select form-select-sm">
+            <option value="">All Customers</option>
+            <?php foreach ($customers as $cust): ?>
+              <option value="<?= $cust['id'] ?>" <?= ((int)($_GET['customer_id'] ?? 0)) === (int)$cust['id'] ? 'selected' : '' ?>>
+                <?= e($cust['full_name']) ?> (<?= e($cust['customer_code']) ?>)
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <!-- 10. Uploaded By Filter -->
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <label class="form-label text-muted" style="font-size:0.75rem; margin-bottom:2px;">Uploaded By</label>
           <select name="uploaded_by_type" class="form-select form-select-sm">
-            <option value="">Uploaded By (All)</option>
+            <option value="">All Sources</option>
             <option value="Staff" <?= ($_GET['uploaded_by_type'] ?? '') === 'Staff' ? 'selected' : '' ?>>Staff</option>
             <option value="Customer" <?= ($_GET['uploaded_by_type'] ?? '') === 'Customer' ? 'selected' : '' ?>>Customer</option>
             <option value="System" <?= ($_GET['uploaded_by_type'] ?? '') === 'System' ? 'selected' : '' ?>>System</option>
           </select>
         </div>
 
-        <!-- Date Range -->
+        <!-- 11. File Format Filter -->
         <div class="col-6 col-sm-6 col-md-4 col-xl-2">
-          <input type="date" name="date_from" class="form-control form-control-sm" placeholder="From Date" value="<?= e($_GET['date_from'] ?? '') ?>" title="Uploaded From">
-        </div>
-        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
-          <input type="date" name="date_to" class="form-control form-control-sm" placeholder="To Date" value="<?= e($_GET['date_to'] ?? '') ?>" title="Uploaded To">
+          <label class="form-label text-muted" style="font-size:0.75rem; margin-bottom:2px;">File Extension</label>
+          <select name="file_format" class="form-select form-select-sm">
+            <option value="">All Formats</option>
+            <option value="pdf" <?= ($_GET['file_format'] ?? '') === 'pdf' ? 'selected' : '' ?>>PDF (.pdf)</option>
+            <option value="jpg" <?= ($_GET['file_format'] ?? '') === 'jpg' ? 'selected' : '' ?>>JPEG (.jpg/.jpeg)</option>
+            <option value="png" <?= ($_GET['file_format'] ?? '') === 'png' ? 'selected' : '' ?>>PNG (.png)</option>
+            <option value="docx" <?= ($_GET['file_format'] ?? '') === 'docx' ? 'selected' : '' ?>>DOCX (.docx)</option>
+          </select>
         </div>
 
-        <!-- Action Buttons (Joined Responsive Button Group) -->
-        <div class="col-12 col-sm-6 col-md-4 col-xl-auto ms-auto d-flex justify-content-end">
-          <div class="btn-group btn-group-sm w-100 w-md-auto shadow-sm" role="group" aria-label="Filter Controls">
-            <button type="submit" class="btn btn-primary px-3 fw-semibold">
-              <i class="fa-solid fa-filter me-1.5"></i> Filter
-            </button>
-            <a href="/documents" class="btn btn-light border px-2.5" title="Clear / Reset Filters">
-              <i class="fa-solid fa-rotate-left"></i>
-            </a>
-          </div>
+        <!-- 12. Date Range: From -->
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <label class="form-label text-muted" style="font-size:0.75rem; margin-bottom:2px;">Upload Date From</label>
+          <input type="date" name="date_from" class="form-control form-control-sm" value="<?= e($_GET['date_from'] ?? '') ?>" title="Uploaded From">
+        </div>
+
+        <!-- 13. Date Range: To -->
+        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+          <label class="form-label text-muted" style="font-size:0.75rem; margin-bottom:2px;">Upload Date To</label>
+          <input type="date" name="date_to" class="form-control form-control-sm" value="<?= e($_GET['date_to'] ?? '') ?>" title="Uploaded To">
+        </div>
+
+        <!-- 14. Per Page -->
+        <div class="col-6 col-sm-6 col-md-4 col-xl-1">
+          <label class="form-label text-muted" style="font-size:0.75rem; margin-bottom:2px;">Per Page</label>
+          <select name="per_page" class="form-select form-select-sm">
+            <option value="15" <?= ((int)($_GET['per_page'] ?? 15)) === 15 ? 'selected' : '' ?>>15</option>
+            <option value="25" <?= ((int)($_GET['per_page'] ?? 15)) === 25 ? 'selected' : '' ?>>25</option>
+            <option value="50" <?= ((int)($_GET['per_page'] ?? 15)) === 50 ? 'selected' : '' ?>>50</option>
+            <option value="100" <?= ((int)($_GET['per_page'] ?? 15)) === 100 ? 'selected' : '' ?>>100</option>
+          </select>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="col-12 col-xl-3 ms-auto d-flex align-items-end justify-content-end gap-2 pt-2">
+          <button type="submit" class="btn btn-primary btn-sm px-3 fw-semibold shadow-sm">
+            <i class="fa-solid fa-filter me-1"></i> Apply Filters
+          </button>
+          <a href="/documents" class="btn btn-light border btn-sm px-3" title="Clear / Reset Filters">
+            <i class="fa-solid fa-rotate-left me-1"></i> Reset
+          </a>
+          <a href="/documents/export-csv?<?= http_build_query($_GET) ?>" class="btn btn-outline-success btn-sm px-3" title="Export current search to CSV">
+            <i class="fa-solid fa-download me-1"></i> CSV
+          </a>
         </div>
       </form>
     </div>
@@ -395,6 +474,41 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </div>
         <?php endforeach; ?>
       </div>
+
+      <!-- Pagination Component -->
+      <?php if ($totalPages > 1): ?>
+        <div class="card-footer bg-white d-flex flex-wrap align-items-center justify-content-between p-3 border-top gap-2">
+          <div class="small text-muted">
+            Showing <strong><?= ($page - 1) * $perPage + 1 ?></strong> to <strong><?= min($totalRecords, $page * $perPage) ?></strong> of <strong><?= $totalRecords ?></strong> documents (Page <?= $page ?> of <?= $totalPages ?>)
+          </div>
+          <nav aria-label="Document pagination">
+            <ul class="pagination pagination-sm mb-0">
+              <?php
+                $queryParams = $_GET;
+                $queryParams['page'] = max(1, $page - 1);
+                $prevUrl = '/documents?' . http_build_query($queryParams);
+                $queryParams['page'] = min($totalPages, $page + 1);
+                $nextUrl = '/documents?' . http_build_query($queryParams);
+              ?>
+              <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
+                <a class="page-link" href="<?= $prevUrl ?>"><i class="fa-solid fa-chevron-left me-1"></i> Prev</a>
+              </li>
+              <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
+                <?php 
+                  $queryParams['page'] = $p;
+                  $pageUrl = '/documents?' . http_build_query($queryParams);
+                ?>
+                <li class="page-item <?= $p === $page ? 'active fw-bold' : '' ?>">
+                  <a class="page-link" href="<?= $pageUrl ?>"><?= $p ?></a>
+                </li>
+              <?php endfor; ?>
+              <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
+                <a class="page-link" href="<?= $nextUrl ?>">Next <i class="fa-solid fa-chevron-right ms-1"></i></a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      <?php endif; ?>
     <?php endif; ?>
   </div>
 </div>

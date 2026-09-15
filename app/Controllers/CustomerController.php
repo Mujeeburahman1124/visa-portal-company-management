@@ -853,4 +853,65 @@ class CustomerController
 
         redirect($_SERVER['HTTP_REFERER'] ?? "/customers/show?id={$id}", "Password for {$customer['full_name']} reset to: {$newPassword}", 'success');
     }
+
+    public function sendActivation(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+
+        $customerId = (int)($_POST['customer_id'] ?? 0);
+        if ($customerId <= 0) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/customers', 'Invalid customer identifier.', 'danger');
+        }
+
+        $stmt = $pdo->prepare("SELECT * FROM customers WHERE id = ?");
+        $stmt->execute([$customerId]);
+        $customer = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$customer || empty($customer['email'])) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/customers', 'Customer has no registered email address.', 'danger');
+        }
+
+        // Invalidate prior active tokens for this customer
+        $pdo->prepare("UPDATE portal_activation_tokens SET is_used = 1 WHERE customer_id = ?")->execute([$customerId]);
+
+        // Generate token
+        $rawToken = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $rawToken);
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+48 hours'));
+
+        $stmt = $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, customer_id, token, token_hash, expires_at, is_used, created_at) VALUES ('customer', ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)");
+        $stmt->execute([$customerId, $customer['email'], $customerId, $rawToken, $tokenHash, $expiresAt]);
+
+        $appUrl = \App\Config\Env::get('APP_URL', 'http://localhost:8000');
+        $activationLink = rtrim($appUrl, '/') . "/portal/activate?token={$rawToken}";
+
+        $subject = "Activate Your MS TRAVEL HUB Customer Portal Account";
+        $body = "
+            <h2 style='color:#0f172a;'>Welcome to MS TRAVEL HUB, {$customer['full_name']}!</h2>
+            <p>Your client portal account has been prepared. You can now securely set your password and access your visa tracking dashboard, uploaded documents, appointments, and billing statements online.</p>
+            <p style='text-align:center; margin:30px 0;'>
+                <a href='{$activationLink}' style='background-color:#0284c7; color:#ffffff; padding:12px 28px; text-decoration:none; border-radius:6px; font-weight:bold; display:inline-block;'>Activate Account &amp; Set Password &rarr;</a>
+            </p>
+            <p style='color:#64748b; font-size:13px;'>Or copy and paste this link into your browser:<br><a href='{$activationLink}'>{$activationLink}</a></p>
+            <p style='color:#64748b; font-size:12px;'>This activation link is single-use and will expire in 48 hours.</p>
+        ";
+
+        try {
+            \App\Services\EmailService::send([
+                'to' => $customer['email'],
+                'name' => $customer['full_name'],
+                'subject' => $subject,
+                'bodyHtml' => $body,
+                'data' => [
+                    'applicantName' => $customer['full_name'],
+                    'customer_name' => $customer['full_name']
+                ]
+            ]);
+        } catch (\Throwable $e) {}
+
+        AuditService::log('SEND_ACTIVATION', 'Customers', $customerId, "Dispatched portal activation link to {$customer['email']}");
+
+        redirect($_SERVER['HTTP_REFERER'] ?? '/customers', "Activation link dispatched to {$customer['email']}.", 'success');
+    }
 }

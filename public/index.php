@@ -226,6 +226,12 @@ switch ($uri) {
         (new App\Controllers\CustomerController())->resetPassword();
         break;
 
+    case '/customers/send-activation':
+    case '/applicants/send-activation':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
+        (new App\Controllers\CustomerController())->sendActivation();
+        break;
+
     case '/customers/check-duplicate':
     case '/applicants/check-duplicate':
         (new App\Controllers\CustomerController())->checkDuplicate();
@@ -266,6 +272,11 @@ switch ($uri) {
 
     case '/documents/download':
         (new App\Controllers\DocumentController())->download();
+        break;
+
+    case '/documents/export':
+    case '/documents/export-csv':
+        (new App\Controllers\DocumentController())->exportCsv();
         break;
 
     // Management & Workflow: Payments & Invoices (Protected: Finance/Management)
@@ -941,6 +952,15 @@ switch ($uri) {
 
     case '/portal/wallet/deposit':
         (new App\Controllers\PortalController())->walletDeposit();
+        break;
+
+    case '/portal/activate':
+        $ctrl = new App\Controllers\PortalController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->processActivate();
+        } else {
+            $ctrl->showActivate();
+        }
         break;
 
     // Agent Self-Service Portal (Phase 2)

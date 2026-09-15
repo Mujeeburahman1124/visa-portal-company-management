@@ -75,6 +75,11 @@ $activeTab = $_GET['tab'] ?? 'company';
             <i class="fa-solid fa-shield-halved text-danger me-1"></i> Security &amp; Sessions
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link <?= $activeTab === 'appearance' ? 'active' : '' ?> py-3 fw-semibold small text-nowrap" href="/settings?tab=appearance">
+            <i class="fa-solid fa-palette text-warning me-1"></i> Website Themes &amp; Appearance
+          </a>
+        </li>
       </ul>
     </div>
 
@@ -625,6 +630,142 @@ $activeTab = $_GET['tab'] ?? 'company';
         </div>
       <?php endif; ?>
 
+      <!-- ============================================== -->
+      <!-- TAB: WEBSITE THEMES & APPEARANCE (PHASE 9 & 10) -->
+      <!-- ============================================== -->
+      <?php if ($activeTab === 'appearance'): ?>
+        <form action="/settings/preferences" method="POST" id="themeSettingsForm">
+          <?= csrf_field() ?>
+          <input type="hidden" name="target_tab" value="appearance">
+
+          <div class="row g-4">
+            <!-- Left Column: Theme Controls -->
+            <div class="col-lg-7">
+              <div class="p-4 bg-light rounded border mb-4">
+                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-palette text-primary me-2"></i> Website Visual Branding &amp; Styling</h6>
+                
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Primary Brand Color</label>
+                    <div class="input-group">
+                      <input type="color" name="settings[theme_primary_color]" id="themePrimaryColor" class="form-control form-control-color" value="<?= e($settings['theme_primary_color'] ?? '#0284c7') ?>" oninput="syncColorInput('primary', this.value)">
+                      <input type="text" id="themePrimaryColorHex" class="form-control" value="<?= e($settings['theme_primary_color'] ?? '#0284c7') ?>" oninput="syncColorHex('primary', this.value)">
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Accent / Action Color</label>
+                    <div class="input-group">
+                      <input type="color" name="settings[theme_accent_color]" id="themeAccentColor" class="form-control form-control-color" value="<?= e($settings['theme_accent_color'] ?? '#059669') ?>" oninput="syncColorInput('accent', this.value)">
+                      <input type="text" id="themeAccentColorHex" class="form-control" value="<?= e($settings['theme_accent_color'] ?? '#059669') ?>" oninput="syncColorHex('accent', this.value)">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Heading Typography Font</label>
+                    <select name="settings[theme_font_family]" id="themeFontFamily" class="form-select" onchange="updateLiveThemePreview()">
+                      <option value="'Times New Roman', Times, serif" <?= ($settings['theme_font_family'] ?? '') === "'Times New Roman', Times, serif" ? 'selected' : '' ?>>Times New Roman (Brand Heritage)</option>
+                      <option value="'Plus Jakarta Sans', sans-serif" <?= ($settings['theme_font_family'] ?? '') === "'Plus Jakarta Sans', sans-serif" ? 'selected' : '' ?>>Plus Jakarta Sans (Modern)</option>
+                      <option value="'Outfit', sans-serif" <?= ($settings['theme_font_family'] ?? '') === "'Outfit', sans-serif" ? 'selected' : '' ?>>Outfit (Geometric)</option>
+                      <option value="'Inter', sans-serif" <?= ($settings['theme_font_family'] ?? '') === "'Inter', sans-serif" ? 'selected' : '' ?>>Inter (Clean)</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Corner Border Radius</label>
+                    <select name="settings[theme_border_radius]" id="themeBorderRadius" class="form-select" onchange="updateLiveThemePreview()">
+                      <option value="4px" <?= ($settings['theme_border_radius'] ?? '') === '4px' ? 'selected' : '' ?>>Sharp (4px)</option>
+                      <option value="8px" <?= ($settings['theme_border_radius'] ?? '8px') === '8px' ? 'selected' : '' ?>>Standard (8px)</option>
+                      <option value="12px" <?= ($settings['theme_border_radius'] ?? '') === '12px' ? 'selected' : '' ?>>Rounded (12px)</option>
+                      <option value="16px" <?= ($settings['theme_border_radius'] ?? '') === '16px' ? 'selected' : '' ?>>Pill (16px)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="row g-3 mb-2">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Portal Theme Mode</label>
+                    <select name="settings[theme_mode]" id="themeModeSelect" class="form-select" onchange="updateLiveThemePreview()">
+                      <option value="light" <?= ($settings['theme_mode'] ?? 'light') === 'light' ? 'selected' : '' ?>>Clean Light Mode</option>
+                      <option value="dark" <?= ($settings['theme_mode'] ?? '') === 'dark' ? 'selected' : '' ?>>Executive Dark Mode</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Sidebar Theme Style</label>
+                    <select name="settings[theme_sidebar_style]" class="form-select">
+                      <option value="dark" <?= ($settings['theme_sidebar_style'] ?? 'dark') === 'dark' ? 'selected' : '' ?>>Deep Slate Dark</option>
+                      <option value="light" <?= ($settings['theme_sidebar_style'] ?? '') === 'light' ? 'selected' : '' ?>>Modern Crisp Light</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Email Template Theme Styling -->
+              <div class="p-4 bg-light rounded border mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                  <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-envelope-open-text text-info me-2"></i> Email Notification Branding</h6>
+                  <button type="button" class="btn btn-outline-info btn-sm" onclick="previewEmailTemplate(1)"><i class="fa-solid fa-eye me-1"></i> Preview Live Email</button>
+                </div>
+
+                <div class="row g-3 mb-2">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Email Header Background</label>
+                    <div class="input-group">
+                      <input type="color" name="settings[email_theme_header_bg]" id="emailHeaderBg" class="form-control form-control-color" value="<?= e($settings['email_theme_header_bg'] ?? '#0f172a') ?>">
+                      <input type="text" class="form-control" value="<?= e($settings['email_theme_header_bg'] ?? '#0f172a') ?>" oninput="document.getElementById('emailHeaderBg').value=this.value">
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Email Accent &amp; Button Color</label>
+                    <div class="input-group">
+                      <input type="color" name="settings[email_theme_color]" id="emailAccentColor" class="form-control form-control-color" value="<?= e($settings['email_theme_color'] ?? '#0284c7') ?>">
+                      <input type="text" class="form-control" value="<?= e($settings['email_theme_color'] ?? '#0284c7') ?>" oninput="document.getElementById('emailAccentColor').value=this.value">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4 fw-semibold shadow"><i class="fa-solid fa-floppy-disk me-1"></i> Save Theme Settings</button>
+                <button type="button" class="btn btn-light border px-3" onclick="resetThemeDefaults()"><i class="fa-solid fa-rotate-left me-1"></i> Reset Defaults</button>
+              </div>
+            </div>
+
+            <!-- Right Column: Live Real-Time Interactive Preview -->
+            <div class="col-lg-5">
+              <div class="sticky-top" style="top: 20px;">
+                <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-wand-magic-sparkles text-warning me-1"></i> Live Real-Time Preview</h6>
+                <p class="text-muted small mb-3">Changes appear immediately in the mockup card below before saving.</p>
+
+                <div id="previewCardContainer" class="p-4 bg-white rounded border shadow-sm" style="transition: all 0.3s ease;">
+                  <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                    <span id="previewBrandName" class="brand-font fw-bold fs-5" style="color: <?= e($settings['theme_primary_color'] ?? '#0284c7') ?>;">MS TRAVEL HUB</span>
+                    <span id="previewBadge" class="badge" style="background-color: <?= e($settings['theme_accent_color'] ?? '#059669') ?>;">Verified</span>
+                  </div>
+
+                  <h6 id="previewHeading" class="brand-font fw-bold mb-2">Visa Application Status #APP-2026-0042</h6>
+                  <p class="text-muted small mb-3">Your visa document verification is progressing as expected with all consular requirements fulfilled.</p>
+
+                  <div class="d-flex gap-2 mb-3">
+                    <button type="button" id="previewPrimaryBtn" class="btn btn-sm text-white px-3" style="background-color: <?= e($settings['theme_primary_color'] ?? '#0284c7') ?>; border-radius: <?= e($settings['theme_border_radius'] ?? '8px') ?>;">
+                      Primary Action
+                    </button>
+                    <button type="button" id="previewOutlineBtn" class="btn btn-sm btn-outline-secondary px-3" style="border-radius: <?= e($settings['theme_border_radius'] ?? '8px') ?>;">
+                      Secondary
+                    </button>
+                  </div>
+
+                  <div class="p-2 bg-light rounded small mb-0">
+                    <i class="fa-solid fa-circle-info text-primary me-1"></i>
+                    Applied Heading Font: <strong id="previewFontLabel"><?= e($settings['theme_font_family'] ?? 'Times New Roman') ?></strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      <?php endif; ?>
+
     </div>
   </div>
 </div>
@@ -974,6 +1115,92 @@ function submitTestEmail() {
     resultDiv.className = 'alert alert-danger py-2 px-3 small';
     resultDiv.innerText = 'Network error while dispatching test email.';
   });
+}
+
+// Live Theme & Color Sync Functions
+function syncColorInput(type, hex) {
+  if (type === 'primary') {
+    document.getElementById('themePrimaryColorHex').value = hex;
+  } else if (type === 'accent') {
+    document.getElementById('themeAccentColorHex').value = hex;
+  }
+  updateLiveThemePreview();
+}
+
+function syncColorHex(type, hex) {
+  if (/^#[0-9A-F]{6}$/i.test(hex)) {
+    if (type === 'primary') {
+      document.getElementById('themePrimaryColor').value = hex;
+    } else if (type === 'accent') {
+      document.getElementById('themeAccentColor').value = hex;
+    }
+    updateLiveThemePreview();
+  }
+}
+
+function updateLiveThemePreview() {
+  const primaryColor = document.getElementById('themePrimaryColor') ? document.getElementById('themePrimaryColor').value : '#0284c7';
+  const accentColor = document.getElementById('themeAccentColor') ? document.getElementById('themeAccentColor').value : '#059669';
+  const fontFamily = document.getElementById('themeFontFamily') ? document.getElementById('themeFontFamily').value : "'Times New Roman', Times, serif";
+  const radius = document.getElementById('themeBorderRadius') ? document.getElementById('themeBorderRadius').value : '8px';
+  const mode = document.getElementById('themeModeSelect') ? document.getElementById('themeModeSelect').value : 'light';
+
+  // Update Preview Card elements
+  const brandName = document.getElementById('previewBrandName');
+  const badge = document.getElementById('previewBadge');
+  const primaryBtn = document.getElementById('previewPrimaryBtn');
+  const outlineBtn = document.getElementById('previewOutlineBtn');
+  const fontLabel = document.getElementById('previewFontLabel');
+  const heading = document.getElementById('previewHeading');
+  const cardContainer = document.getElementById('previewCardContainer');
+
+  if (brandName) brandName.style.color = primaryColor;
+  if (brandName) brandName.style.fontFamily = fontFamily;
+  if (heading) heading.style.fontFamily = fontFamily;
+  if (badge) badge.style.backgroundColor = accentColor;
+  if (primaryBtn) {
+    primaryBtn.style.backgroundColor = primaryColor;
+    primaryBtn.style.borderRadius = radius;
+  }
+  if (outlineBtn) outlineBtn.style.borderRadius = radius;
+  if (fontLabel) fontLabel.textContent = fontFamily.replace(/['",]/g, '').trim();
+
+  if (cardContainer) {
+    if (mode === 'dark') {
+      cardContainer.style.backgroundColor = '#0f172a';
+      cardContainer.style.color = '#f8fafc';
+    } else {
+      cardContainer.style.backgroundColor = '#ffffff';
+      cardContainer.style.color = '#1e293b';
+    }
+  }
+
+  // Also update live CSS variables on document
+  document.documentElement.style.setProperty('--primary-color', primaryColor);
+  document.documentElement.style.setProperty('--bs-primary', primaryColor);
+  document.documentElement.style.setProperty('--accent-color', accentColor);
+  document.documentElement.style.setProperty('--border-radius-base', radius);
+  document.documentElement.style.setProperty('--font-heading', fontFamily);
+
+  // Store in localStorage for client persistence
+  try {
+    localStorage.setItem('user_theme_primary', primaryColor);
+    localStorage.setItem('user_theme_accent', accentColor);
+    localStorage.setItem('user_theme_radius', radius);
+    localStorage.setItem('user_theme_font', fontFamily);
+    localStorage.setItem('user_theme_mode', mode);
+  } catch (e) {}
+}
+
+function resetThemeDefaults() {
+  if (document.getElementById('themePrimaryColor')) document.getElementById('themePrimaryColor').value = '#0284c7';
+  if (document.getElementById('themePrimaryColorHex')) document.getElementById('themePrimaryColorHex').value = '#0284c7';
+  if (document.getElementById('themeAccentColor')) document.getElementById('themeAccentColor').value = '#059669';
+  if (document.getElementById('themeAccentColorHex')) document.getElementById('themeAccentColorHex').value = '#059669';
+  if (document.getElementById('themeFontFamily')) document.getElementById('themeFontFamily').value = "'Times New Roman', Times, serif";
+  if (document.getElementById('themeBorderRadius')) document.getElementById('themeBorderRadius').value = '8px';
+  if (document.getElementById('themeModeSelect')) document.getElementById('themeModeSelect').value = 'light';
+  updateLiveThemePreview();
 }
 </script>
 
