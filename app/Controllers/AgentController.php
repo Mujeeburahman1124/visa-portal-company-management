@@ -278,5 +278,60 @@ class AgentController
         AuditService::log('DELETE_AGENT', 'Agents', $id, "Deleted agent {$agent['company_name']} ({$agent['agent_code']})");
         redirect('/agents', "Agent {$agent['company_name']} deleted successfully.", 'success');
     }
+
+    public function sendActivation(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
+        $pdo = Database::getConnection();
+
+        $agentId = (int)($_POST['agent_id'] ?? 0);
+        if ($agentId <= 0) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/agents', 'Invalid agent identifier.', 'danger');
+        }
+
+        $stmt = $pdo->prepare("SELECT * FROM agents WHERE id = ?");
+        $stmt->execute([$agentId]);
+        $agent = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$agent || empty($agent['email'])) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/agents', 'Agent has no registered email address.', 'danger');
+        }
+
+        // Invalidate prior active tokens
+        $pdo->prepare("UPDATE portal_activation_tokens SET is_used = 1, used_at = CURRENT_TIMESTAMP WHERE portal_type = 'agent' AND entity_id = ?")->execute([$agentId]);
+
+        // Generate token
+        $rawToken = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $rawToken);
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+48 hours'));
+
+        $stmt = $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, customer_id, token, token_hash, expires_at, is_used, created_at) VALUES ('agent', ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)");
+        $stmt->execute([$agentId, $agent['email'], $agentId, $rawToken, $tokenHash, $expiresAt]);
+
+        $appUrl = \App\Config\Env::get('APP_URL', 'http://localhost:8000');
+        $activationLink = rtrim($appUrl, '/') . "/agent/activate?token={$rawToken}";
+
+        try {
+            \App\Services\EmailService::send([
+                'to' => $agent['email'],
+                'name' => $agent['company_name'],
+                'subject' => "Activate Your MS TRAVEL HUB B2B Agent Portal Account",
+                'bodyHtml' => "
+                    <h2 style='color:#0f172a;'>Welcome to MS TRAVEL HUB B2B Portal, {$agent['company_name']}!</h2>
+                    <p>Your B2B agent portal account has been prepared. You can now securely set your password and access your applications, commissions, and account balance online.</p>
+                    <p style='text-align:center; margin:30px 0;'>
+                        <a href='{$activationLink}' style='background-color:#0284c7; color:#ffffff; padding:12px 28px; text-decoration:none; border-radius:6px; font-weight:bold; display:inline-block;'>Activate Agent Portal &rarr;</a>
+                    </p>
+                    <p style='color:#64748b; font-size:13px;'>Or copy and paste this link:<br><a href='{$activationLink}'>{$activationLink}</a></p>
+                    <p style='color:#64748b; font-size:12px;'>This activation link is single-use and will expire in 48 hours.</p>
+                "
+            ]);
+        } catch (\Throwable $e) {}
+
+        AuditService::log('SEND_AGENT_ACTIVATION', 'Agents', $agentId, "Dispatched B2B agent activation link to {$agent['email']}");
+        redirect($_SERVER['HTTP_REFERER'] ?? '/agents', "Agent portal activation link dispatched to {$agent['email']}.", 'success');
+    }
 }
+
 

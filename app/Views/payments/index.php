@@ -116,7 +116,43 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <input type="text" name="search" class="form-control" placeholder="Receipt / Invoice / Name / Passport..." value="<?= e($_GET['search'] ?? '') ?>">
           </div>
         </div>
-        <div class="col-6 col-sm-6 col-md-3 col-xl-2">
+        <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+          <label class="form-label small text-muted mb-1 fw-semibold">Status</label>
+          <select name="status" class="form-select form-select-sm">
+            <option value="">-- All Statuses --</option>
+            <option value="Completed" <?= ($_GET['status'] ?? '') === 'Completed' ? 'selected' : '' ?>>Completed</option>
+            <option value="Pending" <?= ($_GET['status'] ?? '') === 'Pending' ? 'selected' : '' ?>>Pending</option>
+            <option value="Failed" <?= ($_GET['status'] ?? '') === 'Failed' ? 'selected' : '' ?>>Failed</option>
+            <option value="Refunded" <?= ($_GET['status'] ?? '') === 'Refunded' ? 'selected' : '' ?>>Refunded</option>
+          </select>
+        </div>
+        <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+          <label class="form-label small text-muted mb-1 fw-semibold">Currency</label>
+          <select name="currency" class="form-select form-select-sm">
+            <option value="">-- All Currencies --</option>
+            <?php foreach ($currenciesList as $curr): ?>
+              <option value="<?= e($curr) ?>" <?= ($_GET['currency'] ?? '') === $curr ? 'selected' : '' ?>><?= e($curr) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+          <label class="form-label small text-muted mb-1 fw-semibold">Min Amount</label>
+          <input type="number" step="0.01" min="0" name="min_amount" class="form-control form-control-sm" placeholder="Min" value="<?= e($_GET['min_amount'] ?? '') ?>">
+        </div>
+        <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+          <label class="form-label small text-muted mb-1 fw-semibold">Max Amount</label>
+          <input type="number" step="0.01" min="0" name="max_amount" class="form-control form-control-sm" placeholder="Max" value="<?= e($_GET['max_amount'] ?? '') ?>">
+        </div>
+        <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+          <label class="form-label small text-muted mb-1 fw-semibold">Branch</label>
+          <select name="branch_id" class="form-select form-select-sm">
+            <option value="">-- All Branches --</option>
+            <?php foreach ($branchesList as $b): ?>
+              <option value="<?= $b['id'] ?>" <?= ((int)($_GET['branch_id'] ?? 0)) === (int)$b['id'] ? 'selected' : '' ?>><?= e($b['name']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="col-6 col-sm-4 col-md-3 col-xl-2">
           <label class="form-label small text-muted mb-1 fw-semibold">Supplier Channel</label>
           <select name="supplier_id" class="form-select form-select-sm">
             <option value="">-- All Suppliers --</option>
@@ -127,7 +163,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <?php endforeach; ?>
           </select>
         </div>
-        <div class="col-6 col-sm-6 col-md-3 col-xl-2">
+        <div class="col-6 col-sm-4 col-md-3 col-xl-2">
           <label class="form-label small text-muted mb-1 fw-semibold">Destination Country</label>
           <select name="country_id" class="form-select form-select-sm">
             <option value="">-- All Countries --</option>
@@ -138,7 +174,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <?php endforeach; ?>
           </select>
         </div>
-        <div class="col-6 col-sm-6 col-md-3 col-xl-2">
+        <div class="col-6 col-sm-4 col-md-3 col-xl-2">
           <label class="form-label small text-muted mb-1 fw-semibold">Payment Method</label>
           <select name="method" class="form-select form-select-sm">
             <option value="">-- All Methods --</option>
@@ -149,15 +185,21 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <option value="Card" <?= ($_GET['method'] ?? '') === 'Card' ? 'selected' : '' ?>>POS Card</option>
           </select>
         </div>
-        <div class="col-6 col-sm-6 col-md-3 col-xl-3">
-          <div class="btn-group btn-group-sm w-100 shadow-sm" role="group">
-            <button type="submit" class="btn btn-primary fw-semibold">
-              <i class="fa-solid fa-filter me-1"></i> Filter Records
-            </button>
-            <a href="/payments" class="btn btn-outline-secondary" title="Reset Filters">
-              <i class="fa-solid fa-rotate-left"></i>
-            </a>
-          </div>
+        <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+          <label class="form-label small text-muted mb-1 fw-semibold">Date From</label>
+          <input type="date" name="date_from" class="form-control form-control-sm" value="<?= e($_GET['date_from'] ?? '') ?>">
+        </div>
+        <div class="col-6 col-sm-4 col-md-3 col-xl-2">
+          <label class="form-label small text-muted mb-1 fw-semibold">Date To</label>
+          <input type="date" name="date_to" class="form-control form-control-sm" value="<?= e($_GET['date_to'] ?? '') ?>">
+        </div>
+        <div class="col-12 col-md-4 col-xl-4 d-flex gap-2">
+          <button type="submit" class="btn btn-primary btn-sm fw-semibold flex-fill">
+            <i class="fa-solid fa-filter me-1"></i> Filter Records
+          </button>
+          <a href="/payments" class="btn btn-outline-secondary btn-sm" title="Reset Filters">
+            <i class="fa-solid fa-rotate-left"></i>
+          </a>
         </div>
       </form>
     </div>

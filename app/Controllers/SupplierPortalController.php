@@ -232,4 +232,73 @@ class SupplierPortalController
         set_flash('Profile updated.', 'success');
         redirect('/supplier/profile');
     }
+
+    public function showActivate(): void
+    {
+        $token = trim($_GET['token'] ?? '');
+        if (empty($token)) {
+            redirect('/supplier/login', 'Invalid or missing activation token.', 'danger');
+        }
+
+        $pdo = Database::getConnection();
+        $tokenHash = hash('sha256', $token);
+        $stmt = $pdo->prepare("SELECT pat.*, s.company_name as full_name, s.email, s.supplier_code as customer_code 
+            FROM portal_activation_tokens pat 
+            JOIN suppliers s ON pat.entity_id = s.id 
+            WHERE (pat.token = ? OR pat.token_hash = ?) AND pat.portal_type = 'supplier' AND (pat.is_used = 0 OR pat.is_used IS NULL) AND pat.used_at IS NULL AND pat.expires_at > CURRENT_TIMESTAMP");
+        $stmt->execute([$token, $tokenHash]);
+        $activation = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$activation) {
+            require_once dirname(__DIR__) . '/Views/portal/activate_expired.php';
+            return;
+        }
+
+        $portalTitle = 'Supplier Vendor Portal';
+        $actionUrl = '/supplier/activate';
+        $loginUrl = '/supplier/login';
+        require_once dirname(__DIR__) . '/Views/portal/activate.php';
+    }
+
+    public function processActivate(): void
+    {
+        $token = trim($_POST['token'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        if (empty($token)) {
+            redirect('/supplier/login', 'Invalid activation request.', 'danger');
+        }
+
+        if (strlen($password) < 6) {
+            redirect("/supplier/activate?token=" . urlencode($token), 'Password must be at least 6 characters.', 'danger');
+        }
+
+        if ($password !== $confirmPassword) {
+            redirect("/supplier/activate?token=" . urlencode($token), 'Passwords do not match.', 'danger');
+        }
+
+        $pdo = Database::getConnection();
+        $tokenHash = hash('sha256', $token);
+        $stmt = $pdo->prepare("SELECT * FROM portal_activation_tokens WHERE (token = ? OR token_hash = ?) AND portal_type = 'supplier' AND (is_used = 0 OR is_used IS NULL) AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP");
+        $stmt->execute([$token, $tokenHash]);
+        $activation = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$activation) {
+            redirect('/supplier/login', 'This activation link is invalid or has expired.', 'danger');
+        }
+
+        $supplierId = (int)$activation['entity_id'];
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+
+        $pdo->prepare("UPDATE suppliers SET password_hash = ?, portal_enabled = 1, is_active = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+            ->execute([$hash, $supplierId]);
+
+        $pdo->prepare("UPDATE portal_activation_tokens SET is_used = 1, used_at = CURRENT_TIMESTAMP WHERE id = ?")
+            ->execute([$activation['id']]);
+
+        \App\Services\AuditService::log('SUPPLIER_PORTAL_ACTIVATED', 'Suppliers', $supplierId, "Supplier portal account activated successfully");
+
+        redirect('/supplier/login', 'Your account has been activated! You can now log in with your new password.', 'success');
+    }
 }

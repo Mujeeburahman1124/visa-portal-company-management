@@ -327,4 +327,73 @@ class AgentPortalController
         set_flash('Profile updated successfully.', 'success');
         redirect('/agent/profile');
     }
+
+    public function showActivate(): void
+    {
+        $token = trim($_GET['token'] ?? '');
+        if (empty($token)) {
+            redirect('/agent/login', 'Invalid or missing activation token.', 'danger');
+        }
+
+        $pdo = Database::getConnection();
+        $tokenHash = hash('sha256', $token);
+        $stmt = $pdo->prepare("SELECT pat.*, a.company_name as full_name, a.email, a.agent_code as customer_code 
+            FROM portal_activation_tokens pat 
+            JOIN agents a ON pat.entity_id = a.id 
+            WHERE (pat.token = ? OR pat.token_hash = ?) AND pat.portal_type = 'agent' AND (pat.is_used = 0 OR pat.is_used IS NULL) AND pat.used_at IS NULL AND pat.expires_at > CURRENT_TIMESTAMP");
+        $stmt->execute([$token, $tokenHash]);
+        $activation = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$activation) {
+            require_once dirname(__DIR__) . '/Views/portal/activate_expired.php';
+            return;
+        }
+
+        $portalTitle = 'B2B Agent Portal';
+        $actionUrl = '/agent/activate';
+        $loginUrl = '/agent/login';
+        require_once dirname(__DIR__) . '/Views/portal/activate.php';
+    }
+
+    public function processActivate(): void
+    {
+        $token = trim($_POST['token'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        if (empty($token)) {
+            redirect('/agent/login', 'Invalid activation request.', 'danger');
+        }
+
+        if (strlen($password) < 6) {
+            redirect("/agent/activate?token=" . urlencode($token), 'Password must be at least 6 characters.', 'danger');
+        }
+
+        if ($password !== $confirmPassword) {
+            redirect("/agent/activate?token=" . urlencode($token), 'Passwords do not match.', 'danger');
+        }
+
+        $pdo = Database::getConnection();
+        $tokenHash = hash('sha256', $token);
+        $stmt = $pdo->prepare("SELECT * FROM portal_activation_tokens WHERE (token = ? OR token_hash = ?) AND portal_type = 'agent' AND (is_used = 0 OR is_used IS NULL) AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP");
+        $stmt->execute([$token, $tokenHash]);
+        $activation = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$activation) {
+            redirect('/agent/login', 'This activation link is invalid or has expired.', 'danger');
+        }
+
+        $agentId = (int)$activation['entity_id'];
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+
+        $pdo->prepare("UPDATE agents SET password_hash = ?, is_active = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+            ->execute([$hash, $agentId]);
+
+        $pdo->prepare("UPDATE portal_activation_tokens SET is_used = 1, used_at = CURRENT_TIMESTAMP WHERE id = ?")
+            ->execute([$activation['id']]);
+
+        \App\Services\AuditService::log('AGENT_PORTAL_ACTIVATED', 'Agents', $agentId, "Agent portal account activated successfully");
+
+        redirect('/agent/login', 'Your account has been activated! You can now log in with your new password.', 'success');
+    }
 }

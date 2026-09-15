@@ -64,7 +64,7 @@ $flash = get_flash();
       <i class="fa-solid fa-shield-halved text-info fs-3"></i>
     </div>
     <h4 class="brand-font fw-bold mb-1" style="letter-spacing: 0.5px;">MS TRAVEL HUB</h4>
-    <p class="text-white-50 small mb-0">Client Portal &bull; Account Activation</p>
+    <p class="text-white-50 small mb-0"><?= e($portalTitle ?? 'Client Portal') ?> &bull; Account Activation</p>
   </div>
 
   <div class="p-4 p-md-5">
@@ -77,10 +77,10 @@ $flash = get_flash();
 
     <div class="mb-4">
       <h5 class="fw-bold text-dark mb-1">Set Your Password</h5>
-      <p class="text-muted small mb-0">Hello <strong><?= e($activation['full_name'] ?? 'Client') ?></strong>, please create a secure password to activate your portal account.</p>
+      <p class="text-muted small mb-0">Hello <strong><?= e($activation['full_name'] ?? 'User') ?></strong>, please create a secure password to activate your account.</p>
     </div>
 
-    <form action="/portal/activate" method="POST">
+    <form action="<?= e($actionUrl ?? '/portal/activate') ?>" method="POST">
       <?= csrf_field() ?>
       <input type="hidden" name="token" value="<?= e($token) ?>">
 
@@ -110,7 +110,9 @@ $flash = get_flash();
       </button>
 
       <div class="text-center">
-        <a href="/portal/login" class="text-muted small text-decoration-none">&larr; Return to Sign In</a>
+        <a href="<?= e($loginUrl ?? '/portal/login') ?>" class="text-decoration-none small text-muted">
+          <i class="fa-solid fa-arrow-left me-1"></i> Back to Login
+        </a>
       </div>
     </form>
   </div>

@@ -505,6 +505,32 @@ switch ($uri) {
         (new App\Controllers\SupplierController())->resetPassword();
         break;
 
+    case '/suppliers/send-activation':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
+        (new App\Controllers\SupplierController())->sendActivation();
+        break;
+
+    // Administration: Staff Attendance & Working Hours (Protected: Admin / Branch Manager / Accounts / HR)
+    case '/attendance':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager', 'hr', 'case-officer']);
+        (new App\Controllers\AttendanceController())->index();
+        break;
+
+    case '/attendance/record':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager', 'hr']);
+        (new App\Controllers\AttendanceController())->record();
+        break;
+
+    case '/attendance/update':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager', 'hr']);
+        (new App\Controllers\AttendanceController())->update();
+        break;
+
+    case '/attendance/export':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager', 'hr']);
+        (new App\Controllers\AttendanceController())->export();
+        break;
+
     // Administration: Payroll & Staff Compensation (Protected: HR / Admin / Accounts)
     case '/payroll':
         RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
@@ -616,6 +642,11 @@ switch ($uri) {
     case '/agents/reset-password':
         RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
         (new App\Controllers\AgentController())->resetPassword();
+        break;
+
+    case '/agents/send-activation':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
+        (new App\Controllers\AgentController())->sendActivation();
         break;
 
     case '/agents/delete':
@@ -1016,6 +1047,15 @@ switch ($uri) {
         }
         break;
 
+    case '/agent/activate':
+        $agentCtrl = new App\Controllers\AgentPortalController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $agentCtrl->processActivate();
+        } else {
+            $agentCtrl->showActivate();
+        }
+        break;
+
     // Supplier Self-Service Portal (Phase 2)
     case '/supplier':
         session_start_safe();
@@ -1032,6 +1072,15 @@ switch ($uri) {
             $supCtrl->login();
         } else {
             $supCtrl->showLogin();
+        }
+        break;
+
+    case '/supplier/activate':
+        $supCtrl = new App\Controllers\SupplierPortalController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $supCtrl->processActivate();
+        } else {
+            $supCtrl->showActivate();
         }
         break;
 

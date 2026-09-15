@@ -20,6 +20,10 @@ class PaymentController
         $search = trim($_GET['search'] ?? '');
         $status = trim($_GET['status'] ?? '');
         $method = trim($_GET['method'] ?? '');
+        $currency = trim($_GET['currency'] ?? '');
+        $minAmount = !empty($_GET['min_amount']) ? (float)$_GET['min_amount'] : null;
+        $maxAmount = !empty($_GET['max_amount']) ? (float)$_GET['max_amount'] : null;
+        $branchId = (int)($_GET['branch_id'] ?? 0);
         $supplierId = (int)($_GET['supplier_id'] ?? 0);
         $countryId = (int)($_GET['country_id'] ?? 0);
         $dateFrom = trim($_GET['date_from'] ?? '');
@@ -58,6 +62,27 @@ class PaymentController
             $params[] = $method;
         }
 
+        if ($currency !== '') {
+            $sql .= " AND p.currency = ?";
+            $params[] = $currency;
+        }
+
+        if ($minAmount !== null) {
+            $sql .= " AND p.amount >= ?";
+            $params[] = $minAmount;
+        }
+
+        if ($maxAmount !== null) {
+            $sql .= " AND p.amount <= ?";
+            $params[] = $maxAmount;
+        }
+
+        if ($branchId > 0) {
+            $sql .= " AND (u.branch_id = ? OR a.branch_id = ?)";
+            $params[] = $branchId;
+            $params[] = $branchId;
+        }
+
         if ($supplierId > 0) {
             $sql .= " AND a.supplier_id = ?";
             $params[] = $supplierId;
@@ -87,6 +112,8 @@ class PaymentController
         // Meta options for filters
         $suppliersList = $pdo->query("SELECT id, company_name FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll();
         $countriesList = $pdo->query("SELECT id, name FROM countries WHERE is_active = 1 ORDER BY name ASC")->fetchAll();
+        $branchesList = $pdo->query("SELECT id, name FROM branches WHERE is_active = 1 ORDER BY name ASC")->fetchAll();
+        $currenciesList = $pdo->query("SELECT DISTINCT currency FROM payments WHERE currency IS NOT NULL AND currency != '' ORDER BY currency ASC")->fetchAll(PDO::FETCH_COLUMN) ?: ['AED', 'USD', 'EUR', 'GBP', 'INR', 'PKR', 'LKR'];
         $applicationsList = $pdo->query("SELECT a.id, a.application_number, a.total_amount, a.balance_amount, a.passport_number, 
                 c.id as customer_id, c.customer_code, c.full_name as customer_name, c.mobile as customer_mobile, c.email as customer_email,
                 ct.name as country_name, ct.flag_emoji, vs.name as service_name

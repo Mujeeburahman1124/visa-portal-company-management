@@ -321,6 +321,60 @@ class SupplierController
         redirect($_SERVER['HTTP_REFERER'] ?? '/suppliers', "Password for {$supplier['company_name']} reset to: {$newPassword}", 'success');
     }
 
+    public function sendActivation(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
+        $pdo = Database::getConnection();
+
+        $supplierId = (int)($_POST['supplier_id'] ?? 0);
+        if ($supplierId <= 0) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/suppliers', 'Invalid supplier identifier.', 'danger');
+        }
+
+        $stmt = $pdo->prepare("SELECT * FROM suppliers WHERE id = ?");
+        $stmt->execute([$supplierId]);
+        $supplier = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$supplier || empty($supplier['email'])) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/suppliers', 'Supplier has no registered email address.', 'danger');
+        }
+
+        // Invalidate prior active tokens
+        $pdo->prepare("UPDATE portal_activation_tokens SET is_used = 1, used_at = CURRENT_TIMESTAMP WHERE portal_type = 'supplier' AND entity_id = ?")->execute([$supplierId]);
+
+        // Generate token
+        $rawToken = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $rawToken);
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+48 hours'));
+
+        $stmt = $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, customer_id, token, token_hash, expires_at, is_used, created_at) VALUES ('supplier', ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)");
+        $stmt->execute([$supplierId, $supplier['email'], $supplierId, $rawToken, $tokenHash, $expiresAt]);
+
+        $appUrl = \App\Config\Env::get('APP_URL', 'http://localhost:8000');
+        $activationLink = rtrim($appUrl, '/') . "/supplier/activate?token={$rawToken}";
+
+        try {
+            \App\Services\EmailService::send([
+                'to' => $supplier['email'],
+                'name' => $supplier['company_name'],
+                'subject' => "Activate Your MS TRAVEL HUB Supplier Portal Account",
+                'bodyHtml' => "
+                    <h2 style='color:#0f172a;'>Welcome to MS TRAVEL HUB Supplier Portal, {$supplier['company_name']}!</h2>
+                    <p>Your supplier vendor portal account has been prepared. You can now securely set your password and access your payment ledger, assigned visa services, and statements online.</p>
+                    <p style='text-align:center; margin:30px 0;'>
+                        <a href='{$activationLink}' style='background-color:#0284c7; color:#ffffff; padding:12px 28px; text-decoration:none; border-radius:6px; font-weight:bold; display:inline-block;'>Activate Supplier Portal &rarr;</a>
+                    </p>
+                    <p style='color:#64748b; font-size:13px;'>Or copy and paste this link:<br><a href='{$activationLink}'>{$activationLink}</a></p>
+                    <p style='color:#64748b; font-size:12px;'>This activation link is single-use and will expire in 48 hours.</p>
+                "
+            ]);
+        } catch (\Throwable $e) {}
+
+        AuditService::log('SEND_SUPPLIER_ACTIVATION', 'Suppliers', $supplierId, "Dispatched supplier portal activation link to {$supplier['email']}");
+        redirect($_SERVER['HTTP_REFERER'] ?? '/suppliers', "Supplier portal activation link dispatched to {$supplier['email']}.", 'success');
+    }
+
     public function wallet(): void
     {
         AuthMiddleware::handle();
