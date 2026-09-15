@@ -36,6 +36,9 @@ foreach ($suppliers as $s) {
       <p class="text-muted small mb-0">Manage external visa clearing suppliers, VFS/TLS express partners, and accounts payable balances.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
+      <a href="/suppliers/wallet" class="btn btn-outline-info btn-sm px-3 shadow-sm">
+        <i class="fa-solid fa-wallet me-1"></i> Supplier Wallets
+      </a>
       <a href="/suppliers/payments" class="btn btn-outline-primary btn-sm px-3 shadow-sm">
         <i class="fa-solid fa-receipt me-1"></i> Payment Ledger &amp; History
       </a>
@@ -136,6 +139,9 @@ foreach ($suppliers as $s) {
                 </td>
                 <td class="text-end">
                   <div class="d-inline-flex align-items-center gap-1">
+                    <a href="/suppliers/wallet?id=<?= $sup['id'] ?>" class="btn btn-sm btn-outline-info py-1 px-2" title="Supplier Wallet & Advance Ledger">
+                      <i class="fa-solid fa-wallet"></i>
+                    </a>
                     <button type="button" class="btn btn-sm btn-outline-warning py-1 px-2" data-bs-toggle="modal" data-bs-target="#resetSupplierPasswordModal<?= $sup['id'] ?>" title="Reset Portal Password">
                       <i class="fa-solid fa-key"></i>
                     </button>

@@ -831,24 +831,53 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
               <form action="/payments/store" method="POST">
                 <?= csrf_field() ?>
                 <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
+                <!-- Multi-Currency & Payment Details Strip -->
+                <div class="p-3 bg-light rounded border mb-3">
+                  <div class="row g-2 mb-2">
+                    <div class="col-md-3">
+                      <label class="form-label small fw-semibold">Received Currency</label>
+                      <select name="from_currency" id="appPayFromCur" class="form-select form-select-sm fw-bold" onchange="calcAppPaymentConverter()">
+                        <?php foreach (['USD', 'AED', 'LKR', 'EUR', 'GBP', 'SAR', 'QAR', 'INR', 'CAD', 'AUD'] as $c): ?>
+                          <option value="<?= $c ?>" <?= $c === 'USD' ? 'selected' : '' ?>><?= $c ?></option>
+                        <?php endforeach; ?>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label small fw-semibold">Received Amount <span class="text-danger">*</span></label>
+                      <input type="number" step="0.01" min="0.01" name="original_amount" id="appPayOrigAmount" class="form-control form-control-sm fw-bold" 
+                             value="<?= number_format((float)($app['balance_amount'] ?? 0), 2, '.', '') ?>" placeholder="0.00" required oninput="calcAppPaymentConverter()">
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label small fw-semibold">Exchange Rate</label>
+                      <input type="number" step="0.000001" name="exchange_rate" id="appPayRate" class="form-control form-control-sm text-end fw-bold" value="1.000000" oninput="calcAppPaymentConverter()">
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label small fw-semibold">Settlement Currency</label>
+                      <select name="to_currency" id="appPayToCur" class="form-select form-select-sm fw-bold" onchange="calcAppPaymentConverter()">
+                        <option value="USD" selected>USD ($)</option>
+                        <option value="AED">AED</option>
+                        <option value="LKR">LKR</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="GBP">GBP (£)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                    <span class="small fw-semibold text-muted">Settlement Applied to Invoice:</span>
+                    <div>
+                      <span class="h6 fw-bold text-success mb-0" id="appPayDisplay">$<?= number_format((float)($app['balance_amount'] ?? 0), 2) ?> USD</span>
+                      <input type="hidden" name="amount" id="appPayAmountHidden" value="<?= number_format((float)($app['balance_amount'] ?? 0), 2, '.', '') ?>">
+                      <input type="hidden" name="converted_amount" id="appPayConvertedHidden" value="<?= number_format((float)($app['balance_amount'] ?? 0), 2, '.', '') ?>">
+                    </div>
+                  </div>
+                </div>
+
                 <div class="row g-3">
                   <div class="col-md-3">
-                    <label class="form-label small fw-semibold">Amount (USD) <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                      <span class="input-group-text">$</span>
-                      <input type="number" name="amount" class="form-control" step="0.01" min="0.01" 
-                             value="<?= number_format((float)($app['balance_amount'] ?? 0), 2, '.', '') ?>"
-                             placeholder="0.00" required>
-                    </div>
-                    <?php if ((float)($app['balance_amount'] ?? 0) > 0): ?>
-                      <div class="form-text text-danger fw-semibold">Balance due: <?= format_currency($app['balance_amount']) ?></div>
-                    <?php endif; ?>
-                  </div>
-                  <div class="col-md-2">
                     <label class="form-label small fw-semibold">Payment Date <span class="text-danger">*</span></label>
                     <input type="date" name="payment_date" class="form-control" value="<?= date('Y-m-d') ?>" required>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-md-4">
                     <label class="form-label small fw-semibold">Payment Method <span class="text-danger">*</span></label>
                     <select name="payment_method" class="form-select" required>
                       <option value="Cash">Cash</option>
@@ -856,11 +885,12 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
                       <option value="Credit Card">Credit Card</option>
                       <option value="Debit Card">Debit Card</option>
                       <option value="Cheque">Cheque</option>
+                      <option value="Customer Wallet">Customer Wallet</option>
                       <option value="Online Payment">Online Payment</option>
                       <option value="Western Union">Western Union</option>
                     </select>
                   </div>
-                  <div class="col-md-4">
+                  <div class="col-md-5">
                     <label class="form-label small fw-semibold">Transaction Reference</label>
                     <input type="text" name="transaction_reference" class="form-control" placeholder="Bank ref / cheque number...">
                   </div>
@@ -870,7 +900,7 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
                   </div>
                   <div class="col-12">
                     <button type="submit" class="btn btn-success px-4 fw-semibold">
-                      <i class="fa-solid fa-check me-2"></i>Record Payment & Generate Receipt
+                      <i class="fa-solid fa-check me-2"></i>Record Payment &amp; Generate Receipt
                     </button>
                     <button type="button" class="btn btn-outline-primary ms-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#generateLinkModal">
                       <i class="fa-solid fa-link me-1"></i>Generate Payment Link
@@ -881,6 +911,17 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
                   </div>
                 </div>
               </form>
+              <script>
+              function calcAppPaymentConverter() {
+                const orig = parseFloat(document.getElementById('appPayOrigAmount').value) || 0;
+                const rate = parseFloat(document.getElementById('appPayRate').value) || 1;
+                const cur = document.getElementById('appPayToCur').value || 'USD';
+                const conv = (orig * rate).toFixed(2);
+                document.getElementById('appPayDisplay').innerText = (cur === 'USD' ? '$' : '') + conv + ' ' + cur;
+                document.getElementById('appPayAmountHidden').value = conv;
+                document.getElementById('appPayConvertedHidden').value = conv;
+              }
+              </script>
             </div>
           </div>
 

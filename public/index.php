@@ -302,6 +302,12 @@ switch ($uri) {
         (new App\Controllers\PaymentController())->walletDeposit();
         break;
 
+    case '/payments/wallet-debit':
+    case '/customers/wallet-debit':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
+        (new App\Controllers\PaymentController())->walletDebit();
+        break;
+
     case '/payments/supplier-wallet-deposit':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
         (new App\Controllers\PaymentController())->supplierWalletDeposit();
@@ -310,6 +316,11 @@ switch ($uri) {
     case '/payments/agent-wallet-deposit':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
         (new App\Controllers\PaymentController())->agentWalletDeposit();
+        break;
+
+    case '/payments/agent-wallet-debit':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
+        (new App\Controllers\PaymentController())->agentWalletDebit();
         break;
 
     case '/payments/refund':
@@ -414,6 +425,18 @@ switch ($uri) {
         (new App\Controllers\TaskController())->updateStatus();
         break;
 
+    case '/tasks/reassign':
+        (new App\Controllers\TaskController())->reassign();
+        break;
+
+    case '/tasks/comment':
+        (new App\Controllers\TaskController())->addComment();
+        break;
+
+    case '/tasks/details':
+        (new App\Controllers\TaskController())->details();
+        break;
+
     // Management & Workflow: Reports & Analytics (Protected: Management/Finance)
     case '/reports':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'visa-manager', 'accounts']);
@@ -449,6 +472,21 @@ switch ($uri) {
     case '/suppliers/delete':
         RoleMiddleware::authorize(['super-admin', 'admin']);
         (new App\Controllers\SupplierController())->delete();
+        break;
+
+    case '/suppliers/wallet':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager', 'visa-manager']);
+        (new App\Controllers\SupplierController())->wallet();
+        break;
+
+    case '/suppliers/wallet/topup':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
+        (new App\Controllers\SupplierController())->walletTopUp();
+        break;
+
+    case '/suppliers/wallet/deduct':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
+        (new App\Controllers\SupplierController())->walletDeduct();
         break;
 
     case '/suppliers/reset-password':

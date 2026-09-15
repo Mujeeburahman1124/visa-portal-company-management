@@ -223,10 +223,74 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
         <!-- TAB 4: TASKS WORKSPACE -->
         <div class="tab-pane fade <?= $activeTab === 'tasks' ? 'show active' : '' ?>" id="tab-tasks" role="tabpanel">
+          <!-- Filter and Status Pills Bar -->
+          <div class="p-3 bg-light border-bottom">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+              <!-- Status Pills -->
+              <div class="btn-group btn-group-sm" role="group" id="taskStatusPills">
+                <button type="button" class="btn btn-outline-secondary active fw-semibold" data-status-filter="all">
+                  All <span class="badge bg-secondary ms-1"><?= count($allTasks) ?></span>
+                </button>
+                <button type="button" class="btn btn-outline-warning text-dark fw-semibold" data-status-filter="Pending">
+                  Pending <span class="badge bg-warning text-dark ms-1"><?= count(array_filter($allTasks, fn($t) => $t['status'] === 'Pending')) ?></span>
+                </button>
+                <button type="button" class="btn btn-outline-primary fw-semibold" data-status-filter="In Progress">
+                  In Progress <span class="badge bg-primary ms-1"><?= count(array_filter($allTasks, fn($t) => $t['status'] === 'In Progress')) ?></span>
+                </button>
+                <button type="button" class="btn btn-outline-danger fw-semibold" data-status-filter="Overdue">
+                  Overdue <span class="badge bg-danger ms-1"><?= count($overdueTasks) ?></span>
+                </button>
+                <button type="button" class="btn btn-outline-success fw-semibold" data-status-filter="Completed">
+                  Completed <span class="badge bg-success ms-1"><?= count(array_filter($allTasks, fn($t) => $t['status'] === 'Completed')) ?></span>
+                </button>
+              </div>
+
+              <!-- Action button -->
+              <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#createTaskModal">
+                <i class="fa-solid fa-plus me-1"></i> New Task
+              </button>
+            </div>
+
+            <!-- Instant Search & Dropdown Filters -->
+            <div class="row g-2">
+              <div class="col-md-5">
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                  <input type="text" id="taskSearchInput" class="form-control border-start-0" placeholder="Search tasks by title, application #, customer...">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <select id="taskPriorityFilter" class="form-select form-select-sm">
+                  <option value="">All Priorities</option>
+                  <option value="Normal">Normal</option>
+                  <option value="High">High</option>
+                  <option value="Urgent">Urgent</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <select id="taskStaffFilter" class="form-select form-select-sm">
+                  <option value="">All Staff Members</option>
+                  <?php foreach ($staffList as $st): ?>
+                    <option value="<?= e($st['name']) ?>"><?= e($st['name']) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 font-sm">
+            <table class="table table-hover align-middle mb-0 font-sm" id="tasksTable">
               <thead class="table-light">
-                <tr><th>Task Title</th><th>Application #</th><th>Customer</th><th>Assigned To</th><th>Priority</th><th>Due Date</th><th>Status</th><th class="text-end">Update</th></tr>
+                <tr>
+                  <th>Task Title</th>
+                  <th>Application #</th>
+                  <th>Customer</th>
+                  <th>Assigned To</th>
+                  <th>Priority</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th class="text-end">Actions</th>
+                </tr>
               </thead>
               <tbody>
                 <?php if (empty($allTasks)): ?>
@@ -236,11 +300,19 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     <?php 
                       $isOverdue = $task['status'] !== 'Completed' && $task['due_date'] < date('Y-m-d');
                     ?>
-                    <tr>
+                    <tr class="task-row" 
+                        data-status="<?= e($task['status']) ?>" 
+                        data-is-overdue="<?= $isOverdue ? '1' : '0' ?>"
+                        data-priority="<?= e($task['priority']) ?>"
+                        data-staff="<?= e($task['staff_name'] ?? '') ?>"
+                        data-search="<?= strtolower(e($task['task_title'] . ' ' . ($task['application_number'] ?? '') . ' ' . ($task['customer_name'] ?? '') . ' ' . ($task['staff_name'] ?? ''))) ?>">
                       <td>
                         <div class="fw-bold text-dark"><?= e($task['task_title']) ?></div>
                         <?php if (!empty($task['description'])): ?>
                           <div class="text-muted small text-truncate" style="max-width: 250px;"><?= e($task['description']) ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($task['completion_notes'])): ?>
+                          <div class="text-success small fst-italic"><i class="fa-solid fa-check-double me-1"></i><?= e($task['completion_notes']) ?></div>
                         <?php endif; ?>
                       </td>
                       <td>
@@ -275,16 +347,23 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                         <?php endif; ?>
                       </td>
                       <td class="text-end">
-                        <form action="/tasks/status" method="POST" class="d-inline">
-                          <?= csrf_field() ?>
-                          <input type="hidden" name="task_id" value="<?= $task['id'] ?>">
-                          <select name="status" class="form-select form-select-sm d-inline-block w-auto py-0" style="font-size: 0.75rem;" onchange="this.form.submit()">
-                            <option value="Pending" <?= $task['status'] === 'Pending' ? 'selected' : '' ?>>Pending</option>
-                            <option value="In Progress" <?= $task['status'] === 'In Progress' ? 'selected' : '' ?>>In Progress</option>
-                            <option value="Completed" <?= $task['status'] === 'Completed' ? 'selected' : '' ?>>Completed</option>
-                            <option value="Cancelled" <?= $task['status'] === 'Cancelled' ? 'selected' : '' ?>>Cancelled</option>
-                          </select>
-                        </form>
+                        <div class="d-flex align-items-center justify-content-end gap-1">
+                          <!-- View Details & Comments -->
+                          <button type="button" class="btn btn-outline-primary btn-sm py-1 px-2" style="font-size: 0.75rem;" 
+                                  onclick="openTaskDetailModal(<?= $task['id'] ?>)" title="View Details, History & Comments">
+                            <i class="fa-solid fa-eye me-1"></i> Details
+                          </button>
+                          <!-- Reassign -->
+                          <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" style="font-size: 0.75rem;" 
+                                  onclick="openReassignModal(<?= $task['id'] ?>, '<?= addslashes(e($task['task_title'])) ?>', <?= (int)$task['assigned_to'] ?>)" title="Reassign Task">
+                            <i class="fa-solid fa-user-pen"></i>
+                          </button>
+                          <!-- Update Status with Notes -->
+                          <button type="button" class="btn btn-outline-success btn-sm py-1 px-2" style="font-size: 0.75rem;" 
+                                  onclick="openUpdateStatusModal(<?= $task['id'] ?>, '<?= addslashes(e($task['task_title'])) ?>', '<?= e($task['status']) ?>')" title="Update Status">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   <?php endforeach; ?>
@@ -299,7 +378,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 font-sm">
               <thead class="table-light">
-                <tr><th>Staff Member</th><th>Leave Type</th><th>Start Date</th><th>End Date</th><th>Duration</th><th>Reason</th><th>Status</th><th>Approver</th><th class="text-end">Action</th></tr>
+                <tr><th>Staff Member</th><th>Leave Type</th><th>Start Date</th><th>End Date</th><th>Duration</th><th>Reason</th><th>Status</th><th>Approver / Notes</th><th class="text-end">Action</th></tr>
               </thead>
               <tbody>
                 <?php if (empty($leaveRequests)): ?>
@@ -325,22 +404,25 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                           <span class="badge bg-warning-subtle text-warning border">Pending</span>
                         <?php endif; ?>
                       </td>
-                      <td><span class="small text-muted"><?= e($leave['approver_name'] ?? '—') ?></span></td>
+                      <td>
+                        <div class="small fw-semibold"><?= e($leave['approver_name'] ?? '—') ?></div>
+                        <?php if (!empty($leave['approver_notes'])): ?>
+                          <div class="small text-muted fst-italic"><?= e($leave['approver_notes']) ?></div>
+                        <?php endif; ?>
+                      </td>
                       <td class="text-end">
                         <?php if ($leave['status'] === 'Pending' && $canApproveLeave): ?>
                           <div class="btn-group btn-group-sm">
-                            <form action="/action-center/leave/approve" method="POST" class="d-inline">
-                              <?= csrf_field() ?>
-                              <input type="hidden" name="id" value="<?= $leave['id'] ?>">
-                              <input type="hidden" name="approver_notes" value="Approved by manager">
-                              <button type="submit" class="btn btn-success btn-sm py-0 px-2" title="Approve Leave"><i class="fa-solid fa-check"></i></button>
-                            </form>
-                            <form action="/action-center/leave/reject" method="POST" class="d-inline" onsubmit="return confirm('Reject this leave request?')">
-                              <?= csrf_field() ?>
-                              <input type="hidden" name="id" value="<?= $leave['id'] ?>">
-                              <input type="hidden" name="approver_notes" value="Declined due to operational staffing requirements">
-                              <button type="submit" class="btn btn-danger btn-sm py-0 px-2" title="Reject Leave"><i class="fa-solid fa-xmark"></i></button>
-                            </form>
+                            <button type="button" class="btn btn-success btn-sm py-1 px-2" 
+                                    onclick="openApproveLeaveModal(<?= $leave['id'] ?>, '<?= addslashes(e($leave['staff_name'])) ?>', <?= (int)$leave['total_days'] ?>)" 
+                                    title="Approve Leave">
+                              <i class="fa-solid fa-check me-1"></i> Approve
+                            </button>
+                            <button type="button" class="btn btn-danger btn-sm py-1 px-2" 
+                                    onclick="openRejectLeaveModal(<?= $leave['id'] ?>, '<?= addslashes(e($leave['staff_name'])) ?>')" 
+                                    title="Reject Leave">
+                              <i class="fa-solid fa-xmark me-1"></i> Reject
+                            </button>
                           </div>
                         <?php else: ?>
                           <span class="small text-muted">—</span>
@@ -359,7 +441,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 font-sm">
               <thead class="table-light">
-                <tr><th>Staff Member</th><th>Request Type</th><th>Title &amp; Description</th><th>Priority</th><th>Date</th><th>Status</th><th>Resolved By</th><th class="text-end">Action</th></tr>
+                <tr><th>Staff Member</th><th>Request Type</th><th>Title &amp; Description</th><th>Priority</th><th>Date</th><th>Status</th><th>Resolved By &amp; Notes</th><th class="text-end">Action</th></tr>
               </thead>
               <tbody>
                 <?php if (empty($staffRequests)): ?>
@@ -380,22 +462,23 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                           <span class="badge bg-success-subtle text-success border">Completed</span>
                         <?php elseif ($sReq['status'] === 'In Progress'): ?>
                           <span class="badge bg-primary-subtle text-primary border">In Progress</span>
+                        <?php elseif ($sReq['status'] === 'Rejected'): ?>
+                          <span class="badge bg-danger-subtle text-danger border">Rejected</span>
                         <?php else: ?>
                           <span class="badge bg-warning-subtle text-warning border">Pending</span>
                         <?php endif; ?>
                       </td>
-                      <td><span class="small text-muted"><?= e($sReq['resolver_name'] ?? '—') ?></span></td>
+                      <td>
+                        <div class="small fw-semibold"><?= e($sReq['resolver_name'] ?? '—') ?></div>
+                        <?php if (!empty($sReq['resolution_notes'])): ?>
+                          <div class="small text-muted fst-italic"><?= e($sReq['resolution_notes']) ?></div>
+                        <?php endif; ?>
+                      </td>
                       <td class="text-end">
-                        <form action="/action-center/staff-request/update" method="POST" class="d-inline">
-                          <?= csrf_field() ?>
-                          <input type="hidden" name="id" value="<?= $sReq['id'] ?>">
-                          <select name="status" class="form-select form-select-sm d-inline-block w-auto py-0" style="font-size: 0.75rem;" onchange="this.form.submit()">
-                            <option value="Pending" <?= $sReq['status'] === 'Pending' ? 'selected' : '' ?>>Pending</option>
-                            <option value="In Progress" <?= $sReq['status'] === 'In Progress' ? 'selected' : '' ?>>In Progress</option>
-                            <option value="Completed" <?= $sReq['status'] === 'Completed' ? 'selected' : '' ?>>Completed</option>
-                            <option value="Rejected" <?= $sReq['status'] === 'Rejected' ? 'selected' : '' ?>>Rejected</option>
-                          </select>
-                        </form>
+                        <button type="button" class="btn btn-outline-info btn-sm py-1 px-2" style="font-size: 0.75rem;"
+                                onclick="openUpdateStaffRequestModal(<?= $sReq['id'] ?>, '<?= addslashes(e($sReq['title'])) ?>', '<?= e($sReq['status']) ?>', '<?= addslashes(e($sReq['resolution_notes'] ?? '')) ?>')">
+                          <i class="fa-solid fa-pen-to-square me-1"></i> Update
+                        </button>
                       </td>
                     </tr>
                   <?php endforeach; ?>
@@ -682,5 +765,403 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </div>
   </div>
 </div>
+
+<!-- Modal: Task Detail, Comments & Timeline -->
+<div class="modal fade" id="taskDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-list-check me-2"></i> Task Details &amp; History</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4" id="taskDetailBody">
+        <div class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="text-muted small mt-2">Loading task details...</p>
+        </div>
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Reassign Task -->
+<div class="modal fade" id="reassignTaskModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-light border-bottom">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-pen text-primary me-2"></i> Reassign Task</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/tasks/reassign" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="task_id" id="reassignTaskId">
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Task</label>
+            <input type="text" id="reassignTaskTitle" class="form-control bg-light" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Assign To <span class="text-danger">*</span></label>
+            <select name="assigned_to" id="reassignStaffSelect" class="form-select" required>
+              <option value="">-- Select Staff Member --</option>
+              <?php foreach ($staffList as $st): ?>
+                <option value="<?= $st['id'] ?>"><?= e($st['name']) ?> (<?= e($st['role']) ?>)</option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="mb-0">
+            <label class="form-label small fw-semibold">Reassignment Reason / Note</label>
+            <textarea name="reason" class="form-control" rows="2" placeholder="e.g. Workload rebalancing, specialist assignment..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary px-4 fw-semibold"><i class="fa-solid fa-check me-1"></i> Reassign Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Update Task Status with Completion Notes -->
+<div class="modal fade" id="updateTaskStatusModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-light border-bottom">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square text-success me-2"></i> Update Task Status</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/tasks/status" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="task_id" id="statusTaskId">
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Task</label>
+            <input type="text" id="statusTaskTitle" class="form-control bg-light" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">New Status <span class="text-danger">*</span></label>
+            <select name="status" id="statusSelect" class="form-select" required>
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div class="mb-0">
+            <label class="form-label small fw-semibold">Completion Notes / Remarks</label>
+            <textarea name="completion_notes" class="form-control" rows="3" placeholder="Add resolution notes, outcome, or follow-up details..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success px-4 fw-semibold"><i class="fa-solid fa-save me-1"></i> Save Status</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Approve Leave with Notes -->
+<div class="modal fade" id="approveLeaveModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-check-circle me-2"></i> Approve Staff Leave</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/action-center/leave/approve" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="id" id="approveLeaveId">
+        <div class="modal-body p-4">
+          <p class="mb-3 text-dark">You are approving <strong id="approveLeaveStaff"></strong>'s leave request (<span id="approveLeaveDays"></span> days).</p>
+          <div class="mb-0">
+            <label class="form-label small fw-semibold">Approver Remarks (Optional)</label>
+            <textarea name="approver_notes" class="form-control" rows="2" placeholder="e.g. Approved. Handover completed.">Approved by manager</textarea>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success px-4 fw-semibold"><i class="fa-solid fa-check me-1"></i> Confirm Approval</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Reject Leave with Notes -->
+<div class="modal fade" id="rejectLeaveModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-ban me-2"></i> Reject Staff Leave</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/action-center/leave/reject" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="id" id="rejectLeaveId">
+        <div class="modal-body p-4">
+          <p class="mb-3 text-dark">You are rejecting <strong id="rejectLeaveStaff"></strong>'s leave request.</p>
+          <div class="mb-0">
+            <label class="form-label small fw-semibold">Rejection Reason <span class="text-danger">*</span></label>
+            <textarea name="approver_notes" class="form-control" rows="2" required placeholder="State the operational reason for rejecting this leave..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger px-4 fw-semibold"><i class="fa-solid fa-ban me-1"></i> Confirm Rejection</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Update Staff Request Status & Notes -->
+<div class="modal fade" id="updateStaffRequestModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i> Update Staff Request</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/action-center/staff-request/update" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="id" id="staffReqId">
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Request Title</label>
+            <input type="text" id="staffReqTitle" class="form-control bg-light" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Status <span class="text-danger">*</span></label>
+            <select name="status" id="staffReqStatus" class="form-select" required>
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+          </div>
+          <div class="mb-0">
+            <label class="form-label small fw-semibold">Resolution Notes</label>
+            <textarea name="resolution_notes" id="staffReqNotes" class="form-control" rows="3" placeholder="Provide action taken or reason..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-info text-white px-4 fw-semibold"><i class="fa-solid fa-save me-1"></i> Update Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// Filter Pills & Live Search for Tasks Table
+document.addEventListener('DOMContentLoaded', function () {
+  const statusPills = document.querySelectorAll('#taskStatusPills button');
+  const searchInput = document.getElementById('taskSearchInput');
+  const priorityFilter = document.getElementById('taskPriorityFilter');
+  const staffFilter = document.getElementById('taskStaffFilter');
+  const taskRows = document.querySelectorAll('#tasksTable .task-row');
+
+  let activeStatus = 'all';
+
+  function applyTaskFilters() {
+    const q = (searchInput ? searchInput.value.toLowerCase().trim() : '');
+    const pr = (priorityFilter ? priorityFilter.value : '');
+    const st = (staffFilter ? staffFilter.value : '');
+
+    taskRows.forEach(row => {
+      const rowStatus = row.getAttribute('data-status');
+      const isOverdue = row.getAttribute('data-is-overdue') === '1';
+      const rowPriority = row.getAttribute('data-priority');
+      const rowStaff = row.getAttribute('data-staff');
+      const rowSearch = row.getAttribute('data-search');
+
+      let matchStatus = true;
+      if (activeStatus === 'Overdue') {
+        matchStatus = isOverdue;
+      } else if (activeStatus !== 'all') {
+        matchStatus = (rowStatus === activeStatus);
+      }
+
+      const matchPriority = !pr || (rowPriority === pr);
+      const matchStaff = !st || (rowStaff === st);
+      const matchQuery = !q || (rowSearch.includes(q));
+
+      if (matchStatus && matchPriority && matchStaff && matchQuery) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  }
+
+  if (statusPills) {
+    statusPills.forEach(pill => {
+      pill.addEventListener('click', function () {
+        statusPills.forEach(p => p.classList.remove('active'));
+        this.classList.add('active');
+        activeStatus = this.getAttribute('data-status-filter');
+        applyTaskFilters();
+      });
+    });
+  }
+
+  if (searchInput) searchInput.addEventListener('input', applyTaskFilters);
+  if (priorityFilter) priorityFilter.addEventListener('change', applyTaskFilters);
+  if (staffFilter) staffFilter.addEventListener('change', applyTaskFilters);
+});
+
+// Modal Triggers
+function openReassignModal(id, title, staffId) {
+  document.getElementById('reassignTaskId').value = id;
+  document.getElementById('reassignTaskTitle').value = title;
+  const sel = document.getElementById('reassignStaffSelect');
+  if (sel) sel.value = staffId || '';
+  new bootstrap.Modal(document.getElementById('reassignTaskModal')).show();
+}
+
+function openUpdateStatusModal(id, title, status) {
+  document.getElementById('statusTaskId').value = id;
+  document.getElementById('statusTaskTitle').value = title;
+  const sel = document.getElementById('statusSelect');
+  if (sel) sel.value = status || 'Completed';
+  new bootstrap.Modal(document.getElementById('updateTaskStatusModal')).show();
+}
+
+function openApproveLeaveModal(id, staffName, days) {
+  document.getElementById('approveLeaveId').value = id;
+  document.getElementById('approveLeaveStaff').textContent = staffName;
+  document.getElementById('approveLeaveDays').textContent = days;
+  new bootstrap.Modal(document.getElementById('approveLeaveModal')).show();
+}
+
+function openRejectLeaveModal(id, staffName) {
+  document.getElementById('rejectLeaveId').value = id;
+  document.getElementById('rejectLeaveStaff').textContent = staffName;
+  new bootstrap.Modal(document.getElementById('rejectLeaveModal')).show();
+}
+
+function openUpdateStaffRequestModal(id, title, status, notes) {
+  document.getElementById('staffReqId').value = id;
+  document.getElementById('staffReqTitle').value = title;
+  document.getElementById('staffReqStatus').value = status || 'Completed';
+  document.getElementById('staffReqNotes').value = notes || '';
+  new bootstrap.Modal(document.getElementById('updateStaffRequestModal')).show();
+}
+
+// Fetch Task Details, Comments & History dynamically
+function openTaskDetailModal(taskId) {
+  const modalEl = document.getElementById('taskDetailModal');
+  const bodyEl = document.getElementById('taskDetailBody');
+  const bsModal = new bootstrap.Modal(modalEl);
+  bsModal.show();
+
+  bodyEl.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="text-muted small mt-2">Loading task details...</p></div>';
+
+  fetch('/tasks/details?id=' + encodeURIComponent(taskId))
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) {
+        bodyEl.innerHTML = '<div class="alert alert-danger mb-0">' + (data.message || 'Error loading details') + '</div>';
+        return;
+      }
+      const t = data.task;
+      const comments = data.comments || [];
+      const history = data.history || [];
+
+      let html = `
+        <div class="row g-3 mb-4">
+          <div class="col-md-7">
+            <h5 class="fw-bold text-dark mb-1">${t.task_title || ''}</h5>
+            <p class="text-muted small mb-2">${t.description || '<em>No description provided</em>'}</p>
+            ${t.completion_notes ? `<div class="p-2 bg-success bg-opacity-10 rounded border border-success border-opacity-25 small text-success mb-2"><strong>Completion Note:</strong> ${t.completion_notes}</div>` : ''}
+          </div>
+          <div class="col-md-5">
+            <div class="bg-light p-3 rounded border small">
+              <div><strong>Status:</strong> <span class="badge bg-${t.status === 'Completed' ? 'success' : (t.status === 'In Progress' ? 'primary' : 'warning text-dark')}">${t.status}</span></div>
+              <div class="mt-1"><strong>Priority:</strong> <span class="badge bg-${t.priority === 'High' || t.priority === 'Urgent' ? 'danger' : 'secondary'}">${t.priority}</span></div>
+              <div class="mt-1"><strong>Assigned To:</strong> ${t.assigned_to_name || 'Unassigned'}</div>
+              <div class="mt-1"><strong>Due Date:</strong> ${t.due_date || '—'}</div>
+              ${t.application_number ? `<div class="mt-1"><strong>Application:</strong> <a href="/applications/show?id=${t.app_id}" class="fw-bold text-primary">${t.application_number}</a></div>` : ''}
+              ${t.customer_name ? `<div class="mt-1"><strong>Customer:</strong> ${t.customer_name}</div>` : ''}
+            </div>
+          </div>
+        </div>
+
+        <ul class="nav nav-tabs mb-3" id="taskDetailTabs" role="tablist">
+          <li class="nav-item">
+            <button class="nav-link active fw-bold small" data-bs-toggle="tab" data-bs-target="#tabModalComments">
+              <i class="fa-solid fa-comments me-1"></i> Comments (${comments.length})
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link fw-bold small" data-bs-toggle="tab" data-bs-target="#tabModalHistory">
+              <i class="fa-solid fa-clock-rotate-left me-1"></i> Audit History (${history.length})
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          <!-- Comments Pane -->
+          <div class="tab-pane fade show active" id="tabModalComments">
+            <form action="/tasks/comment" method="POST" class="mb-3">
+              <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+              <input type="hidden" name="task_id" value="${t.id}">
+              <div class="input-group">
+                <input type="text" name="comment" class="form-control" placeholder="Write an operational comment..." required>
+                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-paper-plane me-1"></i> Send</button>
+              </div>
+            </form>
+
+            <div class="comments-list" style="max-height: 250px; overflow-y: auto;">
+              ${comments.length === 0 ? '<p class="text-muted small text-center py-3">No comments posted yet.</p>' : ''}
+              ${comments.map(c => `
+                <div class="p-2 mb-2 bg-light rounded border small">
+                  <div class="d-flex justify-content-between text-muted" style="font-size:0.75rem;">
+                    <strong>${c.user_name || 'Staff'}</strong>
+                    <span>${c.created_at || ''}</span>
+                  </div>
+                  <div class="mt-1 text-dark">${c.comment || ''}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- History Pane -->
+          <div class="tab-pane fade" id="tabModalHistory">
+            <div class="history-list" style="max-height: 280px; overflow-y: auto;">
+              ${history.length === 0 ? '<p class="text-muted small text-center py-3">No history entries recorded.</p>' : ''}
+              ${history.map(h => `
+                <div class="d-flex align-items-start gap-2 py-2 border-bottom small">
+                  <i class="fa-solid fa-circle-dot text-primary mt-1" style="font-size:0.65rem;"></i>
+                  <div class="flex-grow-1">
+                    <div>
+                      <span class="badge bg-secondary-subtle text-secondary me-1">${h.action}</span>
+                      <strong>${h.performed_by_name || 'User'}</strong>
+                      ${h.action === 'STATUS_CHANGE' ? ` changed status to <span class="fw-bold">${h.to_status}</span>` : ''}
+                      ${h.action === 'REASSIGN' ? ` reassigned from <strong>${h.assigned_from_name || 'Unassigned'}</strong> to <strong>${h.assigned_to_name || 'Staff'}</strong>` : ''}
+                    </div>
+                    ${h.notes ? `<div class="text-muted fst-italic mt-1">${h.notes}</div>` : ''}
+                    <div class="text-muted" style="font-size:0.7rem;">${h.created_at}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+
+      bodyEl.innerHTML = html;
+    })
+    .catch(err => {
+      bodyEl.innerHTML = '<div class="alert alert-danger mb-0">Failed to load task details.</div>';
+    });
+}
+</script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

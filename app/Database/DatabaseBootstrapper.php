@@ -356,6 +356,92 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE staff_requests ADD COLUMN resolved_by INTEGER NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE staff_requests ADD COLUMN resolution_notes TEXT NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE staff_requests ADD COLUMN resolved_at DATETIME NULL"); } catch (\Throwable $e) {}
+
+            // supplier_payments — add missing columns (currency, payment_status, supplier_invoice_ref)
+            try { $pdo->exec("ALTER TABLE supplier_payments ADD COLUMN currency TEXT DEFAULT 'AED'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE supplier_payments ADD COLUMN payment_status TEXT DEFAULT 'Completed'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE supplier_payments ADD COLUMN supplier_invoice_ref TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE supplier_payments ADD COLUMN from_currency TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE supplier_payments ADD COLUMN to_currency TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE supplier_payments ADD COLUMN exchange_rate REAL DEFAULT 1.0"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE supplier_payments ADD COLUMN original_amount REAL NULL"); } catch (\Throwable $e) {}
+
+            // wallet_transactions — extra reference columns
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN invoice_id INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN payment_method TEXT DEFAULT 'Bank Transfer'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN reference TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN converted_amount REAL NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN converted_currency TEXT NULL"); } catch (\Throwable $e) {}
+
+            // supplier_wallet_transactions — extra reference columns
+            try { $pdo->exec("ALTER TABLE supplier_wallet_transactions ADD COLUMN application_id INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE supplier_wallet_transactions ADD COLUMN payment_method TEXT DEFAULT 'Bank Transfer'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE supplier_wallet_transactions ADD COLUMN reference TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE supplier_wallet_transactions ADD COLUMN converted_amount REAL NULL"); } catch (\Throwable $e) {}
+
+            // agent_wallet_transactions — extra reference columns
+            try { $pdo->exec("ALTER TABLE agent_wallet_transactions ADD COLUMN application_id INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agent_wallet_transactions ADD COLUMN payment_method TEXT DEFAULT 'Bank Transfer'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agent_wallet_transactions ADD COLUMN reference TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE agent_wallet_transactions ADD COLUMN converted_amount REAL NULL"); } catch (\Throwable $e) {}
+
+            // visa_package_inventory_transactions — customer link
+            try { $pdo->exec("ALTER TABLE visa_package_inventory_transactions ADD COLUMN customer_id INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_package_inventory_transactions ADD COLUMN customer_name TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_package_inventory_transactions ADD COLUMN service_fee REAL DEFAULT 0.00"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_package_inventory_transactions ADD COLUMN tax_amount REAL DEFAULT 0.00"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE visa_package_inventory_transactions ADD COLUMN discount REAL DEFAULT 0.00"); } catch (\Throwable $e) {}
+
+            // tasks — completion_notes, reassigned_to
+            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN completion_notes TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN reassigned_to INTEGER NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN department TEXT NULL"); } catch (\Throwable $e) {}
+
+            // Task History table — immutable log of every task action
+            $pdo->exec("CREATE TABLE IF NOT EXISTS task_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id INTEGER NOT NULL,
+                action TEXT NOT NULL,
+                from_status TEXT NULL,
+                to_status TEXT NULL,
+                assigned_from INTEGER NULL,
+                assigned_to INTEGER NULL,
+                notes TEXT NULL,
+                performed_by INTEGER NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+            );");
+
+            // Portal Activation Tokens — for secure "Set Your Password" links
+            $pdo->exec("CREATE TABLE IF NOT EXISTS portal_activation_tokens (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                portal_type TEXT NOT NULL,
+                entity_id INTEGER NOT NULL,
+                entity_email TEXT NOT NULL,
+                token TEXT NOT NULL UNIQUE,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                expires_at DATETIME NOT NULL,
+                used_at DATETIME NULL
+            );");
+
+            // Theme system_settings defaults (idempotent UPSERT via INSERT OR IGNORE)
+            $themeDefaults = [
+                ['theme_mode',         'light',          'Theme', 'Color mode: light / dark / system'],
+                ['theme_primary',      '#4F46E5',        'Theme', 'Primary brand color (hex)'],
+                ['theme_secondary',    '#7C3AED',        'Theme', 'Secondary color (hex)'],
+                ['theme_accent',       '#06B6D4',        'Theme', 'Accent color (hex)'],
+                ['theme_sidebar',      'dark',           'Theme', 'Sidebar style: dark / light / glass'],
+                ['theme_header',       'white',          'Theme', 'Header style: white / colored / transparent'],
+                ['theme_border_radius','8',              'Theme', 'Border radius in px'],
+                ['theme_font',         'Inter',          'Theme', 'Google Font name'],
+                ['email_theme_logo',   '',               'EmailTheme', 'Email logo URL'],
+                ['email_theme_primary','#4F46E5',        'EmailTheme', 'Email header/button color'],
+                ['email_theme_footer', 'MS Travel Hub Global Visa Services', 'EmailTheme', 'Email footer text'],
+            ];
+            $insTheme = $pdo->prepare("INSERT OR IGNORE INTO system_settings (setting_key, setting_value, setting_group, description) VALUES (?, ?, ?, ?)");
+            foreach ($themeDefaults as $td) {
+                $insTheme->execute($td);
+            }
         } else {
             // Ensure password_resets table exists for MySQL
             $pdo->exec("CREATE TABLE IF NOT EXISTS password_resets (

@@ -345,17 +345,54 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             </div>
           </div>
 
-          <!-- Step 3: Payment Details -->
-          <div class="row g-3 mb-3">
-            <div class="col-md-4">
-              <label class="form-label small fw-semibold">Payment Amount ($) <span class="text-danger">*</span></label>
-              <input type="number" step="0.01" min="1" name="amount" id="recordPaymentAmount" class="form-control fw-bold" placeholder="0.00" required>
+          <!-- Step 3: Multi-Currency & Payment Amount Details -->
+          <div class="p-3 bg-light rounded border mb-3">
+            <div class="row g-2 mb-2">
+              <div class="col-md-3">
+                <label class="form-label small fw-semibold">Received Currency</label>
+                <select name="from_currency" id="payFromCur" class="form-select form-select-sm fw-bold" onchange="calcPaymentConverter()">
+                  <?php foreach (['USD', 'AED', 'LKR', 'EUR', 'GBP', 'SAR', 'QAR', 'INR', 'CAD', 'AUD'] as $c): ?>
+                    <option value="<?= $c ?>" <?= $c === 'USD' ? 'selected' : '' ?>><?= $c ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-semibold">Received Amount <span class="text-danger">*</span></label>
+                <input type="number" step="0.01" min="0.01" name="original_amount" id="payOriginalAmount" class="form-control form-control-sm fw-bold" placeholder="0.00" required oninput="calcPaymentConverter()">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-semibold">Exchange Rate (Manual)</label>
+                <input type="number" step="0.000001" name="exchange_rate" id="payExchangeRate" class="form-control form-control-sm text-end fw-bold" value="1.000000" oninput="calcPaymentConverter()">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small fw-semibold">Settlement Currency</label>
+                <select name="to_currency" id="payToCur" class="form-select form-select-sm fw-bold" onchange="calcPaymentConverter()">
+                  <option value="USD" selected>USD ($)</option>
+                  <option value="AED">AED</option>
+                  <option value="LKR">LKR</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="GBP">GBP (£)</option>
+                  <option value="SAR">SAR</option>
+                </select>
+              </div>
             </div>
-            <div class="col-md-4">
+
+            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+              <span class="small fw-semibold text-muted">Applied Settlement Amount:</span>
+              <div>
+                <span class="h5 fw-bold text-success mb-0" id="payConvertedDisplay">$0.00 USD</span>
+                <input type="hidden" name="amount" id="recordPaymentAmount" value="0.00">
+                <input type="hidden" name="converted_amount" id="payConvertedAmountHidden" value="0.00">
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
               <label class="form-label small fw-semibold">Payment Date <span class="text-danger">*</span></label>
               <input type="date" name="payment_date" class="form-control" value="<?= date('Y-m-d') ?>" required>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
               <label class="form-label small fw-semibold">Payment Method <span class="text-danger">*</span></label>
               <select name="payment_method" class="form-select" required>
                 <option value="Cash">Cash at Branch</option>
@@ -407,6 +444,17 @@ function setLinkAmount(select) {
   }
 }
 
+function calcPaymentConverter() {
+  const origAmt = parseFloat(document.getElementById('payOriginalAmount').value) || 0;
+  const rate = parseFloat(document.getElementById('payExchangeRate').value) || 1;
+  const toCur = document.getElementById('payToCur').value || 'USD';
+  const converted = (origAmt * rate).toFixed(2);
+
+  document.getElementById('payConvertedDisplay').innerText = (toCur === 'USD' ? '$' : '') + converted + ' ' + toCur;
+  document.getElementById('recordPaymentAmount').value = converted;
+  document.getElementById('payConvertedAmountHidden').value = converted;
+}
+
 function onApplicantSelected(select) {
   const opt = select.options[select.selectedIndex];
   const card = document.getElementById('applicantCard');
@@ -426,7 +474,10 @@ function onApplicantSelected(select) {
   const tot = parseFloat(opt.dataset.total || 0);
   const due = bal > 0 ? bal : tot;
   document.getElementById('cardBalance').innerText = '$' + due.toFixed(2);
-  document.getElementById('recordPaymentAmount').value = due.toFixed(2);
+  
+  // Set original amount to due balance
+  document.getElementById('payOriginalAmount').value = due.toFixed(2);
+  calcPaymentConverter();
 }
 </script>
 

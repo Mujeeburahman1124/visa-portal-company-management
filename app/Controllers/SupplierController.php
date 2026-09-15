@@ -7,6 +7,7 @@ use App\Config\Database;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\RoleMiddleware;
 use App\Services\AuditService;
+use App\Services\WalletService;
 use PDO;
 
 class SupplierController
@@ -238,7 +239,14 @@ class SupplierController
         $payRef = 'SPAY-' . date('Ymd') . '-' . rand(1000, 9999);
 
         if ($applicationId <= 0) {
-            $applicationId = 1;
+            $applicationId = null;
+        } else {
+            // Verify application actually exists to prevent FK constraint failure
+            $appCheck = $pdo->prepare("SELECT id FROM applications WHERE id = ?");
+            $appCheck->execute([$applicationId]);
+            if (!$appCheck->fetch()) {
+                $applicationId = null;
+            }
         }
 
         $stmt = $pdo->prepare("INSERT INTO supplier_payments (
@@ -311,5 +319,132 @@ class SupplierController
         AuditService::log('RESET_SUPPLIER_PASSWORD', 'Suppliers', $id, "Admin password reset for supplier {$supplier['company_name']}");
 
         redirect($_SERVER['HTTP_REFERER'] ?? '/suppliers', "Password for {$supplier['company_name']} reset to: {$newPassword}", 'success');
+    }
+
+    public function wallet(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager', 'visa-manager']);
+        $pdo = Database::getConnection();
+
+        $supplierId = (int)($_GET['id'] ?? $_GET['supplier_id'] ?? 0);
+        $suppliers = $pdo->query("SELECT id, company_name, supplier_code, country, email, mobile FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($supplierId <= 0 && !empty($suppliers)) {
+            $supplierId = (int)$suppliers[0]['id'];
+        }
+
+        $currentSupplier = null;
+        if ($supplierId > 0) {
+            $stmt = $pdo->prepare("SELECT * FROM suppliers WHERE id = ?");
+            $stmt->execute([$supplierId]);
+            $currentSupplier = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+
+        if (!$currentSupplier && !empty($suppliers)) {
+            $currentSupplier = $suppliers[0];
+            $supplierId = (int)$currentSupplier['id'];
+        }
+
+        $wallet = $supplierId > 0 ? WalletService::getOrCreateSupplierWallet($supplierId, 'AED') : [
+            'id' => 0, 'supplier_id' => 0, 'currency' => 'AED', 'current_balance' => 0.00, 'total_credited' => 0.00, 'total_debited' => 0.00
+        ];
+        $transactions = $supplierId > 0 ? WalletService::getSupplierTransactions($supplierId, 100) : [];
+
+        // Calculate Supplier Financial Summary from supplier_payments
+        $totalPayables = 0.0;
+        $totalPaid = 0.0;
+        $outstanding = 0.0;
+        if ($supplierId > 0) {
+            $payStmt = $pdo->prepare("SELECT 
+                COALESCE(SUM(payable_amount), 0) as total_payables,
+                COALESCE(SUM(paid_amount), 0) as total_paid
+                FROM supplier_payments WHERE supplier_id = ?");
+            $payStmt->execute([$supplierId]);
+            $fin = $payStmt->fetch(PDO::FETCH_ASSOC);
+            $totalPayables = (float)($fin['total_payables'] ?? 0);
+            $totalPaid = (float)($fin['total_paid'] ?? 0);
+            $outstanding = max(0.00, $totalPayables - $totalPaid);
+        }
+
+        require_once dirname(__DIR__) . '/Views/suppliers/wallet.php';
+    }
+
+    public function walletTopUp(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
+
+        $supplierId = (int)($_POST['supplier_id'] ?? 0);
+        $amount = (float)($_POST['amount'] ?? 0.00);
+        $currency = strtoupper(trim($_POST['currency'] ?? 'AED'));
+        $exchangeRate = (float)($_POST['exchange_rate'] ?? 1.000000);
+        $originalAmount = (float)($_POST['original_amount'] ?? $amount);
+        $convertedAmount = (float)($_POST['converted_amount'] ?? $amount);
+        $method = trim($_POST['payment_method'] ?? 'Bank Transfer');
+        $reference = trim($_POST['reference'] ?? ('SUP-WTOP-' . date('Ymd') . '-' . rand(1000, 9999)));
+        $notes = trim($_POST['notes'] ?? 'Supplier wallet top-up');
+        $userId = (int)($_SESSION['user']['id'] ?? 1);
+
+        if ($supplierId <= 0 || $amount <= 0) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/suppliers', 'Invalid supplier or top-up amount.', 'danger');
+        }
+
+        try {
+            WalletService::creditSupplier(
+                $supplierId,
+                $amount,
+                $notes,
+                $userId,
+                $currency,
+                $originalAmount,
+                $exchangeRate,
+                $method,
+                $reference,
+                $convertedAmount
+            );
+            redirect('/suppliers/wallet?id=' . $supplierId, 'Supplier wallet credited successfully.', 'success');
+        } catch (\Throwable $e) {
+            redirect('/suppliers/wallet?id=' . $supplierId, 'Failed to credit wallet: ' . $e->getMessage(), 'danger');
+        }
+    }
+
+    public function walletDeduct(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
+
+        $supplierId = (int)($_POST['supplier_id'] ?? 0);
+        $amount = (float)($_POST['amount'] ?? 0.00);
+        $currency = strtoupper(trim($_POST['currency'] ?? 'AED'));
+        $exchangeRate = (float)($_POST['exchange_rate'] ?? 1.000000);
+        $originalAmount = (float)($_POST['original_amount'] ?? $amount);
+        $convertedAmount = (float)($_POST['converted_amount'] ?? $amount);
+        $method = trim($_POST['payment_method'] ?? 'Bank Transfer');
+        $reference = trim($_POST['reference'] ?? ('SUP-WDED-' . date('Ymd') . '-' . rand(1000, 9999)));
+        $notes = trim($_POST['notes'] ?? 'Supplier wallet debit/payout');
+        $userId = (int)($_SESSION['user']['id'] ?? 1);
+
+        if ($supplierId <= 0 || $amount <= 0) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/suppliers', 'Invalid supplier or debit amount.', 'danger');
+        }
+
+        try {
+            WalletService::debitSupplier(
+                $supplierId,
+                $amount,
+                $notes,
+                $userId,
+                $currency,
+                $originalAmount,
+                $exchangeRate,
+                $method,
+                $reference,
+                $convertedAmount
+            );
+            redirect('/suppliers/wallet?id=' . $supplierId, 'Supplier wallet debited successfully.', 'success');
+        } catch (\Throwable $e) {
+            redirect('/suppliers/wallet?id=' . $supplierId, 'Failed to debit wallet: ' . $e->getMessage(), 'danger');
+        }
     }
 }

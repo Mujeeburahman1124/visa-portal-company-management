@@ -127,7 +127,14 @@
               <td><?= format_date($pay['payment_date']) ?></td>
               <td><?= e($pay['payment_method']) ?></td>
               <td><?= e($pay['transaction_reference'] ?: 'CASH') ?></td>
-              <td class="text-end fw-bold text-success"><?= format_currency((float)$pay['amount']) ?></td>
+              <td class="text-end fw-bold text-success">
+                <?= format_currency((float)$pay['amount']) ?>
+                <?php if (!empty($pay['from_currency']) && !empty($pay['original_amount']) && ($pay['from_currency'] !== ($pay['currency'] ?? 'USD') || (float)$pay['exchange_rate'] != 1.0)): ?>
+                  <div class="text-muted" style="font-size: 0.7rem; font-weight: normal;">
+                    (<?= e($pay['from_currency']) ?> <?= number_format((float)$pay['original_amount'], 2) ?> @ <?= number_format((float)$pay['exchange_rate'], 4) ?>)
+                  </div>
+                <?php endif; ?>
+              </td>
             </tr>
           <?php endforeach; ?>
         </tbody>

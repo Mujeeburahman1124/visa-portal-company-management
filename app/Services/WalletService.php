@@ -48,7 +48,12 @@ class WalletService
         ?int $createdBy = null,
         string $currency = 'USD',
         ?float $originalAmount = null,
-        float $exchangeRate = 1.000000
+        float $exchangeRate = 1.000000,
+        ?string $paymentMethod = null,
+        ?string $reference = null,
+        ?int $invoiceId = null,
+        ?float $convertedAmount = null,
+        ?string $convertedCurrency = null
     ): array {
         if ($amount <= 0) {
             throw new Exception("Credit amount must be greater than zero.");
@@ -73,11 +78,12 @@ class WalletService
 
             // Record transaction ledger entry
             $insert = $pdo->prepare("INSERT INTO wallet_transactions 
-                (transaction_id, wallet_id, customer_id, transaction_type, amount, balance_after, currency, original_amount, exchange_rate, description, payment_id, application_id, created_by)
-                VALUES (?, ?, ?, 'Credit', ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                (transaction_id, wallet_id, customer_id, transaction_type, amount, balance_after, currency, original_amount, exchange_rate, description, payment_id, application_id, created_by, invoice_id, payment_method, reference, converted_amount, converted_currency)
+                VALUES (?, ?, ?, 'Credit', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $insert->execute([
                 $txnId, $walletId, $customerId, $amount, $newBalance, $currency,
-                $originalAmount ?? $amount, $exchangeRate, $description, $paymentId, $applicationId, $createdBy
+                $originalAmount ?? $amount, $exchangeRate, $description, $paymentId, $applicationId, $createdBy,
+                $invoiceId, $paymentMethod, $reference, $convertedAmount ?? $amount, $convertedCurrency ?? $currency
             ]);
 
             $pdo->commit();
@@ -106,7 +112,12 @@ class WalletService
         ?int $createdBy = null,
         string $currency = 'USD',
         ?float $originalAmount = null,
-        float $exchangeRate = 1.000000
+        float $exchangeRate = 1.000000,
+        ?string $paymentMethod = null,
+        ?string $reference = null,
+        ?int $invoiceId = null,
+        ?float $convertedAmount = null,
+        ?string $convertedCurrency = null
     ): array {
         if ($amount <= 0) {
             throw new Exception("Debit amount must be greater than zero.");
@@ -136,11 +147,12 @@ class WalletService
 
             // Record transaction ledger entry
             $insert = $pdo->prepare("INSERT INTO wallet_transactions 
-                (transaction_id, wallet_id, customer_id, transaction_type, amount, balance_after, currency, original_amount, exchange_rate, description, payment_id, application_id, created_by)
-                VALUES (?, ?, ?, 'Debit', ?, ?, ?, ?, ?, ?, NULL, ?, ?)");
+                (transaction_id, wallet_id, customer_id, transaction_type, amount, balance_after, currency, original_amount, exchange_rate, description, payment_id, application_id, created_by, invoice_id, payment_method, reference, converted_amount, converted_currency)
+                VALUES (?, ?, ?, 'Debit', ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)");
             $insert->execute([
                 $txnId, $walletId, $customerId, $amount, $newBalance, $currency,
-                $originalAmount ?? $amount, $exchangeRate, $description, $applicationId, $createdBy
+                $originalAmount ?? $amount, $exchangeRate, $description, $applicationId, $createdBy,
+                $invoiceId, $paymentMethod, $reference, $convertedAmount ?? $amount, $convertedCurrency ?? $currency
             ]);
 
             $pdo->commit();
@@ -205,8 +217,20 @@ class WalletService
         ];
     }
 
-    public static function creditSupplier(int $supplierId, float $amount, string $description, ?int $createdBy = null, string $currency = 'USD', ?float $originalAmount = null, float $exchangeRate = 1.0): array
-    {
+    public static function creditSupplier(
+        int $supplierId,
+        float $amount,
+        string $description,
+        ?int $createdBy = null,
+        string $currency = 'USD',
+        ?float $originalAmount = null,
+        float $exchangeRate = 1.0,
+        ?string $paymentMethod = 'Bank Transfer',
+        ?string $reference = null,
+        ?float $convertedAmount = null,
+        ?int $applicationId = null,
+        ?int $paymentId = null
+    ): array {
         if ($amount <= 0) {
             throw new Exception("Supplier credit amount must be greater than zero.");
         }
@@ -227,9 +251,13 @@ class WalletService
             $txnId = 'SWTX-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
 
             $insert = $pdo->prepare("INSERT INTO supplier_wallet_transactions 
-                (transaction_id, wallet_id, supplier_id, transaction_type, amount, balance_after, currency, original_amount, exchange_rate, description, created_by)
-                VALUES (?, ?, ?, 'Credit', ?, ?, ?, ?, ?, ?, ?)");
-            $insert->execute([$txnId, $walletId, $supplierId, $amount, $newBalance, $currency, $originalAmount ?? $amount, $exchangeRate, $description, $createdBy]);
+                (transaction_id, wallet_id, supplier_id, transaction_type, amount, balance_after, currency, original_amount, exchange_rate, description, created_by, payment_method, reference, converted_amount, application_id, payment_id)
+                VALUES (?, ?, ?, 'Credit', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $insert->execute([
+                $txnId, $walletId, $supplierId, $amount, $newBalance, $currency,
+                $originalAmount ?? $amount, $exchangeRate, $description, $createdBy,
+                $paymentMethod, $reference, $convertedAmount ?? $amount, $applicationId, $paymentId
+            ]);
 
             $pdo->commit();
             AuditService::log('SUPPLIER_WALLET_CREDIT', 'SupplierWallet', $supplierId, "Credited {$currency} " . number_format($amount, 2) . " to supplier wallet #{$supplierId}. Ref: {$txnId}");
@@ -241,8 +269,20 @@ class WalletService
         }
     }
 
-    public static function debitSupplier(int $supplierId, float $amount, string $description, ?int $createdBy = null, string $currency = 'USD'): array
-    {
+    public static function debitSupplier(
+        int $supplierId,
+        float $amount,
+        string $description,
+        ?int $createdBy = null,
+        string $currency = 'USD',
+        ?float $originalAmount = null,
+        float $exchangeRate = 1.0,
+        ?string $paymentMethod = 'Bank Transfer',
+        ?string $reference = null,
+        ?float $convertedAmount = null,
+        ?int $applicationId = null,
+        ?int $paymentId = null
+    ): array {
         if ($amount <= 0) {
             throw new Exception("Supplier debit amount must be greater than zero.");
         }
@@ -268,9 +308,13 @@ class WalletService
             $txnId = 'SWTX-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
 
             $insert = $pdo->prepare("INSERT INTO supplier_wallet_transactions 
-                (transaction_id, wallet_id, supplier_id, transaction_type, amount, balance_after, currency, description, created_by)
-                VALUES (?, ?, ?, 'Debit', ?, ?, ?, ?, ?)");
-            $insert->execute([$txnId, $walletId, $supplierId, $amount, $newBalance, $currency, $description, $createdBy]);
+                (transaction_id, wallet_id, supplier_id, transaction_type, amount, balance_after, currency, original_amount, exchange_rate, description, created_by, payment_method, reference, converted_amount, application_id, payment_id)
+                VALUES (?, ?, ?, 'Debit', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $insert->execute([
+                $txnId, $walletId, $supplierId, $amount, $newBalance, $currency,
+                $originalAmount ?? $amount, $exchangeRate, $description, $createdBy,
+                $paymentMethod, $reference, $convertedAmount ?? $amount, $applicationId, $paymentId
+            ]);
 
             $pdo->commit();
             AuditService::log('SUPPLIER_WALLET_DEBIT', 'SupplierWallet', $supplierId, "Debited {$currency} " . number_format($amount, 2) . " from supplier wallet #{$supplierId}. Ref: {$txnId}");
@@ -325,8 +369,20 @@ class WalletService
         ];
     }
 
-    public static function creditAgent(int $agentId, float $amount, string $description, ?int $createdBy = null, string $currency = 'USD', ?float $originalAmount = null, float $exchangeRate = 1.0): array
-    {
+    public static function creditAgent(
+        int $agentId,
+        float $amount,
+        string $description,
+        ?int $createdBy = null,
+        string $currency = 'USD',
+        ?float $originalAmount = null,
+        float $exchangeRate = 1.0,
+        ?string $paymentMethod = 'Bank Transfer',
+        ?string $reference = null,
+        ?float $convertedAmount = null,
+        ?int $applicationId = null,
+        ?int $paymentId = null
+    ): array {
         if ($amount <= 0) {
             throw new Exception("Agent credit amount must be greater than zero.");
         }
@@ -347,9 +403,13 @@ class WalletService
             $txnId = 'AWTX-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
 
             $insert = $pdo->prepare("INSERT INTO agent_wallet_transactions 
-                (transaction_id, wallet_id, agent_id, transaction_type, amount, balance_after, currency, original_amount, exchange_rate, description, created_by)
-                VALUES (?, ?, ?, 'Credit', ?, ?, ?, ?, ?, ?, ?)");
-            $insert->execute([$txnId, $walletId, $agentId, $amount, $newBalance, $currency, $originalAmount ?? $amount, $exchangeRate, $description, $createdBy]);
+                (transaction_id, wallet_id, agent_id, transaction_type, amount, balance_after, currency, original_amount, exchange_rate, description, created_by, payment_method, reference, converted_amount, application_id, payment_id)
+                VALUES (?, ?, ?, 'Credit', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $insert->execute([
+                $txnId, $walletId, $agentId, $amount, $newBalance, $currency,
+                $originalAmount ?? $amount, $exchangeRate, $description, $createdBy,
+                $paymentMethod, $reference, $convertedAmount ?? $amount, $applicationId, $paymentId
+            ]);
 
             $pdo->commit();
             AuditService::log('AGENT_WALLET_CREDIT', 'AgentWallet', $agentId, "Credited {$currency} " . number_format($amount, 2) . " to agent wallet #{$agentId}. Ref: {$txnId}");
@@ -361,8 +421,20 @@ class WalletService
         }
     }
 
-    public static function debitAgent(int $agentId, float $amount, string $description, ?int $createdBy = null, string $currency = 'USD'): array
-    {
+    public static function debitAgent(
+        int $agentId,
+        float $amount,
+        string $description,
+        ?int $createdBy = null,
+        string $currency = 'USD',
+        ?float $originalAmount = null,
+        float $exchangeRate = 1.0,
+        ?string $paymentMethod = 'Bank Transfer',
+        ?string $reference = null,
+        ?float $convertedAmount = null,
+        ?int $applicationId = null,
+        ?int $paymentId = null
+    ): array {
         if ($amount <= 0) {
             throw new Exception("Agent debit amount must be greater than zero.");
         }
@@ -388,9 +460,13 @@ class WalletService
             $txnId = 'AWTX-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
 
             $insert = $pdo->prepare("INSERT INTO agent_wallet_transactions 
-                (transaction_id, wallet_id, agent_id, transaction_type, amount, balance_after, currency, description, created_by)
-                VALUES (?, ?, ?, 'Debit', ?, ?, ?, ?, ?)");
-            $insert->execute([$txnId, $walletId, $agentId, $amount, $newBalance, $currency, $description, $createdBy]);
+                (transaction_id, wallet_id, agent_id, transaction_type, amount, balance_after, currency, original_amount, exchange_rate, description, created_by, payment_method, reference, converted_amount, application_id, payment_id)
+                VALUES (?, ?, ?, 'Debit', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $insert->execute([
+                $txnId, $walletId, $agentId, $amount, $newBalance, $currency,
+                $originalAmount ?? $amount, $exchangeRate, $description, $createdBy,
+                $paymentMethod, $reference, $convertedAmount ?? $amount, $applicationId, $paymentId
+            ]);
 
             $pdo->commit();
             AuditService::log('AGENT_WALLET_DEBIT', 'AgentWallet', $agentId, "Debited {$currency} " . number_format($amount, 2) . " from agent wallet #{$agentId}. Ref: {$txnId}");
@@ -400,5 +476,20 @@ class WalletService
             $pdo->rollBack();
             throw $e;
         }
+    }
+
+    public static function getAgentTransactions(int $agentId, int $limit = 50): array
+    {
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("SELECT awt.*, u.name as created_by_name
+            FROM agent_wallet_transactions awt
+            LEFT JOIN users u ON awt.created_by = u.id
+            WHERE awt.agent_id = ?
+            ORDER BY awt.created_at DESC
+            LIMIT ?");
+        $stmt->bindValue(1, $agentId, PDO::PARAM_INT);
+        $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

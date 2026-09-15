@@ -424,7 +424,7 @@ class InventoryController
 
         $stmtSupPay = $pdo->prepare("INSERT INTO supplier_payments (
             payment_reference, supplier_id, application_id, payable_amount, paid_amount, currency, supplier_invoice_ref, payment_date, payment_method, transaction_reference, payment_status, notes, created_by
-        ) VALUES (?, ?, 1, ?, ?, ?, ?, ?, 'Bank Transfer', ?, ?, ?, ?)");
+        ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, 'Bank Transfer', ?, ?, ?, ?)");
         $stmtSupPay->execute([
             $payRef, $supplierId, $totalCost, $paidAmount, $item['currency'], $invoiceRef, $date, ('TXN-PUR-' . rand(100000, 999999)), $paymentStatus, "Inventory purchase: {$qty}x {$item['name']} (Inv: {$invoiceRef})", (int)($currentUser['id'] ?? 1)
         ]);
