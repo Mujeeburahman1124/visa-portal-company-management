@@ -1,7 +1,21 @@
 <?php
-$title = "Supplier Payment Ledger & History | MS TRAVEL HUB";
-ob_start();
+$pageTitle = 'Supplier Payment Ledger & History — MS TRAVEL HUB';
+$flash = get_flash();
+require_once dirname(__DIR__) . '/layouts/header.php';
+require_once dirname(__DIR__) . '/layouts/sidebar.php';
+require_once dirname(__DIR__) . '/layouts/topbar.php';
 ?>
+
+<div class="content-body">
+  <?php if ($flash): ?>
+    <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'info')) ?> alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+      <div class="d-flex align-items-center gap-2">
+        <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation' : ($flash['type'] === 'success' ? 'fa-circle-check' : 'fa-circle-info') ?>"></i>
+        <span><?= e($flash['message']) ?></span>
+      </div>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <?php endif; ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
@@ -168,7 +182,7 @@ ob_start();
     </div>
 </div>
 
-<?php
-$content = ob_get_clean();
-require __DIR__ . '/../layouts/app.php';
-?>
+</div>
+
+<?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>
+
