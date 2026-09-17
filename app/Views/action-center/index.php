@@ -2,8 +2,11 @@
 $pageTitle = 'Operational Action Center — MS TRAVEL HUB';
 $flash = get_flash();
 $activeTab = $activeTab ?? ($_GET['tab'] ?? 'missing');
-$userRole = strtolower($user['role'] ?? 'staff');
-$canApproveLeave = in_array($userRole, ['super-admin', 'admin', 'branch-manager'], true);
+$userRole = strtolower($user['role_slug'] ?? $user['role_name'] ?? 'staff');
+$canApproveLeave = user_can('leave.approve') || user_has_role(['super-admin', 'admin', 'branch-manager', 'visa-manager']);
+$canRejectLeave = user_can('leave.reject') || user_has_role(['super-admin', 'admin', 'branch-manager', 'visa-manager']);
+$canApproveStaffRequest = user_can('staff_requests.approve') || user_has_role(['super-admin', 'admin', 'branch-manager', 'visa-manager']);
+$canRejectStaffRequest = user_can('staff_requests.reject') || user_has_role(['super-admin', 'admin', 'branch-manager', 'visa-manager']);
 
 require_once dirname(__DIR__) . '/layouts/header.php';
 require_once dirname(__DIR__) . '/layouts/sidebar.php';
@@ -411,18 +414,22 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                         <?php endif; ?>
                       </td>
                       <td class="text-end">
-                        <?php if ($leave['status'] === 'Pending' && $canApproveLeave): ?>
+                        <?php if ($leave['status'] === 'Pending' && ($canApproveLeave || $canRejectLeave)): ?>
                           <div class="btn-group btn-group-sm">
-                            <button type="button" class="btn btn-success btn-sm py-1 px-2" 
-                                    onclick="openApproveLeaveModal(<?= $leave['id'] ?>, '<?= addslashes(e($leave['staff_name'])) ?>', <?= (int)$leave['total_days'] ?>)" 
-                                    title="Approve Leave">
-                              <i class="fa-solid fa-check me-1"></i> Approve
-                            </button>
-                            <button type="button" class="btn btn-danger btn-sm py-1 px-2" 
-                                    onclick="openRejectLeaveModal(<?= $leave['id'] ?>, '<?= addslashes(e($leave['staff_name'])) ?>')" 
-                                    title="Reject Leave">
-                              <i class="fa-solid fa-xmark me-1"></i> Reject
-                            </button>
+                            <?php if ($canApproveLeave): ?>
+                              <button type="button" class="btn btn-success btn-sm py-1 px-2" 
+                                      onclick="openApproveLeaveModal(<?= $leave['id'] ?>, '<?= addslashes(e($leave['staff_name'])) ?>', <?= (int)$leave['total_days'] ?>)" 
+                                      title="Approve Leave">
+                                <i class="fa-solid fa-check me-1"></i> Approve
+                              </button>
+                            <?php endif; ?>
+                            <?php if ($canRejectLeave): ?>
+                              <button type="button" class="btn btn-danger btn-sm py-1 px-2" 
+                                      onclick="openRejectLeaveModal(<?= $leave['id'] ?>, '<?= addslashes(e($leave['staff_name'])) ?>')" 
+                                      title="Reject Leave">
+                                <i class="fa-solid fa-xmark me-1"></i> Reject
+                              </button>
+                            <?php endif; ?>
                           </div>
                         <?php else: ?>
                           <span class="small text-muted">—</span>
@@ -475,10 +482,27 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                         <?php endif; ?>
                       </td>
                       <td class="text-end">
-                        <button type="button" class="btn btn-outline-info btn-sm py-1 px-2" style="font-size: 0.75rem;"
-                                onclick="openUpdateStaffRequestModal(<?= $sReq['id'] ?>, '<?= addslashes(e($sReq['title'])) ?>', '<?= e($sReq['status']) ?>', '<?= addslashes(e($sReq['resolution_notes'] ?? '')) ?>')">
-                          <i class="fa-solid fa-pen-to-square me-1"></i> Update
-                        </button>
+                        <div class="btn-group btn-group-sm">
+                          <?php if ($sReq['status'] === 'Pending' && $canApproveStaffRequest): ?>
+                            <button type="button" class="btn btn-success btn-sm py-1 px-2" style="font-size: 0.75rem;"
+                                    onclick="openUpdateStaffRequestModal(<?= $sReq['id'] ?>, '<?= addslashes(e($sReq['title'])) ?>', 'Completed', 'Approved & Completed')"
+                                    title="Quick Approve">
+                              <i class="fa-solid fa-check me-1"></i> Approve
+                            </button>
+                          <?php endif; ?>
+                          <?php if ($sReq['status'] === 'Pending' && $canRejectStaffRequest): ?>
+                            <button type="button" class="btn btn-danger btn-sm py-1 px-2" style="font-size: 0.75rem;"
+                                    onclick="openUpdateStaffRequestModal(<?= $sReq['id'] ?>, '<?= addslashes(e($sReq['title'])) ?>', 'Rejected', 'Rejected')"
+                                    title="Quick Reject">
+                              <i class="fa-solid fa-xmark me-1"></i> Reject
+                            </button>
+                          <?php endif; ?>
+                          <button type="button" class="btn btn-outline-info btn-sm py-1 px-2" style="font-size: 0.75rem;"
+                                  onclick="openUpdateStaffRequestModal(<?= $sReq['id'] ?>, '<?= addslashes(e($sReq['title'])) ?>', '<?= e($sReq['status']) ?>', '<?= addslashes(e($sReq['resolution_notes'] ?? '')) ?>')"
+                                  title="Update Status & Notes">
+                            <i class="fa-solid fa-pen-to-square me-1"></i> Update
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   <?php endforeach; ?>

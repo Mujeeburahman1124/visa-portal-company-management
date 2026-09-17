@@ -16,7 +16,7 @@ class ActionCenterController
         $pdo = Database::getConnection();
         $user = auth_user();
         $userId = (int)$user['id'];
-        $userRole = strtolower($user['role'] ?? 'staff');
+        $userRole = strtolower($user['role_slug'] ?? $user['role_name'] ?? 'staff');
 
         $scope = trim($_GET['scope'] ?? 'my'); // 'my' or 'team'
         $activeTab = trim($_GET['tab'] ?? 'missing');
