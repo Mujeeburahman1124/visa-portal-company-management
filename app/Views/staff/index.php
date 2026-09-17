@@ -447,6 +447,52 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <input type="text" name="phone" class="form-control" placeholder="+971 50 123 4567">
           </div>
 
+          <!-- Permission Giving Option -->
+          <div class="mb-3">
+            <div class="d-flex align-items-center justify-content-between mb-1.5">
+              <label class="form-label small fw-semibold mb-0">
+                <i class="fa-solid fa-key text-primary me-1"></i> Permissions &amp; Privileges Granting Option
+              </label>
+              <button class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#staffPermsCollapse" aria-expanded="false" style="font-size: 0.75rem;">
+                <i class="fa-solid fa-sliders me-1"></i> Customize / View Permissions
+              </button>
+            </div>
+            <div class="collapse show" id="staffPermsCollapse">
+              <div class="p-3 bg-light rounded border" style="max-height: 200px; overflow-y: auto;">
+                <p class="text-muted small mb-2" style="font-size: 0.72rem;">
+                  <i class="fa-solid fa-circle-info text-info me-1"></i> Permissions automatically synchronize with the selected Security Role. You can also grant or revoke specific custom permissions below:
+                </p>
+                <?php
+                  $groupedModalPerms = [];
+                  foreach ($allPermissions ?? [] as $mp) {
+                      $groupedModalPerms[$mp['module']][] = $mp;
+                  }
+                ?>
+                <div class="row g-2">
+                  <?php foreach ($groupedModalPerms as $modName => $mPerms): ?>
+                    <div class="col-12">
+                      <div class="fw-bold text-dark border-bottom pb-1 mb-1.5" style="font-size: 0.74rem;">
+                        <i class="fa-solid fa-folder-open text-secondary me-1"></i> <?= e($modName) ?>
+                      </div>
+                      <div class="row g-1">
+                        <?php foreach ($mPerms as $p): ?>
+                          <div class="col-6">
+                            <div class="form-check form-check-inline m-0">
+                              <input class="form-check-input staff-perm-checkbox" type="checkbox" name="permissions[]" value="<?= $p['id'] ?>" id="stf_perm_<?= $p['id'] ?>">
+                              <label class="form-check-label text-truncate small" for="stf_perm_<?= $p['id'] ?>" style="font-size: 0.72rem;" title="<?= e($p['name']) ?>">
+                                <?= e($p['name']) ?>
+                              </label>
+                            </div>
+                          </div>
+                        <?php endforeach; ?>
+                      </div>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="alert alert-info small mb-0 mt-3 d-flex align-items-start gap-2">
             <i class="fa-solid fa-paper-plane text-primary mt-0.5"></i>
             <div>
@@ -456,7 +502,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         </div>
         <div class="modal-footer bg-light">
           <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-sm px-3 fw-semibold">
+          <button type="submit" id="btnSubmitNewStaff" class="btn btn-primary btn-sm px-3 fw-semibold">
             <i class="fa-solid fa-user-plus me-1"></i> Create Staff &amp; Send Credentials
           </button>
         </div>
@@ -464,5 +510,45 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </div>
   </div>
 </div>
+
+<script>
+const rolePermMap = <?= json_encode($rolePermissionsMap ?? []) ?>;
+
+function updateStaffPermissionsFromRole() {
+  const roleSelect = document.querySelector('#newStaffModal select[name="role_id"]');
+  if (!roleSelect) return;
+  const roleId = parseInt(roleSelect.value, 10);
+  const permittedIds = rolePermMap[roleId] || [];
+
+  document.querySelectorAll('.staff-perm-checkbox').forEach(cb => {
+    const pId = parseInt(cb.value, 10);
+    cb.checked = permittedIds.includes(pId);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const roleSelect = document.querySelector('#newStaffModal select[name="role_id"]');
+  if (roleSelect) {
+    roleSelect.addEventListener('change', updateStaffPermissionsFromRole);
+    updateStaffPermissionsFromRole();
+  }
+
+  // Prevent double-submission and repeated email triggers
+  const staffForm = document.querySelector('#newStaffModal form');
+  if (staffForm) {
+    staffForm.addEventListener('submit', function(e) {
+      const btn = document.getElementById('btnSubmitNewStaff');
+      if (btn && btn.disabled) {
+        e.preventDefault();
+        return false;
+      }
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Registering...';
+      }
+    });
+  }
+});
+</script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

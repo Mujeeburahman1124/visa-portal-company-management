@@ -249,10 +249,45 @@ class SupplierController
             }
         }
 
-        $stmt = $pdo->prepare("INSERT INTO supplier_payments (
-            payment_reference, supplier_id, application_id, payable_amount, paid_amount, currency, supplier_invoice_ref, payment_date, payment_method, transaction_reference, payment_status, notes, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$payRef, $supplierId, $applicationId, $payableAmount, $paidAmount, $currency, $invoiceRef, $date, $method, $ref, $status, $notes, $userId]);
+        // Check if there is an existing pending payable for this application
+        $existingPayable = null;
+        if ($applicationId) {
+            $epStmt = $pdo->prepare("SELECT * FROM supplier_payments WHERE application_id = ? AND supplier_id = ? AND payable_amount > paid_amount ORDER BY id ASC LIMIT 1");
+            $epStmt->execute([$applicationId, $supplierId]);
+            $existingPayable = $epStmt->fetch(PDO::FETCH_ASSOC);
+        }
+
+        if ($existingPayable) {
+            $newPaid = (float)$existingPayable['paid_amount'] + $paidAmount;
+            $newStatus = ($newPaid >= (float)$existingPayable['payable_amount']) ? 'Completed' : 'Partial';
+            $combinedNotes = trim(($existingPayable['notes'] ?? '') . ($notes ? " | {$notes}" : ''));
+            
+            $upStmt = $pdo->prepare("UPDATE supplier_payments SET 
+                paid_amount = ?, 
+                payment_status = ?, 
+                payment_method = ?, 
+                transaction_reference = ?, 
+                supplier_invoice_ref = ?,
+                payment_date = ?, 
+                notes = ? 
+                WHERE id = ?");
+            $upStmt->execute([
+                $newPaid, 
+                $newStatus, 
+                $method, 
+                $ref, 
+                $invoiceRef, 
+                $date, 
+                $combinedNotes, 
+                $existingPayable['id']
+            ]);
+            $payRef = $existingPayable['payment_reference'];
+        } else {
+            $stmt = $pdo->prepare("INSERT INTO supplier_payments (
+                payment_reference, supplier_id, application_id, payable_amount, paid_amount, currency, supplier_invoice_ref, payment_date, payment_method, transaction_reference, payment_status, notes, created_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$payRef, $supplierId, $applicationId, $payableAmount, $paidAmount, $currency, $invoiceRef, $date, $method, $ref, $status, $notes, $userId]);
+        }
 
         AuditService::log('SUPPLIER_PAYMENT', 'Suppliers', $supplierId, "Recorded payment of {$currency} " . number_format($paidAmount, 2) . " (Ref: {$payRef}, Invoice: {$invoiceRef})");
 

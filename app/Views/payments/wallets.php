@@ -62,6 +62,55 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </li>
   </ul>
 
+  <!-- Wallets & Ledger Multi-Criteria Filter Bar -->
+  <div class="card card-enterprise shadow-sm border mb-4">
+    <div class="card-body p-3">
+      <form action="/payments/wallets" method="GET" class="row g-2 align-items-end">
+        <input type="hidden" name="tab" value="<?= e($activeTab) ?>">
+
+        <div class="col-12 col-md-3">
+          <label class="form-label small fw-semibold text-secondary mb-1">Search Keywords</label>
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-light"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+            <input type="text" name="search" class="form-control" placeholder="Search name, code, txn ref..." value="<?= e($_GET['search'] ?? '') ?>">
+          </div>
+        </div>
+
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold text-secondary mb-1">Date From</label>
+          <input type="date" name="date_from" class="form-control form-control-sm" value="<?= e($_GET['date_from'] ?? '') ?>">
+        </div>
+
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold text-secondary mb-1">Date To</label>
+          <input type="date" name="date_to" class="form-control form-control-sm" value="<?= e($_GET['date_to'] ?? '') ?>">
+        </div>
+
+        <?php if ($activeTab === 'transactions'): ?>
+          <div class="col-6 col-md-2">
+            <label class="form-label small fw-semibold text-secondary mb-1">Transaction Type</label>
+            <select name="type" class="form-select form-select-sm">
+              <option value="">All Types</option>
+              <option value="credit" <?= strtolower($_GET['type'] ?? '') === 'credit' ? 'selected' : '' ?>>Credit</option>
+              <option value="debit" <?= strtolower($_GET['type'] ?? '') === 'debit' ? 'selected' : '' ?>>Debit</option>
+              <option value="refund" <?= strtolower($_GET['type'] ?? '') === 'refund' ? 'selected' : '' ?>>Refund</option>
+              <option value="adjustment" <?= strtolower($_GET['type'] ?? '') === 'adjustment' ? 'selected' : '' ?>>Adjustment</option>
+            </select>
+          </div>
+        <?php endif; ?>
+
+        <div class="col-12 <?= $activeTab === 'transactions' ? 'col-md-3' : 'col-md-5' ?> d-flex gap-2">
+          <button type="submit" class="btn btn-primary btn-sm flex-fill fw-semibold shadow-sm">
+            <i class="fa-solid fa-filter me-1"></i> Filter
+          </button>
+          <a href="/payments/wallets?tab=<?= e($activeTab) ?>" class="btn btn-light btn-sm border text-secondary" title="Reset Filters">
+            <i class="fa-solid fa-rotate-left me-1"></i> Reset
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <?php if ($activeTab === 'customers'): ?>
     <!-- Customer Wallets -->
     <div class="card card-enterprise shadow-sm border">

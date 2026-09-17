@@ -283,27 +283,113 @@ class PaymentController
         AuthMiddleware::handle();
         $pdo = Database::getConnection();
 
-        $customerWallets = $pdo->query("SELECT cw.*, c.full_name, c.customer_code, c.email, c.mobile 
+        $activeTab = trim($_GET['tab'] ?? 'customers');
+        $search = trim($_GET['search'] ?? '');
+        $dateFrom = trim($_GET['date_from'] ?? '');
+        $dateTo = trim($_GET['date_to'] ?? '');
+        $type = trim($_GET['type'] ?? '');
+
+        // 1. Customer Wallets Filter
+        $cwSql = "SELECT cw.*, c.full_name, c.customer_code, c.email, c.mobile 
             FROM customer_wallets cw 
             JOIN customers c ON cw.customer_id = c.id 
-            ORDER BY cw.current_balance DESC, c.full_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+            WHERE 1=1";
+        $cwParams = [];
+        if ($search !== '') {
+            $cwSql .= " AND (c.full_name LIKE ? OR c.customer_code LIKE ? OR c.email LIKE ? OR c.mobile LIKE ?)";
+            $t = "%{$search}%";
+            $cwParams = [$t, $t, $t, $t];
+        }
+        if (!empty($dateFrom)) {
+            $cwSql .= " AND DATE(cw.created_at) >= ?";
+            $cwParams[] = $dateFrom;
+        }
+        if (!empty($dateTo)) {
+            $cwSql .= " AND DATE(cw.created_at) <= ?";
+            $cwParams[] = $dateTo;
+        }
+        $cwSql .= " ORDER BY cw.current_balance DESC, c.full_name ASC";
+        $cwStmt = $pdo->prepare($cwSql);
+        $cwStmt->execute($cwParams);
+        $customerWallets = $cwStmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $supplierWallets = $pdo->query("SELECT sw.*, s.company_name as supplier_name, s.company_name, s.country 
+        // 2. Supplier Wallets Filter
+        $swSql = "SELECT sw.*, s.company_name as supplier_name, s.company_name, s.country 
             FROM supplier_wallets sw 
             JOIN suppliers s ON sw.supplier_id = s.id 
-            ORDER BY sw.current_balance DESC, s.company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+            WHERE 1=1";
+        $swParams = [];
+        if ($search !== '') {
+            $swSql .= " AND (s.company_name LIKE ? OR s.supplier_code LIKE ? OR s.contact_person LIKE ? OR s.country LIKE ?)";
+            $t = "%{$search}%";
+            $swParams = [$t, $t, $t, $t];
+        }
+        if (!empty($dateFrom)) {
+            $swSql .= " AND DATE(sw.created_at) >= ?";
+            $swParams[] = $dateFrom;
+        }
+        if (!empty($dateTo)) {
+            $swSql .= " AND DATE(sw.created_at) <= ?";
+            $swParams[] = $dateTo;
+        }
+        $swSql .= " ORDER BY sw.current_balance DESC, s.company_name ASC";
+        $swStmt = $pdo->prepare($swSql);
+        $swStmt->execute($swParams);
+        $supplierWallets = $swStmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $agentWallets = $pdo->query("SELECT aw.*, COALESCE(ag.company_name, ag.contact_person, u.name, 'Agent') as agent_name, COALESCE(ag.email, u.email, '') as agent_email 
+        // 3. Agent Wallets Filter
+        $awSql = "SELECT aw.*, COALESCE(ag.company_name, ag.contact_person, u.name, 'Agent') as agent_name, COALESCE(ag.email, u.email, '') as agent_email 
             FROM agent_wallets aw 
             LEFT JOIN agents ag ON aw.agent_id = ag.id 
             LEFT JOIN users u ON aw.agent_id = u.id 
-            ORDER BY aw.current_balance DESC")->fetchAll(PDO::FETCH_ASSOC);
+            WHERE 1=1";
+        $awParams = [];
+        if ($search !== '') {
+            $awSql .= " AND (ag.company_name LIKE ? OR ag.contact_person LIKE ? OR u.name LIKE ? OR ag.email LIKE ? OR u.email LIKE ?)";
+            $t = "%{$search}%";
+            $awParams = [$t, $t, $t, $t, $t];
+        }
+        if (!empty($dateFrom)) {
+            $awSql .= " AND DATE(aw.created_at) >= ?";
+            $awParams[] = $dateFrom;
+        }
+        if (!empty($dateTo)) {
+            $awSql .= " AND DATE(aw.created_at) <= ?";
+            $awParams[] = $dateTo;
+        }
+        $awSql .= " ORDER BY aw.current_balance DESC";
+        $awStmt = $pdo->prepare($awSql);
+        $awStmt->execute($awParams);
+        $agentWallets = $awStmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $recentTransactions = $pdo->query("SELECT wt.*, c.full_name as customer_name, u.name as created_by_name 
+        // 4. Recent Audit Ledger Filter
+        $wtSql = "SELECT wt.*, c.full_name as customer_name, u.name as created_by_name 
             FROM wallet_transactions wt 
             LEFT JOIN customers c ON wt.customer_id = c.id 
             LEFT JOIN users u ON wt.created_by = u.id 
-            ORDER BY wt.created_at DESC LIMIT 50")->fetchAll(PDO::FETCH_ASSOC);
+            WHERE 1=1";
+        $wtParams = [];
+        if ($search !== '') {
+            $wtSql .= " AND (wt.transaction_id LIKE ? OR c.full_name LIKE ? OR wt.description LIKE ? OR wt.payment_reference LIKE ?)";
+            $t = "%{$search}%";
+            $wtParams = [$t, $t, $t, $t];
+        }
+        if ($type !== '') {
+            $wtSql .= " AND LOWER(wt.transaction_type) = LOWER(?)";
+            $wtParams[] = $type;
+        }
+        if (!empty($dateFrom)) {
+            $wtSql .= " AND DATE(wt.created_at) >= ?";
+            $wtParams[] = $dateFrom;
+        }
+        if (!empty($dateTo)) {
+            $wtSql .= " AND DATE(wt.created_at) <= ?";
+            $wtParams[] = $dateTo;
+        }
+        $wtSql .= " ORDER BY wt.created_at DESC LIMIT 100";
+        $wtStmt = $pdo->prepare($wtSql);
+        $wtStmt->execute($wtParams);
+        $recentTransactions = $wtStmt->fetchAll(PDO::FETCH_ASSOC);
 
         $customersList = $pdo->query("SELECT id, full_name, customer_code FROM customers WHERE is_active = 1 ORDER BY full_name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $suppliersList = $pdo->query("SELECT id, company_name as name, company_name FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);

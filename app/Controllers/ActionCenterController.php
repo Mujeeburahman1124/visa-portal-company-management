@@ -201,9 +201,9 @@ class ActionCenterController
         $pdo = Database::getConnection();
         $user = auth_user();
 
-        $userRole = strtolower($user['role'] ?? '');
-        if (!in_array($userRole, ['super-admin', 'admin', 'branch-manager'], true)) {
-            redirect('/action-center?tab=leave', 'Unauthorized to approve leave requests.', 'danger');
+        // Enforce RBAC permission for approving leave
+        if (!user_can('leave.approve') && !user_has_role(['super-admin', 'admin', 'branch-manager'])) {
+            redirect('/action-center?tab=leave', 'Unauthorized: You do not have permission to approve staff leave requests.', 'danger');
         }
 
         $id = (int)($_POST['id'] ?? 0);
@@ -228,9 +228,9 @@ class ActionCenterController
         $pdo = Database::getConnection();
         $user = auth_user();
 
-        $userRole = strtolower($user['role'] ?? '');
-        if (!in_array($userRole, ['super-admin', 'admin', 'branch-manager'], true)) {
-            redirect('/action-center?tab=leave', 'Unauthorized to reject leave requests.', 'danger');
+        // Enforce RBAC permission for rejecting leave
+        if (!user_can('leave.reject') && !user_has_role(['super-admin', 'admin', 'branch-manager'])) {
+            redirect('/action-center?tab=leave', 'Unauthorized: You do not have permission to reject staff leave requests.', 'danger');
         }
 
         $id = (int)($_POST['id'] ?? 0);
@@ -284,6 +284,13 @@ class ActionCenterController
         $id = (int)($_POST['id'] ?? 0);
         $status = trim($_POST['status'] ?? 'Completed');
         $notes = trim($_POST['resolution_notes'] ?? '');
+
+        // Enforce RBAC permission for approving/resolving/rejecting staff requests
+        $isApproving = in_array(strtolower($status), ['completed', 'approved', 'in-progress'], true);
+        $requiredPerm = $isApproving ? 'staff_requests.approve' : 'staff_requests.reject';
+        if (!user_can($requiredPerm) && !user_has_role(['super-admin', 'admin', 'branch-manager'])) {
+            redirect('/action-center?tab=requests', 'Unauthorized: You do not have permission to resolve/approve staff requests.', 'danger');
+        }
 
         if ($id > 0) {
             $stmt = $pdo->prepare("UPDATE staff_requests SET 

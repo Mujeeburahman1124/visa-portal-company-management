@@ -490,9 +490,12 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
         <!-- Financial Breakdown Card -->
         <div class="p-3 bg-light rounded border mb-0">
-          <h6 class="fw-bold text-dark mb-2" style="font-size: 0.85rem;"><i class="fa-solid fa-receipt text-primary me-1.5"></i> Financial Breakdown &amp; Package Pricing</h6>
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="fw-bold text-dark mb-0" style="font-size: 0.85rem;"><i class="fa-solid fa-receipt text-primary me-1.5"></i> Financial Breakdown &amp; Package Pricing</h6>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.7rem;"><i class="fa-solid fa-pen me-1"></i> Calculations Fully Editable</span>
+          </div>
           <div class="row g-2 align-items-center">
-            <div class="col-md-3 col-6">
+            <div class="col-md-2 col-6">
               <label class="form-label small text-muted mb-1" style="font-size: 0.72rem;">Selling Price ($)</label>
               <input type="number" step="0.01" name="selling_price" id="custSellingPrice" class="form-control form-control-sm fw-bold" value="0.00" oninput="calcTotalCustomerPrice()">
             </div>
@@ -508,11 +511,16 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               <label class="form-label small text-muted mb-1" style="font-size: 0.72rem;">Tax / VAT ($)</label>
               <input type="number" step="0.01" name="tax_amount" id="custTaxAmount" class="form-control form-control-sm" value="0.00" oninput="calcTotalCustomerPrice()">
             </div>
-            <div class="col-md-3 col-12">
-              <div class="p-2 bg-white rounded border text-end">
-                <span class="text-muted small d-block" style="font-size: 0.7rem;">Total Invoice Amount:</span>
-                <span class="fw-bold text-primary fs-6" id="custTotalAmountDisplay">$0.00</span>
-              </div>
+            <div class="col-md-2 col-6">
+              <label class="form-label small text-muted mb-1" style="font-size: 0.72rem;">Exchange Rate</label>
+              <input type="number" step="0.000001" name="exchange_rate" id="custExchangeRate" class="form-control form-control-sm" value="1.000000" placeholder="e.g. 0.012" oninput="calcTotalCustomerPrice()">
+            </div>
+            <div class="col-md-2 col-6">
+              <label class="form-label small fw-bold text-dark mb-1 d-flex justify-content-between" style="font-size: 0.72rem;">
+                <span>Total Invoice ($)</span>
+                <a href="javascript:void(0)" onclick="resetAutoTotal()" class="text-decoration-none text-muted" title="Recalculate auto total"><i class="fa-solid fa-calculator"></i></a>
+              </label>
+              <input type="number" step="0.01" name="total_amount" id="custTotalAmountInput" class="form-control form-control-sm fw-bold text-primary border-primary" value="0.00" oninput="markManualTotal()">
             </div>
           </div>
         </div>
@@ -695,13 +703,28 @@ function updateServiceInfo() {
   calcTotalCustomerPrice();
 }
 
+let isManualTotalOverridden = false;
+
+function markManualTotal() {
+  isManualTotalOverridden = true;
+}
+
+function resetAutoTotal() {
+  isManualTotalOverridden = false;
+  calcTotalCustomerPrice();
+}
+
 function calcTotalCustomerPrice() {
   const price = parseFloat(document.getElementById('custSellingPrice').value || 0);
   const discount = parseFloat(document.getElementById('custDiscount').value || 0);
   const net = Math.max(0, price - discount);
   const tax = parseFloat(document.getElementById('custTaxAmount').value || 0);
-  const total = net + tax;
-  document.getElementById('custTotalAmountDisplay').innerText = '$' + total.toFixed(2);
+  const autoTotal = net + tax;
+
+  const totalInput = document.getElementById('custTotalAmountInput');
+  if (totalInput && !isManualTotalOverridden) {
+    totalInput.value = autoTotal.toFixed(2);
+  }
 }
 
 function toggleCustPaymentBox() {
@@ -731,6 +754,24 @@ function removeCustomerDocRow(btn) {
     btn.closest('.customer-doc-row').remove();
   }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Prevent duplicate submission on form submit
+  const regForm = document.getElementById('registerApplicantForm');
+  if (regForm) {
+    regForm.addEventListener('submit', function(e) {
+      const btn = this.querySelector('button[type="submit"]');
+      if (btn && btn.disabled) {
+        e.preventDefault();
+        return false;
+      }
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Registering Applicant...';
+      }
+    });
+  }
+});
 </script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

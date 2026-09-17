@@ -371,7 +371,9 @@ class CustomerController
             $taxRate = (float)($serviceData['tax_rate'] ?? 5.0);
             $netSellingPrice = max(0.0, $sellingPrice - $discount);
             $taxAmount = (float)($_POST['tax_amount'] ?? ($netSellingPrice * ($taxRate / 100.0)));
-            $totalAmount = max(0.0, $netSellingPrice + $taxAmount);
+            $totalAmount = (isset($_POST['total_amount']) && is_numeric($_POST['total_amount']) && (float)$_POST['total_amount'] > 0)
+                ? (float)$_POST['total_amount']
+                : max(0.0, $netSellingPrice + $taxAmount);
             $grossProfit = max(0.0, $totalAmount - $supplierCost - $otherExpenses);
 
             // Payment Option (Default Pay Later)
@@ -431,6 +433,24 @@ class CustomerController
             ]);
 
             $appId = (int)$pdo->lastInsertId();
+
+            // Record Supplier Account Payable immediately so Supplier Management & Portal reflect it accurately
+            if (!empty($supplierId) && $supplierCost > 0) {
+                $spayRef = 'SPAY-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -4));
+                $spStmt = $pdo->prepare("INSERT INTO supplier_payments (
+                    payment_reference, supplier_id, application_id, payable_amount, paid_amount,
+                    payment_date, payment_method, payment_status, notes, created_by, created_at
+                ) VALUES (?, ?, ?, ?, 0.00, ?, 'Account Payable', 'Pending', ?, ?, CURRENT_TIMESTAMP)");
+                $spStmt->execute([
+                    $spayRef,
+                    $supplierId,
+                    $appId,
+                    $supplierCost,
+                    $appDate,
+                    "Payable recorded automatically for visa application {$appNumber} ({$visaTypeName})",
+                    $currentUser['id'] ?? null
+                ]);
+            }
 
             // Link uploaded documents to application_id as well
             if (!empty($appId)) {

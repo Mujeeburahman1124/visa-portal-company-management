@@ -60,6 +60,14 @@ class StaffController
         $roles = $pdo->query("SELECT id, name, slug FROM roles ORDER BY name ASC")->fetchAll();
         $branches = $pdo->query("SELECT id, name, code FROM branches ORDER BY name ASC")->fetchAll();
 
+        // Permissions map for granting/previewing in registration form
+        $allPermissions = $pdo->query("SELECT id, name, slug, module FROM permissions ORDER BY module ASC, name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $rolePermissionsMap = [];
+        $rpRows = $pdo->query("SELECT role_id, permission_id FROM role_permissions")->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rpRows as $rp) {
+            $rolePermissionsMap[(int)$rp['role_id']][] = (int)$rp['permission_id'];
+        }
+
         // Overall stats
         $totalStaff = count($staff);
         $activeStaff = count(array_filter($staff, fn($s) => (int)$s['is_active'] === 1));
@@ -135,23 +143,24 @@ class StaffController
         $pdo = Database::getConnection();
 
         $name = trim($_POST['name'] ?? '');
-        $email = trim($_POST['email'] ?? '');
+        $email = strtolower(trim($_POST['email'] ?? ''));
         $password = !empty($_POST['password']) ? trim($_POST['password']) : \App\Services\PasswordGeneratorService::generate(10, 'STAFF@');
         $roleId = (int)($_POST['role_id'] ?? 4);
         $branchId = !empty($_POST['branch_id']) ? (int)$_POST['branch_id'] : 1;
         $phone = trim($_POST['phone'] ?? '');
         $designation = trim($_POST['designation'] ?? 'Visa Specialist');
         $department = trim($_POST['department'] ?? 'Visa Department');
+        $customPerms = $_POST['permissions'] ?? [];
 
         if (empty($name) || empty($email)) {
             redirect('/staff', 'Please provide staff name and work email.', 'danger');
         }
 
-        // Check duplicate email
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE email = ?");
+        // Strict duplicate check on email BEFORE taking ANY action
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE LOWER(TRIM(email)) = ? LIMIT 1");
         $stmt->execute([$email]);
-        if ((int)$stmt->fetchColumn() > 0) {
-            redirect('/staff', "A user with email '{$email}' already exists.", 'danger');
+        if ($stmt->fetch()) {
+            redirect('/staff', "Registration blocked: A user with email '{$email}' already exists. No new account or notification was dispatched.", 'danger');
         }
 
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
@@ -161,6 +170,14 @@ class StaffController
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$roleId, $branchId, $name, $email, $passwordHash, $phone, $designation, $department]);
         $newId = (int)$pdo->lastInsertId();
+
+        // If custom permissions were explicitly given/checked in the form, sync with role_permissions
+        if (!empty($customPerms) && is_array($customPerms)) {
+            $rpIns = $pdo->prepare("INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)");
+            foreach ($customPerms as $cpId) {
+                $rpIns->execute([$roleId, (int)$cpId]);
+            }
+        }
 
         // Fetch Role & Branch Name for Welcome Email
         $roleName = $pdo->query("SELECT name FROM roles WHERE id = {$roleId}")->fetchColumn() ?: 'Staff Member';
