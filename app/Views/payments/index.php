@@ -345,8 +345,10 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <label class="form-label small fw-semibold text-secondary">1. Select Applicant / Visa Application <span class="text-danger">*</span></label>
             <select name="application_id" id="paymentAppSelect" class="form-select" required onchange="onApplicantSelected(this)">
               <option value="">-- Search &amp; Select Customer / Application --</option>
+              <?php $activeSelAppId = (int)($selectedAppId ?? ($_GET['app_id'] ?? ($_GET['application_id'] ?? 0))); ?>
               <?php foreach ($applicationsList as $ap): ?>
                 <option value="<?= $ap['id'] ?>" 
+                  <?= ($activeSelAppId === (int)$ap['id']) ? 'selected' : '' ?>
                   data-name="<?= e($ap['customer_name']) ?>"
                   data-code="<?= e($ap['customer_code']) ?>"
                   data-passport="<?= e($ap['passport_number'] ?: 'On File') ?>"
@@ -521,6 +523,16 @@ function onApplicantSelected(select) {
   document.getElementById('payOriginalAmount').value = due.toFixed(2);
   calcPaymentConverter();
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+  var sel = document.getElementById('paymentAppSelect');
+  if (sel && sel.value) {
+    onApplicantSelected(sel);
+    if (typeof openModalById === 'function') {
+      openModalById('recordPaymentModal');
+    }
+  }
+});
 </script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

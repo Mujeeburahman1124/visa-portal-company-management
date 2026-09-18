@@ -21,8 +21,8 @@ class CustomerController
 
         $sql = "SELECT c.*, 
                     cp.passport_number, cp.expiry_date as passport_expiry,
-                    COUNT(a.id) as total_applications,
-                    SUM(CASE WHEN a.status NOT IN ('Approved', 'Completed', 'Cancelled') THEN 1 ELSE 0 END) as active_applications
+                    COUNT(DISTINCT a.id) as total_applications,
+                    COUNT(DISTINCT CASE WHEN a.status NOT IN ('Approved', 'Completed', 'Cancelled') THEN a.id ELSE NULL END) as active_applications
                 FROM customers c 
                 LEFT JOIN customer_passports cp ON cp.customer_id = c.id AND cp.is_primary = 1
                 LEFT JOIN applications a ON a.customer_id = c.id

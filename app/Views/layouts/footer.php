@@ -50,11 +50,6 @@
 </div>
 
 <!-- Core JS Dependencies -->
-<script>
-if (typeof bootstrap === 'undefined') {
-  document.write('<script src="/assets/js/bootstrap.bundle.min.js"><\/script>');
-}
-</script>
-<script src="/assets/js/app.js?v=2.0.0"></script>
+<script src="/assets/js/app.js?v=2.1.0"></script>
 </body>
 </html>

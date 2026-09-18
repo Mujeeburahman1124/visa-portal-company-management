@@ -718,39 +718,6 @@ class ApplicationController
         require_once dirname(__DIR__) . '/Views/applications/show.php';
     }
 
-    public function updateStage(): void
-    {
-        AuthMiddleware::handle();
-        $user = auth_user();
-
-        $appId = (int)($_POST['application_id'] ?? 0);
-        $newStage = trim($_POST['new_stage'] ?? '');
-        $newStatus = trim($_POST['new_status'] ?? '');
-        $comments = trim($_POST['comments'] ?? '');
-        $nextAction = trim($_POST['next_action'] ?? '');
-        $nextActionDueDate = !empty($_POST['next_action_due_date']) ? $_POST['next_action_due_date'] : null;
-
-        if ($appId <= 0 || empty($newStage) || empty($newStatus)) {
-            redirect($_SERVER['HTTP_REFERER'] ?? '/applications', 'Invalid stage transition parameters.', 'danger');
-        }
-
-        $result = StageTransitionService::transition(
-            $appId,
-            $newStage,
-            $newStatus,
-            $comments,
-            (int)($user['id'] ?? 0),
-            $nextAction,
-            $nextActionDueDate
-        );
-
-        if ($result['success']) {
-            redirect("/applications/show?id={$appId}", $result['message'], 'success');
-        } else {
-            redirect("/applications/show?id={$appId}", $result['message'], 'danger');
-        }
-    }
-
     public function assignStaff(): void
     {
         AuthMiddleware::handle();
@@ -972,6 +939,53 @@ class ApplicationController
         redirect('/applications', 'Application archived successfully.', 'info');
     }
 
+    public function updateStage(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $user = auth_user();
+
+        $appId = (int)($_POST['application_id'] ?? 0);
+        $newStage = trim($_POST['new_stage'] ?? '');
+        $newStatus = trim($_POST['new_status'] ?? '');
+        $nextAction = trim($_POST['next_action'] ?? '');
+        $nextActionDueDate = !empty($_POST['next_action_due_date']) ? $_POST['next_action_due_date'] : null;
+        $comments = trim($_POST['comments'] ?? '');
+
+        if ($appId <= 0 || empty($newStage)) {
+            redirect("/applications/show?id={$appId}", 'Target stage is required.', 'danger');
+        }
+
+        if (empty($newStatus)) {
+            $newStatus = 'In Process';
+            if ($newStage === 'Visa Issued & Completed' || $newStage === 'Approved') {
+                $newStatus = 'Approved';
+            } elseif ($newStage === 'Application Rejected' || $newStage === 'Rejected') {
+                $newStatus = 'Rejected';
+            } elseif (str_contains(strtolower($newStage), 'returned') || str_contains(strtolower($newStage), 'modification')) {
+                $newStatus = 'Action Required';
+            }
+        }
+
+        $res = StageTransitionService::transition(
+            $appId, 
+            $newStage, 
+            $newStatus, 
+            $comments ?: "Stage advanced to {$newStage}", 
+            (int)($user['id'] ?? 0), 
+            $nextAction ?: null, 
+            $nextActionDueDate ?: null
+        );
+
+        if (isset($res['success']) && !$res['success']) {
+            redirect("/applications/show?id={$appId}", $res['message'] ?? 'Stage transition failed.', 'danger');
+        }
+
+        AuditService::log('STAGE_TRANSITION', 'Applications', $appId, "Advanced stage to {$newStage} ({$newStatus})", ['comments' => $comments], $user['id'] ?? null);
+
+        redirect("/applications/show?id={$appId}", "Application stage advanced to '{$newStage}' successfully.", 'success');
+    }
+
     public function decisionApprove(): void
     {
         AuthMiddleware::handle();
@@ -1002,24 +1016,22 @@ class ApplicationController
             $filePath = 'visas/' . $fileName;
         }
 
-        // Upsert into visa_approvals
-        try {
-            $pdo->prepare("INSERT INTO visa_approvals (application_id, visa_number, issue_date, expiry_date, entry_before_date, max_stay, validity, visa_file, notes, approved_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE visa_number=VALUES(visa_number), issue_date=VALUES(issue_date), expiry_date=VALUES(expiry_date), entry_before_date=VALUES(entry_before_date), max_stay=VALUES(max_stay), validity=VALUES(validity), visa_file=COALESCE(VALUES(visa_file), visa_file), notes=VALUES(notes)")
-                ->execute([$appId, $visaNumber, $issueDate, $expiryDate, $entryBefore, $maxStay, $validity, $filePath, $notes, $user['id'] ?? null]);
-        } catch (\Throwable $e) {
-            try {
-                $pdo->prepare("INSERT INTO visa_approvals (application_id, visa_number, issue_date, expiry_date, entry_before_date, maximum_stay, validity, approved_visa_file, approval_notes, approved_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON DUPLICATE KEY UPDATE visa_number=VALUES(visa_number), issue_date=VALUES(issue_date), expiry_date=VALUES(expiry_date), entry_before_date=VALUES(entry_before_date), maximum_stay=VALUES(maximum_stay), validity=VALUES(validity), approved_visa_file=COALESCE(VALUES(approved_visa_file), approved_visa_file), approval_notes=VALUES(approval_notes)")
-                    ->execute([$appId, $visaNumber, $issueDate, $expiryDate, $entryBefore, $maxStay, $validity, $filePath, $notes, $user['id'] ?? null]);
-            } catch (\Throwable $e2) {
-                $pdo->prepare("INSERT INTO visa_approvals (application_id, visa_number, issue_date, expiry_date, approved_by)
-                    VALUES (?, ?, ?, ?, ?)
-                    ON DUPLICATE KEY UPDATE visa_number=VALUES(visa_number), issue_date=VALUES(issue_date), expiry_date=VALUES(expiry_date)")
-                    ->execute([$appId, $visaNumber, $issueDate, $expiryDate, $user['id'] ?? null]);
-            }
+        // Upsert into visa_approvals safely
+        $stmtCheck = $pdo->prepare("SELECT id FROM visa_approvals WHERE application_id = ?");
+        $stmtCheck->execute([$appId]);
+        $existingApprovalId = $stmtCheck->fetchColumn();
+
+        if ($existingApprovalId) {
+            $pdo->prepare("UPDATE visa_approvals SET 
+                visa_number = ?, issue_date = ?, expiry_date = ?, entry_before_date = ?, maximum_stay = ?, validity = ?, 
+                approved_visa_file = COALESCE(?, approved_visa_file), approval_notes = ?, approved_by = ?, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?")
+                ->execute([$visaNumber, $issueDate, $expiryDate, $entryBefore, $maxStay, $validity, $filePath, $notes, $user['id'] ?? null, $existingApprovalId]);
+        } else {
+            $pdo->prepare("INSERT INTO visa_approvals (
+                application_id, visa_number, issue_date, expiry_date, entry_before_date, maximum_stay, validity, approved_visa_file, approval_notes, approved_by, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+            ->execute([$appId, $visaNumber, $issueDate, $expiryDate, $entryBefore, $maxStay, $validity, $filePath, $notes, $user['id'] ?? null]);
         }
 
         // Transition status
@@ -1060,10 +1072,22 @@ class ApplicationController
             $filePath = 'rejections/' . $fileName;
         }
 
-        $pdo->prepare("INSERT INTO visa_rejections (application_id, rejection_date, customer_reason, internal_reason, reapplication_eligibility, rejection_document, rejected_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE rejection_date=VALUES(rejection_date), customer_reason=VALUES(customer_reason), internal_reason=VALUES(internal_reason), reapplication_eligibility=VALUES(reapplication_eligibility), rejection_document=COALESCE(VALUES(rejection_document), rejection_document)")
+        $stmtCheck = $pdo->prepare("SELECT id FROM visa_rejections WHERE application_id = ?");
+        $stmtCheck->execute([$appId]);
+        $existingRejId = $stmtCheck->fetchColumn();
+
+        if ($existingRejId) {
+            $pdo->prepare("UPDATE visa_rejections SET 
+                rejection_date = ?, customer_reason = ?, internal_reason = ?, reapplication_eligibility = ?, 
+                rejection_document = COALESCE(?, rejection_document), rejected_by = ?, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?")
+                ->execute([$rejectionDate, $customerReason, $internalReason, $eligibility, $filePath, $user['id'] ?? null, $existingRejId]);
+        } else {
+            $pdo->prepare("INSERT INTO visa_rejections (
+                application_id, rejection_date, customer_reason, internal_reason, reapplication_eligibility, rejection_document, rejected_by, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
             ->execute([$appId, $rejectionDate, $customerReason, $internalReason, $eligibility, $filePath, $user['id'] ?? null]);
+        }
 
         StageTransitionService::transition($appId, 'Application Rejected', 'Rejected', "Application rejected: {$customerReason}", (int)($user['id'] ?? 0));
 

@@ -124,6 +124,32 @@ class PaymentController
             WHERE a.is_archived = 0 
             ORDER BY a.created_at DESC LIMIT 100")->fetchAll();
 
+        $selectedAppId = (int)($_GET['app_id'] ?? ($_GET['application_id'] ?? 0));
+        if ($selectedAppId > 0) {
+            $found = false;
+            foreach ($applicationsList as $aItem) {
+                if ((int)$aItem['id'] === $selectedAppId) {
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                $stmtSingle = $pdo->prepare("SELECT a.id, a.application_number, a.total_amount, a.balance_amount, a.passport_number, 
+                        c.id as customer_id, c.customer_code, c.full_name as customer_name, c.mobile as customer_mobile, c.email as customer_email,
+                        ct.name as country_name, ct.flag_emoji, vs.name as service_name
+                    FROM applications a 
+                    JOIN customers c ON a.customer_id = c.id 
+                    JOIN visa_services vs ON a.visa_service_id = vs.id
+                    JOIN countries ct ON vs.country_id = ct.id
+                    WHERE a.id = ?");
+                $stmtSingle->execute([$selectedAppId]);
+                $singleApp = $stmtSingle->fetch();
+                if ($singleApp) {
+                    array_unshift($applicationsList, $singleApp);
+                }
+            }
+        }
+
         // Summary metrics (defensive execution)
         $metrics = [
             'total_received' => 0.0,

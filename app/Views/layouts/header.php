@@ -102,6 +102,60 @@
 
   <!-- Core Bootstrap 5 Bundle JS (Loaded early so modal/dropdown APIs exist everywhere) -->
   <script src="/assets/js/bootstrap.bundle.min.js"></script>
+  <script>
+    window.openModalById = function (modalId) {
+      var el = document.getElementById(modalId);
+      if (!el) {
+        console.error('Modal element not found: ' + modalId);
+        return;
+      }
+      try {
+        if (window.bootstrap && bootstrap.Modal) {
+          var modalInstance = bootstrap.Modal.getOrCreateInstance(el);
+          modalInstance.show();
+          return;
+        }
+      } catch (err) {
+        console.warn('Bootstrap modal instance failed, using fallback:', err);
+      }
+      el.classList.add('show');
+      el.style.display = 'block';
+      el.removeAttribute('aria-hidden');
+      el.setAttribute('aria-modal', 'true');
+      document.body.classList.add('modal-open');
+      var backdrop = document.getElementById('vt-modal-backdrop');
+      if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'vt-modal-backdrop';
+        backdrop.className = 'modal-backdrop fade show';
+        document.body.appendChild(backdrop);
+      }
+    };
+    window.closeModalById = function (modalId) {
+      var el = document.getElementById(modalId);
+      if (!el) return;
+      try {
+        if (window.bootstrap && bootstrap.Modal) {
+          var instance = bootstrap.Modal.getInstance(el);
+          if (instance) {
+            instance.hide();
+            return;
+          }
+        }
+      } catch (e) {}
+      el.classList.remove('show');
+      el.style.display = 'none';
+      el.setAttribute('aria-hidden', 'true');
+      el.removeAttribute('aria-modal');
+      var openModals = document.querySelectorAll('.modal.show');
+      if (openModals.length === 0) {
+        document.body.classList.remove('modal-open');
+        var backdrop = document.getElementById('vt-modal-backdrop');
+        if (backdrop) backdrop.remove();
+        document.querySelectorAll('.modal-backdrop').forEach(function(b) { b.remove(); });
+      }
+    };
+  </script>
 </head>
 <body class="app-body <?= $thMode === 'dark' ? 'theme-dark' : 'theme-light' ?>">
 <div class="app-wrapper" id="appWrapper">

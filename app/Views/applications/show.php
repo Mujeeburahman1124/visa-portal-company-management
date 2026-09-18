@@ -2002,6 +2002,21 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
 </div>
 
 <script>
+if (typeof window.openModalById !== 'function') {
+  window.openModalById = function (modalId) {
+    var el = document.getElementById(modalId);
+    if (!el) return;
+    try {
+      if (window.bootstrap && bootstrap.Modal) {
+        bootstrap.Modal.getOrCreateInstance(el).show();
+        return;
+      }
+    } catch (e) {}
+    el.classList.add('show');
+    el.style.display = 'block';
+  };
+}
+
 function toggleDecisionFields() {
   const dec = document.getElementById('decisionSelect')?.value;
   const appFields = document.getElementById('approvedFields');
