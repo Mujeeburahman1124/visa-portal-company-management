@@ -1088,6 +1088,7 @@ function submitTestEmail() {
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Sending...';
 
   const formData = new FormData();
+  formData.append('csrf_token', '<?= csrf_token() ?>');
   formData.append('template_id', tmplId);
   formData.append('test_email', email);
 

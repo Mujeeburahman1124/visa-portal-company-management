@@ -57,6 +57,15 @@ function csrf_token(): string {
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
+    if (!isset($_SESSION['csrf_tokens']) || !is_array($_SESSION['csrf_tokens'])) {
+        $_SESSION['csrf_tokens'] = [];
+    }
+    if (!in_array($_SESSION['csrf_token'], $_SESSION['csrf_tokens'], true)) {
+        $_SESSION['csrf_tokens'][] = $_SESSION['csrf_token'];
+        if (count($_SESSION['csrf_tokens']) > 20) {
+            $_SESSION['csrf_tokens'] = array_slice($_SESSION['csrf_tokens'], -20);
+        }
+    }
     return $_SESSION['csrf_token'];
 }
 
@@ -65,10 +74,20 @@ function csrf_field(): string {
 }
 
 function verify_csrf(?string $token): bool {
-    if (empty($token) || empty($_SESSION['csrf_token'])) {
+    if (empty($token)) {
         return false;
     }
-    return hash_equals($_SESSION['csrf_token'], $token);
+    if (!empty($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token)) {
+        return true;
+    }
+    if (!empty($_SESSION['csrf_tokens']) && is_array($_SESSION['csrf_tokens'])) {
+        foreach ($_SESSION['csrf_tokens'] as $validToken) {
+            if (hash_equals($validToken, $token)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 function e(?string $string): string {
