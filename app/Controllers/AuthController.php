@@ -223,28 +223,173 @@ class AuthController
     }
 
     /**
-     * Demo Quick Role Switcher for instant pairwise role testing
+     * Demo / Quick Role Switcher alias for backward compatibility
      */
     public function quickSwitch(): void
     {
-        $userId = (int)($_GET['user_id'] ?? 0);
-        if ($userId > 0) {
-            $pdo = Database::getConnection();
-            $stmt = $pdo->prepare("SELECT u.*, r.name as role_name, r.slug as role_slug, b.name as branch_name 
-                FROM users u 
-                JOIN roles r ON u.role_id = r.id 
-                LEFT JOIN branches b ON u.branch_id = b.id 
-                WHERE u.id = ? AND u.is_active = 1");
-            $stmt->execute([$userId]);
-            $user = $stmt->fetch();
-            if ($user) {
-                unset($user['password_hash']);
-                $_SESSION['user'] = $user;
-                unset($_SESSION['user_permissions']); // Reset permissions cache
-                AuditService::log('ROLE_SWITCH', 'Auth', (int)$user['id'], "Switched active user session to {$user['name']} ({$user['role_name']})", null, (int)$user['id']);
-                redirect($_SERVER['HTTP_REFERER'] ?? '/dashboard', "Active role switched to {$user['name']} ({$user['role_name']})", 'info');
+        $this->switchAccount();
+    }
+
+    /**
+     * Switch Account Workflow (Server-Authorized, Anti-Privilege Escalation)
+     */
+    public function switchAccount(): void
+    {
+        if (!is_authenticated()) {
+            redirect('/auth/login', 'Please sign in to continue.', 'warning');
+        }
+
+        $currentUser = auth_user();
+        if (!can_switch_accounts()) {
+            http_response_code(403);
+            redirect('/dashboard', 'Access denied: You do not have permission to switch accounts.', 'danger');
+        }
+
+        $targetUserId = (int)($_POST['user_id'] ?? $_GET['user_id'] ?? 0);
+        if ($targetUserId <= 0) {
+            redirect('/dashboard', 'Invalid target account selected.', 'warning');
+        }
+
+        // If target is already the current user, redirect with notice
+        if ($targetUserId === (int)($currentUser['id'] ?? 0)) {
+            redirect('/dashboard', "Already operating as {$currentUser['name']}.", 'info');
+        }
+
+        // Check if switching back to original admin
+        if (is_impersonating() && $targetUserId === (int)($_SESSION['original_admin_id'] ?? 0)) {
+            $this->switchBack();
+            return;
+        }
+
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("SELECT u.*, r.name as role_name, r.slug as role_slug, b.name as branch_name, b.code as branch_code 
+            FROM users u 
+            JOIN roles r ON u.role_id = r.id 
+            LEFT JOIN branches b ON u.branch_id = b.id 
+            WHERE u.id = ? AND u.is_active = 1");
+        $stmt->execute([$targetUserId]);
+        $targetUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$targetUser) {
+            redirect('/dashboard', 'Target user account not found or is currently inactive.', 'danger');
+        }
+
+        // Authorization check: prevent privilege escalation
+        $isSuperAdmin = (($currentUser['role_slug'] ?? '') === 'super-admin' || ((int)($currentUser['role_id'] ?? 0)) === 1);
+        if (is_impersonating()) {
+            $orig = original_admin_user();
+            if (($orig['role_slug'] ?? '') === 'super-admin' || ((int)($orig['role_id'] ?? 0)) === 1) {
+                $isSuperAdmin = true;
             }
         }
-        redirect('/dashboard');
+
+        if (!$isSuperAdmin) {
+            // Branch manager cannot switch to Super Admin or accounts in other branches
+            if ($targetUser['role_slug'] === 'super-admin' || ((int)$targetUser['role_id']) === 1) {
+                http_response_code(403);
+                redirect('/dashboard', 'Unauthorized: You cannot switch into a Super Admin account.', 'danger');
+            }
+            if ((int)($targetUser['branch_id'] ?? 0) !== (int)($currentUser['branch_id'] ?? 0)) {
+                http_response_code(403);
+                redirect('/dashboard', 'Unauthorized: You cannot switch into accounts in other branches.', 'danger');
+            }
+        }
+
+        // Preserve original admin context if not already impersonating
+        if (!is_impersonating()) {
+            $_SESSION['original_admin'] = $currentUser;
+            $_SESSION['original_admin_id'] = (int)$currentUser['id'];
+        }
+
+        // Apply new user context
+        unset($targetUser['password_hash']);
+        $_SESSION['user'] = $targetUser;
+        unset($_SESSION['user_permissions']); // Invalidate cached permissions
+
+        // Pre-load and cache target user's actual permissions from role_permissions
+        try {
+            $permStmt = $pdo->prepare("SELECT p.slug FROM role_permissions rp JOIN permissions p ON rp.permission_id = p.id WHERE rp.role_id = ?");
+            $permStmt->execute([(int)$targetUser['role_id']]);
+            $_SESSION['user_permissions'] = $permStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        } catch (\Throwable $e) {
+            $_SESSION['user_permissions'] = [];
+        }
+
+        AuditService::log('SWITCH_ACCOUNT', 'Auth', (int)$targetUser['id'], "Switched active account context from " . ($currentUser['name'] ?? 'Admin') . " to {$targetUser['name']} ({$targetUser['role_name']})", null, (int)$targetUser['id']);
+
+        redirect('/dashboard', "Active account switched to {$targetUser['name']} ({$targetUser['role_name']}). Context and permissions updated.", 'info');
+    }
+
+    /**
+     * Switch Back to Original Super Admin Account
+     */
+    public function switchBack(): void
+    {
+        if (!is_authenticated()) {
+            redirect('/auth/login');
+        }
+
+        if (!is_impersonating()) {
+            redirect('/dashboard');
+        }
+
+        $originalAdminId = (int)($_SESSION['original_admin_id'] ?? 0);
+        $currentName = $_SESSION['user']['name'] ?? 'Staff';
+
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("SELECT u.*, r.name as role_name, r.slug as role_slug, b.name as branch_name 
+            FROM users u 
+            JOIN roles r ON u.role_id = r.id 
+            LEFT JOIN branches b ON u.branch_id = b.id 
+            WHERE u.id = ? AND u.is_active = 1");
+        $stmt->execute([$originalAdminId]);
+        $originalUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$originalUser) {
+            // If original account was deactivated, force full logout
+            $this->logout();
+            return;
+        }
+
+        unset($originalUser['password_hash']);
+        $_SESSION['user'] = $originalUser;
+        unset($_SESSION['original_admin']);
+        unset($_SESSION['original_admin_id']);
+        unset($_SESSION['user_permissions']);
+
+        AuditService::log('SWITCH_BACK', 'Auth', (int)$originalUser['id'], "Restored administrator session for {$originalUser['name']} from {$currentName}", null, (int)$originalUser['id']);
+
+        redirect('/dashboard', "Welcome back, {$originalUser['name']}! Administrator privileges restored.", 'success');
+    }
+
+    /**
+     * API: Get eligible switchable accounts
+     */
+    public function switchableAccountsApi(): void
+    {
+        if (!is_authenticated()) {
+            json_response(['success' => false, 'message' => 'Unauthenticated'], 401);
+        }
+
+        if (!can_switch_accounts()) {
+            json_response(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $users = get_switchable_users();
+        $currentUser = auth_user();
+        $isImpersonating = is_impersonating();
+        $originalAdmin = original_admin_user();
+
+        json_response([
+            'success' => true,
+            'current_user_id' => (int)($currentUser['id'] ?? 0),
+            'is_impersonating' => $isImpersonating,
+            'original_admin' => $originalAdmin ? [
+                'id' => (int)$originalAdmin['id'],
+                'name' => $originalAdmin['name'],
+                'role_name' => $originalAdmin['role_name'] ?? 'Super Admin',
+            ] : null,
+            'users' => $users,
+        ]);
     }
 }

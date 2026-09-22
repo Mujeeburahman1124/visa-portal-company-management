@@ -14,12 +14,19 @@ class StaffController
     public function index(): void
     {
         AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
         $pdo = Database::getConnection();
+        $currentUser = auth_user();
 
         $search = trim($_GET['search'] ?? '');
         $roleId = (int)($_GET['role_id'] ?? 0);
         $branchId = (int)($_GET['branch_id'] ?? 0);
         $status = $_GET['status'] ?? '';
+
+        // Scope branch managers to their branch
+        if (($currentUser['role_slug'] ?? '') === 'branch-manager' && empty($branchId)) {
+            $branchId = (int)($currentUser['branch_id'] ?? 1);
+        }
 
         $sql = "SELECT u.*, r.name as role_name, r.slug as role_slug, b.name as branch_name,
             COUNT(DISTINCT a.id) as total_applications,
@@ -78,6 +85,7 @@ class StaffController
     public function show(): void
     {
         AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
         $pdo = Database::getConnection();
 
         $id = (int)($_GET['id'] ?? 0);
@@ -141,6 +149,7 @@ class StaffController
     {
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
         $pdo = Database::getConnection();
+        $currentUser = auth_user();
 
         $name = trim($_POST['name'] ?? '');
         $email = strtolower(trim($_POST['email'] ?? ''));
@@ -164,11 +173,12 @@ class StaffController
         }
 
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+        $createdBy = (int)($currentUser['id'] ?? 1);
 
         $stmt = $pdo->prepare("INSERT INTO users (
-            role_id, branch_id, name, email, password_hash, phone, designation, department
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$roleId, $branchId, $name, $email, $passwordHash, $phone, $designation, $department]);
+            role_id, branch_id, name, email, password_hash, phone, designation, department, created_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$roleId, $branchId, $name, $email, $passwordHash, $phone, $designation, $department, $createdBy]);
         $newId = (int)$pdo->lastInsertId();
 
         // If custom permissions were explicitly given/checked in the form, sync with role_permissions

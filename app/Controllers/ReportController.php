@@ -5,6 +5,7 @@ namespace App\Controllers;
 
 use App\Config\Database;
 use App\Middleware\AuthMiddleware;
+use App\Middleware\RoleMiddleware;
 use PDO;
 
 class ReportController
@@ -12,6 +13,7 @@ class ReportController
     public function index(): void
     {
         AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'visa-manager', 'accounts']);
         $pdo = Database::getConnection();
 
         $reportType = trim($_GET['type'] ?? 'status');

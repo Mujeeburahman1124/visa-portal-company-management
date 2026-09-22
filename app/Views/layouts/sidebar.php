@@ -4,16 +4,19 @@ $currentUser = auth_user();
 $roleSlug = $currentUser['role_slug'] ?? '';
 $roleName = $currentUser['role_name'] ?? 'Staff';
 
-// Helper to check module permission
-$canViewStaff = user_has_role(['super-admin', 'admin']);
-$canViewAudit = user_has_role(['super-admin', 'admin']);
-$canViewSettings = user_has_role(['super-admin', 'admin', 'branch-manager']);
-$canViewSuppliers = user_has_role(['super-admin', 'admin', 'branch-manager', 'accounts']);
-$canViewBranches = user_has_role(['super-admin', 'admin', 'branch-manager']);
-$canViewReports = user_has_role(['super-admin', 'admin', 'branch-manager', 'visa-manager', 'accounts']);
-$canViewPayments = user_has_role(['super-admin', 'admin', 'branch-manager', 'accounts', 'visa-manager']);
-$canViewPayroll = user_has_role(['super-admin', 'admin', 'accounts', 'branch-manager']);
-$canViewInventory = user_has_role(['super-admin', 'admin', 'accounts', 'branch-manager']);
+$isSuperAdmin = ($roleSlug === 'super-admin' || (int)($currentUser['role_id'] ?? 0) === 1 || $roleName === 'Super Admin');
+$isAdmin = $isSuperAdmin || ($roleSlug === 'admin');
+
+// Helper to check module permission with dynamic user_can() support
+$canViewStaff = $isAdmin || user_can('staff.view');
+$canViewAudit = $isAdmin || user_can('audit.view');
+$canViewSettings = $isAdmin || user_can('settings.view') || ($roleSlug === 'branch-manager');
+$canViewSuppliers = $isAdmin || user_can('suppliers.view');
+$canViewBranches = $isAdmin || user_can('branches.view');
+$canViewReports = $isAdmin || user_can('reports.view');
+$canViewPayments = $isAdmin || user_can('payments.view') || user_can('finance.view');
+$canViewPayroll = $isAdmin || user_can('staff.view') || ($roleSlug === 'accounts');
+$canViewInventory = $isAdmin || user_can('settings.view') || ($roleSlug === 'branch-manager');
 ?>
 <aside class="app-sidebar" id="appSidebar">
   <!-- Sidebar Brand Header -->
@@ -208,20 +211,49 @@ $canViewInventory = user_has_role(['super-admin', 'admin', 'accounts', 'branch-m
       </a>
     </div>
 
-    <!-- Quick Role Switcher for Pairwise Testing -->
+    <!-- Dynamic Switch Account Dropdown (Database-Driven) -->
+    <?php if (can_switch_accounts()): 
+        $switchUsers = get_switchable_users();
+    ?>
     <div class="dropdown mt-2 sidebar-role-switcher">
-      <button class="btn btn-dark btn-sm w-100 py-1 text-start d-flex align-items-center justify-content-between border-secondary" style="font-size: 0.72rem;" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        <span><i class="fa-solid fa-users-viewfinder text-info me-1"></i> Switch Role</span>
+      <button class="btn btn-dark btn-sm w-100 py-1 text-start d-flex align-items-center justify-content-between border-secondary" style="font-size: 0.72rem;" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Switch between eligible user accounts">
+        <span>
+          <i class="fa-solid fa-users-viewfinder text-info me-1"></i> Switch Account
+          <?= is_impersonating() ? '<span class="badge bg-warning text-dark ms-1" style="font-size: 0.58rem; padding: 2px 4px;">Active</span>' : '' ?>
+        </span>
         <i class="fa-solid fa-chevron-down" style="font-size: 0.6rem;"></i>
       </button>
-      <ul class="dropdown-menu dropdown-menu-dark shadow" style="font-size: 0.8rem; z-index: 1060;">
-        <li class="dropdown-header small text-uppercase text-muted" style="font-size: 0.65rem;">Switch Test Account</li>
-        <li><a class="dropdown-item <?= ($currentUser['id'] ?? 0) == 1 ? 'active' : '' ?>" href="/auth/switch?user_id=1"><i class="fa-solid fa-crown text-warning me-2"></i> Super Admin (Tariq)</a></li>
-        <li><a class="dropdown-item <?= ($currentUser['id'] ?? 0) == 2 ? 'active' : '' ?>" href="/auth/switch?user_id=2"><i class="fa-solid fa-user-tie text-info me-2"></i> Visa Manager (Sarah)</a></li>
-        <li><a class="dropdown-item <?= ($currentUser['id'] ?? 0) == 4 ? 'active' : '' ?>" href="/auth/switch?user_id=4"><i class="fa-solid fa-user-shield text-primary me-2"></i> Visa Officer (Fatima)</a></li>
-        <li><a class="dropdown-item <?= ($currentUser['id'] ?? 0) == 5 ? 'active' : '' ?>" href="/auth/switch?user_id=5"><i class="fa-solid fa-user-gear text-secondary me-2"></i> Processing Staff (Marcus)</a></li>
-        <li><a class="dropdown-item <?= ($currentUser['id'] ?? 0) == 6 ? 'active' : '' ?>" href="/auth/switch?user_id=6"><i class="fa-solid fa-calculator text-success me-2"></i> Accounts (Priya)</a></li>
+      <ul class="dropdown-menu dropdown-menu-dark shadow" style="font-size: 0.8rem; z-index: 1060; max-height: 280px; overflow-y: auto;">
+        <li class="dropdown-header small text-uppercase text-muted" style="font-size: 0.65rem;">Active Accounts in Database</li>
+        <?php if (is_impersonating()): ?>
+          <li>
+            <a class="dropdown-item text-warning fw-bold py-1.5 border-bottom border-secondary bg-warning-subtle text-dark" href="/auth/switch-back">
+              <i class="fa-solid fa-rotate-left me-2"></i> Return to Super Admin
+            </a>
+          </li>
+        <?php endif; ?>
+        <?php foreach ($switchUsers as $su): 
+            $isCur = ((int)($currentUser['id'] ?? 0) === (int)$su['id']);
+            $rSlug = $su['role_slug'] ?? '';
+            $icon = 'fa-user text-light';
+            if ($rSlug === 'super-admin') $icon = 'fa-crown text-warning';
+            elseif ($rSlug === 'admin') $icon = 'fa-user-shield text-danger';
+            elseif ($rSlug === 'branch-manager') $icon = 'fa-building-user text-primary';
+            elseif ($rSlug === 'visa-manager') $icon = 'fa-user-tie text-info';
+            elseif ($rSlug === 'processing-staff') $icon = 'fa-user-gear text-secondary';
+            elseif ($rSlug === 'accounts') $icon = 'fa-calculator text-success';
+        ?>
+          <li>
+            <a class="dropdown-item <?= $isCur ? 'active' : '' ?> py-1.5 d-flex align-items-center justify-content-between" href="/auth/switch?user_id=<?= $su['id'] ?>" title="<?= e($su['email']) ?> (<?= e($su['branch_name'] ?? 'Main') ?>)">
+              <span class="text-truncate" style="max-width: 135px;">
+                <i class="fa-solid <?= $icon ?> me-1.5"></i> <?= e($su['name']) ?>
+              </span>
+              <span class="badge bg-secondary-subtle text-light border-0 ms-1" style="font-size: 0.62rem;"><?= e($su['role_name']) ?></span>
+            </a>
+          </li>
+        <?php endforeach; ?>
       </ul>
     </div>
+    <?php endif; ?>
   </div>
 </aside>

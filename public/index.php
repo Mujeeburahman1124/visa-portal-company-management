@@ -87,7 +87,11 @@ switch ($uri) {
         break;
 
     case '/auth/switch':
-        (new App\Controllers\AuthController())->quickSwitch();
+        (new App\Controllers\AuthController())->switchAccount();
+        break;
+
+    case '/auth/switch-back':
+        (new App\Controllers\AuthController())->switchBack();
         break;
 
     // Core Operations: Dashboard
@@ -1114,6 +1118,10 @@ switch ($uri) {
         break;
 
     // RESTful API Endpoints & Global Live Search
+    case '/api/switch-accounts':
+        (new App\Controllers\AuthController())->switchableAccountsApi();
+        break;
+
     case '/api/search':
         (new App\Controllers\Api\SearchApiController())->search();
         break;

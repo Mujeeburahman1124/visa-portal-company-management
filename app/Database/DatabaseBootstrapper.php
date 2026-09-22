@@ -37,6 +37,13 @@ class DatabaseBootstrapper
                 SeedData::seed($pdo);
             }
 
+            // Ensure created_by exists on users table
+            try {
+                $pdo->exec("ALTER TABLE users ADD COLUMN created_by INTEGER NULL;");
+            } catch (\Throwable $e) {
+                // Already exists
+            }
+
             // Ensure password_resets table exists for SQLite
             $pdo->exec("CREATE TABLE IF NOT EXISTS password_resets (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

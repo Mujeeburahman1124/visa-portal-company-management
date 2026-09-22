@@ -132,6 +132,71 @@ function session_start_safe(): void {
     }
 }
 
+function is_impersonating(): bool {
+    return !empty($_SESSION['original_admin_id']);
+}
+
+function original_admin_user(): ?array {
+    return $_SESSION['original_admin'] ?? null;
+}
+
+function can_switch_accounts(): bool {
+    if (is_impersonating()) {
+        return true;
+    }
+    $user = auth_user();
+    if (!$user) {
+        return false;
+    }
+    $roleSlug = $user['role_slug'] ?? '';
+    $roleId = (int)($user['role_id'] ?? 0);
+    return $roleSlug === 'super-admin' || $roleId === 1 || $roleSlug === 'admin' || $roleSlug === 'branch-manager';
+}
+
+function get_switchable_users(): array {
+    $user = auth_user();
+    if (!$user || !can_switch_accounts()) {
+        return [];
+    }
+    try {
+        $pdo = App\Config\Database::getConnection();
+        $isSuperAdmin = (($user['role_slug'] ?? '') === 'super-admin' || ((int)($user['role_id'] ?? 0)) === 1);
+        if (is_impersonating()) {
+            $orig = original_admin_user();
+            if (($orig['role_slug'] ?? '') === 'super-admin' || ((int)($orig['role_id'] ?? 0)) === 1) {
+                $isSuperAdmin = true;
+            }
+        }
+
+        if ($isSuperAdmin) {
+            $stmt = $pdo->query("SELECT u.id, u.name, u.email, u.phone, u.avatar, u.designation, u.department, 
+                                        u.role_id, r.name as role_name, r.slug as role_slug, 
+                                        u.branch_id, b.name as branch_name, b.code as branch_code, u.is_active 
+                                 FROM users u 
+                                 JOIN roles r ON u.role_id = r.id 
+                                 LEFT JOIN branches b ON u.branch_id = b.id 
+                                 WHERE u.is_active = 1 
+                                 ORDER BY r.id ASC, u.name ASC");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
+
+        // Branch Manager / Branch Admin: isolate to their branch, exclude Super Admin to prevent privilege escalation
+        $branchId = (int)($user['branch_id'] ?? 1);
+        $stmt = $pdo->prepare("SELECT u.id, u.name, u.email, u.phone, u.avatar, u.designation, u.department, 
+                                      u.role_id, r.name as role_name, r.slug as role_slug, 
+                                      u.branch_id, b.name as branch_name, b.code as branch_code, u.is_active 
+                               FROM users u 
+                               JOIN roles r ON u.role_id = r.id 
+                               LEFT JOIN branches b ON u.branch_id = b.id 
+                               WHERE u.is_active = 1 AND u.branch_id = ? AND r.slug != 'super-admin' 
+                               ORDER BY r.id ASC, u.name ASC");
+        $stmt->execute([$branchId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    } catch (\Throwable $e) {
+        return [];
+    }
+}
+
 function set_flash(string $message, string $type = 'success'): void {
     $_SESSION['flash'] = [
         'type' => $type,

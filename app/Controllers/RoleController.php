@@ -60,9 +60,12 @@ class RoleController
         $newRoleId = (int)$pdo->lastInsertId();
 
         if (!empty($selectedPermIds)) {
-            $insStmt = $pdo->prepare("INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)");
+            $selectedPermIds = array_unique(array_filter(array_map('intval', $selectedPermIds)));
+            $insStmt = $pdo->prepare("INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)");
             foreach ($selectedPermIds as $pId) {
-                $insStmt->execute([$newRoleId, (int)$pId]);
+                if ($pId > 0) {
+                    $insStmt->execute([$newRoleId, $pId]);
+                }
             }
         }
 
@@ -142,9 +145,12 @@ class RoleController
         $pdo->prepare("DELETE FROM role_permissions WHERE role_id = ?")->execute([$id]);
         
         if (!empty($selectedPermIds)) {
-            $insStmt = $pdo->prepare("INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)");
+            $selectedPermIds = array_unique(array_filter(array_map('intval', $selectedPermIds)));
+            $insStmt = $pdo->prepare("INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)");
             foreach ($selectedPermIds as $pId) {
-                $insStmt->execute([$id, (int)$pId]);
+                if ($pId > 0) {
+                    $insStmt->execute([$id, $pId]);
+                }
             }
         }
 

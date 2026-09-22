@@ -15,6 +15,7 @@ class SupplierController
     public function index(): void
     {
         AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
         $pdo = Database::getConnection();
 
         $search = trim($_GET['search'] ?? '');

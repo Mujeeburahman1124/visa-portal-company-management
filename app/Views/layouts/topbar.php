@@ -20,6 +20,21 @@ $currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
 $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
 ?>
 <div class="app-main-content" id="appMainContent">
+<?php if (is_impersonating()): 
+    $origAdmin = original_admin_user();
+?>
+  <div class="impersonation-banner bg-warning text-dark px-3 py-2 d-flex flex-wrap align-items-center justify-content-between shadow-sm border-bottom border-warning-subtle" style="font-size: 0.84rem; z-index: 1040;">
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-dark text-warning p-1 px-2"><i class="fa-solid fa-user-secret me-1"></i> Impersonating</span>
+      <span>Operating as: <strong><?= e($currentUser['name'] ?? 'Staff') ?></strong> (Role: <span class="fw-bold"><?= e($currentUser['role_name'] ?? 'Staff') ?></span>, Branch: <?= e($currentUser['branch_name'] ?? 'Main') ?>) &mdash; Real Admin: <em><?= e($origAdmin['name'] ?? 'Super Admin') ?></em></span>
+    </div>
+    <div class="d-flex align-items-center gap-2 mt-1 mt-md-0">
+      <a href="/auth/switch-back" class="btn btn-dark btn-sm py-1 px-3 fw-bold shadow-sm">
+        <i class="fa-solid fa-rotate-left me-1"></i> Return to Super Admin
+      </a>
+    </div>
+  </div>
+<?php endif; ?>
 <header class="app-topbar" id="appTopbar">
   <div class="d-flex align-items-center gap-2 gap-md-3">
     <!-- Desktop Sidebar Collapse Toggle -->
@@ -186,9 +201,34 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
         <?php if (user_has_role(['super-admin', 'admin', 'branch-manager', 'visa-manager'])): ?>
           <li><a class="dropdown-item py-2" href="/notifications/admin"><i class="fa-solid fa-tower-broadcast me-2 text-primary"></i> Notification Center</a></li>
         <?php endif; ?>
-        <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#changePasswordModal"><i class="fa-solid fa-key me-2 text-muted"></i> Change Password</button></li>
         <?php if (user_has_role(['super-admin', 'admin', 'branch-manager'])): ?>
           <li><a class="dropdown-item py-2" href="/settings"><i class="fa-solid fa-sliders me-2 text-muted"></i> System Settings</a></li>
+        <?php endif; ?>
+        <?php if (can_switch_accounts()): 
+            $topbarSwitchUsers = get_switchable_users();
+        ?>
+          <li><hr class="dropdown-divider my-1"></li>
+          <li class="dropdown-header small text-uppercase text-muted" style="font-size: 0.7rem;"><i class="fa-solid fa-users-viewfinder text-primary me-1"></i> Switch Account</li>
+          <?php if (is_impersonating()): ?>
+            <li>
+              <a class="dropdown-item py-1.5 text-warning fw-bold bg-warning-subtle text-dark" href="/auth/switch-back">
+                <i class="fa-solid fa-rotate-left me-2 text-warning"></i> Return to Super Admin
+              </a>
+            </li>
+          <?php endif; ?>
+          <?php foreach ($topbarSwitchUsers as $tsu): ?>
+            <?php if ((int)$tsu['id'] !== (int)($currentUser['id'] ?? 0)): ?>
+              <li>
+                <a class="dropdown-item py-1.5 d-flex align-items-center justify-content-between" href="/auth/switch?user_id=<?= $tsu['id'] ?>">
+                  <span class="text-truncate" style="max-width: 145px;">
+                    <i class="fa-solid <?= $tsu['role_slug'] === 'super-admin' ? 'fa-crown text-warning' : ($tsu['role_slug'] === 'admin' ? 'fa-user-shield text-danger' : 'fa-user text-primary') ?> me-1.5"></i>
+                    <?= e($tsu['name']) ?>
+                  </span>
+                  <span class="badge bg-light text-dark border ms-1" style="font-size: 0.65rem;"><?= e($tsu['role_name']) ?></span>
+                </a>
+              </li>
+            <?php endif; ?>
+          <?php endforeach; ?>
         <?php endif; ?>
         <li><hr class="dropdown-divider my-1"></li>
         <li><a class="dropdown-item py-2 text-danger fw-semibold" href="/auth/logout"><i class="fa-solid fa-right-from-bracket me-2"></i> Sign Out</a></li>

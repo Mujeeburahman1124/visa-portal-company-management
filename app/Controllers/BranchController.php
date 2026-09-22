@@ -14,6 +14,7 @@ class BranchController
     public function index(): void
     {
         AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
         $pdo = Database::getConnection();
 
         $branches = $pdo->query("SELECT b.*,

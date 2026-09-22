@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Config\App;
 use App\Config\Database;
 use App\Middleware\AuthMiddleware;
+use App\Middleware\RoleMiddleware;
 use App\Services\AuditService;
 use App\Services\FinanceService;
 use PDO;
@@ -15,6 +16,7 @@ class PaymentController
     public function index(): void
     {
         AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts', 'visa-manager']);
         $pdo = Database::getConnection();
 
         $search = trim($_GET['search'] ?? '');
