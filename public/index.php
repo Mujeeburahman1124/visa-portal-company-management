@@ -1044,7 +1044,9 @@ switch ($uri) {
         break;
 
     // Agent Self-Service Portal (Phase 2)
+    // Agent Portal
     case '/agent':
+    case '/agent-portal':
         session_start_safe();
         if (!empty($_SESSION['agent_auth'])) {
             redirect('/agent/dashboard');
@@ -1054,6 +1056,7 @@ switch ($uri) {
         break;
 
     case '/agent/login':
+    case '/agent-portal/login':
         $agentCtrl = new App\Controllers\AgentPortalController();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $agentCtrl->login();
@@ -1063,22 +1066,27 @@ switch ($uri) {
         break;
 
     case '/agent/logout':
+    case '/agent-portal/logout':
         (new App\Controllers\AgentPortalController())->logout();
         break;
 
     case '/agent/dashboard':
+    case '/agent-portal/dashboard':
         (new App\Controllers\AgentPortalController())->dashboard();
         break;
 
     case '/agent/applications':
+    case '/agent-portal/applications':
         (new App\Controllers\AgentPortalController())->applications();
         break;
 
     case '/agent/applications/update':
+    case '/agent-portal/applications/update':
         (new App\Controllers\AgentPortalController())->updateApplication();
         break;
 
     case '/agent/create-application':
+    case '/agent-portal/create-application':
         $agentCtrl = new App\Controllers\AgentPortalController();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $agentCtrl->storeApplication();
@@ -1088,6 +1096,7 @@ switch ($uri) {
         break;
 
     case '/agent/profile':
+    case '/agent-portal/profile':
         $agentCtrl = new App\Controllers\AgentPortalController();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $agentCtrl->updateProfile();
@@ -1097,6 +1106,7 @@ switch ($uri) {
         break;
 
     case '/agent/activate':
+    case '/agent-portal/activate':
         $agentCtrl = new App\Controllers\AgentPortalController();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $agentCtrl->processActivate();
@@ -1105,8 +1115,9 @@ switch ($uri) {
         }
         break;
 
-    // Supplier Self-Service Portal (Phase 2)
+    // Supplier Self-Service Portal
     case '/supplier':
+    case '/supplier-portal':
         session_start_safe();
         if (!empty($_SESSION['supplier_auth'])) {
             redirect('/supplier/dashboard');
@@ -1116,6 +1127,7 @@ switch ($uri) {
         break;
 
     case '/supplier/login':
+    case '/supplier-portal/login':
         $supCtrl = new App\Controllers\SupplierPortalController();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $supCtrl->login();
@@ -1125,6 +1137,7 @@ switch ($uri) {
         break;
 
     case '/supplier/activate':
+    case '/supplier-portal/activate':
         $supCtrl = new App\Controllers\SupplierPortalController();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $supCtrl->processActivate();
@@ -1134,30 +1147,40 @@ switch ($uri) {
         break;
 
     case '/supplier/logout':
+    case '/supplier-portal/logout':
         (new App\Controllers\SupplierPortalController())->logout();
         break;
 
     case '/supplier/dashboard':
+    case '/supplier-portal/dashboard':
         (new App\Controllers\SupplierPortalController())->dashboard();
         break;
 
     case '/supplier/applications':
+    case '/supplier-portal/applications':
         (new App\Controllers\SupplierPortalController())->applications();
         break;
 
     case '/supplier/update-status':
+    case '/supplier-portal/update-status':
         (new App\Controllers\SupplierPortalController())->updateStatus();
         break;
 
     case '/supplier/payments':
+    case '/supplier-portal/payments':
         (new App\Controllers\SupplierPortalController())->payments();
         break;
 
     case '/supplier/profile':
+    case '/supplier-portal/profile':
         $supCtrl = new App\Controllers\SupplierPortalController();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $supCtrl->updateProfile();
         } else {
+            $supCtrl->profile();
+        }
+        break;
+
             $supCtrl->profile();
         }
         break;

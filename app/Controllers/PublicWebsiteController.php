@@ -149,11 +149,22 @@ class PublicWebsiteController
             redirect('/visa-services', 'Visa service package not found or currently unavailable.', 'danger');
         }
 
-        // Mandatory Document Requirements for this country/category
-        $docTypes = $pdo->query("SELECT name, description, category, is_mandatory 
-                                 FROM document_types 
-                                 WHERE is_active = 1 
-                                 ORDER BY is_mandatory DESC, category ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        // Mandatory Document Requirements for this visa service
+        $docReqStmt = $pdo->prepare("SELECT dt.name, dt.description, dt.category, vr.is_mandatory 
+                                     FROM visa_requirements vr 
+                                     JOIN document_types dt ON vr.document_type_id = dt.id 
+                                     WHERE vr.visa_service_id = ? AND vr.is_active = 1 AND dt.is_active = 1 
+                                     ORDER BY vr.is_mandatory DESC, dt.category ASC");
+        $docReqStmt->execute([$service['id']]);
+        $docTypes = $docReqStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        if (empty($docTypes)) {
+            $docTypes = $pdo->query("SELECT name, description, category, requires_expiry AS is_mandatory 
+                                     FROM document_types 
+                                     WHERE is_active = 1 
+                                     ORDER BY category ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
+
 
         require_once dirname(__DIR__) . '/Views/public/visa_service_detail.php';
     }
