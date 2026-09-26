@@ -11,17 +11,34 @@ class DatabaseBootstrapper
 {
     private static bool $initialized = false;
 
-    public static function init(): void
+    public static function init(bool $force = false): void
     {
-        if (self::$initialized) {
+        if (self::$initialized && !$force) {
             return;
         }
         self::$initialized = true;
 
         $pdo = Database::getConnection();
-        
-        // Check if schema is initialized
         $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+
+        // Fast path for HTTP requests: if core tables exist & DB_AUTO_MIGRATE is false, skip repetitive DDL checks
+        $autoMigrate = (bool)\App\Config\Env::get('DB_AUTO_MIGRATE', false);
+        if (!$force && !$autoMigrate && php_sapi_name() !== 'cli') {
+            try {
+                if ($driver === 'sqlite') {
+                    $hasUsers = (bool)$pdo->query("SELECT 1 FROM sqlite_master WHERE type='table' AND name='users'")->fetchColumn();
+                    $hasTokens = (bool)$pdo->query("SELECT 1 FROM sqlite_master WHERE type='table' AND name='portal_activation_tokens'")->fetchColumn();
+                } else {
+                    $hasUsers = (bool)$pdo->query("SHOW TABLES LIKE 'users'")->fetchColumn();
+                    $hasTokens = (bool)$pdo->query("SHOW TABLES LIKE 'portal_activation_tokens'")->fetchColumn();
+                }
+                if ($hasUsers && $hasTokens) {
+                    return;
+                }
+            } catch (\Throwable $e) {
+                // proceed with full bootstrap
+            }
+        }
         if ($driver === 'sqlite') {
             $stmt = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='users'");
             $exists = $stmt->fetch();
@@ -431,6 +448,28 @@ class DatabaseBootstrapper
                 used_at DATETIME NULL
             );");
 
+            // Public Recruitment Jobs Table for SQLite
+            $pdo->exec("CREATE TABLE IF NOT EXISTS jobs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_title TEXT NOT NULL,
+                slug TEXT NOT NULL UNIQUE,
+                category TEXT DEFAULT 'General',
+                location TEXT NOT NULL,
+                country_id INTEGER NULL,
+                salary_min REAL DEFAULT 0,
+                salary_max REAL DEFAULT 0,
+                currency TEXT DEFAULT 'AED',
+                duty_hours TEXT DEFAULT '8 Hours/Day',
+                vacancies INTEGER DEFAULT 1,
+                experience_required TEXT DEFAULT '1-2 Years',
+                benefits TEXT NULL,
+                description TEXT NOT NULL,
+                requirements TEXT NULL,
+                status TEXT DEFAULT 'PUBLISHED',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );");
+
             // Theme system_settings defaults (idempotent UPSERT via INSERT OR IGNORE)
             $themeDefaults = [
                 ['theme_mode',         'light',          'Theme', 'Color mode: light / dark / system'],
@@ -718,6 +757,30 @@ class DatabaseBootstrapper
                 INDEX idx_wtx_wallet (wallet_id),
                 FOREIGN KEY (wallet_id) REFERENCES customer_wallets(id) ON DELETE CASCADE,
                 FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+
+            // Public Recruitment Jobs Table for MySQL
+            $pdo->exec("CREATE TABLE IF NOT EXISTS jobs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                job_title VARCHAR(200) NOT NULL,
+                slug VARCHAR(200) NOT NULL UNIQUE,
+                category VARCHAR(100) DEFAULT 'General',
+                location VARCHAR(150) NOT NULL,
+                country_id INT NULL,
+                salary_min DECIMAL(12,2) DEFAULT 0.00,
+                salary_max DECIMAL(12,2) DEFAULT 0.00,
+                currency VARCHAR(10) DEFAULT 'AED',
+                duty_hours VARCHAR(100) DEFAULT '8 Hours/Day',
+                vacancies INT DEFAULT 1,
+                experience_required VARCHAR(100) DEFAULT '1-2 Years',
+                benefits TEXT NULL,
+                description TEXT NOT NULL,
+                requirements TEXT NULL,
+                status VARCHAR(30) DEFAULT 'PUBLISHED',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_jobs_status (status),
+                INDEX idx_jobs_slug (slug)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
         }
 

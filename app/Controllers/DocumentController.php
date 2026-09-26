@@ -374,11 +374,72 @@ class DocumentController
     }
 
     /**
+     * Verify ownership / role access for a document
+     */
+    public static function authorizeDocumentAccess(array $doc): bool
+    {
+        if (is_authenticated()) {
+            $user = auth_user();
+            if (($user['role_slug'] ?? '') === 'super-admin' || ($user['role_name'] ?? '') === 'Super Admin' || (int)($user['role_id'] ?? 0) === 1) {
+                return true;
+            }
+            $userBranch = (int)($user['branch_id'] ?? 0);
+            if ($userBranch > 0 && !empty($doc['customer_id'])) {
+                try {
+                    $pdo = Database::getConnection();
+                    $stmt = $pdo->prepare("SELECT branch_id FROM customers WHERE id = ?");
+                    $stmt->execute([(int)$doc['customer_id']]);
+                    $custBranch = (int)$stmt->fetchColumn();
+                    if ($custBranch > 0 && $custBranch !== $userBranch && ($user['role_slug'] ?? '') !== 'admin') {
+                        return false;
+                    }
+                } catch (\Throwable $e) {}
+            }
+            return true;
+        }
+
+        if (is_customer_authenticated()) {
+            $customer = auth_customer();
+            return (int)($doc['customer_id'] ?? 0) === (int)($customer['id'] ?? 0);
+        }
+
+        if (is_agent_authenticated()) {
+            $agent = auth_agent();
+            if (!empty($doc['application_id'])) {
+                try {
+                    $pdo = Database::getConnection();
+                    $stmt = $pdo->prepare("SELECT agent_id FROM applications WHERE id = ?");
+                    $stmt->execute([(int)$doc['application_id']]);
+                    $appAgent = (int)$stmt->fetchColumn();
+                    return $appAgent === (int)($agent['id'] ?? 0);
+                } catch (\Throwable $e) {}
+            }
+            return false;
+        }
+
+        if (is_supplier_authenticated()) {
+            $supplier = auth_supplier();
+            if (!empty($doc['application_id'])) {
+                try {
+                    $pdo = Database::getConnection();
+                    $stmt = $pdo->prepare("SELECT supplier_id FROM applications WHERE id = ?");
+                    $stmt->execute([(int)$doc['application_id']]);
+                    $appSupplier = (int)$stmt->fetchColumn();
+                    return $appSupplier === (int)($supplier['id'] ?? 0);
+                } catch (\Throwable $e) {}
+            }
+            return false;
+        }
+
+        return false;
+    }
+
+    /**
      * Preview / Stream Document Securely Inline
      */
     public function preview(): void
     {
-        if (!is_authenticated() && !is_customer_authenticated()) {
+        if (!is_authenticated() && !is_customer_authenticated() && !is_agent_authenticated() && !is_supplier_authenticated()) {
             http_response_code(403);
             die('Access Denied. Please log in.');
         }
@@ -395,10 +456,20 @@ class DocumentController
             die('Document file not found.');
         }
 
+        if (!self::authorizeDocumentAccess($doc)) {
+            http_response_code(403);
+            die('Access Denied. You are not authorized to view this document.');
+        }
+
         $filePath = App::uploadPath($doc['file_path']);
         if (!file_exists($filePath)) {
-            http_response_code(404);
-            die('File not found in storage repository.');
+            $legacyPath = App::publicPath('uploads/documents/' . basename($doc['file_path']));
+            if (file_exists($legacyPath)) {
+                $filePath = $legacyPath;
+            } else {
+                http_response_code(404);
+                die('File not found in storage repository.');
+            }
         }
 
         $mime = 'application/octet-stream';
@@ -422,7 +493,7 @@ class DocumentController
      */
     public function download(): void
     {
-        if (!is_authenticated() && !is_customer_authenticated()) {
+        if (!is_authenticated() && !is_customer_authenticated() && !is_agent_authenticated() && !is_supplier_authenticated()) {
             http_response_code(403);
             die('Access Denied. Please log in.');
         }
@@ -439,10 +510,20 @@ class DocumentController
             die('Document not found.');
         }
 
+        if (!self::authorizeDocumentAccess($doc)) {
+            http_response_code(403);
+            die('Access Denied. You are not authorized to download this document.');
+        }
+
         $filePath = App::uploadPath($doc['file_path']);
         if (!file_exists($filePath)) {
-            http_response_code(404);
-            die('File not found on server.');
+            $legacyPath = App::publicPath('uploads/documents/' . basename($doc['file_path']));
+            if (file_exists($legacyPath)) {
+                $filePath = $legacyPath;
+            } else {
+                http_response_code(404);
+                die('File not found on server.');
+            }
         }
 
         $currentUser = auth_user();

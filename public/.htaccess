@@ -1,0 +1,59 @@
+# Hostinger Apache Configuration for VISA TRACK SaaS Application (public/.htaccess)
+
+# Options & Directives
+Options -Indexes -MultiViews
+
+# Disable Directory Browsing
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>
+
+# URL Rewriting Engine
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Enforce HTTPS (Hostinger SSL)
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Block access to hidden files and dotfiles (.env, .git, etc.)
+    RewriteRule "(^|/)\." - [F]
+
+    # Serve static assets directly if physical file exists
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    # Serve physical directory directly if exists
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Route all application requests to index.php
+    RewriteRule ^ index.php [L,QSA]
+</IfModule>
+
+# Deny direct access to sensitive file types
+<FilesMatch "\.(env|json|config|sql|sqlite|db|log|md|sh|yml|yaml|bak|swp)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Production Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+</IfModule>
+
+# Performance: Gzip Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>

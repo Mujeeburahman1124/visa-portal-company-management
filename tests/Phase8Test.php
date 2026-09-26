@@ -162,7 +162,8 @@ class Phase8Test
     private function testSystemSettings(): void
     {
         echo "\n11. SYSTEM SETTINGS ENGINE TESTS\n";
-        $this->pdo->exec("INSERT IGNORE INTO system_settings (setting_key, setting_value) VALUES ('qa_test_key', 'passed')");
+        $ins = ($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql') ? 'INSERT IGNORE INTO' : 'INSERT OR IGNORE INTO';
+        $this->pdo->exec("{$ins} system_settings (setting_key, setting_value) VALUES ('qa_test_key', 'passed')");
         $val = $this->pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'qa_test_key'")->fetchColumn();
         $this->assert($val === 'passed', "System settings key-value store functional");
     }

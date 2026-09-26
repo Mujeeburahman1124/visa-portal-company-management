@@ -1,0 +1,28 @@
+# Hostinger Root Apache Configuration (Root .htaccess)
+# Protects non-public directories and redirects root traffic to public/
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Prevent direct HTTP access to sensitive non-public directories
+    RewriteRule ^(app|config|data|storage|tests|scripts|\.git) - [F,L]
+
+    # Block access to environment, configuration, and database dump files
+    RewriteRule \.(env|sqlite|sql|db|json|md|yml|yaml|log)$ - [F,L]
+
+    # Redirect requests to public/ folder if web root is pointing to project root
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Block access to hidden files (.env, .gitignore, etc.)
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>

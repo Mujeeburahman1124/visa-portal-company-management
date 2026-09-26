@@ -7,6 +7,15 @@
 scratch/
 tests/tmp/
 
+# Storage & Backup Files
+storage/documents/*
+!storage/documents/.gitkeep
+storage/backups/*
+!storage/backups/.gitkeep
+data/*.sqlite
+data/*.db
+*.sql
+
 # Uploaded Customer Documents & Files
 public/uploads/customers/*
 public/uploads/documents/*
@@ -24,3 +33,4 @@ public/uploads/avatars/*
 *.sublime-workspace
 .DS_Store
 Thumbs.db
+

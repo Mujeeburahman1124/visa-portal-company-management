@@ -144,11 +144,15 @@ class EmailService
         $timeout = 10;
         $remoteSocket = ($encryption === 'ssl' ? 'ssl://' : 'tcp://') . $host . ':' . $port;
         
+        $verifyPeer = (bool)Env::get('SMTP_VERIFY_PEER', true);
+        $verifyPeerName = (bool)Env::get('SMTP_VERIFY_PEER_NAME', true);
+        $allowSelfSigned = (bool)Env::get('SMTP_ALLOW_SELF_SIGNED', false);
+
         $context = stream_context_create([
             'ssl' => [
-                'verify_peer' => false,
-                'verify_peer_name' => false,
-                'allow_self_signed' => true,
+                'verify_peer' => $verifyPeer,
+                'verify_peer_name' => $verifyPeerName,
+                'allow_self_signed' => $allowSelfSigned,
             ]
         ]);
 

@@ -44,9 +44,12 @@ class Database
                             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                             PDO::ATTR_EMULATE_PREPARES => false,
                         ]);
-                    } catch (PDOException $ex) {
-                        // If MySQL is offline or refused, seamlessly fallback to SQLite so the app never crashes
-                        error_log("MySQL connection failed ({$ex->getMessage()}). Falling back to SQLite database.");
+                } catch (PDOException $ex) {
+                    $appEnv = strtolower((string)Env::get('APP_ENV', Env::get('NOTIFICATION_ENV', 'production')));
+                    $allowFallback = (bool)Env::get('DB_ALLOW_SQLITE_FALLBACK', false);
+
+                    if ($allowFallback) {
+                        error_log("MySQL connection failed ({$ex->getMessage()}). Falling back to SQLite database (DB_ALLOW_SQLITE_FALLBACK enabled).");
                         $dbPath = App::dbPath();
                         $dsn = "sqlite:{$dbPath}";
                         self::$pdo = new PDO($dsn, null, null, [
@@ -57,7 +60,16 @@ class Database
                         self::$pdo->exec('PRAGMA foreign_keys = ON;');
                         self::$pdo->exec('PRAGMA journal_mode = WAL;');
                         self::$pdo->exec('PRAGMA busy_timeout = 60000;');
+                    } else {
+                        error_log("Production MySQL Connection Failure: " . $ex->getMessage());
+                        if (php_sapi_name() !== 'cli' && !headers_sent()) {
+                            http_response_code(500);
+                            echo "<!DOCTYPE html><html><head><title>System Maintenance</title><style>body{font-family:sans-serif;text-align:center;padding:50px;background:#f8fafc;color:#1e293b;}h1{color:#e11d48;}</style></head><body><h1>Database Connection Unavailable</h1><p>The system is currently unable to reach the database server. Please try again shortly or contact support.</p></body></html>";
+                            exit;
+                        }
+                        throw new PDOException("Production MySQL connection failed: " . $ex->getMessage());
                     }
+                }
                 }
             } else {
                 $customPath = Env::get('DB_PATH');

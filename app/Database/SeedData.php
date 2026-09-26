@@ -621,5 +621,35 @@ class SeedData
         foreach ($settings as $st) {
             $stmt->execute($st);
         }
+
+        // 25. Sample Recruitment Jobs
+        $jobs = [
+            ['Senior Hospitality Manager', 'senior-hospitality-manager-dubai', 'Hospitality', 'Dubai, UAE', 1, 8000.00, 12000.00, 'AED', '8 Hours/Day', 5, '3+ Years', 'Free Accommodation, Medical Insurance, Annual Flight Ticket, Duty Meals', 'Leading 5-Star Hotel Group in Dubai is seeking an experienced Senior Hospitality Manager to oversee guest relations and front office operations.', 'Must have minimum 3 years experience in luxury hotel management. Fluent English required.'],
+            ['Civil Construction Supervisor', 'civil-construction-supervisor-riyadh', 'Engineering', 'Riyadh, Saudi Arabia', 5, 9000.00, 14000.00, 'SAR', '8 Hours/Day', 10, '4+ Years', 'Furnished Housing, Transport Allowance, Comprehensive Medical, Paid Leave', 'Top tier construction firm in Riyadh looking for qualified Civil Supervisors for commercial tower projects.', 'Bachelor degree in Civil Engineering or Diploma with 4+ years site supervision experience.'],
+            ['Executive Chef & Culinary Lead', 'executive-chef-dubai', 'Hospitality', 'Dubai, UAE', 1, 7500.00, 11000.00, 'AED', '9 Hours/Day', 3, '5+ Years', 'Free Accommodation, Food Allowance, Flight Ticket, Visa Sponsorship', 'Premier fine dining restaurant chain hiring Executive Chefs specialized in International and Middle Eastern cuisine.', 'Strong background in kitchen management, HACCP standards, and menu engineering.'],
+            ['Customer Success Executive', 'customer-success-executive-london', 'Customer Service', 'London, UK', 2, 2200.00, 3000.00, 'GBP', '8 Hours/Day', 4, '2+ Years', 'UK Visa Sponsorship, Health Coverage, Paid Annual Leave, Bonus Scheme', 'International Travel and Visa Services firm recruiting Customer Success Executives for our London Holborn office.', 'Excellent English communication skills, customer service passion, and proficiency in CRM tools.'],
+            ['Heavy Vehicle Driver', 'heavy-vehicle-driver-abudhabi', 'Logistics', 'Abu Dhabi, UAE', 1, 3500.00, 5000.00, 'AED', '8 Hours/Day', 12, '2+ Years', 'Free Accommodation, Overtime Pay, Insurance, Driving License Transfer', 'Government contractor recruiting experienced Heavy Vehicle Drivers holding valid UAE License #6/#8.', 'Clean driving record and minimum 2 years GCC heavy driving experience.']
+        ];
+
+        $stmtJob = $pdo->prepare("{$ins} jobs (
+            job_title, slug, category, location, country_id, salary_min, salary_max, currency, 
+            duty_hours, vacancies, experience_required, benefits, description, requirements, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PUBLISHED')");
+
+        foreach ($jobs as $j) {
+            $stmtJob->execute($j);
+        }
+
+        // 26. Sample Payments
+        $samplePayments = [
+            ['RCP-2026-0001', 'INV-2026-0001', 1, 1, 290.00, 'USD', date('Y-m-d'), 'Bank Transfer', 'TXN-99882211', 'Customer Payment', 'Completed', 1, 'Initial deposit for Canada Visitor Visa']
+        ];
+        $stmtPay = $pdo->prepare("{$ins} payments (
+            payment_number, invoice_number, application_id, customer_id, amount, currency, 
+            payment_date, payment_method, transaction_reference, payment_type, status, received_by, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        foreach ($samplePayments as $sp) {
+            try { $stmtPay->execute($sp); } catch (\Throwable $e) {}
+        }
     }
 }

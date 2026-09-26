@@ -6,7 +6,12 @@ $customerId = (int)($customer['id'] ?? 0);
 $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE customer_id = {$customerId} AND is_read = 0")->fetchColumn();
 ?>
 
+<link rel="stylesheet" href="/assets/css/flatpickr.min.css">
+<script src="/assets/js/flatpickr.min.js"></script>
+<script src="/assets/js/app-datepicker.js?v=1.0.0"></script>
+
 <!-- Customer Portal Header Navbar (MS Luxury Obsidian, Emerald & Sapphire Gradient) -->
+
 <nav class="navbar navbar-expand-xl navbar-dark sticky-top shadow-sm py-2" style="background: linear-gradient(135deg, #070a12 0%, #064e3b 35%, #0369a1 70%, #1d4ed8 100%); border-bottom: 1px solid rgba(255,255,255,0.15); z-index: 1040;">
   <div class="container-fluid container-xl">
     <!-- Brand Logo -->

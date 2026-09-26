@@ -52,9 +52,9 @@ $pdo->prepare("INSERT INTO applications (
 ) VALUES (
     ?, ?, ?, 1, 1,
     'Documents Collected', 'In Process', 'Normal', 100, 'Initial check',
-    'Omani', 'Oman', 'OM-778899', CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 15 DAY),
+    'Omani', 'Oman', 'OM-778899', CURRENT_DATE, ?,
     400.00, 200.00, 20.00, 420.00, 0.00, 420.00, 1
-)")->execute([$appNum, $customerId, $serviceId]);
+)")->execute([$appNum, $customerId, $serviceId, date('Y-m-d', strtotime('+15 days'))]);
 $appId = (int)$pdo->lastInsertId();
 
 assert_test("1. Test Application & Customer Initialized", $appId > 0 && $customerId > 0);

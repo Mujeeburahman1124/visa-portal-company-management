@@ -37,13 +37,58 @@ if (empty($uri)) {
 switch ($uri) {
     case '':
     case '/':
-        if (is_authenticated()) {
-            redirect('/dashboard');
-        } elseif (is_customer_authenticated()) {
-            redirect('/portal/dashboard');
-        } else {
-            redirect('/auth/login');
-        }
+        (new App\Controllers\PublicWebsiteController())->home();
+        break;
+
+    case '/about':
+        (new App\Controllers\PublicWebsiteController())->about();
+        break;
+
+    case '/visa-services':
+        (new App\Controllers\PublicWebsiteController())->visaServices();
+        break;
+
+    case '/visa-service':
+    case '/visa-services/detail':
+        (new App\Controllers\PublicWebsiteController())->visaServiceDetail();
+        break;
+
+    case '/jobs':
+        (new App\Controllers\PublicWebsiteController())->jobs();
+        break;
+
+    case '/job':
+    case '/jobs/detail':
+        (new App\Controllers\PublicWebsiteController())->jobDetail();
+        break;
+
+    case '/jobs/apply':
+        (new App\Controllers\PublicWebsiteController())->applyJob();
+        break;
+
+    case '/visa-enquiry':
+        (new App\Controllers\PublicWebsiteController())->visaEnquiry();
+        break;
+
+    case '/track':
+    case '/public-track':
+        (new App\Controllers\PublicWebsiteController())->tracking();
+        break;
+
+    case '/contact':
+        (new App\Controllers\PublicWebsiteController())->contact();
+        break;
+
+    case '/faq':
+        (new App\Controllers\PublicWebsiteController())->faq();
+        break;
+
+    case '/sitemap.xml':
+        (new App\Controllers\PublicWebsiteController())->sitemap();
+        break;
+
+    case '/robots.txt':
+        (new App\Controllers\PublicWebsiteController())->robotsTxt();
         break;
 
     // Authentication Routes

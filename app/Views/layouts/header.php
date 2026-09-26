@@ -22,6 +22,9 @@
   
   <!-- Application CSS -->
   <link rel="stylesheet" href="/assets/css/main.css?v=7.0.0">
+  <!-- Flatpickr Datepicker CSS -->
+  <link rel="stylesheet" href="/assets/css/flatpickr.min.css">
+
 
   <?php
     // Dynamic Website Themes from system_settings

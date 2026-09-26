@@ -62,7 +62,7 @@ unset($_SESSION['demo_reset_link']);
           <label for="recoveryEmail" class="form-label small fw-semibold text-secondary">Work Email Address</label>
           <div class="input-group">
             <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-envelope"></i></span>
-            <input type="email" name="email" id="recoveryEmail" class="form-control border-start-0 ps-0" placeholder="user@visatrack.com" required value="admin@visatrack.com">
+            <input type="email" name="email" id="recoveryEmail" class="form-control border-start-0 ps-0" placeholder="user@company.com" required value="">
           </div>
         </div>
 

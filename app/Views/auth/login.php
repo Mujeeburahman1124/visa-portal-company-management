@@ -264,7 +264,7 @@ $flash = get_flash();
         <label for="loginEmail" class="form-label small fw-semibold text-secondary mb-1" style="font-size: 0.85rem;">Work Email</label>
         <div class="input-group">
           <span class="input-group-text bg-light border-end-0 text-muted" style="font-size: 0.85rem;"><i class="fa-solid fa-envelope"></i></span>
-          <input type="email" name="email" id="loginEmail" class="form-control border-start-0 ps-0" placeholder="admin@visatrack.com" required value="admin@visatrack.com" autocomplete="username" style="font-size: 0.9rem; height: 40px;">
+          <input type="email" name="email" id="loginEmail" class="form-control border-start-0 ps-0" placeholder="name@company.com" required value="" autocomplete="username" style="font-size: 0.9rem; height: 40px;">
         </div>
       </div>
 
@@ -275,7 +275,7 @@ $flash = get_flash();
         </div>
         <div class="input-group">
           <span class="input-group-text bg-light border-end-0 text-muted" style="font-size: 0.85rem;"><i class="fa-solid fa-lock"></i></span>
-          <input type="password" name="password" id="loginPassword" class="form-control border-start-0 border-end-0 px-0" placeholder="••••••••" required value="admin123" autocomplete="current-password" style="font-size: 0.9rem; height: 40px;">
+          <input type="password" name="password" id="loginPassword" class="form-control border-start-0 border-end-0 px-0" placeholder="••••••••" required value="" autocomplete="current-password" style="font-size: 0.9rem; height: 40px;">
           <button type="button" class="input-group-text bg-light border-start-0 text-muted" id="togglePasswordBtn" aria-label="Toggle password visibility">
             <i class="fa-solid fa-eye" id="togglePasswordIcon" style="font-size: 0.82rem;"></i>
           </button>
@@ -296,22 +296,6 @@ $flash = get_flash();
         <i class="fa-solid fa-right-to-bracket me-1.5" id="submitIcon"></i> Sign In to Operations
       </button>
     </form>
-
-    <!-- Quick Role Testing (Compact) -->
-    <div class="mt-3 pt-2.5 border-top">
-      <div class="text-center mb-1.5">
-        <span class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.04em;">
-          <i class="fa-solid fa-bolt text-warning me-1"></i> Fast Role Fill
-        </span>
-      </div>
-      <div class="d-flex flex-wrap justify-content-center gap-1">
-        <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2 text-dark" style="font-size: 0.72rem;" onclick="fillCreds('admin@visatrack.com', 'admin123')">Admin</button>
-        <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2 text-dark" style="font-size: 0.72rem;" onclick="fillCreds('manager@visatrack.com', 'password123')">Manager</button>
-        <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2 text-dark" style="font-size: 0.72rem;" onclick="fillCreds('officer@visatrack.com', 'password123')">Officer</button>
-        <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2 text-dark" style="font-size: 0.72rem;" onclick="fillCreds('staff@visatrack.com', 'password123')">Staff</button>
-        <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2 text-dark" style="font-size: 0.72rem;" onclick="fillCreds('accounts@visatrack.com', 'password123')">Accounts</button>
-      </div>
-    </div>
 
     <!-- Portal Link -->
     <div class="text-center mt-2.5 small text-muted" style="font-size: 0.78rem;">

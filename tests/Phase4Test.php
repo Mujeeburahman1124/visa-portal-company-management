@@ -67,11 +67,11 @@ $insApp = $pdo->prepare("INSERT INTO applications (
 ) VALUES (
     ?, ?, ?, 1, 1,
     'Application Registered', 'Registered', 'High', 100, 'Initial registration',
-    'Emirati', 'United Arab Emirates', ?, CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 15 DAY),
+    'Emirati', 'United Arab Emirates', ?, CURRENT_DATE, ?,
     500.00, 250.00, 25.00, 525.00, 0.00, 525.00,
-    'Collect initial documents', DATE_ADD(CURRENT_DATE, INTERVAL 2 DAY), 1
+    'Collect initial documents', ?, 1
 )");
-$insApp->execute([$appNum, $customerId, $serviceId, $testPassport]);
+$insApp->execute([$appNum, $customerId, $serviceId, $testPassport, date('Y-m-d', strtotime('+15 days')), date('Y-m-d', strtotime('+2 days'))]);
 $appId = (int)$pdo->lastInsertId();
 
 assert_test("4. Visa Application Created", $appId > 0, "App Number: {$appNum}");

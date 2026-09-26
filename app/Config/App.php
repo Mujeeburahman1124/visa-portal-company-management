@@ -61,9 +61,9 @@ class App
 
     public static function uploadPath(string $path = ''): string
     {
-        $upload = self::publicPath('uploads/documents');
+        $upload = self::basePath('storage' . DIRECTORY_SEPARATOR . 'documents');
         if (!is_dir($upload)) {
-            mkdir($upload, 0777, true);
+            mkdir($upload, 0755, true);
         }
         return $path ? $upload . DIRECTORY_SEPARATOR . ltrim($path, '/\\') : $upload;
     }

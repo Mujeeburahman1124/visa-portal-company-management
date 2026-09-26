@@ -408,7 +408,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             </div>
             <div class="col-6">
               <label class="form-label small fw-semibold">Temporary Password <span class="text-danger">*</span></label>
-              <input type="password" name="password" class="form-control" value="password123" required>
+              <input type="password" name="password" class="form-control" placeholder="••••••••" required>
             </div>
           </div>
 
