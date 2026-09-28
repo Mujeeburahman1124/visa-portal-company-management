@@ -10,7 +10,8 @@
 }
 
 .btn-primary:hover, .btn-primary:focus, .btn-primary:active {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+  background: var(--mh-gradient-blue);
+  filter: brightness(1.12);
   color: #ffffff;
   box-shadow: 0 6px 20px var(--mh-blue-glow);
   transform: translateY(-1px);

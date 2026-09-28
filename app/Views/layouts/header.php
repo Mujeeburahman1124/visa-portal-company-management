@@ -37,7 +37,7 @@
     $thPrimary = '#0284c7';
     $thAccent = '#059669';
     $thRadius = '8px';
-    $thFont = "'Times New Roman', Times, serif";
+    $thFont = "'Plus Jakarta Sans', sans-serif";
     $thMode = 'light';
     try {
         $thPdo = \App\Config\Database::getConnection();
@@ -50,43 +50,52 @@
     } catch (\Throwable $e) {}
   ?>
   <style id="dynamicAppThemeVars">
-    :root {
+    :root:not([data-theme]),
+    :root[data-theme=""] {
       --primary-color: <?= e($thPrimary) ?>;
       --bs-primary: <?= e($thPrimary) ?>;
       --primary-hover: <?= e($thPrimary) ?>dd;
       --accent-color: <?= e($thAccent) ?>;
       --border-radius-base: <?= e($thRadius) ?>;
+    }
+    :root {
+      --border-radius-base: <?= e($thRadius) ?>;
       --font-heading: <?= $thFont ?>;
     }
     .brand-font, h1.brand-font, h2.brand-font, h3.brand-font, h4.brand-font, h5.brand-font, h6.brand-font {
-      font-family: var(--font-heading) !important;
+      font-family: var(--font-heading);
     }
-    .btn-primary {
+    :root:not([data-theme]) .btn-primary,
+    :root[data-theme=""] .btn-primary {
       background-color: var(--primary-color) !important;
       border-color: var(--primary-color) !important;
     }
-    .btn-primary:hover, .btn-primary:focus {
+    :root:not([data-theme]) .btn-primary:hover,
+    :root:not([data-theme]) .btn-primary:focus,
+    :root[data-theme=""] .btn-primary:hover,
+    :root[data-theme=""] .btn-primary:focus {
       background-color: var(--primary-hover) !important;
       border-color: var(--primary-hover) !important;
     }
-    .btn-outline-primary {
+    :root:not([data-theme]) .btn-outline-primary,
+    :root[data-theme=""] .btn-outline-primary {
       color: var(--primary-color) !important;
       border-color: var(--primary-color) !important;
     }
-    .btn-outline-primary:hover {
-      background-color: var(--primary-color) !important;
-      color: #ffffff !important;
-    }
-    .text-primary {
+    :root:not([data-theme]) .text-primary,
+    :root[data-theme=""] .text-primary {
       color: var(--primary-color) !important;
     }
-    .bg-primary {
+    :root:not([data-theme]) .bg-primary,
+    :root[data-theme=""] .bg-primary {
       background-color: var(--primary-color) !important;
     }
-    .border-primary {
+    :root:not([data-theme]) .border-primary,
+    :root[data-theme=""] .border-primary {
       border-color: var(--primary-color) !important;
     }
-    .nav-tabs .nav-link.active {
+    :root:not([data-theme]) .nav-tabs .nav-link.active,
+    :root[data-theme=""] .nav-tabs .nav-link.active {
       border-bottom-color: var(--primary-color) !important;
       color: var(--primary-color) !important;
     }

@@ -59,18 +59,30 @@
     const valid = THEMES.find(t => t.id === id);
     const theme = valid ? id : DEFAULT_THEME;
     document.documentElement.setAttribute('data-theme', theme);
+    if (document.body) {
+      document.body.setAttribute('data-theme', theme);
+    }
     saveTheme(theme);
     updateSelectorUI(theme);
+    window.dispatchEvent(new CustomEvent('vt-theme-changed', { detail: { theme: theme } }));
   }
 
   /* ── Apply immediately (pre-DOM) to prevent flash ── */
   const initialTheme = getSavedTheme();
   document.documentElement.setAttribute('data-theme', initialTheme);
+  document.addEventListener('DOMContentLoaded', function () {
+    if (document.body) {
+      document.body.setAttribute('data-theme', getSavedTheme());
+    }
+  });
 
   /* ── Sync across browser tabs ── */
   window.addEventListener('storage', function (e) {
     if (e.key === STORAGE_KEY && e.newValue) {
       document.documentElement.setAttribute('data-theme', e.newValue);
+      if (document.body) {
+        document.body.setAttribute('data-theme', e.newValue);
+      }
       updateSelectorUI(e.newValue);
     }
   });

@@ -5,11 +5,13 @@
    ========================================================================== */
 
 /* ─── THEME 1: OCEAN ROYAL (default) ──────────────────────────────────────── */
+/* ─── THEME 1: OCEAN ROYAL (default) ──────────────────────────────────────── */
 :root,
-[data-theme="ocean-royal"] {
+:root[data-theme="ocean-royal"],
+html[data-theme="ocean-royal"] {
   --color-primary:          #1e40af;
   --color-primary-light:    #3b82f6;
-  --color-primary-hover:    #1d35a0;
+  --color-primary-hover:    #1d4ed8;
   --color-secondary:        #0891b2;
   --color-secondary-hover:  #0e7490;
   --color-accent:           #7c3aed;
@@ -58,19 +60,40 @@
   --border-radius-full:     9999px;
   --transition:             0.2s ease;
   --transition-slow:        0.35s ease;
-  /* Admin Panel Tokens */
+
+  /* Admin & Dashboard Brand Tokens */
   --mh-blue:                #1e40af;
   --mh-blue-hover:          #1d4ed8;
-  --mh-gradient-blue:       linear-gradient(135deg,#1e40af 0%,#0891b2 55%,#7c3aed 100%);
+  --mh-blue-dark:           #1e3a8a;
+  --mh-blue-deep:           #172554;
+  --mh-blue-light:          #eff6ff;
+  --mh-blue-subtle:         #dbeafe;
+  --mh-blue-border:         #bfdbfe;
   --mh-blue-glow:           rgba(30,64,175,0.35);
+  --mh-gradient-blue:       linear-gradient(135deg,#1e40af 0%,#0891b2 55%,#7c3aed 100%);
+  --mh-gradient-hero:       linear-gradient(135deg,#0f172a 0%,#1e3a8a 40%,#0e4472 100%);
   --vt-primary:             #1e40af;
   --vt-primary-hover:       #1d4ed8;
+  --vt-primary-dark:        #1e3a8a;
+  --vt-primary-light:       #eff6ff;
+  --vt-primary-subtle:      #dbeafe;
+  --vt-primary-border:      #bfdbfe;
+  --vt-bg:                  #f0f6ff;
+  --vt-surface:             #ffffff;
+  --vt-surface-muted:       #f0f6ff;
+  --vt-border:              #dbeafe;
   --bs-primary:             #1e40af;
+  --bs-primary-rgb:         30, 64, 175;
   --primary-color:          #1e40af;
+  --primary-hover:          #1d4ed8;
+  --accent-color:           #7c3aed;
+  --bs-btn-bg:              #1e40af;
+  --bs-btn-border-color:    #1e40af;
 }
 
 /* ─── THEME 2: SUNSET FUSION ───────────────────────────────────────────────── */
-[data-theme="sunset-fusion"] {
+:root[data-theme="sunset-fusion"],
+html[data-theme="sunset-fusion"] {
   --color-primary:          #be185d;
   --color-primary-light:    #ec4899;
   --color-primary-hover:    #9d174d;
@@ -115,19 +138,40 @@
   --footer-heading:         #ffffff;
   --footer-link-hover:      #f9a8d4;
   --hero-highlight:         #f9a8d4;
-  /* Admin Panel Tokens */
+
+  /* Admin & Dashboard Brand Tokens */
   --mh-blue:                #be185d;
   --mh-blue-hover:          #9d174d;
-  --mh-gradient-blue:       linear-gradient(135deg,#be185d 0%,#e11d48 50%,#ea580c 100%);
+  --mh-blue-dark:           #831843;
+  --mh-blue-deep:           #500724;
+  --mh-blue-light:          #fdf2f8;
+  --mh-blue-subtle:         #fce7f3;
+  --mh-blue-border:         #fbcfe8;
   --mh-blue-glow:           rgba(190,24,93,0.35);
+  --mh-gradient-blue:       linear-gradient(135deg,#be185d 0%,#e11d48 50%,#ea580c 100%);
+  --mh-gradient-hero:       linear-gradient(135deg,#1e1b2e 0%,#4c1130 40%,#7c2d12 100%);
   --vt-primary:             #be185d;
   --vt-primary-hover:       #9d174d;
+  --vt-primary-dark:        #831843;
+  --vt-primary-light:       #fdf2f8;
+  --vt-primary-subtle:      #fce7f3;
+  --vt-primary-border:      #fbcfe8;
+  --vt-bg:                  #fff5f7;
+  --vt-surface:             #ffffff;
+  --vt-surface-muted:       #fff0f4;
+  --vt-border:              #fce7f3;
   --bs-primary:             #be185d;
+  --bs-primary-rgb:         190, 24, 93;
   --primary-color:          #be185d;
+  --primary-hover:          #9d174d;
+  --accent-color:           #ea580c;
+  --bs-btn-bg:              #be185d;
+  --bs-btn-border-color:    #be185d;
 }
 
 /* ─── THEME 3: EMERALD ROYAL ───────────────────────────────────────────────── */
-[data-theme="emerald-royal"] {
+:root[data-theme="emerald-royal"],
+html[data-theme="emerald-royal"] {
   --color-primary:          #065f46;
   --color-primary-light:    #10b981;
   --color-primary-hover:    #064e3b;
@@ -172,19 +216,40 @@
   --footer-heading:         #ffffff;
   --footer-link-hover:      #6ee7b7;
   --hero-highlight:         #6ee7b7;
-  /* Admin Panel Tokens */
+
+  /* Admin & Dashboard Brand Tokens */
   --mh-blue:                #065f46;
   --mh-blue-hover:          #047857;
-  --mh-gradient-blue:       linear-gradient(135deg,#065f46 0%,#0d9488 50%,#1d4ed8 100%);
+  --mh-blue-dark:           #064e3b;
+  --mh-blue-deep:           #022c22;
+  --mh-blue-light:          #ecfdf5;
+  --mh-blue-subtle:         #d1fae5;
+  --mh-blue-border:         #a7f3d0;
   --mh-blue-glow:           rgba(6,95,70,0.35);
+  --mh-gradient-blue:       linear-gradient(135deg,#065f46 0%,#0d9488 50%,#1d4ed8 100%);
+  --mh-gradient-hero:       linear-gradient(135deg,#022c22 0%,#065f46 50%,#0c4a6e 100%);
   --vt-primary:             #065f46;
   --vt-primary-hover:       #047857;
+  --vt-primary-dark:        #064e3b;
+  --vt-primary-light:       #ecfdf5;
+  --vt-primary-subtle:      #d1fae5;
+  --vt-primary-border:      #a7f3d0;
+  --vt-bg:                  #f0fdf4;
+  --vt-surface:             #ffffff;
+  --vt-surface-muted:       #ecfdf5;
+  --vt-border:              #a7f3d0;
   --bs-primary:             #065f46;
+  --bs-primary-rgb:         6, 95, 70;
   --primary-color:          #065f46;
+  --primary-hover:          #047857;
+  --accent-color:           #1d4ed8;
+  --bs-btn-bg:              #065f46;
+  --bs-btn-border-color:    #065f46;
 }
 
 /* ─── THEME 4: VIOLET AURORA ───────────────────────────────────────────────── */
-[data-theme="violet-aurora"] {
+:root[data-theme="violet-aurora"],
+html[data-theme="violet-aurora"] {
   --color-primary:          #5b21b6;
   --color-primary-light:    #8b5cf6;
   --color-primary-hover:    #4c1d95;
@@ -229,19 +294,40 @@
   --footer-heading:         #ffffff;
   --footer-link-hover:      #c4b5fd;
   --hero-highlight:         #c4b5fd;
-  /* Admin Panel Tokens */
+
+  /* Admin & Dashboard Brand Tokens */
   --mh-blue:                #5b21b6;
   --mh-blue-hover:          #6d28d9;
-  --mh-gradient-blue:       linear-gradient(135deg,#5b21b6 0%,#2563eb 50%,#db2777 100%);
+  --mh-blue-dark:           #4c1d95;
+  --mh-blue-deep:           #2e1065;
+  --mh-blue-light:          #f5f3ff;
+  --mh-blue-subtle:         #ede9fe;
+  --mh-blue-border:         #ddd6fe;
   --mh-blue-glow:           rgba(91,33,182,0.35);
+  --mh-gradient-blue:       linear-gradient(135deg,#5b21b6 0%,#2563eb 50%,#db2777 100%);
+  --mh-gradient-hero:       linear-gradient(135deg,#1e1b4b 0%,#3730a3 50%,#1e3a5f 100%);
   --vt-primary:             #5b21b6;
   --vt-primary-hover:       #6d28d9;
+  --vt-primary-dark:        #4c1d95;
+  --vt-primary-light:       #f5f3ff;
+  --vt-primary-subtle:      #ede9fe;
+  --vt-primary-border:      #ddd6fe;
+  --vt-bg:                  #faf5ff;
+  --vt-surface:             #ffffff;
+  --vt-surface-muted:       #f5f3ff;
+  --vt-border:              #ddd6fe;
   --bs-primary:             #5b21b6;
+  --bs-primary-rgb:         91, 33, 182;
   --primary-color:          #5b21b6;
+  --primary-hover:          #6d28d9;
+  --accent-color:           #db2777;
+  --bs-btn-bg:              #5b21b6;
+  --bs-btn-border-color:    #5b21b6;
 }
 
 /* ─── THEME 5: CRIMSON MIDNIGHT ────────────────────────────────────────────── */
-[data-theme="crimson-midnight"] {
+:root[data-theme="crimson-midnight"],
+html[data-theme="crimson-midnight"] {
   --color-primary:          #991b1b;
   --color-primary-light:    #ef4444;
   --color-primary-hover:    #7f1d1d;
@@ -286,15 +372,121 @@
   --footer-heading:         #ffffff;
   --footer-link-hover:      #fca5a5;
   --hero-highlight:         #fca5a5;
-  /* Admin Panel Tokens */
+
+  /* Admin & Dashboard Brand Tokens */
   --mh-blue:                #991b1b;
   --mh-blue-hover:          #b91c1c;
-  --mh-gradient-blue:       linear-gradient(135deg,#991b1b 0%,#881337 50%,#92400e 100%);
+  --mh-blue-dark:           #7f1d1d;
+  --mh-blue-deep:           #450a0a;
+  --mh-blue-light:          #fef2f2;
+  --mh-blue-subtle:         #fee2e2;
+  --mh-blue-border:         #fecaca;
   --mh-blue-glow:           rgba(153,27,27,0.35);
+  --mh-gradient-blue:       linear-gradient(135deg,#991b1b 0%,#881337 50%,#92400e 100%);
+  --mh-gradient-hero:       linear-gradient(135deg,#1c0a0a 0%,#3b0a0a 40%,#1e2a4a 100%);
   --vt-primary:             #991b1b;
   --vt-primary-hover:       #b91c1c;
+  --vt-primary-dark:        #7f1d1d;
+  --vt-primary-light:       #fef2f2;
+  --vt-primary-subtle:      #fee2e2;
+  --vt-primary-border:      #fecaca;
+  --vt-bg:                  #fff5f5;
+  --vt-surface:             #ffffff;
+  --vt-surface-muted:       #fef2f2;
+  --vt-border:              #fecaca;
   --bs-primary:             #991b1b;
+  --bs-primary-rgb:         153, 27, 27;
   --primary-color:          #991b1b;
+  --primary-hover:          #b91c1c;
+  --accent-color:           #92400e;
+  --bs-btn-bg:              #991b1b;
+  --bs-btn-border-color:    #991b1b;
+}
+
+/* ─── SCOPED THEME COMPONENT OVERRIDES (Guarantees Active Theme Control) ──── */
+html[data-theme] .btn-primary,
+:root[data-theme] .btn-primary {
+  background: var(--mh-gradient-blue) !important;
+  border-color: var(--color-primary) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px var(--mh-blue-glow) !important;
+}
+
+html[data-theme] .btn-primary:hover,
+html[data-theme] .btn-primary:focus,
+html[data-theme] .btn-primary:active,
+:root[data-theme] .btn-primary:hover,
+:root[data-theme] .btn-primary:focus,
+:root[data-theme] .btn-primary:active {
+  background: var(--mh-gradient-blue) !important;
+  filter: brightness(1.12) !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 20px var(--mh-blue-glow) !important;
+}
+
+html[data-theme] .btn-outline-primary,
+:root[data-theme] .btn-outline-primary {
+  color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  background: transparent !important;
+}
+
+html[data-theme] .btn-outline-primary:hover,
+:root[data-theme] .btn-outline-primary:hover {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: #ffffff !important;
+}
+
+html[data-theme] .bg-primary,
+:root[data-theme] .bg-primary {
+  background-color: var(--color-primary) !important;
+}
+
+html[data-theme] .text-primary,
+:root[data-theme] .text-primary {
+  color: var(--color-primary) !important;
+}
+
+html[data-theme] .border-primary,
+:root[data-theme] .border-primary {
+  border-color: var(--color-primary) !important;
+}
+
+html[data-theme] .nav-tabs .nav-link.active,
+:root[data-theme] .nav-tabs .nav-link.active {
+  border-bottom-color: var(--color-primary) !important;
+  color: var(--color-primary) !important;
+}
+
+html[data-theme] .nav-link-custom.active,
+:root[data-theme] .nav-link-custom.active {
+  background: var(--mh-gradient-blue) !important;
+  box-shadow: 0 4px 18px var(--mh-blue-glow) !important;
+  color: #ffffff !important;
+}
+
+html[data-theme] .dashboard-hero-banner,
+:root[data-theme] .dashboard-hero-banner {
+  background: var(--mh-gradient-hero) !important;
+  border-color: var(--color-border-strong) !important;
+  box-shadow: 0 12px 32px -4px rgba(6,14,28,0.35), 0 4px 16px var(--mh-blue-glow) !important;
+}
+
+html[data-theme] .card-header-brand,
+:root[data-theme] .card-header-brand {
+  background: var(--mh-gradient-blue) !important;
+}
+
+html[data-theme] .topbar-search .search-shortcut-badge,
+:root[data-theme] .topbar-search .search-shortcut-badge {
+  background: var(--mh-blue-subtle) !important;
+  color: var(--color-primary) !important;
+}
+
+html[data-theme] .topbar-search .topbar-search-icon,
+:root[data-theme] .topbar-search .topbar-search-icon {
+  color: var(--color-primary) !important;
 }
 
 /* ─── DARK THEME OVERLAYS ──────────────────────────────────────────────────── */
