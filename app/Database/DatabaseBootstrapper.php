@@ -1461,16 +1461,19 @@ class DatabaseBootstrapper
             );");
         }
 
-        // Seed default demo agent if table is empty
+        // Seed default demo agents
         try {
-            $agCount = (int)$pdo->query("SELECT COUNT(*) FROM agents")->fetchColumn();
-            if ($agCount === 0) {
-                $ins = $driver === 'mysql' ? 'INSERT IGNORE INTO' : 'INSERT OR IGNORE INTO';
-                $agentPassHash = password_hash('agent123', PASSWORD_DEFAULT);
-                $pdo->prepare("{$ins} agents (agent_code, company_name, contact_person, mobile, email, password_hash, country, city, is_active) 
-                    VALUES ('AGT-001', 'Skyline Travel Partners', 'Sarah Agent', '+971507776655', 'agent@example.com', ?, 'United Arab Emirates', 'Dubai', 1)")
-                    ->execute([$agentPassHash]);
-            }
+            $ins = $driver === 'mysql' ? 'INSERT IGNORE INTO' : 'INSERT OR IGNORE INTO';
+            $agentPassHash = password_hash('password', PASSWORD_DEFAULT);
+            $pdo->prepare("{$ins} agents (agent_code, company_name, contact_person, mobile, email, password_hash, country, city, is_active) 
+                VALUES ('AGT-001', 'Skyline Travel Partners', 'Sarah Agent', '+971507776655', 'agent@example.com', ?, 'United Arab Emirates', 'Dubai', 1)")
+                ->execute([$agentPassHash]);
+            $pdo->prepare("{$ins} agents (agent_code, company_name, contact_person, mobile, email, password_hash, country, city, is_active) 
+                VALUES ('AGT-002', 'Skyline Travel Partners', 'Sarah Agent', '+971507776655', 'agent@skylinetravel.com', ?, 'United Arab Emirates', 'Dubai', 1)")
+                ->execute([$agentPassHash]);
+            // Ensure both agents have active status and valid password
+            $pdo->prepare("UPDATE agents SET password_hash = ?, is_active = 1 WHERE email IN ('agent@example.com', 'agent@skylinetravel.com')")
+                ->execute([$agentPassHash]);
         } catch (\Throwable $e) {}
 
         // Ensure communications table exists for SQLite

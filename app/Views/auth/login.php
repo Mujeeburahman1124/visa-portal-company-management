@@ -291,15 +291,36 @@ $flash = get_flash();
         </div>
       </div>
 
+      <!-- Quick Demo Login Credentials -->
+      <div class="p-2.5 mb-3 bg-light rounded-3 border" style="font-size: 0.78rem;">
+        <div class="fw-bold text-secondary mb-1.5 d-flex align-items-center justify-content-between">
+          <span><i class="fa-solid fa-key me-1 text-primary"></i> 1-Click Demo Accounts:</span>
+          <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.68rem;">Default Password: password</span>
+        </div>
+        <div class="d-flex flex-wrap gap-1.5">
+          <button type="button" class="btn btn-outline-primary btn-sm py-1 px-2 fw-semibold" style="font-size: 0.73rem;" onclick="fillCreds('admin@visatrack.com', 'password')">
+            <i class="fa-solid fa-user-shield me-1"></i> Super Admin
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 fw-semibold" style="font-size: 0.73rem;" onclick="fillCreds('manager@visatrack.com', 'password')">
+            <i class="fa-solid fa-user-tie me-1"></i> Manager
+          </button>
+          <button type="button" class="btn btn-outline-info btn-sm py-1 px-2 fw-semibold" style="font-size: 0.73rem;" onclick="fillCreds('agent@skylinetravel.com', 'password')">
+            <i class="fa-solid fa-handshake me-1"></i> Agent (Skyline)
+          </button>
+        </div>
+      </div>
+
       <button type="submit" class="btn btn-primary w-100 fw-semibold shadow-sm rounded-2" id="submitBtn" style="height: 42px; font-size: 0.92rem;">
         <span class="spinner-border spinner-border-sm me-2 d-none" id="submitSpinner" role="status" aria-hidden="true"></span>
         <i class="fa-solid fa-right-to-bracket me-1.5" id="submitIcon"></i> Sign In to Operations
       </button>
     </form>
 
-    <!-- Portal Link -->
-    <div class="text-center mt-2.5 small text-muted" style="font-size: 0.78rem;">
-      Applicant? <a href="/portal/login" class="text-primary fw-semibold text-decoration-none">Customer Tracking Portal &rarr;</a>
+    <!-- Portal Switcher Links -->
+    <div class="d-flex justify-content-center align-items-center gap-2 mt-3 pt-2.5 border-top small text-muted" style="font-size: 0.78rem;">
+      <a href="/agent/login" class="text-decoration-none fw-semibold text-primary"><i class="fa-solid fa-handshake me-1"></i>Agent Portal</a>
+      <span>&bull;</span>
+      <a href="/track" class="text-decoration-none fw-semibold text-secondary"><i class="fa-solid fa-magnifying-glass me-1"></i>Track Application</a>
     </div>
   </div>
   
