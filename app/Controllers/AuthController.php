@@ -111,15 +111,20 @@ class AuthController
 
         if ($user) {
             $token = bin2hex(random_bytes(32));
+            // Store the HASH of the token in DB — never store the raw token
+            $tokenHash = hash('sha256', $token);
             $expiresAt = date('Y-m-d H:i:s', time() + 3600); // 1 hour expiration
 
             $ins = $pdo->prepare("INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)");
-            $ins->execute([$user['email'], $token, $expiresAt]);
+            $ins->execute([$user['email'], $tokenHash, $expiresAt]);
 
             AuditService::log('PASSWORD_RESET_REQUEST', 'Auth', (int)$user['id'], "Password reset requested for {$user['email']}", null, (int)$user['id']);
 
-            // Store demo token in session for easy local testing / simulation
-            $_SESSION['demo_reset_link'] = "/auth/reset-password?token=" . $token;
+            // Only store demo reset link in local/development environments — NEVER in production
+            $appEnv = strtolower((string)\App\Config\Env::get('APP_ENV', 'local'));
+            if ($appEnv !== 'production' && $appEnv !== 'prod') {
+                $_SESSION['demo_reset_link'] = "/auth/reset-password?token=" . $token;
+            }
         }
 
         redirect('/auth/forgot-password', $successMsg, 'success');
@@ -133,8 +138,10 @@ class AuthController
         }
 
         $pdo = Database::getConnection();
+        // Token is stored as SHA-256 hash in DB
+        $tokenHash = hash('sha256', $token);
         $stmt = $pdo->prepare("SELECT * FROM password_resets WHERE token = ? AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP");
-        $stmt->execute([$token]);
+        $stmt->execute([$tokenHash]);
         $reset = $stmt->fetch();
 
         if (!$reset) {
@@ -163,8 +170,10 @@ class AuthController
         }
 
         $pdo = Database::getConnection();
+        // Token is stored as SHA-256 hash in DB
+        $tokenHash = hash('sha256', $token);
         $stmt = $pdo->prepare("SELECT * FROM password_resets WHERE token = ? AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP");
-        $stmt->execute([$token]);
+        $stmt->execute([$tokenHash]);
         $reset = $stmt->fetch();
 
         if (!$reset) {

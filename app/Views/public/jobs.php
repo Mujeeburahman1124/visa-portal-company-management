@@ -1,19 +1,14 @@
-<?php
-$pageTitle = "Global Job Opportunities — MS Travel Hub Recruitment";
+﻿<?php
+$pageTitle = "Global Job Opportunities â€” MS Travel Hub Recruitment";
 $metaDescription = "Explore overseas job opportunities in Dubai, Riyadh, London and worldwide. Apply online directly.";
 $currentRoute = '/jobs';
 
 ob_start();
 ?>
 
-<div class="py-4 bg-dark text-white">
-    <div class="container">
-        <h1 class="fw-bold fs-2">Global Recruitment &amp; Career Opportunities</h1>
-        <p class="text-info mb-0">Verified job vacancies with visa sponsorship, flight tickets, and corporate benefits.</p>
-    </div>
-</div>
+<div class="pub-page-header"><div class="container"><h1>Global Recruitment &amp; Career Opportunities</h1><p>Verified job vacancies with visa sponsorship, flight tickets, and corporate benefits.</p></div></div>
 
-<div class="py-5">
+<div class="py-5" style="background:var(--color-background)">
     <div class="container">
         <!-- Search & Category Filters -->
         <div class="card p-3 mb-4 border-0 shadow-sm bg-light">
@@ -112,3 +107,4 @@ ob_start();
 <?php
 $content = ob_get_clean();
 require dirname(__DIR__) . '/public/layout.php';
+

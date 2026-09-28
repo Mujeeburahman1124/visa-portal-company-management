@@ -16,8 +16,60 @@ use App\Database\DatabaseBootstrapper;
 use App\Middleware\CsrfMiddleware;
 use App\Middleware\RoleMiddleware;
 
+// ─── Global Exception & Error Handler ────────────────────────────────────────
+// Catches all unhandled Throwables BEFORE they produce raw PHP output to users.
+set_exception_handler(function (\Throwable $e): void {
+    $isApi = str_starts_with(
+        parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/',
+        '/api/'
+    );
+
+    // Always log to server error log; never display raw stack traces
+    error_log(sprintf(
+        '[VISA-TRACK] Unhandled %s in %s:%d — %s',
+        get_class($e), $e->getFile(), $e->getLine(), $e->getMessage()
+    ));
+
+    if (!headers_sent()) {
+        http_response_code(500);
+    }
+
+    if ($isApi) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => 'An internal server error occurred. Please try again later.',
+        ]);
+    } else {
+        $errorPage = dirname(__DIR__) . '/app/Views/layouts/500.php';
+        if (file_exists($errorPage)) {
+            require $errorPage;
+        } else {
+            echo '<h1>500 — Internal Server Error</h1>'
+               . '<p>Something went wrong. Please contact support if this persists.</p>';
+        }
+    }
+    exit;
+});
+
+set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline): bool {
+    // Convert fatal-level errors to exceptions so the handler above catches them
+    if ($errno & (E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR)) {
+        throw new \ErrorException($errstr, 0, $errno, $errfile, $errline);
+    }
+    // For non-fatal warnings/notices, log but allow normal flow
+    error_log(sprintf('[VISA-TRACK] PHP Warning(%d) in %s:%d — %s', $errno, $errfile, $errline, $errstr));
+    return true;
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Automatically initialize database schema and seed data on bootstrap
-DatabaseBootstrapper::init();
+try {
+    DatabaseBootstrapper::init();
+} catch (\Throwable $e) {
+    error_log('[VISA-TRACK] DatabaseBootstrapper::init() failed: ' . $e->getMessage());
+    // Do NOT expose DB error details to the user — fall through; queries will fail safely
+}
 
 // Validate CSRF on all POST requests except API / public tracking webhooks
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -44,6 +96,7 @@ switch ($uri) {
         (new App\Controllers\PublicWebsiteController())->about();
         break;
 
+    case '/visa':
     case '/visa-services':
         (new App\Controllers\PublicWebsiteController())->visaServices();
         break;
@@ -985,7 +1038,8 @@ switch ($uri) {
         (new App\Controllers\PortalController())->logout();
         break;
 
-    case '/track':
+    // /portal/track — delegates to portal controller for authenticated customers
+    // Note: /track (public) is handled above by PublicWebsiteController::tracking()
     case '/portal/track':
         (new App\Controllers\PortalController())->trackPublic();
         break;
@@ -1177,10 +1231,6 @@ switch ($uri) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $supCtrl->updateProfile();
         } else {
-            $supCtrl->profile();
-        }
-        break;
-
             $supCtrl->profile();
         }
         break;

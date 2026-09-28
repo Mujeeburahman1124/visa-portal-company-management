@@ -20,11 +20,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
+  <!-- Central Theme Engine — must load BEFORE main.css -->
+  <link rel="stylesheet" href="/assets/css/theme.css?v=2.0">
   <!-- Application CSS -->
   <link rel="stylesheet" href="/assets/css/main.css?v=7.0.0">
   <!-- Flatpickr Datepicker CSS -->
   <link rel="stylesheet" href="/assets/css/flatpickr.min.css">
 
+  <!-- Anti-FOUC: apply stored theme before any render -->
+  <script>
+    (function(){try{var t=localStorage.getItem('vt_theme')||'ocean-royal';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+  </script>
 
   <?php
     // Dynamic Website Themes from system_settings

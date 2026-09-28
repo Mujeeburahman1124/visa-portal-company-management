@@ -124,6 +124,9 @@ class DocumentVerificationService
             return ['success' => false, 'message' => 'Document not found.'];
         }
 
+        // Initialize $appId before any conditional use to prevent undefined-variable errors
+        $appId = !empty($doc['app_id']) ? (int)$doc['app_id'] : null;
+
         $pdo->beginTransaction();
         try {
             $updStmt = $pdo->prepare("UPDATE documents 
@@ -138,8 +141,7 @@ class DocumentVerificationService
             $updStmt->execute([$verifierId, $rejectionReason, $notes, $docId]);
 
             // Set Application to Action Required and update next action
-            if (!empty($doc['app_id'])) {
-                $appId = (int)$doc['app_id'];
+            if ($appId !== null) {
                 $due3Days = date('Y-m-d', strtotime('+3 days'));
                 $pdo->prepare("UPDATE applications 
                     SET status = 'Action Required',
@@ -155,14 +157,14 @@ class DocumentVerificationService
             // Create notification for customer & staff via Central NotificationService
             try {
                 \App\Services\NotificationService::trigger('document.rejected', [
-                    'application_id' => $appId,
-                    'customer_id' => $doc['customer_id'],
+                    'application_id'     => $appId,
+                    'customer_id'        => $doc['customer_id'],
                     'application_number' => $doc['application_number'] ?? '',
-                    'documentName' => $doc['doc_type_name'],
-                    'rejectionReason' => $rejectionReason,
-                    'actionUrl' => (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000') . "/portal/documents",
-                    'portal_link' => "/portal/documents",
-                    'severity' => 'danger',
+                    'documentName'       => $doc['doc_type_name'],
+                    'rejectionReason'    => $rejectionReason,
+                    'actionUrl'          => (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000') . "/portal/documents",
+                    'portal_link'        => "/portal/documents",
+                    'severity'           => 'danger',
                 ]);
             } catch (\Throwable $e) {}
 

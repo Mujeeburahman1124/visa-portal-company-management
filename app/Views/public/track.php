@@ -1,19 +1,14 @@
-<?php
-$pageTitle = "Public 2-Factor Visa Tracking — MS Travel Hub";
+﻿<?php
+$pageTitle = "Public 2-Factor Visa Tracking â€” MS Travel Hub";
 $metaDescription = "Track your visa application progress in real-time. Secure 2-factor authentication lookup.";
 $currentRoute = '/track';
 
 ob_start();
 ?>
 
-<div class="py-4 bg-dark text-white text-center">
-    <div class="container">
-        <h1 class="fw-bold fs-2"><i class="fa-solid fa-shield-halved text-info me-2"></i> Public 2-Factor Visa Tracking Center</h1>
-        <p class="text-info mb-0">Enter your Application Reference Number AND Passport Number for instant status lookup.</p>
-    </div>
-</div>
+<div class="pub-page-header"><div class="container"><h1><i class="fa-solid fa-shield-halved text-info me-2"></i> Public 2-Factor Visa Tracking Center</h1><p>Enter your Application Reference Number AND Passport Number for instant status lookup.</p></div></div>
 
-<div class="py-5">
+<div class="py-5" style="background:var(--color-background)">
     <div class="container" style="max-width: 800px;">
 
         <!-- 2-Factor Search Box -->
@@ -50,7 +45,7 @@ ob_start();
                         <span class="badge bg-secondary-subtle text-secondary fw-bold px-3 py-1.5 mb-1">
                             Ref: <?= e($trackingResult['application_number']) ?>
                         </span>
-                        <h4 class="fw-bold text-dark mb-0"><?= e($trackingResult['flag_emoji'] ?? '🌐') ?> <?= e($trackingResult['country_name']) ?> — <?= e($trackingResult['service_name']) ?></h4>
+                        <h4 class="fw-bold text-dark mb-0"><?= e($trackingResult['flag_emoji'] ?? 'ðŸŒ') ?> <?= e($trackingResult['country_name']) ?> â€” <?= e($trackingResult['service_name']) ?></h4>
                     </div>
 
                     <div class="text-end mt-2 mt-md-0">
@@ -137,3 +132,4 @@ ob_start();
 <?php
 $content = ob_get_clean();
 require dirname(__DIR__) . '/public/layout.php';
+

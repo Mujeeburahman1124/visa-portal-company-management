@@ -1,108 +1,119 @@
-<?php
-$pageTitle = "Visa Services & Processing Packages — MS Travel Hub";
+﻿<?php
+$pageTitle = "Visa Services & Processing Packages â€” MS Travel Hub";
 $metaDescription = "Browse international visa processing packages for UAE, UK, USA, Schengen, Canada and Saudi Arabia with public pricing and clear timeline.";
 $currentRoute = '/visa-services';
 
 ob_start();
 ?>
 
-<div class="py-4 bg-dark text-white">
+<!-- Page Header -->
+<div class="pub-page-header">
     <div class="container">
-        <h1 class="fw-bold fs-2">Visa Processing Services Catalog</h1>
-        <p class="text-info mb-0">Select your destination country or visa category to explore pricing and processing requirements.</p>
+        <h1>Visa Processing Services Catalog</h1>
+        <p>Select your destination country or visa category to explore pricing and processing requirements.</p>
+        <nav class="pub-breadcrumb" aria-label="Breadcrumb">
+            <a href="/"><i class="fa-solid fa-house" aria-hidden="true"></i> Home</a>
+            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            <span>Visa Services</span>
+        </nav>
     </div>
 </div>
 
-<div class="py-5">
-    <div class="container">
-        <!-- Search & Filter Bar -->
-        <div class="card p-3 mb-4 border-0 shadow-sm bg-light">
-            <form action="/visa-services" method="GET" class="row g-2 align-items-center">
-                <div class="col-md-4">
-                    <input type="text" name="search" class="form-control" placeholder="Search by service name or country..." value="<?= e($_GET['search'] ?? '') ?>">
-                </div>
+<div class="py-5" style="background:var(--color-background)">
+    <div class="container py-2">
 
+        <!-- Filter Bar -->
+        <div class="pub-form-card mb-5" style="border-radius:var(--border-radius-lg);padding:20px 24px">
+            <form action="/visa-services" method="GET" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="vs_search" class="form-label">Search</label>
+                    <input type="text" id="vs_search" name="search" class="form-control"
+                           placeholder="Service name or country..." value="<?= e($_GET['search'] ?? '') ?>">
+                </div>
                 <div class="col-md-3">
-                    <select name="country_id" class="form-select">
-                        <option value="">All Destination Countries</option>
+                    <label for="vs_country" class="form-label">Destination Country</label>
+                    <select id="vs_country" name="country_id" class="form-select">
+                        <option value="">All Countries</option>
                         <?php foreach ($countries as $c): ?>
-                            <option value="<?= $c['id'] ?>" <?= (int)($_GET['country_id'] ?? 0) === (int)$c['id'] ? 'selected' : '' ?>>
-                                <?= e($c['flag_emoji']) ?> <?= e($c['name']) ?>
-                            </option>
+                        <option value="<?= $c['id'] ?>" <?= (int)($_GET['country_id'] ?? 0) === (int)$c['id'] ? 'selected' : '' ?>>
+                            <?= e($c['flag_emoji']) ?> <?= e($c['name']) ?>
+                        </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-
                 <div class="col-md-3">
-                    <select name="category_id" class="form-select">
+                    <label for="vs_cat" class="form-label">Category</label>
+                    <select id="vs_cat" name="category_id" class="form-select">
                         <option value="">All Categories</option>
                         <?php foreach ($categories as $cat): ?>
-                            <option value="<?= $cat['id'] ?>" <?= (int)($_GET['category_id'] ?? 0) === (int)$cat['id'] ? 'selected' : '' ?>>
-                                <?= e($cat['name']) ?>
-                            </option>
+                        <option value="<?= $cat['id'] ?>" <?= (int)($_GET['category_id'] ?? 0) === (int)$cat['id'] ? 'selected' : '' ?>>
+                            <?= e($cat['name']) ?>
+                        </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-brand w-100">
-                        <i class="fa-solid fa-filter me-1"></i> Filter
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn-brand w-100 justify-content-center">
+                        <i class="fa-solid fa-filter" aria-hidden="true"></i> Filter
                     </button>
+                    <?php if (!empty($_GET['search']) || !empty($_GET['country_id']) || !empty($_GET['category_id'])): ?>
+                    <a href="/visa-services" class="btn-outline-brand flex-shrink-0" title="Reset filters">
+                        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                    </a>
+                    <?php endif; ?>
                 </div>
             </form>
         </div>
 
         <!-- Services Grid -->
         <?php if (empty($services)): ?>
-            <div class="text-center py-5">
-                <i class="fa-solid fa-folder-open text-muted fs-1 mb-3"></i>
-                <h5>No visa service packages found</h5>
-                <p class="text-secondary">Try adjusting your filters or search terms.</p>
-                <a href="/visa-services" class="btn btn-outline-secondary btn-sm">Reset Filters</a>
-            </div>
+        <div class="text-center py-5">
+            <i class="fa-solid fa-folder-open fs-1 mb-3" style="color:var(--color-text-muted)" aria-hidden="true"></i>
+            <h2 style="font-size:1.2rem;color:var(--color-heading)">No visa service packages found</h2>
+            <p style="color:var(--color-text-muted)">Try adjusting your filters or search terms.</p>
+            <a href="/visa-services" class="btn-outline-brand">Reset Filters</a>
+        </div>
         <?php else: ?>
-            <div class="row g-4">
-                <?php foreach ($services as $srv): ?>
-                    <div class="col-lg-4 col-md-6">
-                        <div class="card card-custom h-100 p-4">
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <span class="fs-2"><?= e($srv['flag_emoji'] ?? '🌐') ?></span>
-                                <span class="badge bg-primary-subtle text-primary fw-semibold px-2.5 py-1">
-                                    <?= e($srv['entry_type'] ?? 'Single Entry') ?>
-                                </span>
-                            </div>
+        <div class="row g-4">
+            <?php foreach ($services as $srv): ?>
+            <div class="col-lg-4 col-md-6">
+                <div class="pub-service-card">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <span class="pub-service-flag" aria-label="<?= e($srv['country_name'] ?? '') ?> flag"><?= e($srv['flag_emoji'] ?? 'ðŸŒ') ?></span>
+                        <span class="pub-service-badge"><?= e($srv['entry_type'] ?? 'Single Entry') ?></span>
+                    </div>
 
-                            <h5 class="fw-bold text-dark mb-1"><?= e($srv['name']) ?></h5>
-                            <p class="text-secondary small mb-3"><?= e($srv['country_name']) ?> &bull; <?= e($srv['category_name'] ?? 'Visa') ?></p>
+                    <h2 style="font-size:1rem;font-weight:700;color:var(--color-heading);margin-bottom:4px"><?= e($srv['name']) ?></h2>
+                    <p style="font-size:0.83rem;color:var(--color-text-muted);margin-bottom:0"><?= e($srv['country_name']) ?> &bull; <?= e($srv['category_name'] ?? 'Visa') ?></p>
 
-                            <div class="p-3 bg-light rounded-3 mb-3 small">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span class="text-muted">Stay Duration:</span>
-                                    <span class="fw-semibold"><?= e($srv['duration'] ?? 'N/A') ?></span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span class="text-muted">Est. Processing:</span>
-                                    <span class="fw-semibold text-info"><?= e($srv['estimated_days']) ?> Working Days</span>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span class="text-muted">Validity:</span>
-                                    <span class="fw-semibold"><?= e($srv['validity'] ?? 'Standard') ?></span>
-                                </div>
-                            </div>
-
-                            <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
-                                <div>
-                                    <small class="text-muted d-block">Public Price</small>
-                                    <span class="fw-bold text-dark fs-5"><?= format_currency((float)$srv['selling_price'], $srv['currency'] ?? 'USD') ?></span>
-                                </div>
-                                <a href="/visa-service?id=<?= $srv['id'] ?>" class="btn btn-sm btn-outline-brand">
-                                    View Requirements &rarr;
-                                </a>
-                            </div>
+                    <div class="pub-service-meta">
+                        <div class="pub-service-meta-row">
+                            <span>Stay Duration:</span>
+                            <strong><?= e($srv['duration'] ?? 'N/A') ?></strong>
+                        </div>
+                        <div class="pub-service-meta-row">
+                            <span>Est. Processing:</span>
+                            <strong class="pub-service-meta-value-accent"><?= e($srv['estimated_days']) ?> Working Days</strong>
+                        </div>
+                        <div class="pub-service-meta-row">
+                            <span>Validity:</span>
+                            <strong><?= e($srv['validity'] ?? 'Standard') ?></strong>
                         </div>
                     </div>
-                <?php endforeach; ?>
+
+                    <div class="d-flex justify-content-between align-items-center mt-auto pt-2" style="border-top:1px solid var(--color-border)">
+                        <div>
+                            <small style="color:var(--color-text-muted);display:block">Public Price</small>
+                            <span class="pub-service-price"><?= format_currency((float)$srv['selling_price'], $srv['currency'] ?? 'USD') ?></span>
+                        </div>
+                        <a href="/visa-service?id=<?= (int)$srv['id'] ?>" class="btn-outline-brand" style="padding:7px 16px;font-size:0.84rem">
+                            View Requirements &rarr;
+                        </a>
+                    </div>
+                </div>
             </div>
+            <?php endforeach; ?>
+        </div>
         <?php endif; ?>
     </div>
 </div>

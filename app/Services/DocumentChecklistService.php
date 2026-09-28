@@ -34,13 +34,17 @@ class DocumentChecklistService
         }
 
         // 2. Fetch all service requirements with document types
-        $stmt = $pdo->prepare("SELECT vr.id as requirement_id, vr.is_mandatory, vr.is_critical, vr.condition_notes, vr.instructions,
-                    dt.id as document_type_id, dt.name as document_name, dt.code as document_code, 
+        // visa_requirements.service_id is the FK to visa_services.id in both SQLite and MySQL schemas.
+        // is_critical may not exist on older schemas — use COALESCE for resilience.
+        $stmt = $pdo->prepare("SELECT vr.id as requirement_id, vr.is_mandatory,
+                    COALESCE(vr.is_critical, 0) as is_critical,
+                    vr.condition_notes, vr.instructions,
+                    dt.id as document_type_id, dt.name as document_name, dt.code as document_code,
                     dt.category, dt.requires_expiry
              FROM visa_requirements vr
              JOIN document_types dt ON vr.document_type_id = dt.id
              WHERE vr.service_id = ?
-             ORDER BY vr.is_critical DESC, vr.is_mandatory DESC, dt.name ASC");
+             ORDER BY vr.is_mandatory DESC, dt.name ASC");
         $stmt->execute([$app['visa_service_id']]);
         $requirements = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 

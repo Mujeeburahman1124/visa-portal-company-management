@@ -54,13 +54,18 @@ class DocumentApiController extends ApiController
      */
     public function verify(int $id = 0): void
     {
+        $user = auth_user();
+        if (!$user) {
+            $this->jsonError('Authentication required.', [], 401);
+            return;
+        }
+
         $input = $this->getJsonInput();
         if ($id <= 0) {
             $id = (int)($input['document_id'] ?? $_POST['document_id'] ?? $_GET['id'] ?? 0);
         }
 
-        $user = auth_user();
-        $userId = $user ? (int)$user['id'] : 1;
+        $userId = (int)$user['id'];
         $notes = trim($input['notes'] ?? '');
 
         $res = DocumentVerificationService::verify($id, $userId, $notes);
@@ -76,6 +81,12 @@ class DocumentApiController extends ApiController
      */
     public function reject(int $id = 0): void
     {
+        $user = auth_user();
+        if (!$user) {
+            $this->jsonError('Authentication required.', [], 401);
+            return;
+        }
+
         $input = $this->getJsonInput();
         if ($id <= 0) {
             $id = (int)($input['document_id'] ?? $_POST['document_id'] ?? $_GET['id'] ?? 0);
@@ -86,8 +97,7 @@ class DocumentApiController extends ApiController
             $this->jsonError('Rejection reason is required.', ['reason' => 'Required'], 422);
         }
 
-        $user = auth_user();
-        $userId = $user ? (int)$user['id'] : 1;
+        $userId = (int)$user['id'];
         $notes = trim($input['notes'] ?? '');
 
         $res = DocumentVerificationService::reject($id, $userId, $reason, $notes);

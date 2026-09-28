@@ -1,5 +1,5 @@
-<?php
-$pageTitle = "About Us — MS Travel Hub Global Visa Services";
+﻿<?php
+$pageTitle = "About Us â€” MS Travel Hub Global Visa Services";
 $metaDescription = "Learn about MS Travel Hub Global Visa Services. Licensed international visa processing, recruitment, and document management agency.";
 $currentRoute = '/about';
 
@@ -13,7 +13,7 @@ ob_start();
     </div>
 </div>
 
-<div class="py-5">
+<div class="py-5" style="background:var(--color-background)">
     <div class="container">
         <div class="row align-items-center g-5 mb-5">
             <div class="col-lg-6">
@@ -71,3 +71,4 @@ ob_start();
 <?php
 $content = ob_get_clean();
 require dirname(__DIR__) . '/public/layout.php';
+

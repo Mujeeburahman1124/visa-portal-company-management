@@ -218,6 +218,8 @@ CREATE TABLE IF NOT EXISTS visa_requirements (
     service_id INT NOT NULL,
     document_type_id INT NOT NULL,
     is_mandatory TINYINT(1) DEFAULT 1,
+    is_critical TINYINT(1) DEFAULT 0,
+    is_active TINYINT(1) DEFAULT 1,
     condition_notes TEXT,
     instructions TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

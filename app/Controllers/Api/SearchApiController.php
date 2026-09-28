@@ -22,6 +22,12 @@ class SearchApiController
      */
     public function search(): void
     {
+        // Security: search results contain sensitive PII — authentication required
+        if (!is_authenticated()) {
+            json_response(['success' => false, 'message' => 'Authentication required.'], 401);
+            return;
+        }
+
         $query = trim($_GET['q'] ?? '');
         if (strlen($query) < 2) {
             json_response(['applications' => [], 'customers' => []]);

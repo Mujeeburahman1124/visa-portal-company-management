@@ -216,12 +216,15 @@ CREATE TABLE IF NOT EXISTS visa_requirements (
     service_id INTEGER NOT NULL,
     document_type_id INTEGER NOT NULL,
     is_mandatory INTEGER DEFAULT 1,
+    is_critical INTEGER DEFAULT 0,
+    is_active INTEGER DEFAULT 1,
     condition_notes TEXT,
     instructions TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (service_id) REFERENCES visa_services(id) ON DELETE CASCADE,
     FOREIGN KEY (document_type_id) REFERENCES document_types(id) ON DELETE CASCADE
 );
+
 
 CREATE TABLE IF NOT EXISTS suppliers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

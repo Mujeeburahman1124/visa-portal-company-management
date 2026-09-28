@@ -53,6 +53,9 @@
 <script src="/assets/js/flatpickr.min.js"></script>
 <script src="/assets/js/app-datepicker.js?v=1.0.0"></script>
 <script src="/assets/js/app.js?v=2.1.0"></script>
+<!-- Central Theme Engine -->
+<script src="/assets/js/theme.js?v=2.0"></script>
 </body>
+
 
 </html>

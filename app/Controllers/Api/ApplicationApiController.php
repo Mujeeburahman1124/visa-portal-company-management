@@ -21,6 +21,11 @@ class ApplicationApiController extends ApiController
      */
     public function index(): void
     {
+        if (!is_authenticated()) {
+            $this->jsonError('Authentication required.', [], 401);
+            return;
+        }
+
         $pdo = Database::getConnection();
         $status = $_GET['status'] ?? '';
         $priority = $_GET['priority'] ?? '';
@@ -71,6 +76,16 @@ class ApplicationApiController extends ApiController
      */
     public function show(int $id): void
     {
+        if (!is_authenticated()) {
+            $this->jsonError('Authentication required.', [], 401);
+            return;
+        }
+
+        if ($id <= 0) {
+            $this->jsonError('Invalid application ID.', [], 400);
+            return;
+        }
+
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare("SELECT a.*, 
                 c.full_name as customer_name, c.customer_code, c.email as customer_email, c.mobile as customer_mobile, c.nationality as customer_nationality,
@@ -88,6 +103,7 @@ class ApplicationApiController extends ApiController
 
         if (!$app) {
             $this->jsonError('Application not found', [], 404);
+            return;
         }
 
         // Attach Checklist & Stage History

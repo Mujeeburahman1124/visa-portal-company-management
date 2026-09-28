@@ -2,11 +2,15 @@
    VISA TRACK — CENTRAL MODULE ENTRY POINT
    ========================================================================== */
 
+/* 0. Central Theme Engine (must be FIRST — defines all CSS tokens) */
+@import url("./theme.css");
+
 /* 1. Base Layer */
 @import url("./base/variables.css");
 @import url("./base/reset.css");
 @import url("./base/typography.css");
 @import url("./base/global.css");
+
 
 /* 2. Reusable Layout / Components Layer */
 @import url("./components/sidebar.css");

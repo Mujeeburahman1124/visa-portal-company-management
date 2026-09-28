@@ -293,8 +293,13 @@ function format_datetime(?string $date): string {
 }
 
 function json_response(array $data, int $statusCode = 200): void {
-    http_response_code($statusCode);
-    header('Content-Type: application/json');
+    if (!headers_sent()) {
+        http_response_code($statusCode);
+        header('Content-Type: application/json');
+    }
     echo json_encode($data);
+    if (defined('IN_TEST_MODE') && IN_TEST_MODE) {
+        return;
+    }
     exit;
 }

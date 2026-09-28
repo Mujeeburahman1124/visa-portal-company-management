@@ -149,22 +149,46 @@ class PublicWebsiteController
             redirect('/visa-services', 'Visa service package not found or currently unavailable.', 'danger');
         }
 
-        // Mandatory Document Requirements for this visa service
-        $docReqStmt = $pdo->prepare("SELECT dt.name, dt.description, dt.category, vr.is_mandatory 
-                                     FROM visa_requirements vr 
-                                     JOIN document_types dt ON vr.document_type_id = dt.id 
-                                     WHERE vr.visa_service_id = ? AND vr.is_active = 1 AND dt.is_active = 1 
-                                     ORDER BY vr.is_mandatory DESC, dt.category ASC");
-        $docReqStmt->execute([$service['id']]);
-        $docTypes = $docReqStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        if (empty($docTypes)) {
-            $docTypes = $pdo->query("SELECT name, description, category, requires_expiry AS is_mandatory 
-                                     FROM document_types 
-                                     WHERE is_active = 1 
-                                     ORDER BY category ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        // Load document requirements for this visa service.
+        // visa_requirements uses column 'service_id' (FK to visa_services.id).
+        // is_mandatory lives on visa_requirements, NOT on document_types.
+        // visa_requirements has no is_active column — filter by dt.is_active only.
+        $docTypes = [];
+        try {
+            $docReqStmt = $pdo->prepare(
+                "SELECT dt.name, dt.description, dt.category,
+                        vr.is_mandatory,
+                        COALESCE(vr.condition_notes, '') AS condition_notes,
+                        COALESCE(vr.instructions, '')    AS instructions
+                 FROM visa_requirements vr
+                 JOIN document_types dt ON vr.document_type_id = dt.id
+                 WHERE vr.service_id = ?
+                   AND dt.is_active = 1
+                 ORDER BY vr.is_mandatory DESC, dt.category ASC, dt.name ASC"
+            );
+            $docReqStmt->execute([$service['id']]);
+            $docTypes = $docReqStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            // If visa_requirements is empty or has a schema issue, degrade gracefully
+            $docTypes = [];
         }
 
+        // Fallback: show all active document types (non-service-specific) if none configured
+        if (empty($docTypes)) {
+            try {
+                $docTypes = $pdo->query(
+                    "SELECT name, description, category,
+                            0 AS is_mandatory,
+                            '' AS condition_notes,
+                            '' AS instructions
+                     FROM document_types
+                     WHERE is_active = 1
+                     ORDER BY category ASC, name ASC"
+                )->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } catch (\Throwable $e) {
+                $docTypes = [];
+            }
+        }
 
         require_once dirname(__DIR__) . '/Views/public/visa_service_detail.php';
     }

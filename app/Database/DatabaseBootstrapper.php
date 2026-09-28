@@ -11,6 +11,12 @@ class DatabaseBootstrapper
 {
     private static bool $initialized = false;
 
+    /**
+     * Schema version — increment this every time new DDL is added to init().
+     * The fast-path guard uses this to decide if migrations need to run.
+     */
+    private const SCHEMA_VERSION = 14;
+
     public static function init(bool $force = false): void
     {
         if (self::$initialized && !$force) {
@@ -21,24 +27,40 @@ class DatabaseBootstrapper
         $pdo = Database::getConnection();
         $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
 
-        // Fast path for HTTP requests: if core tables exist & DB_AUTO_MIGRATE is false, skip repetitive DDL checks
+        // Ensure schema_migrations tracking table exists for both drivers
+        try {
+            $createMigrationsSql = ($driver === 'mysql')
+                ? "CREATE TABLE IF NOT EXISTS schema_migrations (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    version INT NOT NULL UNIQUE,
+                    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+                : "CREATE TABLE IF NOT EXISTS schema_migrations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    version INTEGER NOT NULL UNIQUE,
+                    applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )";
+            $pdo->exec($createMigrationsSql);
+        } catch (\Throwable $e) {
+            // Ignore
+        }
+
+        // Fast path for HTTP requests: skip expensive DDL if schema is up-to-date
         $autoMigrate = (bool)\App\Config\Env::get('DB_AUTO_MIGRATE', false);
         if (!$force && !$autoMigrate && php_sapi_name() !== 'cli') {
             try {
-                if ($driver === 'sqlite') {
-                    $hasUsers = (bool)$pdo->query("SELECT 1 FROM sqlite_master WHERE type='table' AND name='users'")->fetchColumn();
-                    $hasTokens = (bool)$pdo->query("SELECT 1 FROM sqlite_master WHERE type='table' AND name='portal_activation_tokens'")->fetchColumn();
-                } else {
-                    $hasUsers = (bool)$pdo->query("SHOW TABLES LIKE 'users'")->fetchColumn();
-                    $hasTokens = (bool)$pdo->query("SHOW TABLES LIKE 'portal_activation_tokens'")->fetchColumn();
+                $currentVer = (int)$pdo->query(
+                    "SELECT COALESCE(MAX(version),0) FROM schema_migrations"
+                )->fetchColumn();
+                if ($currentVer >= self::SCHEMA_VERSION) {
+                    return; // Schema is current — fast exit
                 }
-                if ($hasUsers && $hasTokens) {
-                    return;
-                }
+                // Schema is behind — fall through to run migrations
             } catch (\Throwable $e) {
                 // proceed with full bootstrap
             }
         }
+
         if ($driver === 'sqlite') {
             $stmt = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='users'");
             $exists = $stmt->fetch();
@@ -60,6 +82,14 @@ class DatabaseBootstrapper
             } catch (\Throwable $e) {
                 // Already exists
             }
+
+            // Ensure visa_requirements columns exist
+            try {
+                $pdo->exec("ALTER TABLE visa_requirements ADD COLUMN is_active INTEGER DEFAULT 1;");
+            } catch (\Throwable $e) {}
+            try {
+                $pdo->exec("ALTER TABLE visa_requirements ADD COLUMN is_critical INTEGER DEFAULT 0;");
+            } catch (\Throwable $e) {}
 
             // Ensure password_resets table exists for SQLite
             $pdo->exec("CREATE TABLE IF NOT EXISTS password_resets (
@@ -1676,7 +1706,11 @@ class DatabaseBootstrapper
         try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN entry_before_date DATE NULL"); } catch (\Throwable $e) {}
 
         try {
-            $pdo->exec("ALTER TABLE visa_requirements ADD COLUMN is_critical INTEGER DEFAULT 0");
+            $pdo->exec("ALTER TABLE visa_requirements ADD COLUMN is_critical TINYINT(1) DEFAULT 0");
+        } catch (\Throwable $e) {}
+
+        try {
+            $pdo->exec("ALTER TABLE visa_requirements ADD COLUMN is_active TINYINT(1) DEFAULT 1");
         } catch (\Throwable $e) {}
 
         try {
@@ -2680,6 +2714,17 @@ class DatabaseBootstrapper
                 } catch (\Throwable $e) {}
             }
         }
+
+        // ── RECORD SCHEMA VERSION ─────────────────────────────────────────────
+        // Must be the LAST operation so that a failed migration does NOT mark
+        // itself as complete — allowing a retry on the next request.
+        try {
+            $ins = ($driver === 'mysql')
+                ? 'INSERT IGNORE INTO schema_migrations (version) VALUES (' . self::SCHEMA_VERSION . ')'
+                : 'INSERT OR IGNORE INTO schema_migrations (version) VALUES (' . self::SCHEMA_VERSION . ')';
+            $pdo->exec($ins);
+        } catch (\Throwable $e) {
+            error_log('[VISA-TRACK] Could not record schema version: ' . $e->getMessage());
+        }
     }
 }
-

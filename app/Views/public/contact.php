@@ -1,19 +1,14 @@
-<?php
-$pageTitle = "Contact Us — MS Travel Hub Global Visa Services";
+﻿<?php
+$pageTitle = "Contact Us â€” MS Travel Hub Global Visa Services";
 $metaDescription = "Get in touch with MS Travel Hub. Contact our Dubai, London, New York and Riyadh branches for visa support.";
 $currentRoute = '/contact';
 
 ob_start();
 ?>
 
-<div class="py-4 bg-dark text-white text-center">
-    <div class="container">
-        <h1 class="fw-bold fs-2">Contact Global Operations</h1>
-        <p class="text-info mb-0">Our visa and recruitment consultants are available 24/7 to assist your application.</p>
-    </div>
-</div>
+<div class="pub-page-header"><div class="container"><h1>Contact Global Operations</h1><p>Our visa and recruitment consultants are available 24/7 to assist your application.</p></div></div>
 
-<div class="py-5">
+<div class="py-5" style="background:var(--color-background)">
     <div class="container">
         <div class="row g-5">
             <div class="col-lg-5">
@@ -30,7 +25,7 @@ ob_start();
 
                     <p class="small text-secondary mb-2"><i class="fa-solid fa-phone text-info me-2"></i> <?= e(\App\Config\Env::get('COMPANY_PHONE', '0585909349')) ?></p>
                     <p class="small text-secondary mb-2"><i class="fa-solid fa-envelope text-info me-2"></i> <?= e(\App\Config\Env::get('COMPANY_EMAIL', 'mstravelu@gmail.com')) ?></p>
-                    <p class="small text-secondary mb-0"><i class="fa-solid fa-clock text-info me-2"></i> Monday – Saturday: 9:00 AM – 6:00 PM GST</p>
+                    <p class="small text-secondary mb-0"><i class="fa-solid fa-clock text-info me-2"></i> Monday â€“ Saturday: 9:00 AM â€“ 6:00 PM GST</p>
                 </div>
 
                 <h5 class="fw-bold text-dark mb-3">Global Offices</h5>
@@ -95,3 +90,4 @@ ob_start();
 <?php
 $content = ob_get_clean();
 require dirname(__DIR__) . '/public/layout.php';
+
