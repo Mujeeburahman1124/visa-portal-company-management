@@ -261,11 +261,14 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
                 <!-- Assigned Staff -->
                 <td>
-                  <div class="d-flex align-items-center gap-2">
+                  <div class="d-flex align-items-center gap-1">
                     <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 26px; height: 26px; font-size: 0.7rem;">
                       <?= strtoupper(substr($app['staff_name'] ?? 'U', 0, 1)) ?>
                     </div>
-                    <span class="small fw-semibold text-dark text-truncate" style="max-width: 110px;"><?= e($app['staff_name'] ?? 'Unassigned') ?></span>
+                    <span class="small fw-semibold text-dark text-truncate" style="max-width: 100px;"><?= e($app['staff_name'] ?? 'Unassigned') ?></span>
+                    <button type="button" class="btn btn-link btn-sm p-0 text-muted ms-1" onclick="openAppReassignModal(<?= $app['id'] ?>, '<?= e(addslashes($app['application_number'])) ?>', <?= (int)($app['assigned_staff_id'] ?? 0) ?>, event)" title="Reassign staff officer">
+                      <i class="fa-solid fa-user-pen" style="font-size: 0.72rem;"></i>
+                    </button>
                   </div>
                 </td>
 
@@ -302,5 +305,61 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     <?php endif; ?>
   </div>
 </div>
+
+<!-- Modal: Quick Reassign Application Staff -->
+<div class="modal fade" id="quickReassignAppModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-light border-bottom">
+        <h5 class="modal-title fw-bold fs-6"><i class="fa-solid fa-user-gear text-primary me-2"></i> Reassign Application Officer</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/applications/assign" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="application_id" id="quickReassignAppId">
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Application Number</label>
+            <input type="text" id="quickReassignAppNumber" class="form-control bg-light" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Assigned Officer <span class="text-danger">*</span></label>
+            <select name="staff_id" id="quickReassignStaffSelect" class="form-select" required>
+              <option value="">-- Select Staff Member --</option>
+              <?php foreach ($staffMembers as $stf): ?>
+                <option value="<?= $stf['id'] ?>"><?= e($stf['name']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="mb-0">
+            <label class="form-label small fw-semibold">Reassignment Note</label>
+            <textarea name="notes" class="form-control" rows="2" placeholder="Reason for reassigning application..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-top">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-save me-1"></i> Save Assignment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function openAppReassignModal(appId, appNumber, staffId, evt) {
+  if (evt) {
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+  }
+  document.getElementById('quickReassignAppId').value = appId;
+  document.getElementById('quickReassignAppNumber').value = appNumber;
+  const sel = document.getElementById('quickReassignStaffSelect');
+  if (sel) sel.value = staffId || '';
+  const modalEl = document.getElementById('quickReassignAppModal');
+  if (modalEl) {
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+  }
+}
+</script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

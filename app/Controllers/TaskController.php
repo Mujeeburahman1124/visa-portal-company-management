@@ -95,7 +95,7 @@ class TaskController
 
         AuditService::log('CREATE_TASK', 'Tasks', $taskId, "Created task: {$title}");
 
-        redirect($_SERVER['HTTP_REFERER'] ?? '/tasks', "Task '{$title}' created successfully.", 'success');
+        redirect($this->getRedirectUrl(), "Task '{$title}' created successfully.", 'success');
     }
 
     public function updateStatus(): void
@@ -122,10 +122,10 @@ class TaskController
             $stmtHist->execute([$taskId, $prevStatus, $status, $completionNotes ?: "Status changed to {$status}", $currentUser['id']]);
 
             AuditService::log('UPDATE_TASK', 'Tasks', $taskId, "Updated task status from {$prevStatus} to {$status}");
-            redirect($_SERVER['HTTP_REFERER'] ?? '/tasks', "Task marked as {$status}.", 'success');
+            redirect($this->getRedirectUrl(), "Task marked as {$status}.", 'success');
         }
 
-        redirect($_SERVER['HTTP_REFERER'] ?? '/tasks', 'Invalid task status.', 'danger');
+        redirect($this->getRedirectUrl(), 'Invalid task status.', 'danger');
     }
 
     public function reassign(): void
@@ -151,10 +151,25 @@ class TaskController
                 $stmtHist->execute([$taskId, $prevAssignee, $assignedTo, $reason, $currentUser['id']]);
 
                 AuditService::log('REASSIGN_TASK', 'Tasks', $taskId, "Reassigned task #{$taskId} to user #{$assignedTo}: {$reason}");
-                redirect($_SERVER['HTTP_REFERER'] ?? '/action-center?tab=tasks', 'Task reassigned successfully.', 'success');
+                redirect($this->getRedirectUrl(), 'Task reassigned successfully.', 'success');
             }
         }
-        redirect($_SERVER['HTTP_REFERER'] ?? '/action-center?tab=tasks', 'Failed to reassign task.', 'danger');
+        redirect($this->getRedirectUrl(), 'Failed to reassign task.', 'danger');
+    }
+
+    private function getRedirectUrl(): string
+    {
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+        if ($referer !== '') {
+            if (str_contains($referer, '/action-center')) {
+                if (!str_contains($referer, 'tab=')) {
+                    return $referer . (str_contains($referer, '?') ? '&' : '?') . 'tab=tasks';
+                }
+                return preg_replace('/tab=[^&]+/', 'tab=tasks', $referer);
+            }
+            return $referer;
+        }
+        return '/action-center?tab=tasks';
     }
 
     public function addComment(): void

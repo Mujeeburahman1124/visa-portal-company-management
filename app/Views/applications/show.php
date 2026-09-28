@@ -138,9 +138,12 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
           </span>
         </div>
         <h5 class="fw-bold mb-1" style="color: #0f172a;"><?= e($app['current_stage']) ?></h5>
-        <div class="text-muted small mb-2">
-          <span>Assigned Officer: <strong><?= e($app['staff_name'] ?? 'Unassigned') ?></strong></span> &bull; 
-          <span>Updated: <?= format_datetime($app['updated_at'] ?? $app['created_at']) ?></span>
+        <div class="text-muted small mb-2 d-flex align-items-center flex-wrap gap-1">
+          <span>Assigned Officer: <strong><?= e($app['staff_name'] ?? 'Unassigned') ?></strong></span>
+          <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 fw-semibold" style="font-size: 0.72rem;" onclick="openModalById('reassignStaffModal', event)" title="Reassign to another staff member">
+            <i class="fa-solid fa-user-pen me-1"></i> Reassign
+          </button>
+          <span>&bull; Updated: <?= format_datetime($app['updated_at'] ?? $app['created_at']) ?></span>
         </div>
         <div class="small text-secondary bg-light p-2 rounded">
           <i class="fa-solid fa-clock me-1 text-muted"></i> 

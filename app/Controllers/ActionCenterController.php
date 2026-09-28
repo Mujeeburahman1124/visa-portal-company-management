@@ -17,8 +17,10 @@ class ActionCenterController
         $user = auth_user();
         $userId = (int)$user['id'];
         $userRole = strtolower($user['role_slug'] ?? $user['role_name'] ?? 'staff');
+        $isManagerOrAdmin = user_has_role(['super-admin', 'admin', 'branch-manager', 'visa-manager']);
+        $defaultScope = $isManagerOrAdmin ? 'team' : 'my';
 
-        $scope = trim($_GET['scope'] ?? 'my'); // 'my' or 'team'
+        $scope = trim($_GET['scope'] ?? $defaultScope); // 'team' or 'my'
         $activeTab = trim($_GET['tab'] ?? 'missing');
 
         // 1. Missing Mandatory Documents Queue
@@ -66,7 +68,7 @@ class ActionCenterController
         // 4. Overdue Tasks Queue & All Active Tasks
         $today = date('Y-m-d');
         $tasksSql = "SELECT t.*, a.application_number, a.id as app_id, c.full_name as customer_name, 
-                     u.name as staff_name, creator.name as created_by_name
+                     u.name as staff_name, u.id as assigned_to_id, creator.name as created_by_name
             FROM tasks t 
             LEFT JOIN applications a ON t.application_id = a.id 
             LEFT JOIN customers c ON a.customer_id = c.id 
@@ -74,7 +76,8 @@ class ActionCenterController
             LEFT JOIN users creator ON t.created_by = creator.id
             WHERE 1=1";
         if ($scope === 'my') {
-            $tasksSql .= " AND t.assigned_to = {$userId}";
+            // In My Scope: include tasks assigned to user OR created by user so assigned-out tasks are never lost
+            $tasksSql .= " AND (t.assigned_to = {$userId} OR t.created_by = {$userId})";
         }
         $tasksSql .= " ORDER BY t.due_date ASC";
         $allTasks = $pdo->query($tasksSql)->fetchAll(PDO::FETCH_ASSOC);

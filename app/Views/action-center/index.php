@@ -48,10 +48,10 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
       <!-- My Actions vs Team Actions Switcher -->
       <div class="btn-group shadow-sm bg-white p-1 rounded border ms-2">
-        <a href="/action-center?scope=my&tab=<?= e($activeTab) ?>" class="btn btn-sm <?= $scope === 'my' ? 'btn-primary' : 'btn-light text-dark' ?> px-3 fw-semibold">
+        <a href="/action-center?scope=my&tab=<?= e($activeTab) ?>" id="scopeMyBtn" class="btn btn-sm <?= $scope === 'my' ? 'btn-primary' : 'btn-light text-dark' ?> px-3 fw-semibold">
           <i class="fa-solid fa-user me-1"></i> My Scope
         </a>
-        <a href="/action-center?scope=team&tab=<?= e($activeTab) ?>" class="btn btn-sm <?= $scope === 'team' ? 'btn-primary' : 'btn-light text-dark' ?> px-3 fw-semibold">
+        <a href="/action-center?scope=team&tab=<?= e($activeTab) ?>" id="scopeTeamBtn" class="btn btn-sm <?= $scope === 'team' ? 'btn-primary' : 'btn-light text-dark' ?> px-3 fw-semibold">
           <i class="fa-solid fa-users me-1"></i> Team Scope
         </a>
       </div>
@@ -61,7 +61,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   <!-- Action Category Tabs -->
   <div class="card card-enterprise mb-4">
     <div class="card-header p-0 bg-white">
-      <ul class="nav nav-tabs card-header-tabs m-0 px-3" role="tablist">
+      <ul class="nav nav-tabs card-header-tabs m-0 px-3" id="actionCenterTabs" role="tablist">
         <li class="nav-item">
           <button class="nav-link <?= $activeTab === 'missing' ? 'active fw-bold' : '' ?> py-3 small" data-bs-toggle="tab" data-bs-target="#tab-missing">
             <i class="fa-solid fa-file-circle-exclamation text-danger me-1"></i> Missing Docs 
@@ -326,7 +326,12 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                         <?php endif; ?>
                       </td>
                       <td><?= e($task['customer_name'] ?? '—') ?></td>
-                      <td><span class="badge bg-light text-dark border"><?= e($task['staff_name'] ?? 'Unassigned') ?></span></td>
+                      <td>
+                        <span class="badge bg-light text-dark border"><?= e($task['staff_name'] ?? 'Unassigned') ?></span>
+                        <?php if (!empty($task['created_by']) && (int)$task['created_by'] === (int)$user['id'] && (int)($task['assigned_to'] ?? 0) !== (int)$user['id']): ?>
+                          <span class="badge bg-info-subtle text-info border ms-1" style="font-size: 0.65rem;" title="Created and assigned by you">Assigned by you</span>
+                        <?php endif; ?>
+                      </td>
                       <td>
                         <span class="badge bg-<?= strtolower($task['priority']) === 'high' || strtolower($task['priority']) === 'urgent' ? 'danger' : 'secondary' ?>">
                           <?= e($task['priority']) ?>
@@ -353,17 +358,17 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                         <div class="d-flex align-items-center justify-content-end gap-1">
                           <!-- View Details & Comments -->
                           <button type="button" class="btn btn-outline-primary btn-sm py-1 px-2" style="font-size: 0.75rem;" 
-                                  onclick="openTaskDetailModal(<?= $task['id'] ?>)" title="View Details, History & Comments">
-                            <i class="fa-solid fa-eye me-1"></i> Details
+                                  onclick="openTaskDetailModal(<?= $task['id'] ?>, event)" title="View Details, History & Comments">
+                             <i class="fa-solid fa-eye me-1"></i> Details
                           </button>
                           <!-- Reassign -->
                           <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" style="font-size: 0.75rem;" 
-                                  onclick="openReassignModal(<?= $task['id'] ?>, '<?= addslashes(e($task['task_title'])) ?>', <?= (int)$task['assigned_to'] ?>)" title="Reassign Task">
+                                  onclick="openReassignModal(<?= $task['id'] ?>, '<?= addslashes(e($task['task_title'])) ?>', <?= (int)$task['assigned_to'] ?>, event)" title="Reassign Task">
                             <i class="fa-solid fa-user-pen"></i>
                           </button>
                           <!-- Update Status with Notes -->
                           <button type="button" class="btn btn-outline-success btn-sm py-1 px-2" style="font-size: 0.75rem;" 
-                                  onclick="openUpdateStatusModal(<?= $task['id'] ?>, '<?= addslashes(e($task['task_title'])) ?>', '<?= e($task['status']) ?>')" title="Update Status">
+                                  onclick="openUpdateStatusModal(<?= $task['id'] ?>, '<?= addslashes(e($task['task_title'])) ?>', '<?= e($task['status']) ?>', event)" title="Update Status">
                             <i class="fa-solid fa-pen-to-square"></i>
                           </button>
                         </div>
@@ -1038,51 +1043,117 @@ document.addEventListener('DOMContentLoaded', function () {
   if (searchInput) searchInput.addEventListener('input', applyTaskFilters);
   if (priorityFilter) priorityFilter.addEventListener('change', applyTaskFilters);
   if (staffFilter) staffFilter.addEventListener('change', applyTaskFilters);
+
+  // Dynamic Tab and Scope synchronization
+  const tabsList = document.querySelectorAll('#actionCenterTabs button[data-bs-toggle="tab"]');
+  const scopeMyBtn = document.getElementById('scopeMyBtn');
+  const scopeTeamBtn = document.getElementById('scopeTeamBtn');
+  const currentScope = '<?= e($scope) ?>';
+
+  tabsList.forEach(btn => {
+    btn.addEventListener('shown.bs.tab', function(e) {
+      const tabTarget = e.target.getAttribute('data-bs-target').replace('#tab-', '');
+      if (scopeMyBtn) scopeMyBtn.href = '/action-center?scope=my&tab=' + tabTarget;
+      if (scopeTeamBtn) scopeTeamBtn.href = '/action-center?scope=team&tab=' + tabTarget;
+      const newUrl = window.location.pathname + '?scope=' + currentScope + '&tab=' + tabTarget;
+      history.replaceState(null, '', newUrl);
+    });
+  });
+
+  // Automatically activate tab from URL query param if present
+  const urlParams = new URLSearchParams(window.location.search);
+  const activeTabParam = urlParams.get('tab') || '<?= e($activeTab) ?>';
+  if (activeTabParam && activeTabParam !== 'missing') {
+    const targetTabBtn = document.querySelector('#actionCenterTabs button[data-bs-target="#tab-' + activeTabParam + '"]');
+    if (targetTabBtn && !targetTabBtn.classList.contains('active')) {
+      const tabTrigger = bootstrap.Tab.getOrCreateInstance(targetTabBtn);
+      tabTrigger.show();
+    }
+  }
 });
 
-// Modal Triggers
-function openReassignModal(id, title, staffId) {
+// Modal Triggers with Event Propagation Guards
+function openReassignModal(id, title, staffId, evt) {
+  if (evt) {
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+  }
   document.getElementById('reassignTaskId').value = id;
   document.getElementById('reassignTaskTitle').value = title;
   const sel = document.getElementById('reassignStaffSelect');
   if (sel) sel.value = staffId || '';
-  new bootstrap.Modal(document.getElementById('reassignTaskModal')).show();
+  const modalEl = document.getElementById('reassignTaskModal');
+  if (modalEl) {
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+  }
 }
 
-function openUpdateStatusModal(id, title, status) {
+function openUpdateStatusModal(id, title, status, evt) {
+  if (evt) {
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+  }
   document.getElementById('statusTaskId').value = id;
   document.getElementById('statusTaskTitle').value = title;
   const sel = document.getElementById('statusSelect');
   if (sel) sel.value = status || 'Completed';
-  new bootstrap.Modal(document.getElementById('updateTaskStatusModal')).show();
+  const modalEl = document.getElementById('updateTaskStatusModal');
+  if (modalEl) {
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+  }
 }
 
-function openApproveLeaveModal(id, staffName, days) {
+function openApproveLeaveModal(id, staffName, days, evt) {
+  if (evt) {
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+  }
   document.getElementById('approveLeaveId').value = id;
   document.getElementById('approveLeaveStaff').textContent = staffName;
   document.getElementById('approveLeaveDays').textContent = days;
-  new bootstrap.Modal(document.getElementById('approveLeaveModal')).show();
+  const modalEl = document.getElementById('approveLeaveModal');
+  if (modalEl) {
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+  }
 }
 
-function openRejectLeaveModal(id, staffName) {
+function openRejectLeaveModal(id, staffName, evt) {
+  if (evt) {
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+  }
   document.getElementById('rejectLeaveId').value = id;
   document.getElementById('rejectLeaveStaff').textContent = staffName;
-  new bootstrap.Modal(document.getElementById('rejectLeaveModal')).show();
+  const modalEl = document.getElementById('rejectLeaveModal');
+  if (modalEl) {
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+  }
 }
 
-function openUpdateStaffRequestModal(id, title, status, notes) {
+function openUpdateStaffRequestModal(id, title, status, notes, evt) {
+  if (evt) {
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+  }
   document.getElementById('staffReqId').value = id;
   document.getElementById('staffReqTitle').value = title;
   document.getElementById('staffReqStatus').value = status || 'Completed';
   document.getElementById('staffReqNotes').value = notes || '';
-  new bootstrap.Modal(document.getElementById('updateStaffRequestModal')).show();
+  const modalEl = document.getElementById('updateStaffRequestModal');
+  if (modalEl) {
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+  }
 }
 
 // Fetch Task Details, Comments & History dynamically
-function openTaskDetailModal(taskId) {
+function openTaskDetailModal(taskId, evt) {
+  if (evt) {
+    evt.stopPropagation();
+    evt.stopImmediatePropagation();
+  }
   const modalEl = document.getElementById('taskDetailModal');
   const bodyEl = document.getElementById('taskDetailBody');
-  const bsModal = new bootstrap.Modal(modalEl);
+  const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
   bsModal.show();
 
   bodyEl.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="text-muted small mt-2">Loading task details...</p></div>';
