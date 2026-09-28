@@ -19,28 +19,74 @@ use App\Middleware\RoleMiddleware;
 // ─── Global Exception & Error Handler ────────────────────────────────────────
 // Catches all unhandled Throwables BEFORE they produce raw PHP output to users.
 set_exception_handler(function (\Throwable $e): void {
-    $isApi = str_starts_with(
-        parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/',
-        '/api/'
-    );
+    // Clear any active output buffers to avoid broken layouts
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
 
-    // Always log to server error log; never display raw stack traces
+    $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+    $isApi = str_starts_with($uri, '/api/');
+
+    // Always log to server error log
     error_log(sprintf(
         '[VISA-TRACK] Unhandled %s in %s:%d — %s',
         get_class($e), $e->getFile(), $e->getLine(), $e->getMessage()
     ));
 
+    // Log the error into activity_logs so Super Admin can inspect it
+    try {
+        if (class_exists(\App\Services\AuditService::class)) {
+            $user = function_exists('auth_user') ? auth_user() : ($_SESSION['user'] ?? null);
+            \App\Services\AuditService::log(
+                'SYSTEM_ERROR',
+                'System',
+                null,
+                get_class($e) . ': ' . $e->getMessage() . ' at ' . basename($e->getFile()) . ':' . $e->getLine(),
+                [
+                    'exception' => get_class($e),
+                    'message'   => $e->getMessage(),
+                    'file'      => $e->getFile(),
+                    'line'      => $e->getLine(),
+                    'uri'       => $_SERVER['REQUEST_URI'] ?? '',
+                    'method'    => $_SERVER['REQUEST_METHOD'] ?? '',
+                    'user'      => $user ? ($user['name'] . ' (' . ($user['role_name'] ?? $user['role'] ?? 'Staff') . ')') : 'Unauthenticated',
+                ],
+                $user['id'] ?? null
+            );
+        }
+    } catch (\Throwable $ignored) {}
+
     if (!headers_sent()) {
         http_response_code(500);
     }
 
+    // Determine if current user is Super Admin or Admin
+    $isSuperAdmin = false;
+    if (session_status() === PHP_SESSION_ACTIVE || !empty($_SESSION)) {
+        $u = $_SESSION['user'] ?? null;
+        $role = $u['role_slug'] ?? $u['role'] ?? '';
+        if ($role === 'super-admin' || $role === 'Super Admin' || $role === 'admin' || $role === 'Admin' || isset($_SESSION['impersonator_id'])) {
+            $isSuperAdmin = true;
+        }
+    }
+
     if ($isApi) {
         header('Content-Type: application/json');
-        echo json_encode([
+        $resp = [
             'success' => false,
             'message' => 'An internal server error occurred. Please try again later.',
-        ]);
+        ];
+        if ($isSuperAdmin) {
+            $resp['debug'] = [
+                'exception' => get_class($e),
+                'message'   => $e->getMessage(),
+                'file'      => $e->getFile(),
+                'line'      => $e->getLine(),
+            ];
+        }
+        echo json_encode($resp);
     } else {
+        $diagnosticError = $isSuperAdmin ? $e : null;
         $errorPage = dirname(__DIR__) . '/app/Views/layouts/500.php';
         if (file_exists($errorPage)) {
             require $errorPage;
@@ -89,60 +135,37 @@ if (empty($uri)) {
 switch ($uri) {
     case '':
     case '/':
-        (new App\Controllers\PublicWebsiteController())->home();
-        break;
-
     case '/about':
-        (new App\Controllers\PublicWebsiteController())->about();
-        break;
-
     case '/visa':
     case '/visa-services':
-        (new App\Controllers\PublicWebsiteController())->visaServices();
-        break;
-
     case '/visa-service':
     case '/visa-services/detail':
-        (new App\Controllers\PublicWebsiteController())->visaServiceDetail();
-        break;
-
     case '/jobs':
-        (new App\Controllers\PublicWebsiteController())->jobs();
-        break;
-
     case '/job':
     case '/jobs/detail':
-        (new App\Controllers\PublicWebsiteController())->jobDetail();
-        break;
-
     case '/jobs/apply':
-        (new App\Controllers\PublicWebsiteController())->applyJob();
-        break;
-
     case '/visa-enquiry':
-        (new App\Controllers\PublicWebsiteController())->visaEnquiry();
-        break;
+    case '/contact':
+    case '/faq':
+        if (isset($_SESSION['user_id'])) {
+            header('Location: /dashboard');
+        } elseif (isset($_SESSION['customer_id'])) {
+            header('Location: /portal/dashboard');
+        } else {
+            header('Location: /login');
+        }
+        exit;
 
     case '/track':
     case '/public-track':
-        (new App\Controllers\PublicWebsiteController())->tracking();
-        break;
-
-    case '/contact':
-        (new App\Controllers\PublicWebsiteController())->contact();
-        break;
-
-    case '/faq':
-        (new App\Controllers\PublicWebsiteController())->faq();
+    case '/tracking':
+        (new App\Controllers\TrackingController())->index();
         break;
 
     case '/sitemap.xml':
-        (new App\Controllers\PublicWebsiteController())->sitemap();
-        break;
-
     case '/robots.txt':
-        (new App\Controllers\PublicWebsiteController())->robotsTxt();
-        break;
+        http_response_code(404);
+        exit;
 
     // Authentication Routes
     case '/login':

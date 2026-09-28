@@ -4,7 +4,13 @@
  */
 
 // 0. Define global modal & dropdown helper functions early
-window.openModalById = function (modalId) {
+window.openModalById = function (modalId, evt) {
+  const e = evt || window.event;
+  if (e) {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+  }
   const el = document.getElementById(modalId);
   if (!el) {
     console.error('Modal element not found: ' + modalId);

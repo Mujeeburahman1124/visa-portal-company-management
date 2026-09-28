@@ -112,7 +112,13 @@
   <!-- Core Bootstrap 5 Bundle JS (Loaded early so modal/dropdown APIs exist everywhere) -->
   <script src="/assets/js/bootstrap.bundle.min.js"></script>
   <script>
-    window.openModalById = function (modalId) {
+    window.openModalById = function (modalId, evt) {
+      var e = evt || window.event;
+      if (e) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      }
       var el = document.getElementById(modalId);
       if (!el) {
         console.error('Modal element not found: ' + modalId);

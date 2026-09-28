@@ -77,7 +77,7 @@ $activeTab = $_GET['tab'] ?? 'company';
         </li>
         <li class="nav-item">
           <a class="nav-link <?= $activeTab === 'appearance' ? 'active' : '' ?> py-3 fw-semibold small text-nowrap" href="/settings?tab=appearance">
-            <i class="fa-solid fa-palette text-warning me-1"></i> Website Themes &amp; Appearance
+            <i class="fa-solid fa-palette text-warning me-1"></i> Admin Portal Themes &amp; Appearance
           </a>
         </li>
       </ul>
@@ -749,7 +749,28 @@ $activeTab = $_GET['tab'] ?? 'company';
             <!-- Left Column: Theme Controls -->
             <div class="col-lg-7">
               <div class="p-4 bg-light rounded border mb-4">
-                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-palette text-primary me-2"></i> Website Visual Branding &amp; Styling</h6>
+                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-palette text-primary me-2"></i> Admin Portal Visual Branding &amp; Themes</h6>
+                
+                <div class="mb-3">
+                  <label class="form-label small fw-semibold">Dashboard Luxury Theme Presets</label>
+                  <div class="d-flex flex-wrap gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 shadow-sm" onclick="applyThemePreset('ocean-royal', '#1e40af', '#0891b2')">
+                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#1e40af;"></span> Ocean Royal
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1 shadow-sm" onclick="applyThemePreset('sunset-fusion', '#be185d', '#ea580c')">
+                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#be185d;"></span> Sunset Fusion
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success d-flex align-items-center gap-1 shadow-sm" onclick="applyThemePreset('emerald-royal', '#065f46', '#0d9488')">
+                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#065f46;"></span> Emerald Royal
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-dark d-flex align-items-center gap-1 shadow-sm" style="color:#7c3aed;border-color:#7c3aed;" onclick="applyThemePreset('violet-aurora', '#5b21b6', '#2563eb')">
+                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#5b21b6;"></span> Violet Aurora
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 shadow-sm" onclick="applyThemePreset('crimson-midnight', '#991b1b', '#92400e')">
+                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#991b1b;"></span> Crimson Midnight
+                    </button>
+                  </div>
+                </div>
                 
                 <div class="row g-3 mb-3">
                   <div class="col-md-6">
@@ -1226,6 +1247,16 @@ function submitTestEmail() {
 }
 
 // Live Theme & Color Sync Functions
+function applyThemePreset(themeId, primaryHex, accentHex) {
+  document.documentElement.setAttribute('data-theme', themeId);
+  try { localStorage.setItem('vt_theme', themeId); } catch(e){}
+  if (document.getElementById('themePrimaryColor')) document.getElementById('themePrimaryColor').value = primaryHex;
+  if (document.getElementById('themePrimaryColorHex')) document.getElementById('themePrimaryColorHex').value = primaryHex;
+  if (document.getElementById('themeAccentColor')) document.getElementById('themeAccentColor').value = accentHex;
+  if (document.getElementById('themeAccentColorHex')) document.getElementById('themeAccentColorHex').value = accentHex;
+  updateLiveThemePreview();
+}
+
 function syncColorInput(type, hex) {
   if (type === 'primary') {
     document.getElementById('themePrimaryColorHex').value = hex;

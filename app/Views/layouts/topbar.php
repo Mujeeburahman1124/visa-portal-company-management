@@ -15,6 +15,16 @@ try {
     // Graceful fallback
 }
 
+// Super Admin System Error Detection
+$isSuperAdminUser = (($currentUser['role_slug'] ?? '') === 'super-admin' || ($currentUser['role'] ?? '') === 'Super Admin' || is_impersonating());
+$systemErrorCount = 0;
+if ($isSuperAdminUser) {
+    try {
+        $stmtErr = $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE action IN ('SYSTEM_ERROR', 'ERROR', 'EXCEPTION')");
+        $systemErrorCount = (int)$stmtErr->fetchColumn();
+    } catch (\Throwable $e) {}
+}
+
 // Generate dynamic breadcrumb from URI
 $currentUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
 $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
@@ -123,6 +133,24 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
         <li><a class="dropdown-item py-2" href="/tasks"><i class="fa-solid fa-list-check text-warning me-2"></i> Create Task</a></li>
         <li><a class="dropdown-item py-2" href="/appointments"><i class="fa-solid fa-calendar-plus text-danger me-2"></i> Schedule Appointment</a></li>
       </ul>
+    </div>
+
+    <!-- Super Admin System Errors Warning Indicator -->
+    <?php if ($isSuperAdminUser && $systemErrorCount > 0): ?>
+      <a href="/audit-logs?action=SYSTEM_ERROR" class="btn btn-outline-danger btn-sm rounded-pill d-flex align-items-center gap-1 px-2.5 shadow-sm" title="System Errors Logged — Click to inspect">
+        <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+        <span class="d-none d-md-inline small fw-bold">Errors</span>
+        <span class="badge bg-danger rounded-pill"><?= $systemErrorCount ?></span>
+      </a>
+    <?php endif; ?>
+
+    <!-- Theme Palette Selector -->
+    <div class="theme-selector-wrap flex-shrink-0">
+      <button class="theme-selector-btn" type="button" aria-label="Choose Theme" title="Choose Theme">
+        <span class="theme-swatch-current"></span>
+        <span class="d-none d-xl-inline">Theme</span>
+        <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem;"></i>
+      </button>
     </div>
 
     <!-- Notification Bell with Dropdown Panel -->

@@ -278,18 +278,21 @@ function get_flash(): ?array {
     return null;
 }
 
-function format_currency(float $amount, string $currency = 'USD'): string {
-    return '$' . number_format($amount, 2);
+function format_currency(int|float|string|null $amount, string $currency = 'USD'): string {
+    $val = is_numeric($amount) ? (float)$amount : 0.0;
+    return '$' . number_format($val, 2);
 }
 
 function format_date(?string $date, string $format = 'd M Y'): string {
-    if (empty($date)) return '—';
-    return date($format, strtotime($date));
+    if (empty($date) || $date === '—') return '—';
+    $time = strtotime($date);
+    return ($time !== false && $time > 0) ? date($format, $time) : '—';
 }
 
 function format_datetime(?string $date): string {
-    if (empty($date)) return '—';
-    return date('d M Y, h:i A', strtotime($date));
+    if (empty($date) || $date === '—') return '—';
+    $time = strtotime($date);
+    return ($time !== false && $time > 0) ? date('d M Y, h:i A', $time) : '—';
 }
 
 function json_response(array $data, int $statusCode = 200): void {

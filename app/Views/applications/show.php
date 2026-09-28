@@ -67,12 +67,12 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
           </a>
 
           <!-- Update Stage Button -->
-          <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#stageTransitionModal" onclick="openModalById('stageTransitionModal')">
+          <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" onclick="openModalById('stageTransitionModal', event)">
             <i class="fa-solid fa-forward-step me-1"></i> Update Stage
           </button>
 
           <!-- Approve Visa Button -->
-          <button type="button" class="btn btn-success btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#approveVisaModal" onclick="openModalById('approveVisaModal')">
+          <button type="button" class="btn btn-success btn-sm px-3 shadow-sm" onclick="openModalById('approveVisaModal', event)">
             <i class="fa-solid fa-circle-check me-1"></i> Approve Visa
           </button>
 
@@ -82,12 +82,12 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
               <i class="fa-solid fa-gavel me-1"></i> Decisions
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; z-index: 1070;">
-              <li><button type="button" class="dropdown-item py-2 text-success fw-semibold" data-bs-toggle="modal" data-bs-target="#approveVisaModal" onclick="openModalById('approveVisaModal')"><i class="fa-solid fa-circle-check me-2"></i> Approve (Grant Visa)</button></li>
-              <li><button type="button" class="dropdown-item py-2 text-warning fw-semibold" data-bs-toggle="modal" data-bs-target="#returnVisaModal" onclick="openModalById('returnVisaModal')"><i class="fa-solid fa-rotate-left me-2"></i> Return for Modifications</button></li>
-              <li><button type="button" class="dropdown-item py-2 text-danger fw-semibold" data-bs-toggle="modal" data-bs-target="#rejectVisaModal" onclick="openModalById('rejectVisaModal')"><i class="fa-solid fa-circle-xmark me-2"></i> Reject Application</button></li>
+              <li><button type="button" class="dropdown-item py-2 text-success fw-semibold" onclick="openModalById('approveVisaModal', event)"><i class="fa-solid fa-circle-check me-2"></i> Approve (Grant Visa)</button></li>
+              <li><button type="button" class="dropdown-item py-2 text-warning fw-semibold" onclick="openModalById('returnVisaModal', event)"><i class="fa-solid fa-rotate-left me-2"></i> Return for Modifications</button></li>
+              <li><button type="button" class="dropdown-item py-2 text-danger fw-semibold" onclick="openModalById('rejectVisaModal', event)"><i class="fa-solid fa-circle-xmark me-2"></i> Reject Application</button></li>
               <li><hr class="dropdown-divider my-1"></li>
-              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#requestDocModal" onclick="openModalById('requestDocModal')"><i class="fa-solid fa-file-circle-question text-primary me-2"></i> Request Additional Document</button></li>
-              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#addCommModal" onclick="openModalById('addCommModal')"><i class="fa-solid fa-phone text-info me-2"></i> Log Client Communication</button></li>
+              <li><button type="button" class="dropdown-item py-2" onclick="openModalById('requestDocModal', event)"><i class="fa-solid fa-file-circle-question text-primary me-2"></i> Request Additional Document</button></li>
+              <li><button type="button" class="dropdown-item py-2" onclick="openModalById('addCommModal', event)"><i class="fa-solid fa-phone text-info me-2"></i> Log Client Communication</button></li>
             </ul>
           </div>
 
@@ -98,9 +98,9 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; z-index: 1070;">
               <li><a class="dropdown-item py-2" href="/applications/edit?id=<?= $app['id'] ?>"><i class="fa-solid fa-pen-to-square text-primary me-2"></i> Edit Details</a></li>
-              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#reassignStaffModal" onclick="openModalById('reassignStaffModal')"><i class="fa-solid fa-user-gear text-info me-2"></i> Reassign Staff</button></li>
-              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#priorityModal" onclick="openModalById('priorityModal')"><i class="fa-solid fa-flag text-warning me-2"></i> Change Priority</button></li>
-              <li><button type="button" class="dropdown-item py-2" data-bs-toggle="modal" data-bs-target="#addNoteModal" onclick="openModalById('addNoteModal')"><i class="fa-solid fa-note-sticky text-secondary me-2"></i> Add Internal Note</button></li>
+              <li><button type="button" class="dropdown-item py-2" onclick="openModalById('reassignStaffModal', event)"><i class="fa-solid fa-user-gear text-info me-2"></i> Reassign Staff</button></li>
+              <li><button type="button" class="dropdown-item py-2" onclick="openModalById('priorityModal', event)"><i class="fa-solid fa-flag text-warning me-2"></i> Change Priority</button></li>
+              <li><button type="button" class="dropdown-item py-2" onclick="openModalById('addNoteModal', event)"><i class="fa-solid fa-note-sticky text-secondary me-2"></i> Add Internal Note</button></li>
               <li><hr class="dropdown-divider my-1"></li>
               <li><a class="dropdown-item py-2" href="/payments/invoice?app_id=<?= $app['id'] ?>" target="_blank"><i class="fa-solid fa-file-invoice text-success me-2"></i> Print Invoice</a></li>
               <li>
@@ -168,7 +168,7 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
         </div>
         <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded">
           <span class="small text-muted"><i class="fa-solid fa-info-circle me-1"></i> Fulfill pending checklist items to advance</span>
-          <button type="button" class="btn btn-sm btn-warning text-dark py-1 px-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#stageTransitionModal" onclick="openModalById('stageTransitionModal')">
+          <button type="button" class="btn btn-sm btn-warning text-dark py-1 px-3 fw-semibold" onclick="openModalById('stageTransitionModal', event)">
             <i class="fa-solid fa-circle-check me-1"></i> Advance Stage &rarr;
           </button>
         </div>
@@ -787,27 +787,27 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
           
           <!-- Financial Summary Cards -->
           <div class="row g-3 mb-4">
-            <div class="col-md-3">
-              <div class="border rounded p-3 text-center bg-light">
-                <div class="small text-muted mb-1">Total Invoice</div>
-                <div class="fs-5 fw-bold text-dark"><?= format_currency($app['total_amount'] ?? $app['selling_price'] ?? 0) ?></div>
+            <div class="col-6 col-md-3">
+              <div class="border rounded p-3 text-center bg-light h-100">
+                <div class="small text-muted mb-1 text-truncate">Total Invoice</div>
+                <div class="fs-5 fw-bold text-dark text-nowrap"><?= format_currency($app['total_amount'] ?? $app['selling_price'] ?? 0) ?></div>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="border rounded p-3 text-center bg-success bg-opacity-10">
-                <div class="small text-muted mb-1">Total Paid</div>
-                <div class="fs-5 fw-bold text-success"><?= format_currency($app['paid_amount'] ?? 0) ?></div>
+            <div class="col-6 col-md-3">
+              <div class="border rounded p-3 text-center bg-success bg-opacity-10 h-100">
+                <div class="small text-muted mb-1 text-truncate">Total Paid</div>
+                <div class="fs-5 fw-bold text-success text-nowrap"><?= format_currency($app['paid_amount'] ?? 0) ?></div>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="border rounded p-3 text-center <?= ((float)($app['balance_amount'] ?? 0) > 0) ? 'bg-danger bg-opacity-10' : 'bg-light' ?>">
-                <div class="small text-muted mb-1">Balance Due</div>
-                <div class="fs-5 fw-bold <?= ((float)($app['balance_amount'] ?? 0) > 0) ? 'text-danger' : 'text-muted' ?>"><?= format_currency($app['balance_amount'] ?? 0) ?></div>
+            <div class="col-6 col-md-3">
+              <div class="border rounded p-3 text-center <?= ((float)($app['balance_amount'] ?? 0) > 0) ? 'bg-danger bg-opacity-10' : 'bg-light' ?> h-100">
+                <div class="small text-muted mb-1 text-truncate">Balance Due</div>
+                <div class="fs-5 fw-bold text-nowrap <?= ((float)($app['balance_amount'] ?? 0) > 0) ? 'text-danger' : 'text-muted' ?>"><?= format_currency($app['balance_amount'] ?? 0) ?></div>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="border rounded p-3 text-center bg-light">
-                <div class="small text-muted mb-1">Payment Status</div>
+            <div class="col-6 col-md-3">
+              <div class="border rounded p-3 text-center bg-light h-100 d-flex flex-column justify-content-center">
+                <div class="small text-muted mb-1 text-truncate">Payment Status</div>
                 <div class="fw-bold">
                   <?php
                     $bal = (float)($app['balance_amount'] ?? 0);
@@ -834,7 +834,7 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
                 <!-- Multi-Currency & Payment Details Strip -->
                 <div class="p-3 bg-light rounded border mb-3">
                   <div class="row g-2 mb-2">
-                    <div class="col-md-3">
+                    <div class="col-6 col-lg-3">
                       <label class="form-label small fw-semibold">Received Currency</label>
                       <select name="from_currency" id="appPayFromCur" class="form-select form-select-sm fw-bold" onchange="calcAppPaymentConverter()">
                         <?php foreach (['USD', 'AED', 'LKR', 'EUR', 'GBP', 'SAR', 'QAR', 'INR', 'CAD', 'AUD'] as $c): ?>
@@ -842,16 +842,16 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
                         <?php endforeach; ?>
                       </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-6 col-lg-3">
                       <label class="form-label small fw-semibold">Received Amount <span class="text-danger">*</span></label>
                       <input type="number" step="0.01" min="0.01" name="original_amount" id="appPayOrigAmount" class="form-control form-control-sm fw-bold" 
                              value="<?= number_format((float)($app['balance_amount'] ?? 0), 2, '.', '') ?>" placeholder="0.00" required oninput="calcAppPaymentConverter()">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-6 col-lg-3">
                       <label class="form-label small fw-semibold">Exchange Rate</label>
                       <input type="number" step="0.000001" name="exchange_rate" id="appPayRate" class="form-control form-control-sm text-end fw-bold" value="1.000000" oninput="calcAppPaymentConverter()">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-6 col-lg-3">
                       <label class="form-label small fw-semibold">Settlement Currency</label>
                       <select name="to_currency" id="appPayToCur" class="form-select form-select-sm fw-bold" onchange="calcAppPaymentConverter()">
                         <option value="USD" selected>USD ($)</option>
@@ -2002,20 +2002,37 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
 </div>
 
 <script>
-if (typeof window.openModalById !== 'function') {
-  window.openModalById = function (modalId) {
-    var el = document.getElementById(modalId);
-    if (!el) return;
-    try {
-      if (window.bootstrap && bootstrap.Modal) {
-        bootstrap.Modal.getOrCreateInstance(el).show();
-        return;
-      }
-    } catch (e) {}
-    el.classList.add('show');
-    el.style.display = 'block';
-  };
-}
+window.openModalById = function (modalId, evt) {
+  var e = evt || window.event;
+  if (e) {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+  }
+  var el = document.getElementById(modalId);
+  if (!el) {
+    console.error('Modal element not found: ' + modalId);
+    return;
+  }
+  try {
+    if (window.bootstrap && bootstrap.Modal) {
+      bootstrap.Modal.getOrCreateInstance(el).show();
+      return;
+    }
+  } catch (err) {}
+  el.classList.add('show');
+  el.style.display = 'block';
+  el.removeAttribute('aria-hidden');
+  el.setAttribute('aria-modal', 'true');
+  document.body.classList.add('modal-open');
+  var backdrop = document.getElementById('vt-modal-backdrop');
+  if (!backdrop) {
+    backdrop = document.createElement('div');
+    backdrop.id = 'vt-modal-backdrop';
+    backdrop.className = 'modal-backdrop fade show';
+    document.body.appendChild(backdrop);
+  }
+};
 
 function toggleDecisionFields() {
   const dec = document.getElementById('decisionSelect')?.value;
