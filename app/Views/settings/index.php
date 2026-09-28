@@ -352,9 +352,116 @@ $activeTab = $_GET['tab'] ?? 'company';
         </form>
 
       <!-- ============================================== -->
+      <!-- ============================================== -->
       <!-- TAB 5: EMAIL NOTIFICATION TEMPLATES -->
       <!-- ============================================== -->
       <?php elseif ($activeTab === 'templates'): ?>
+        <!-- Global Email Branding & Theme Customizer -->
+        <div class="card border rounded-3 shadow-sm mb-4">
+          <div class="card-header bg-light d-flex flex-wrap align-items-center justify-content-between py-3 gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-primary p-2 rounded-2"><i class="fa-solid fa-paintbrush text-white"></i></span>
+              <div>
+                <h6 class="fw-bold text-dark mb-0">Global Email Branding &amp; Visual Styling</h6>
+                <div class="text-muted small" style="font-size: 0.8rem;">Configure the official logo, header color, brand accents, and footer branding applied to all automated emails.</div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-outline-info btn-sm px-3 fw-semibold shadow-sm" onclick="previewBrandedEmail()">
+              <i class="fa-solid fa-eye me-1"></i> Preview Branded Layout
+            </button>
+          </div>
+          <div class="card-body p-3.5">
+            <form action="/settings/preferences" method="POST" id="emailBrandingForm">
+              <?= csrf_field() ?>
+              <input type="hidden" name="target_tab" value="templates">
+
+              <div class="row g-3 align-items-start">
+                <!-- Logo URL -->
+                <div class="col-lg-5 col-md-12">
+                  <label class="form-label small fw-semibold text-dark mb-1">
+                    <i class="fa-solid fa-image text-primary me-1"></i> Email Header Logo
+                  </label>
+                  <div class="input-group">
+                    <input type="text" name="settings[email_theme_logo]" id="emailThemeLogoInput" class="form-control form-control-sm" 
+                           value="<?= e(!empty($settings['email_theme_logo']) ? $settings['email_theme_logo'] : '/assets/images/logo.png') ?>" 
+                           placeholder="/assets/images/logo.png or https://..." oninput="updateEmailHeaderPreview()">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetEmailLogo()">Default</button>
+                  </div>
+                  <div class="form-text small" style="font-size: 0.72rem;">Default: <code>/assets/images/logo.png</code>. Supports absolute URLs or local asset paths.</div>
+                </div>
+
+                <!-- Header Background Color -->
+                <div class="col-lg-3 col-md-6 col-sm-6">
+                  <label class="form-label small fw-semibold text-dark mb-1">
+                    <i class="fa-solid fa-fill-drip text-dark me-1"></i> Header Background
+                  </label>
+                  <div class="d-flex align-items-center gap-2">
+                    <input type="color" id="emailHeaderBgColor" class="form-control form-control-color border-0 p-0" style="width: 36px; height: 34px; border-radius: 6px; cursor: pointer;"
+                           value="<?= e(!empty($settings['email_theme_header_bg']) ? $settings['email_theme_header_bg'] : '#0f172a') ?>" oninput="syncEmailHeaderColor(this.value)">
+                    <input type="text" name="settings[email_theme_header_bg]" id="emailHeaderBgHex" class="form-control form-control-sm font-monospace text-uppercase" 
+                           value="<?= e(!empty($settings['email_theme_header_bg']) ? $settings['email_theme_header_bg'] : '#0f172a') ?>" maxlength="7" oninput="syncEmailHeaderHex(this.value)">
+                  </div>
+                  <div class="form-text small" style="font-size: 0.72rem;">Email top banner color (Dark, Navy, Black, etc.)</div>
+                </div>
+
+                <!-- Primary Brand / Button Color -->
+                <div class="col-lg-4 col-md-6 col-sm-6">
+                  <label class="form-label small fw-semibold text-dark mb-1">
+                    <i class="fa-solid fa-palette text-primary me-1"></i> Brand Color (Buttons &amp; Links)
+                  </label>
+                  <div class="d-flex align-items-center gap-2">
+                    <input type="color" id="emailThemeColor" class="form-control form-control-color border-0 p-0" style="width: 36px; height: 34px; border-radius: 6px; cursor: pointer;"
+                           value="<?= e(!empty($settings['email_theme_color']) ? $settings['email_theme_color'] : (!empty($settings['email_theme_primary']) ? $settings['email_theme_primary'] : '#2563eb')) ?>" oninput="syncEmailThemeColor(this.value)">
+                    <input type="text" name="settings[email_theme_color]" id="emailThemeColorHex" class="form-control form-control-sm font-monospace text-uppercase" 
+                           value="<?= e(!empty($settings['email_theme_color']) ? $settings['email_theme_color'] : (!empty($settings['email_theme_primary']) ? $settings['email_theme_primary'] : '#2563eb')) ?>" maxlength="7" oninput="syncEmailThemeHex(this.value)">
+                  </div>
+                  <div class="form-text small" style="font-size: 0.72rem;">Applied to Call-To-Action buttons and accent borders</div>
+                </div>
+
+                <!-- Footer Text -->
+                <div class="col-lg-9 col-md-8">
+                  <label class="form-label small fw-semibold text-dark mb-1">
+                    <i class="fa-solid fa-align-left text-secondary me-1"></i> Email Footer Branding Text
+                  </label>
+                  <input type="text" name="settings[email_theme_footer]" id="emailThemeFooterInput" class="form-control form-control-sm"
+                         value="<?= e($settings['email_theme_footer'] ?? 'MS Travel Hub Global Visa Services • Enterprise Visa Operations') ?>" oninput="updateEmailHeaderPreview()">
+                </div>
+
+                <!-- Save Button -->
+                <div class="col-lg-3 col-md-4 d-flex align-items-end">
+                  <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold shadow-sm py-2">
+                    <i class="fa-solid fa-floppy-disk me-1"></i> Save Email Branding
+                  </button>
+                </div>
+              </div>
+
+              <!-- Interactive Live Header Preview Strip -->
+              <div class="mt-3 p-3 rounded-2 border" style="background-color: #f8fafc;">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="small fw-bold text-secondary text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Live Email Header &amp; Button Preview:</span>
+                  <span class="badge bg-success-subtle text-success small" style="font-size: 0.68rem;">Realtime CSS Preview</span>
+                </div>
+                <div id="liveEmailHeaderPreview" style="background-color: <?= e(!empty($settings['email_theme_header_bg']) ? $settings['email_theme_header_bg'] : '#0f172a') ?>; border-bottom: 4px solid <?= e(!empty($settings['email_theme_color']) ? $settings['email_theme_color'] : '#2563eb') ?>; padding: 16px 24px; border-radius: 8px 8px 0 0;" class="d-flex align-items-center justify-content-between shadow-sm">
+                  <div class="d-flex align-items-center gap-3">
+                    <img id="previewEmailLogoImg" src="<?= e(!empty($settings['email_theme_logo']) ? $settings['email_theme_logo'] : '/assets/images/logo.png') ?>" alt="Logo" style="max-height: 42px; width: auto; max-width: 150px; border-radius: 4px; display: block;" onerror="this.src='/assets/images/logo.png'">
+                    <div>
+                      <div class="text-white fw-bold" style="font-size: 0.98rem; line-height: 1.2;">MS TRAVEL HUB</div>
+                      <div style="color: #94a3b8; font-size: 0.74rem;">Global Visa &amp; Operations Management</div>
+                    </div>
+                  </div>
+                  <span class="badge" style="background: rgba(255,255,255,0.15); color: #fff; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.25);">OFFICIAL NOTICE</span>
+                </div>
+                <div class="bg-white p-3 border-start border-end border-bottom rounded-bottom-2 d-flex flex-wrap align-items-center justify-content-between gap-2 shadow-sm">
+                  <div class="small text-secondary"><i class="fa-solid fa-wand-magic-sparkles text-primary me-1"></i> Sample Branded Email CTA Button:</div>
+                  <button type="button" id="previewEmailBtn" class="btn btn-sm text-white fw-semibold px-4 shadow-sm" style="background-color: <?= e(!empty($settings['email_theme_color']) ? $settings['email_theme_color'] : '#2563eb') ?>; border-radius: 6px; font-size: 0.82rem; pointer-events: none;">
+                    Review Visa Application &rarr;
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
         <div class="row g-4">
           <!-- Templates Catalog List -->
           <div class="col-lg-5">
@@ -1202,6 +1309,250 @@ function resetThemeDefaults() {
   if (document.getElementById('themeBorderRadius')) document.getElementById('themeBorderRadius').value = '8px';
   if (document.getElementById('themeModeSelect')) document.getElementById('themeModeSelect').value = 'light';
   updateLiveThemePreview();
+}
+</script>
+
+<!-- ============================================== -->
+<!-- EMAIL TEMPLATE PREVIEW MODAL -->
+<!-- ============================================== -->
+<div class="modal fade" id="emailPreviewModal" tabindex="-1" aria-labelledby="emailPreviewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content shadow-lg border-0 rounded-3">
+      <div class="modal-header bg-dark text-white py-3">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid fa-envelope-open text-info fs-5"></i>
+          <div>
+            <h6 class="modal-title fw-bold mb-0 text-white" id="emailPreviewModalLabel">Email Template Preview</h6>
+            <div class="small text-white-50" id="emailPreviewSubject">Loading subject...</div>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0" style="background-color: #f1f5f9; min-height: 480px;">
+        <div class="p-3 bg-white border-bottom small d-flex justify-content-between align-items-center text-muted">
+          <span><i class="fa-solid fa-desktop me-1 text-primary"></i> Responsive Desktop &amp; Mobile Email Rendering</span>
+          <span class="badge bg-primary-subtle text-primary fw-semibold"><i class="fa-solid fa-palette me-1"></i> Branded Output</span>
+        </div>
+        <div id="emailPreviewContainer" class="p-3 d-flex justify-content-center">
+          <div id="emailPreviewLoading" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <div class="text-muted small mt-2">Generating live template preview...</div>
+          </div>
+          <iframe id="emailPreviewIframe" style="width: 100%; min-height: 540px; border: none; display: none; background: #f1f5f9;" title="Email Preview"></iframe>
+        </div>
+      </div>
+      <div class="modal-footer bg-light py-2">
+        <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================== -->
+<!-- SEND TEST EMAIL MODAL -->
+<!-- ============================================== -->
+<div class="modal fade" id="sendTestEmailModal" tabindex="-1" aria-labelledby="sendTestEmailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow border-0 rounded-3">
+      <div class="modal-header bg-light py-3">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid fa-paper-plane text-primary"></i>
+          <h6 class="modal-title fw-bold mb-0" id="sendTestEmailModalLabel">Send Test Notification</h6>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <input type="hidden" id="testEmailTemplateId" value="0">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-dark">Template to Dispatch</label>
+          <input type="text" id="testEmailTemplateTitle" class="form-control form-control-sm bg-light" readonly value="">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-dark">Recipient Email Address <span class="text-danger">*</span></label>
+          <input type="email" id="testEmailRecipientInput" class="form-control" placeholder="your-email@example.com" value="<?= e(auth_user()['email'] ?? '') ?>" required>
+          <div class="form-text small" style="font-size: 0.75rem;">Will dispatch the live formatted email with sample data.</div>
+        </div>
+        <div id="testEmailAlert" class="alert d-none small mb-0" role="alert"></div>
+      </div>
+      <div class="modal-footer bg-light py-2">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm px-3 fw-semibold" id="confirmSendTestBtn" onclick="executeSendTestEmail()">
+          <span class="spinner-border spinner-border-sm me-1 d-none" id="sendTestSpinner"></span>
+          <i class="fa-solid fa-paper-plane me-1" id="sendTestIcon"></i> Send Test Now
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Email Branding Live Synchronization Functions
+function syncEmailHeaderColor(hex) {
+  const hexInput = document.getElementById('emailHeaderBgHex');
+  if (hexInput) hexInput.value = hex;
+  updateEmailHeaderPreview();
+}
+
+function syncEmailHeaderHex(hex) {
+  if (/^#[0-9A-F]{6}$/i.test(hex)) {
+    const colorInput = document.getElementById('emailHeaderBgColor');
+    if (colorInput) colorInput.value = hex;
+    updateEmailHeaderPreview();
+  }
+}
+
+function syncEmailThemeColor(hex) {
+  const hexInput = document.getElementById('emailThemeColorHex');
+  if (hexInput) hexInput.value = hex;
+  updateEmailHeaderPreview();
+}
+
+function syncEmailThemeHex(hex) {
+  if (/^#[0-9A-F]{6}$/i.test(hex)) {
+    const colorInput = document.getElementById('emailThemeColor');
+    if (colorInput) colorInput.value = hex;
+    updateEmailHeaderPreview();
+  }
+}
+
+function updateEmailHeaderPreview() {
+  const headerBg = document.getElementById('emailHeaderBgHex') ? document.getElementById('emailHeaderBgHex').value : '#0f172a';
+  const themeColor = document.getElementById('emailThemeColorHex') ? document.getElementById('emailThemeColorHex').value : '#2563eb';
+  const logoUrl = document.getElementById('emailThemeLogoInput') ? document.getElementById('emailThemeLogoInput').value.trim() : '/assets/images/logo.png';
+  
+  const headerStrip = document.getElementById('liveEmailHeaderPreview');
+  const btn = document.getElementById('previewEmailBtn');
+  const logoImg = document.getElementById('previewEmailLogoImg');
+
+  if (headerStrip) {
+    headerStrip.style.backgroundColor = headerBg;
+    headerStrip.style.borderBottomColor = themeColor;
+  }
+  if (btn) {
+    btn.style.backgroundColor = themeColor;
+  }
+  if (logoImg && logoUrl) {
+    logoImg.src = logoUrl;
+  }
+}
+
+function resetEmailLogo() {
+  const input = document.getElementById('emailThemeLogoInput');
+  if (input) {
+    input.value = '/assets/images/logo.png';
+    updateEmailHeaderPreview();
+  }
+}
+
+// Live Preview of any template
+function previewEmailTemplate(templateId) {
+  const modal = new bootstrap.Modal(document.getElementById('emailPreviewModal'));
+  const titleEl = document.getElementById('emailPreviewModalLabel');
+  const subjEl = document.getElementById('emailPreviewSubject');
+  const iframe = document.getElementById('emailPreviewIframe');
+  const loader = document.getElementById('emailPreviewLoading');
+
+  if (titleEl) titleEl.textContent = 'Loading Template...';
+  if (subjEl) subjEl.textContent = '';
+  if (loader) loader.style.display = 'block';
+  if (iframe) iframe.style.display = 'none';
+
+  modal.show();
+
+  fetch('/settings/preview-template?id=' + templateId)
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        if (titleEl) titleEl.textContent = 'Preview: ' + (data.template_name || 'Email Template');
+        if (subjEl) subjEl.textContent = 'Subject: ' + (data.subject || '');
+        if (loader) loader.style.display = 'none';
+        if (iframe) {
+          iframe.style.display = 'block';
+          const doc = iframe.contentDocument || iframe.contentWindow.document;
+          doc.open();
+          doc.write(data.html);
+          doc.close();
+        }
+      } else {
+        alert(data.error || 'Failed to load preview');
+      }
+    })
+    .catch(err => {
+      if (loader) loader.innerHTML = '<div class="text-danger py-4">Error loading email preview: ' + err.message + '</div>';
+    });
+}
+
+function previewBrandedEmail() {
+  // Previews template #1 (or first available template) to view branding
+  const firstTmpl = <?= !empty($templates[0]['id']) ? (int)$templates[0]['id'] : 1 ?>;
+  previewEmailTemplate(firstTmpl);
+}
+
+// Send Test Email Modal
+function openTestEmailModal(templateId, templateTitle) {
+  document.getElementById('testEmailTemplateId').value = templateId;
+  document.getElementById('testEmailTemplateTitle').value = templateTitle;
+  const alertEl = document.getElementById('testEmailAlert');
+  if (alertEl) {
+    alertEl.className = 'alert d-none small mb-0';
+    alertEl.textContent = '';
+  }
+  const modal = new bootstrap.Modal(document.getElementById('sendTestEmailModal'));
+  modal.show();
+}
+
+function executeSendTestEmail() {
+  const id = document.getElementById('testEmailTemplateId').value;
+  const email = document.getElementById('testEmailRecipientInput').value.trim();
+  const alertEl = document.getElementById('testEmailAlert');
+  const btn = document.getElementById('confirmSendTestBtn');
+  const spinner = document.getElementById('sendTestSpinner');
+  const icon = document.getElementById('sendTestIcon');
+
+  if (!email) {
+    alertEl.className = 'alert alert-danger small mb-0';
+    alertEl.textContent = 'Please enter a recipient email address.';
+    alertEl.classList.remove('d-none');
+    return;
+  }
+
+  btn.disabled = true;
+  if (spinner) spinner.classList.remove('d-none');
+  if (icon) icon.classList.add('d-none');
+
+  const formData = new FormData();
+  formData.append('template_id', id);
+  formData.append('test_email', email);
+  formData.append('csrf_token', '<?= csrf_token() ?>');
+
+  fetch('/settings/send-test-email', {
+    method: 'POST',
+    body: formData
+  })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      if (spinner) spinner.classList.add('d-none');
+      if (icon) icon.classList.remove('d-none');
+
+      if (data.success) {
+        alertEl.className = 'alert alert-success small mb-0';
+        alertEl.textContent = data.message || 'Test email dispatched successfully!';
+        alertEl.classList.remove('d-none');
+      } else {
+        alertEl.className = 'alert alert-danger small mb-0';
+        alertEl.textContent = data.error || data.message || 'Failed to dispatch test email.';
+        alertEl.classList.remove('d-none');
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      if (spinner) spinner.classList.add('d-none');
+      if (icon) icon.classList.remove('d-none');
+      alertEl.className = 'alert alert-danger small mb-0';
+      alertEl.textContent = 'Network error: ' + err.message;
+      alertEl.classList.remove('d-none');
+    });
 }
 </script>
 

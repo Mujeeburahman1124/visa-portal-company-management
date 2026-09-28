@@ -328,6 +328,7 @@ class EmailService
      */
     public static function wrapEmailTemplate(string $title, string $contentHtml, array $data = []): string
     {
+        $appUrl = rtrim((string)($data['appUrl'] ?? \App\Config\Env::get('APP_URL', 'http://localhost:8000')), '/');
         $companyName = htmlspecialchars((string)($data['companyName'] ?? App::COMPANY_NAME), ENT_QUOTES, 'UTF-8');
         $companyEmail = htmlspecialchars((string)($data['companyEmail'] ?? 'mstravelu@gmail.com'), ENT_QUOTES, 'UTF-8');
         $companyPhone = htmlspecialchars((string)($data['companyPhone'] ?? '0585909349'), ENT_QUOTES, 'UTF-8');
@@ -335,12 +336,29 @@ class EmailService
         $currentYear = date('Y');
 
         $emailHeaderBg = '#0f172a';
-        $emailThemeColor = '#0284c7';
+        $emailThemeColor = '#2563eb';
+        $emailLogo = $appUrl . '/assets/images/logo.png';
+        $emailFooterText = 'MS Travel Hub Global Visa Services &bull; Enterprise Visa Operations';
+
         try {
             $emPdo = \App\Config\Database::getConnection();
-            $emSettings = $emPdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('email_theme_header_bg', 'email_theme_color')")->fetchAll(\PDO::FETCH_KEY_PAIR) ?: [];
-            if (!empty($emSettings['email_theme_header_bg'])) $emailHeaderBg = htmlspecialchars($emSettings['email_theme_header_bg'], ENT_QUOTES, 'UTF-8');
-            if (!empty($emSettings['email_theme_color'])) $emailThemeColor = htmlspecialchars($emSettings['email_theme_color'], ENT_QUOTES, 'UTF-8');
+            $emSettings = $emPdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('email_theme_header_bg', 'email_theme_color', 'email_theme_primary', 'email_theme_logo', 'email_theme_footer')")->fetchAll(\PDO::FETCH_KEY_PAIR) ?: [];
+            
+            if (!empty($emSettings['email_theme_header_bg'])) {
+                $emailHeaderBg = htmlspecialchars($emSettings['email_theme_header_bg'], ENT_QUOTES, 'UTF-8');
+            }
+            if (!empty($emSettings['email_theme_color'])) {
+                $emailThemeColor = htmlspecialchars($emSettings['email_theme_color'], ENT_QUOTES, 'UTF-8');
+            } elseif (!empty($emSettings['email_theme_primary'])) {
+                $emailThemeColor = htmlspecialchars($emSettings['email_theme_primary'], ENT_QUOTES, 'UTF-8');
+            }
+            if (!empty($emSettings['email_theme_logo'])) {
+                $rawLogo = trim($emSettings['email_theme_logo']);
+                $emailLogo = str_starts_with($rawLogo, 'http') ? $rawLogo : $appUrl . '/' . ltrim($rawLogo, '/');
+            }
+            if (!empty($emSettings['email_theme_footer'])) {
+                $emailFooterText = htmlspecialchars($emSettings['email_theme_footer'], ENT_QUOTES, 'UTF-8');
+            }
         } catch (\Throwable $e) {}
 
         return <<<HTML
@@ -355,55 +373,66 @@ class EmailService
     table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
     img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
     body { margin: 0; padding: 0; width: 100% !important; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6; }
-    .email-container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08); }
-    .email-header { background: {$emailHeaderBg}; padding: 28px 32px; text-align: left; }
-    .header-title { color: #38bdf8; font-size: 19px; font-weight: 700; letter-spacing: 0.5px; margin: 0; text-transform: uppercase; }
-    .header-subtitle { color: #94a3b8; font-size: 12px; margin-top: 4px; }
-    .email-body { padding: 32px; font-size: 15px; color: #334155; }
-    .email-body h2, .email-body h3 { color: #0f172a; margin-top: 0; }
+    .email-container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0; }
+    .email-header { background: {$emailHeaderBg}; padding: 24px 32px; border-bottom: 4px solid {$emailThemeColor}; text-align: left; }
+    .email-body { padding: 32px 32px 28px; font-size: 15px; color: #334155; line-height: 1.65; }
+    .email-body h1, .email-body h2, .email-body h3 { color: #0f172a; margin-top: 0; font-weight: 700; letter-spacing: -0.01em; }
     .email-footer { background-color: #f8fafc; padding: 24px 32px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
-    .email-footer a { color: {$emailThemeColor}; text-decoration: none; }
-    .btn-primary { display: inline-block; background-color: {$emailThemeColor}; color: #ffffff !important; font-weight: 600; padding: 12px 24px; border-radius: 6px; text-decoration: none; margin: 16px 0; }
-    .data-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
-    .data-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
-    .data-table td:first-child { font-weight: 600; color: #475569; width: 38%; }
+    .email-footer a { color: {$emailThemeColor}; text-decoration: none; font-weight: 600; }
+    .btn-primary { display: inline-block; background-color: {$emailThemeColor}; color: #ffffff !important; font-weight: 600; font-size: 14px; padding: 12px 28px; border-radius: 8px; text-decoration: none; margin: 16px 0; box-shadow: 0 3px 8px rgba(0,0,0,0.12); }
+    .data-table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 14px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+    .data-table td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; }
+    .data-table td:first-child { font-weight: 600; color: #475569; width: 36%; background: #f8fafc; }
+    .info-card { background: #f8fafc; border-left: 4px solid {$emailThemeColor}; padding: 14px 18px; border-radius: 6px; margin: 18px 0; font-size: 14px; color: #334155; }
+    .badge-status { display: inline-block; padding: 4px 12px; font-size: 12px; font-weight: 700; border-radius: 20px; background-color: {$emailThemeColor}; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px; }
   </style>
 </head>
-<body style="background-color: #f1f5f9; margin: 0; padding: 24px 0;">
+<body style="background-color: #f1f5f9; margin: 0; padding: 28px 12px;">
   <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
     <tr>
       <td align="center">
-        <table role="presentation" class="email-container" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
-          <!-- HEADER -->
+        <table role="presentation" class="email-container" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;">
+          <!-- BRANDED HEADER -->
           <tr>
-            <td class="email-header" style="background-color: {$emailHeaderBg}; padding: 24px 32px;">
-              <table role="presentation" width="100%">
+            <td class="email-header" style="background-color: {$emailHeaderBg}; padding: 22px 32px; border-bottom: 4px solid {$emailThemeColor};">
+              <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td>
-                    <div style="font-size: 20px; font-weight: 800; color: #38bdf8; letter-spacing: 0.5px;">VISA TRACK</div>
-                    <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">{$companyName}</div>
+                  <td valign="middle" style="vertical-align: middle;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding-right: 14px; vertical-align: middle;">
+                          <img src="{$emailLogo}" alt="{$companyName}" style="max-height: 48px; width: auto; max-width: 170px; display: block; border-radius: 6px;" border="0">
+                        </td>
+                        <td style="vertical-align: middle;">
+                          <div style="font-size: 17px; font-weight: 800; color: #ffffff; letter-spacing: 0.3px; line-height: 1.2;">{$companyName}</div>
+                          <div style="font-size: 11px; color: #94a3b8; margin-top: 2px; letter-spacing: 0.2px;">Global Visa &amp; Operations Management</div>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
-                  <td align="right">
-                    <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 600; border: 1px solid rgba(56, 189, 248, 0.3);">CONFIDENTIAL</span>
+                  <td align="right" valign="middle" style="vertical-align: middle;">
+                    <span style="background: rgba(255,255,255,0.12); color: #ffffff; font-size: 10px; padding: 4px 10px; border-radius: 14px; font-weight: 600; letter-spacing: 0.5px; border: 1px solid rgba(255,255,255,0.2);">OFFICIAL NOTICE</span>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
           
-          <!-- BODY -->
+          <!-- EMAIL BODY CONTENT -->
           <tr>
-            <td class="email-body" style="padding: 32px; font-size: 15px; color: #334155; line-height: 1.6;">
+            <td class="email-body" style="padding: 32px 32px 28px; font-size: 15px; color: #334155; line-height: 1.65;">
               {$contentHtml}
             </td>
           </tr>
           
-          <!-- FOOTER -->
+          <!-- BRANDED FOOTER -->
           <tr>
             <td class="email-footer" style="background-color: #f8fafc; padding: 24px 32px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
-              <p style="margin: 0 0 8px 0; font-weight: 600; color: #334155;">{$companyName}</p>
-              <p style="margin: 0 0 8px 0;">Helpline: {$companyPhone} | Support: <a href="mailto:{$companyEmail}" style="color: #0284c7;">{$companyEmail}</a></p>
-              <p style="margin: 0; font-size: 11px; color: #94a3b8;">&copy; {$currentYear} {$companyName}. All rights reserved. This is an automated operational notification.</p>
+              <p style="margin: 0 0 6px 0; font-weight: 700; color: #1e293b; font-size: 13px;">{$companyName}</p>
+              <p style="margin: 0 0 10px 0; color: #64748b; font-size: 12px;">{$emailFooterText}</p>
+              <p style="margin: 0 0 10px 0;">Helpline: <strong style="color: #334155;">{$companyPhone}</strong> &bull; Support: <a href="mailto:{$companyEmail}" style="color: {$emailThemeColor}; text-decoration: none; font-weight: 600;">{$companyEmail}</a></p>
+              <div style="height: 1px; background: #e2e8f0; margin: 14px auto; max-width: 320px;"></div>
+              <p style="margin: 0; font-size: 11px; color: #94a3b8;">&copy; {$currentYear} {$companyName}. All rights reserved. Generated automatically by VISA TRACK.</p>
             </td>
           </tr>
         </table>
