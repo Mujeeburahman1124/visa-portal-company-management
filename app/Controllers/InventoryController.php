@@ -22,7 +22,7 @@ class InventoryController
         $categoryId = (int)($_GET['category_id'] ?? 0);
         $supplierId = (int)($_GET['supplier_id'] ?? 0);
         $status = trim($_GET['status'] ?? '');
-        $branchId = (int)($_GET['branch_id'] ?? 0);
+        $branchId = get_scoped_branch_id((int)($_GET['branch_id'] ?? 0));
 
         $sql = "SELECT i.*, 
                        c.name as category_name, c.code as category_code,
@@ -89,7 +89,7 @@ class InventoryController
         $name = trim($_POST['name'] ?? '');
         $categoryId = (int)($_POST['category_id'] ?? 1);
         $supplierId = !empty($_POST['supplier_id']) ? (int)$_POST['supplier_id'] : null;
-        $branchId = !empty($_POST['branch_id']) ? (int)$_POST['branch_id'] : 1;
+        $branchId = get_scoped_branch_id(!empty($_POST['branch_id']) ? (int)$_POST['branch_id'] : 0) ?: 1;
         $unit = trim($_POST['unit'] ?? 'Pcs');
         $openingStock = max(0, (int)($_POST['opening_stock'] ?? 0));
         $minStock = max(1, (int)($_POST['minimum_stock'] ?? 10));

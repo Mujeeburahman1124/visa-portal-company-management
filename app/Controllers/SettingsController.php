@@ -218,12 +218,12 @@ class SettingsController
             'appointmentDate' => date('d M Y, 10:30 AM', strtotime('+3 days')),
             'appointmentLocation' => 'VFS Global Visa Application Center, Dubai',
             'appointmentType' => 'Biometrics & Passport Submission',
-            'login_url' => 'http://localhost:8000/portal/login',
-            'tracking_url' => 'http://localhost:8000/tracking?number=APP-2026-0089',
+            'login_url' => \App\Config\App::url('portal/login'),
+            'tracking_url' => \App\Config\App::url('tracking?number=APP-2026-0089'),
             'companyName' => 'MS TRAVEL HUB GLOBAL',
-            'companyEmail' => 'support@mstravelhub.com',
-            'companyPhone' => '+971 4 123 4567',
-            'companyWebsite' => 'https://mstravelhub.com',
+            'companyEmail' => 'mstravelu@gmail.com',
+            'companyPhone' => '0585909349',
+            'companyWebsite' => 'https://mshorizonuae.com',
             'currentYear' => date('Y')
         ];
 

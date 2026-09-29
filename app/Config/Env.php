@@ -63,14 +63,31 @@ class Env
             self::init();
         }
 
+        // Always prefer the actual incoming live host for APP_URL when running via web server
+        if ($key === 'APP_URL' && !empty($_SERVER['HTTP_HOST']) && !str_contains($_SERVER['HTTP_HOST'], 'localhost') && !str_starts_with($_SERVER['HTTP_HOST'], '127.0.0.1')) {
+            $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+                || (!empty($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443)
+                || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+            $scheme = $isHttps ? 'https' : 'http';
+            return $scheme . '://' . $_SERVER['HTTP_HOST'];
+        }
+
         // 1. Check direct env variable
         $val = getenv($key);
         if ($val !== false && $val !== '') {
-            return self::castValue($val);
+            $casted = self::castValue($val);
+            if ($key === 'APP_URL' && is_string($casted) && str_contains($casted, 'localhost')) {
+                return 'https://mshorizonuae.com';
+            }
+            return $casted;
         }
 
         if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
-            return self::castValue($_ENV[$key]);
+            $casted = self::castValue($_ENV[$key]);
+            if ($key === 'APP_URL' && is_string($casted) && str_contains($casted, 'localhost')) {
+                return 'https://mshorizonuae.com';
+            }
+            return $casted;
         }
 
         // 2. Check system_settings table if available (skip DB_* keys to prevent recursion)
@@ -85,6 +102,20 @@ class Env
                 }
             } catch (\Throwable $e) {
                 // DB might not be initialized yet
+            }
+        }
+
+        // Special handling for APP_URL to ensure emails and links always resolve to the live domain
+        if ($key === 'APP_URL') {
+            if (!empty($_SERVER['HTTP_HOST']) && !str_contains($_SERVER['HTTP_HOST'], 'localhost') && !str_starts_with($_SERVER['HTTP_HOST'], '127.0.0.1')) {
+                $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+                    || (!empty($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443)
+                    || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+                $scheme = $isHttps ? 'https' : 'http';
+                return $scheme . '://' . $_SERVER['HTTP_HOST'];
+            }
+            if ($default === 'http://localhost:8000' || empty($default)) {
+                return 'https://mshorizonuae.com';
             }
         }
 

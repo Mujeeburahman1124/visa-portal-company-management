@@ -29,10 +29,20 @@ class CustomerController
                 WHERE c.is_active = 1";
 
         $params = [];
+        $scopedBranchId = get_scoped_branch_id((int)($_GET['branch_id'] ?? 0));
+        if ($scopedBranchId > 0) {
+            $sql .= " AND (
+                (SELECT u.branch_id FROM users u WHERE u.id = c.created_by) = ? 
+                OR a.branch_id = ?
+            )";
+            $params[] = $scopedBranchId;
+            $params[] = $scopedBranchId;
+        }
+
         if ($search !== '') {
             $sql .= " AND (c.full_name LIKE ? OR c.customer_code LIKE ? OR c.mobile LIKE ? OR c.email LIKE ? OR cp.passport_number LIKE ?)";
             $term = "%{$search}%";
-            $params = array_fill(0, 5, $term);
+            $params = array_merge($params, array_fill(0, 5, $term));
         }
 
         if ($nationality !== '') {
@@ -167,8 +177,8 @@ class CustomerController
         // Dispatch Welcome Onboarding Email to Customer with Auto-Generated Password
         if (!empty($email)) {
             try {
-                $appUrl = (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000');
-                $portalUrl = rtrim($appUrl, '/') . '/portal/login';
+                $appUrl = \App\Config\App::url();
+                $portalUrl = \App\Config\App::url('portal/login');
                 \App\Services\EmailService::send([
                     'to' => $email,
                     'name' => $fullName,
@@ -355,7 +365,7 @@ class CustomerController
             $travelDate = !empty($_POST['travel_date']) ? $_POST['travel_date'] : null;
             $returnDate = !empty($_POST['return_date']) ? $_POST['return_date'] : null;
             $priority = in_array($_POST['priority'] ?? '', ['Critical', 'Urgent', 'High', 'Normal'], true) ? $_POST['priority'] : 'Normal';
-            $branchId = !empty($_POST['branch_id']) ? (int)$_POST['branch_id'] : ($currentUser['branch_id'] ?? 1);
+            $branchId = get_scoped_branch_id(!empty($_POST['branch_id']) ? (int)$_POST['branch_id'] : 0, $currentUser) ?: 1;
             $assignedStaffId = !empty($_POST['assigned_staff_id']) ? (int)$_POST['assigned_staff_id'] : ($currentUser['id'] ?? null);
             $supplierId = !empty($_POST['supplier_id']) ? (int)$_POST['supplier_id'] : null;
             $internalNotes = trim($_POST['internal_notes'] ?? '');
@@ -551,7 +561,7 @@ class CustomerController
                 'whatsapp' => $whatsapp,
                 'nationality' => $nationality,
                 'applicationNumber' => $appNumber ?? '',
-                'loginUrl' => (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000') . "/portal/login",
+                'loginUrl' => \App\Config\App::url('portal/login'),
             ]);
         } catch (\Throwable $e) {}
 
@@ -903,8 +913,8 @@ class CustomerController
         $stmt = $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, customer_id, token, token_hash, expires_at, is_used, created_at) VALUES ('customer', ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)");
         $stmt->execute([$customerId, $customer['email'], $customerId, $rawToken, $tokenHash, $expiresAt]);
 
-        $appUrl = \App\Config\Env::get('APP_URL', 'http://localhost:8000');
-        $activationLink = rtrim($appUrl, '/') . "/portal/activate?token={$rawToken}";
+        $appUrl = \App\Config\App::url();
+        $activationLink = \App\Config\App::url("portal/activate?token={$rawToken}");
 
         $subject = "Activate Your MS TRAVEL HUB Customer Portal Account";
         $body = "

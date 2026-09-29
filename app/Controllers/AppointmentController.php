@@ -31,6 +31,12 @@ class AppointmentController
                 WHERE 1=1";
 
         $params = [];
+        $scopedBranchId = get_scoped_branch_id((int)($_GET['branch_id'] ?? 0));
+        if ($scopedBranchId > 0) {
+            $sql .= " AND a.branch_id = ?";
+            $params[] = $scopedBranchId;
+        }
+
         if ($status !== '') {
             $sql .= " AND ap.status = ?";
             $params[] = $status;
@@ -86,8 +92,18 @@ class AppointmentController
             $appointmentTypes = [];
         }
 
-        $staffMembers = $pdo->query("SELECT id, name FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll();
-        $activeApplications = $pdo->query("SELECT a.id, a.application_number, c.full_name as customer_name, a.customer_id FROM applications a JOIN customers c ON a.customer_id = c.id WHERE a.is_archived = 0 AND a.status NOT IN ('Approved', 'Completed') ORDER BY a.application_number ASC")->fetchAll();
+        if ($scopedBranchId > 0) {
+            $staffStmt = $pdo->prepare("SELECT id, name FROM users WHERE is_active = 1 AND branch_id = ? ORDER BY name ASC");
+            $staffStmt->execute([$scopedBranchId]);
+            $staffMembers = $staffStmt->fetchAll();
+
+            $appStmt = $pdo->prepare("SELECT a.id, a.application_number, c.full_name as customer_name, a.customer_id FROM applications a JOIN customers c ON a.customer_id = c.id WHERE a.is_archived = 0 AND a.branch_id = ? AND a.status NOT IN ('Approved', 'Completed') ORDER BY a.application_number ASC");
+            $appStmt->execute([$scopedBranchId]);
+            $activeApplications = $appStmt->fetchAll();
+        } else {
+            $staffMembers = $pdo->query("SELECT id, name FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll();
+            $activeApplications = $pdo->query("SELECT a.id, a.application_number, c.full_name as customer_name, a.customer_id FROM applications a JOIN customers c ON a.customer_id = c.id WHERE a.is_archived = 0 AND a.status NOT IN ('Approved', 'Completed') ORDER BY a.application_number ASC")->fetchAll();
+        }
 
         require_once dirname(__DIR__) . '/Views/appointments/index.php';
     }
@@ -164,7 +180,7 @@ class AppointmentController
                 'centerName' => $centerName,
                 'locationAddress' => $location ?: 'Consular Visa Application Center',
                 'referenceNumber' => $refNumber,
-                'actionUrl' => (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000') . "/portal/appointments",
+                'actionUrl' => \App\Config\App::url('portal/appointments'),
                 'portal_link' => "/portal/appointments",
                 'link' => "/applications/show?id={$appId}",
             ]);

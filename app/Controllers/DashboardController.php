@@ -53,11 +53,14 @@ class DashboardController
             }
         }
 
+        // Scope non-super-admins strictly to their branch
+        $scopedBranch = (!$isSuperAdmin && $branchId > 0) ? $branchId : (($dashboardType === 'branch' && $branchId > 0) ? $branchId : 0);
+
         // Branch name lookup if applicable
         $branchName = 'Head Office';
-        if ($branchId > 0) {
+        if ($scopedBranch > 0) {
             $bStmt = $pdo->prepare("SELECT name FROM branches WHERE id = ?");
-            $bStmt->execute([$branchId]);
+            $bStmt->execute([$scopedBranch]);
             $branchName = $bStmt->fetchColumn() ?: 'Branch Office';
         }
 
@@ -72,9 +75,9 @@ class DashboardController
         $baseWhere = "WHERE is_archived = 0";
         $baseParams = [];
 
-        if ($dashboardType === 'branch' && $branchId > 0) {
+        if ($scopedBranch > 0) {
             $baseWhere .= " AND branch_id = ?";
-            $baseParams[] = $branchId;
+            $baseParams[] = $scopedBranch;
         } elseif ($dashboardType === 'processing') {
             $baseWhere .= " AND assigned_staff_id = ?";
             $baseParams[] = $userId;
@@ -138,11 +141,11 @@ class DashboardController
             $stmtMyOverdueTasks->execute([$userId, $today]);
             $alerts['overdue_tasks'] = (int)$stmtMyOverdueTasks->fetchColumn();
             $alerts['unpaid_applications'] = 0; // Concealed from processing desk
-        } elseif ($dashboardType === 'branch' && $branchId > 0) {
+        } elseif ($scopedBranch > 0) {
             $stmtExpPass = $pdo->prepare("SELECT COUNT(DISTINCT cp.id) FROM customer_passports cp 
                 JOIN applications a ON cp.customer_id = a.customer_id 
                 WHERE a.is_archived = 0 AND a.branch_id = ? AND cp.expiry_date <= ?");
-            $stmtExpPass->execute([$branchId, $in90Days]);
+            $stmtExpPass->execute([$scopedBranch, $in90Days]);
             $alerts['expiring_passports'] = (int)$stmtExpPass->fetchColumn();
 
             $alerts['expiring_national_ids'] = (int)$pdo->query("SELECT COUNT(*) FROM customer_national_ids WHERE expiry_date <= '{$in90Days}'")->fetchColumn();
@@ -152,11 +155,11 @@ class DashboardController
             $stmtBranchTasks = $pdo->prepare("SELECT COUNT(*) FROM tasks t 
                 JOIN users u ON t.assigned_to = u.id 
                 WHERE u.branch_id = ? AND t.status != 'Completed' AND t.due_date < ?");
-            $stmtBranchTasks->execute([$branchId, $today]);
+            $stmtBranchTasks->execute([$scopedBranch, $today]);
             $alerts['overdue_tasks'] = (int)$stmtBranchTasks->fetchColumn();
 
             $stmtBranchUnpaid = $pdo->prepare("SELECT COUNT(*) FROM applications WHERE is_archived = 0 AND branch_id = ? AND balance_amount > 0");
-            $stmtBranchUnpaid->execute([$branchId]);
+            $stmtBranchUnpaid->execute([$scopedBranch]);
             $alerts['unpaid_applications'] = (int)$stmtBranchUnpaid->fetchColumn();
         } else {
             // Global alerts for admin and accounts
@@ -180,9 +183,9 @@ class DashboardController
         if ($canViewFinance) {
             $finWhere = "WHERE is_archived = 0";
             $finParams = [];
-            if ($dashboardType === 'branch' && $branchId > 0) {
+            if ($scopedBranch > 0) {
                 $finWhere .= " AND branch_id = ?";
-                $finParams[] = $branchId;
+                $finParams[] = $scopedBranch;
             }
             $fStmt = $pdo->prepare("SELECT 
                 COALESCE(SUM(total_amount), 0) as total_sales,
@@ -238,7 +241,7 @@ class DashboardController
                 ORDER BY CASE WHEN a.priority IN ('Critical', 'Urgent') THEN 0 ELSE 1 END, a.expected_completion_date ASC LIMIT 8");
             $urgentStmt->execute([$userId]);
             $urgentApplications = $urgentStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        } elseif ($dashboardType === 'branch' && $branchId > 0) {
+        } elseif ($scopedBranch > 0) {
             $urgentStmt = $pdo->prepare("SELECT a.*, c.full_name as customer_name, c.mobile, vs.name as service_name, u.name as staff_name 
                 FROM applications a 
                 JOIN customers c ON a.customer_id = c.id 
@@ -246,7 +249,7 @@ class DashboardController
                 LEFT JOIN users u ON a.assigned_staff_id = u.id 
                 WHERE a.is_archived = 0 AND a.branch_id = ? AND (a.priority IN ('Critical', 'Urgent') OR a.status = 'Action Required')
                 ORDER BY a.expected_completion_date ASC LIMIT 6");
-            $urgentStmt->execute([$branchId]);
+            $urgentStmt->execute([$scopedBranch]);
             $urgentApplications = $urgentStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } else {
             $urgentStmt = $pdo->query("SELECT a.*, c.full_name as customer_name, c.mobile, vs.name as service_name, u.name as staff_name 
@@ -270,7 +273,7 @@ class DashboardController
                 ORDER BY ap.appointment_date ASC, ap.appointment_time ASC LIMIT 5");
             $aptStmt->execute([$today, $userId]);
             $upcomingAppointments = $aptStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        } elseif ($dashboardType === 'branch' && $branchId > 0) {
+        } elseif ($scopedBranch > 0) {
             $aptStmt = $pdo->prepare("SELECT ap.*, a.application_number, c.full_name as customer_name, u.name as staff_name 
                 FROM appointments ap 
                 JOIN applications a ON ap.application_id = a.id 
@@ -278,7 +281,7 @@ class DashboardController
                 LEFT JOIN users u ON a.assigned_staff_id = u.id 
                 WHERE ap.appointment_date >= ? AND ap.status != 'Cancelled' AND a.branch_id = ?
                 ORDER BY ap.appointment_date ASC, ap.appointment_time ASC LIMIT 5");
-            $aptStmt->execute([$today, $branchId]);
+            $aptStmt->execute([$today, $scopedBranch]);
             $upcomingAppointments = $aptStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } else {
             $aptStmt = $pdo->query("SELECT ap.*, a.application_number, c.full_name as customer_name, u.name as staff_name 
@@ -306,9 +309,9 @@ class DashboardController
         if ($canViewStaff) {
             $swWhere = "WHERE u.is_active = 1 AND r.slug != 'read-only'";
             $swParams = [];
-            if ($dashboardType === 'branch' && $branchId > 0) {
+            if ($scopedBranch > 0) {
                 $swWhere .= " AND u.branch_id = ?";
-                $swParams[] = $branchId;
+                $swParams[] = $scopedBranch;
             }
             $workloadStmt = $pdo->prepare("SELECT u.id, u.name, u.designation, r.name as role_name,
                 COUNT(a.id) as total_assigned,

@@ -140,6 +140,23 @@ function original_admin_user(): ?array {
     return $_SESSION['original_admin'] ?? null;
 }
 
+function is_super_admin(?array $user = null): bool {
+    $u = $user ?: auth_user();
+    if (!$u) return false;
+    return ($u['role_slug'] ?? '') === 'super-admin'
+        || (int)($u['role_id'] ?? 0) === 1
+        || ($u['role_name'] ?? '') === 'Super Admin';
+}
+
+function get_scoped_branch_id(int $requestedBranchId = 0, ?array $user = null): int {
+    $u = $user ?: auth_user();
+    if (!$u) return 0;
+    if (is_super_admin($u)) {
+        return $requestedBranchId > 0 ? $requestedBranchId : 0;
+    }
+    return (int)($u['branch_id'] ?? 1);
+}
+
 function can_switch_accounts(): bool {
     if (is_impersonating()) {
         return true;
@@ -276,6 +293,10 @@ function get_flash(): ?array {
         return $flash;
     }
     return null;
+}
+
+function app_url(string $path = ''): string {
+    return \App\Config\App::url($path);
 }
 
 function format_currency(int|float|string|null $amount, string $currency = 'USD'): string {

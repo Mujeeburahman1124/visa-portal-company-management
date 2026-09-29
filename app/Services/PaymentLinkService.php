@@ -81,8 +81,7 @@ class PaymentLinkService
         ]);
 
         $linkId = (int)$pdo->lastInsertId();
-        $baseUrl = (string)Env::get('APP_URL', 'http://localhost:8000');
-        $paymentUrl = "{$baseUrl}/pay?token={$token}";
+        $paymentUrl = App::url("pay?token={$token}");
 
         // Audit Log
         AuditService::log('PAYMENT_LINK_CREATED', 'Payments', $linkId, "Generated payment link for {$app['application_number']} ($" . number_format($amount, 2) . ")", [
@@ -269,7 +268,7 @@ class PaymentLinkService
 
             // 8. Trigger Central Real-Time Multi-Channel Notification (Email + WhatsApp + In-App)
             try {
-                $receiptUrl = (string)Env::get('APP_URL', 'http://localhost:8000') . "/payments/receipt?id={$paymentId}";
+                $receiptUrl = App::url("payments/receipt?id={$paymentId}");
                 NotificationService::trigger('payment.received', [
                     'application_id' => $appId,
                     'customer_id' => $customerId,

@@ -25,7 +25,7 @@ class PaymentController
         $currency = trim($_GET['currency'] ?? '');
         $minAmount = !empty($_GET['min_amount']) ? (float)$_GET['min_amount'] : null;
         $maxAmount = !empty($_GET['max_amount']) ? (float)$_GET['max_amount'] : null;
-        $branchId = (int)($_GET['branch_id'] ?? 0);
+        $branchId = get_scoped_branch_id((int)($_GET['branch_id'] ?? 0));
         $supplierId = (int)($_GET['supplier_id'] ?? 0);
         $countryId = (int)($_GET['country_id'] ?? 0);
         $dateFrom = trim($_GET['date_from'] ?? '');
@@ -290,7 +290,7 @@ class PaymentController
                 'currency' => $toCurrency,
                 'paymentMethod' => $paymentMethod,
                 'paymentDate' => $paymentDate,
-                'receiptUrl' => (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000') . "/portal/invoices",
+                'receiptUrl' => \App\Config\App::url('portal/invoices'),
                 'portal_link' => "/portal/invoices",
                 'link' => "/payments/receipt?id={$paymentId}",
             ]);

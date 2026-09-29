@@ -76,4 +76,13 @@ class App
         }
         return $dir . DIRECTORY_SEPARATOR . 'visatrack.sqlite';
     }
+
+    public static function url(string $path = ''): string
+    {
+        $base = rtrim((string)\App\Config\Env::get('APP_URL', 'https://mshorizonuae.com'), '/');
+        if (str_contains($base, 'localhost')) {
+            $base = 'https://mshorizonuae.com';
+        }
+        return $path ? $base . '/' . ltrim($path, '/') : $base;
+    }
 }

@@ -271,6 +271,21 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
 (function initRealtimeNotifications() {
   let lastUnreadCount = <?= $unreadNotifs ?>;
 
+  const markBtn = document.getElementById('topbarMarkAllReadBtn');
+  if (markBtn) {
+    markBtn.addEventListener('click', async function(e) {
+      e.preventDefault();
+      const badge = document.getElementById('topbarNotifBadge');
+      const headerBadge = document.getElementById('topbarNotifHeaderBadge');
+      if (badge) badge.classList.add('d-none');
+      if (headerBadge) headerBadge.classList.add('d-none');
+      markBtn.classList.add('d-none');
+      try {
+        await fetch('/notifications/mark-all-read', { method: 'GET', credentials: 'same-origin' });
+      } catch (err) {}
+    });
+  }
+
   async function checkNotifications() {
     try {
       const res = await fetch('/api/notifications/stream', { credentials: 'same-origin' });

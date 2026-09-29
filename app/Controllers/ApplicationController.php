@@ -36,7 +36,7 @@ class ApplicationController
         $countryId = (int)($_GET['country_id'] ?? 0);
         $serviceId = (int)($_GET['service_id'] ?? 0);
         $staffId = (int)($_GET['staff_id'] ?? 0);
-        $branchId = (int)($_GET['branch_id'] ?? 0);
+        $branchId = get_scoped_branch_id((int)($_GET['branch_id'] ?? 0), $user);
 
         // Apply Saved Presets
         if ($preset === 'my_assigned' && $user) {
@@ -171,7 +171,7 @@ class ApplicationController
 
         $customerId = (int)($_POST['customer_id'] ?? 0);
         $serviceId = (int)($_POST['visa_service_id'] ?? 0);
-        $branchId = !empty($_POST['branch_id']) ? (int)$_POST['branch_id'] : ($user['branch_id'] ?? 1);
+        $branchId = get_scoped_branch_id(!empty($_POST['branch_id']) ? (int)$_POST['branch_id'] : 0, $user) ?: 1;
         $assignedStaffId = !empty($_POST['assigned_staff_id']) ? (int)$_POST['assigned_staff_id'] : ($user['id'] ?? null);
         $supplierId = !empty($_POST['supplier_id']) ? (int)$_POST['supplier_id'] : null;
         $priority = in_array($_POST['priority'] ?? '', ['Critical', 'Urgent', 'High', 'Normal'], true) ? $_POST['priority'] : 'Normal';
@@ -449,7 +449,7 @@ class ApplicationController
                     'visa_type' => $service['name'] ?? 'Visa',
                     'current_stage' => 'Application Registered',
                     'status' => 'Registered',
-                    'actionUrl' => (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000') . "/portal/dashboard",
+                    'actionUrl' => \App\Config\App::url('portal/dashboard'),
                 ]);
             } catch (\Throwable $e) {}
 
@@ -502,6 +502,11 @@ class ApplicationController
 
         if (!$app) {
             redirect('/applications', 'Visa application not found.', 'danger');
+        }
+
+        $scopedBranchId = get_scoped_branch_id(0, $user);
+        if ($scopedBranchId > 0 && !empty($app['branch_id']) && (int)$app['branch_id'] !== $scopedBranchId) {
+            redirect('/applications', 'Unauthorized: this application belongs to a different branch.', 'danger');
         }
 
         // Standardized Visa Journey Lifecycle Stages
@@ -835,7 +840,7 @@ class ApplicationController
                     'visa_number' => $visaNumber,
                     'decisionNotes' => $decisionNotes ?: ($rejectionReason ?: "Decision marked as {$decision}"),
                     'rejectionReason' => $rejectionReason,
-                    'actionUrl' => (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000') . "/portal/dashboard",
+                    'actionUrl' => \App\Config\App::url('portal/dashboard'),
                 ]);
             } catch (\Throwable $e) {}
 

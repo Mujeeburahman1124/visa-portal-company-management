@@ -20,13 +20,8 @@ class StaffController
 
         $search = trim($_GET['search'] ?? '');
         $roleId = (int)($_GET['role_id'] ?? 0);
-        $branchId = (int)($_GET['branch_id'] ?? 0);
+        $branchId = get_scoped_branch_id((int)($_GET['branch_id'] ?? 0), $currentUser);
         $status = $_GET['status'] ?? '';
-
-        // Scope branch managers to their branch
-        if (($currentUser['role_slug'] ?? '') === 'branch-manager' && empty($branchId)) {
-            $branchId = (int)($currentUser['branch_id'] ?? 1);
-        }
 
         $sql = "SELECT u.*, r.name as role_name, r.slug as role_slug, b.name as branch_name,
             COUNT(DISTINCT a.id) as total_applications,
@@ -155,7 +150,7 @@ class StaffController
         $email = strtolower(trim($_POST['email'] ?? ''));
         $password = !empty($_POST['password']) ? trim($_POST['password']) : \App\Services\PasswordGeneratorService::generate(10, 'STAFF@');
         $roleId = (int)($_POST['role_id'] ?? 4);
-        $branchId = !empty($_POST['branch_id']) ? (int)$_POST['branch_id'] : 1;
+        $branchId = get_scoped_branch_id(!empty($_POST['branch_id']) ? (int)$_POST['branch_id'] : 0, $currentUser) ?: 1;
         $phone = trim($_POST['phone'] ?? '');
         $designation = trim($_POST['designation'] ?? 'Visa Specialist');
         $department = trim($_POST['department'] ?? 'Visa Department');
@@ -192,8 +187,8 @@ class StaffController
         // Fetch Role & Branch Name for Welcome Email
         $roleName = $pdo->query("SELECT name FROM roles WHERE id = {$roleId}")->fetchColumn() ?: 'Staff Member';
         $branchName = $pdo->query("SELECT name FROM branches WHERE id = {$branchId}")->fetchColumn() ?: 'Main Office';
-        $appUrl = (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000');
-        $loginUrl = rtrim($appUrl, '/') . '/login';
+        $appUrl = \App\Config\App::url();
+        $loginUrl = \App\Config\App::url('login');
 
         // Dispatch Welcome Onboarding Email with Auto-Generated Password
         try {
@@ -453,8 +448,8 @@ class StaffController
         // Dispatch Email Notification to Staff
         if (!empty($member['email'])) {
             try {
-                $appUrl = (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000');
-                $loginUrl = rtrim($appUrl, '/') . '/login';
+                $appUrl = \App\Config\App::url();
+                $loginUrl = \App\Config\App::url('login');
                 \App\Services\EmailService::send([
                     'to' => $member['email'],
                     'name' => $member['name'],

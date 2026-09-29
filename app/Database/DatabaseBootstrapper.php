@@ -2268,7 +2268,9 @@ class DatabaseBootstrapper
         $categories = [
             'Applications', 'Applicants', 'Documents', 'Tasks', 'Appointments',
             'Payments', 'Reports', 'Staff', 'Branches', 'Suppliers',
-            'Notifications', 'Audit', 'Settings'
+            'Notifications', 'Audit', 'Settings',
+            'Visa Services', 'Wallets', 'Inventory', 'Action Center',
+            'Tracking', 'Payroll', 'Agents', 'Roles'
         ];
 
         $actions = ['view', 'create', 'edit', 'delete', 'approve', 'assign', 'export'];
@@ -2277,22 +2279,130 @@ class DatabaseBootstrapper
 
         foreach ($categories as $cat) {
             foreach ($actions as $act) {
-                $slug = strtolower($cat) . '.' . $act;
+                $slug = strtolower(str_replace(' ', '_', $cat)) . '.' . $act;
                 $name = ucfirst($act) . ' ' . $cat;
                 $desc = "Permission to {$act} {$cat} records";
                 $stmt->execute([$name, $slug, $cat, $desc]);
             }
         }
 
-        // Grant all permissions to Super Admin (role_id = 1) and Admin (role_id = 2)
-        $permIds = $pdo->query("SELECT id FROM permissions")->fetchAll(PDO::FETCH_COLUMN);
-        $rolePermStmt = $pdo->prepare("{$insertIgnore} role_permissions (role_id, permission_id) VALUES (?, ?)");
-        
-        foreach ([1, 2] as $rId) {
-            foreach ($permIds as $pId) {
-                $rolePermStmt->execute([$rId, $pId]);
-            }
+        // Fetch all permissions indexed by slug
+        $allPermRows = $pdo->query("SELECT id, slug, module FROM permissions")->fetchAll(PDO::FETCH_ASSOC);
+        $permBySlug = [];
+        foreach ($allPermRows as $pr) {
+            $permBySlug[$pr['slug']] = (int)$pr['id'];
         }
+
+        $allPermIds = array_values($permBySlug);
+
+        // Fetch roles mapped by slug => id
+        $roleRows = $pdo->query("SELECT id, slug FROM roles")->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
+        $rolesBySlug = array_flip($roleRows);
+
+        $rolePermStmt = $pdo->prepare("{$insertIgnore} role_permissions (role_id, permission_id) VALUES (?, ?)");
+
+        // 1. Super Admin: 100% permissions
+        $superAdminId = $rolesBySlug['super-admin'] ?? 1;
+        foreach ($allPermIds as $pId) {
+            $rolePermStmt->execute([$superAdminId, $pId]);
+        }
+
+        // 2. Admin: 100% permissions
+        $adminId = $rolesBySlug['admin'] ?? 2;
+        foreach ($allPermIds as $pId) {
+            $rolePermStmt->execute([$adminId, $pId]);
+        }
+
+        // Helper to grant permissions by slug pattern or module
+        $grantRolePerms = function(int $roleId, array $patterns) use ($allPermRows, $rolePermStmt) {
+            if ($roleId <= 0) return;
+            foreach ($allPermRows as $p) {
+                $matched = false;
+                foreach ($patterns as $pattern) {
+                    if ($pattern === '*' || $p['slug'] === $pattern || $p['module'] === $pattern) {
+                        $matched = true;
+                        break;
+                    }
+                    if (str_ends_with($pattern, '.*') && str_starts_with($p['slug'], substr($pattern, 0, -1))) {
+                        $matched = true;
+                        break;
+                    }
+                    if (str_starts_with($pattern, '*.') && str_ends_with($p['slug'], substr($pattern, 1))) {
+                        $matched = true;
+                        break;
+                    }
+                }
+                if ($matched) {
+                    $rolePermStmt->execute([$roleId, (int)$p['id']]);
+                }
+            }
+        };
+
+        // 3. Branch Manager
+        $bmId = $rolesBySlug['branch-manager'] ?? 3;
+        $grantRolePerms($bmId, [
+            'applications.*', 'applicants.*', 'documents.*', 'tasks.*', 'appointments.*',
+            'payments.*', 'reports.*', 'staff.view', 'staff.assign', 'branches.view',
+            'suppliers.view', 'notifications.*', 'audit.view', 'visa_services.*',
+            'wallets.view', 'inventory.*', 'action_center.*', 'tracking.*', 'payroll.*', 'agents.view'
+        ]);
+
+        // 4. Visa Manager
+        $vmId = $rolesBySlug['visa-manager'] ?? 4;
+        $grantRolePerms($vmId, [
+            'applications.*', 'applicants.*', 'documents.*', 'tasks.*', 'appointments.*',
+            'visa_services.*', 'tracking.*', 'action_center.*', 'reports.view', 'notifications.view'
+        ]);
+
+        // 5. Visa Consultant
+        $vcId = $rolesBySlug['visa-consultant'] ?? 5;
+        $grantRolePerms($vcId, [
+            'applications.view', 'applications.create', 'applications.edit',
+            'applicants.view', 'applicants.create', 'applicants.edit',
+            'documents.view', 'documents.create', 'documents.edit',
+            'tasks.view', 'tasks.create', 'tasks.edit',
+            'appointments.view', 'appointments.create', 'appointments.edit',
+            'visa_services.view', 'tracking.view', 'tracking.edit',
+            'action_center.view', 'payments.view', 'payments.create'
+        ]);
+
+        // 6. Processing Staff
+        $psId = $rolesBySlug['processing-staff'] ?? 6;
+        $grantRolePerms($psId, [
+            'applications.view', 'applications.edit', 'applicants.view',
+            'documents.view', 'documents.create', 'documents.edit', 'documents.approve',
+            'tasks.view', 'tasks.edit', 'appointments.view', 'appointments.edit',
+            'tracking.view', 'tracking.edit', 'action_center.view', 'action_center.edit'
+        ]);
+
+        // 7. Accounts
+        $accId = $rolesBySlug['accounts'] ?? 7;
+        $grantRolePerms($accId, [
+            'payments.view', 'payments.create', 'payments.edit', 'payments.approve', 'payments.export',
+            'wallets.view', 'wallets.create', 'wallets.edit', 'wallets.approve', 'wallets.export',
+            'payroll.view', 'payroll.create', 'payroll.edit', 'payroll.approve', 'payroll.export',
+            'applications.view', 'applicants.view', 'reports.view', 'reports.export', 'suppliers.view'
+        ]);
+
+        // 8. Customer Service
+        $csId = $rolesBySlug['customer-service'] ?? 8;
+        $grantRolePerms($csId, [
+            'applicants.view', 'applicants.create', 'applicants.edit',
+            'applications.view', 'appointments.view', 'appointments.create', 'appointments.edit',
+            'tracking.view', 'tasks.view', 'tasks.create', 'notifications.view', 'notifications.create'
+        ]);
+
+        // 9. Data Entry
+        $deId = $rolesBySlug['data-entry'] ?? 9;
+        $grantRolePerms($deId, [
+            'applicants.view', 'applicants.create', 'applicants.edit',
+            'applications.view', 'applications.create', 'applications.edit',
+            'documents.view', 'documents.create'
+        ]);
+
+        // 10. Read Only
+        $roId = $rolesBySlug['read-only'] ?? 10;
+        $grantRolePerms($roId, ['*.view']);
 
         // Ensure all 7 standard email templates exist with placeholders
         $emailTemplates = [

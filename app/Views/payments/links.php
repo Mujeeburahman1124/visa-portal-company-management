@@ -85,7 +85,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             </tr>
           <?php else: ?>
             <?php foreach ($paymentLinks as $l): 
-              $linkUrl = (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000') . "/pay?token=" . $l['link_token'];
+              $linkUrl = \App\Config\App::url("pay?token=" . $l['link_token']);
               $isPaid = ($l['status'] === 'Paid');
               $isPending = ($l['status'] === 'Pending');
             ?>

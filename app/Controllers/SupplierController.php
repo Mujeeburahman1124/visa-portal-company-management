@@ -387,8 +387,8 @@ class SupplierController
         $stmt = $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, customer_id, token, token_hash, expires_at, is_used, created_at) VALUES ('supplier', ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)");
         $stmt->execute([$supplierId, $supplier['email'], $supplierId, $rawToken, $tokenHash, $expiresAt]);
 
-        $appUrl = \App\Config\Env::get('APP_URL', 'http://localhost:8000');
-        $activationLink = rtrim($appUrl, '/') . "/supplier/activate?token={$rawToken}";
+        $appUrl = \App\Config\App::url();
+        $activationLink = \App\Config\App::url("supplier/activate?token={$rawToken}");
 
         try {
             \App\Services\EmailService::send([

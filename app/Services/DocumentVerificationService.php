@@ -73,7 +73,7 @@ class DocumentVerificationService
                     'customer_id' => $doc['customer_id'],
                     'application_number' => $doc['application_number'] ?? '',
                     'documentName' => $doc['doc_type_name'],
-                    'actionUrl' => (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000') . "/portal/documents",
+                    'actionUrl' => \App\Config\App::url('portal/documents'),
                     'portal_link' => "/portal/documents",
                     'severity' => 'success',
                 ]);
@@ -162,7 +162,7 @@ class DocumentVerificationService
                     'application_number' => $doc['application_number'] ?? '',
                     'documentName'       => $doc['doc_type_name'],
                     'rejectionReason'    => $rejectionReason,
-                    'actionUrl'          => (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000') . "/portal/documents",
+                    'actionUrl'          => \App\Config\App::url('portal/documents'),
                     'portal_link'        => "/portal/documents",
                     'severity'           => 'danger',
                 ]);

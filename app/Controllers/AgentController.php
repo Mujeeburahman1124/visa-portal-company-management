@@ -86,8 +86,8 @@ class AgentController
         // Dispatch Welcome Onboarding Email to Agent with Auto-Generated Password
         if (!empty($email)) {
             try {
-                $appUrl = (string)\App\Config\Env::get('APP_URL', 'http://localhost:8000');
-                $portalUrl = rtrim($appUrl, '/') . '/agent/login';
+                $appUrl = \App\Config\App::url();
+                $portalUrl = \App\Config\App::url('agent/login');
                 \App\Services\EmailService::send([
                     'to' => $email,
                     'name' => $contact ?: $company,
@@ -309,8 +309,8 @@ class AgentController
         $stmt = $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, customer_id, token, token_hash, expires_at, is_used, created_at) VALUES ('agent', ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)");
         $stmt->execute([$agentId, $agent['email'], $agentId, $rawToken, $tokenHash, $expiresAt]);
 
-        $appUrl = \App\Config\Env::get('APP_URL', 'http://localhost:8000');
-        $activationLink = rtrim($appUrl, '/') . "/agent/activate?token={$rawToken}";
+        $appUrl = \App\Config\App::url();
+        $activationLink = \App\Config\App::url("agent/activate?token={$rawToken}");
 
         try {
             \App\Services\EmailService::send([

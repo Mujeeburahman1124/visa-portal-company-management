@@ -448,16 +448,16 @@ class NotificationService
      */
     private static function buildTemplateData(array $context, ?array $customer, ?array $staff, ?array $app): array
     {
-        $appUrl = (string)Env::get('APP_URL', 'http://localhost:8000');
+        $appUrl = App::url();
         $companyName = (string)Env::get('COMPANY_NAME', App::COMPANY_NAME);
 
         $data = [
             'companyName' => $companyName,
             'companyEmail' => (string)Env::get('COMPANY_EMAIL', 'mstravelu@gmail.com'),
             'companyPhone' => (string)Env::get('COMPANY_PHONE', '0585909349'),
-            'companyWebsite' => (string)Env::get('COMPANY_WEBSITE', 'https://visatrack.mstravelhub.com'),
+            'companyWebsite' => (string)Env::get('COMPANY_WEBSITE', 'https://mshorizonuae.com'),
             'appUrl' => $appUrl,
-            'loginUrl' => $appUrl . '/portal/login',
+            'loginUrl' => App::url('portal/login'),
             'supportEmail' => 'mstravelu@gmail.com',
         ];
 

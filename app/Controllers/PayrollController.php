@@ -23,7 +23,7 @@ class PayrollController
             $selectedMonth = date('Y-m');
         }
 
-        $branchId = (int)($_GET['branch_id'] ?? 0);
+        $branchId = get_scoped_branch_id((int)($_GET['branch_id'] ?? 0));
         $search = trim($_GET['search'] ?? '');
 
         // Fetch active staff with baseline salary details
@@ -325,7 +325,7 @@ class PayrollController
         $search = trim($_GET['search'] ?? '');
         $month = trim($_GET['month'] ?? '');
         $status = trim($_GET['status'] ?? '');
-        $branchId = (int)($_GET['branch_id'] ?? 0);
+        $branchId = get_scoped_branch_id((int)($_GET['branch_id'] ?? 0));
 
         $sql = "SELECT pr.*, u.name as staff_name, u.designation, u.department, b.name as branch_name, r.name as role_name
                 FROM payroll_records pr
