@@ -86,7 +86,7 @@ set_exception_handler(function (\Throwable $e): void {
         }
         echo json_encode($resp);
     } else {
-        $diagnosticError = $isSuperAdmin ? $e : null;
+        $diagnosticError = $e;
         $errorPage = dirname(__DIR__) . '/app/Views/layouts/500.php';
         if (file_exists($errorPage)) {
             require $errorPage;

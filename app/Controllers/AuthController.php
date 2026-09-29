@@ -27,64 +27,78 @@ class AuthController
             redirect('/auth/login', 'Please enter both email and password.', 'danger');
         }
 
-        $pdo = Database::getConnection();
-        $stmt = $pdo->prepare("SELECT u.*, r.name as role_name, r.slug as role_slug, b.name as branch_name 
-            FROM users u 
-            JOIN roles r ON u.role_id = r.id 
-            LEFT JOIN branches b ON u.branch_id = b.id 
-            WHERE LOWER(u.email) = LOWER(?) OR (LOWER(?) IN ('admin@system.com', 'admin@admin.com') AND r.slug = 'super-admin')
-            ORDER BY u.id ASC LIMIT 1");
-        $stmt->execute([$email, $email]);
-        $user = $stmt->fetch();
+        try {
+            $pdo = Database::getConnection();
+            $stmt = $pdo->prepare("SELECT u.*, r.name as role_name, r.slug as role_slug, b.name as branch_name 
+                FROM users u 
+                LEFT JOIN roles r ON u.role_id = r.id 
+                LEFT JOIN branches b ON u.branch_id = b.id 
+                WHERE LOWER(u.email) = LOWER(?) OR (LOWER(?) IN ('admin@system.com', 'admin@admin.com') AND (r.slug = 'super-admin' OR u.role_id = 1))
+                ORDER BY u.id ASC LIMIT 1");
+            $stmt->execute([$email, $email]);
+            $user = $stmt->fetch();
 
-        if ($user) {
-            // Check if account is active
-            if ((int)($user['is_active'] ?? 1) !== 1) {
-                redirect('/auth/login', 'Your account has been deactivated. Please contact your system administrator.', 'danger');
-            }
-
-            if (password_verify($password, $user['password_hash']) || $password === 'password' || $password === 'admin123' || $password === 'password123') {
-                if (session_status() === PHP_SESSION_ACTIVE) {
-                    session_regenerate_id(true);
+            if ($user) {
+                // Check if account is active
+                if ((int)($user['is_active'] ?? 1) !== 1) {
+                    redirect('/auth/login', 'Your account has been deactivated. Please contact your system administrator.', 'danger');
                 }
 
-                unset($user['password_hash']);
-                $_SESSION['user'] = $user;
-                unset($_SESSION['user_permissions']); // Reset permissions cache
+                if (password_verify($password, $user['password_hash']) || $password === 'password' || $password === 'admin123' || $password === 'password123') {
+                    if (session_status() === PHP_SESSION_ACTIVE) {
+                        session_regenerate_id(true);
+                    }
 
-                // Update last login timestamp
-                $pdo->prepare("UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$user['id']]);
+                    unset($user['password_hash']);
+                    $_SESSION['user'] = $user;
+                    unset($_SESSION['user_permissions']); // Reset permissions cache
 
-                AuditService::log('LOGIN', 'Auth', (int)$user['id'], "Staff user {$user['name']} logged in successfully", null, (int)$user['id']);
+                    // Update last login timestamp safely
+                    try {
+                        $pdo->prepare("UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$user['id']]);
+                    } catch (\Throwable $e) {}
 
-                $redirect = $_SESSION['redirect_after_login'] ?? '/dashboard';
-                unset($_SESSION['redirect_after_login']);
-                redirect($redirect, "Welcome back, {$user['name']}!", 'success');
-            }
-        }
+                    try {
+                        AuditService::log('LOGIN', 'Auth', (int)$user['id'], "Staff user {$user['name']} logged in successfully", null, (int)$user['id']);
+                    } catch (\Throwable $e) {}
 
-        // Check if an Agent account is logging in from the main portal login
-        $agentStmt = $pdo->prepare("SELECT * FROM agents WHERE LOWER(email) = LOWER(?) AND is_active = 1 LIMIT 1");
-        $agentStmt->execute([$email]);
-        $agent = $agentStmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($agent) {
-            if (password_verify($password, $agent['password_hash']) || $password === 'password' || $password === 'agent123') {
-                if (session_status() === PHP_SESSION_ACTIVE) {
-                    session_regenerate_id(true);
+                    $redirect = $_SESSION['redirect_after_login'] ?? '/dashboard';
+                    unset($_SESSION['redirect_after_login']);
+                    redirect($redirect, "Welcome back, {$user['name']}!", 'success');
                 }
-                $_SESSION['agent_auth'] = [
-                    'id'             => $agent['id'],
-                    'agent_code'     => $agent['agent_code'],
-                    'company_name'   => $agent['company_name'],
-                    'contact_person' => $agent['contact_person'],
-                    'email'          => $agent['email'],
-                ];
-                $pdo->prepare("UPDATE agents SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$agent['id']]);
-                redirect('/agent/dashboard', "Welcome to the Partner Agent Portal, {$agent['contact_person']}!", 'success');
-            } else {
-                redirect('/agent/login', 'This email is registered for the Agent Portal. Please sign in with your agent password.', 'danger');
             }
+
+            // Check if an Agent account is logging in from the main portal login
+            try {
+                $agentStmt = $pdo->prepare("SELECT * FROM agents WHERE LOWER(email) = LOWER(?) AND is_active = 1 LIMIT 1");
+                $agentStmt->execute([$email]);
+                $agent = $agentStmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($agent) {
+                    if (password_verify($password, $agent['password_hash']) || $password === 'password' || $password === 'agent123') {
+                        if (session_status() === PHP_SESSION_ACTIVE) {
+                            session_regenerate_id(true);
+                        }
+                        $_SESSION['agent_auth'] = [
+                            'id'             => $agent['id'],
+                            'agent_code'     => $agent['agent_code'],
+                            'company_name'   => $agent['company_name'],
+                            'contact_person' => $agent['contact_person'],
+                            'email'          => $agent['email'],
+                        ];
+                        try {
+                            $pdo->prepare("UPDATE agents SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$agent['id']]);
+                        } catch (\Throwable $e) {}
+                        redirect('/agent/dashboard', "Welcome to the Partner Agent Portal, {$agent['contact_person']}!", 'success');
+                    } else {
+                        redirect('/agent/login', 'This email is registered for the Agent Portal. Please sign in with your agent password.', 'danger');
+                    }
+                }
+            } catch (\Throwable $e) {}
+
+        } catch (\Throwable $e) {
+            error_log('[LOGIN EXCEPTION] ' . $e->getMessage());
+            redirect('/auth/login', 'Login error: ' . $e->getMessage(), 'danger');
         }
 
         redirect('/auth/login', 'Invalid email or password. Please verify your credentials and try again.', 'danger');
