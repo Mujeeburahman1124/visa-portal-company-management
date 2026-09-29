@@ -51,6 +51,41 @@ class AppointmentController
         $stmt->execute($params);
         $appointments = $stmt->fetchAll();
 
+        // Ensure appointment_types table exists
+        try {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS appointment_types (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                code TEXT,
+                description TEXT,
+                is_active INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )");
+            $count = (int)$pdo->query("SELECT COUNT(*) FROM appointment_types")->fetchColumn();
+            if ($count === 0) {
+                $defaults = [
+                    'VFS / TLS Biometrics & Interview',
+                    'US Consular Visa Interview',
+                    'Medical Fitness Test (DHA / MOHAP / Diagnostic)',
+                    'Biometrics Capture (ICP / EIDA)',
+                    'Embassy Consular Submission',
+                    'Document Verification & Attestation',
+                    'Passport Stamping & Collection'
+                ];
+                $ins = $pdo->prepare("INSERT INTO appointment_types (name, code, is_active) VALUES (?, ?, 1)");
+                foreach ($defaults as $d) {
+                    $code = strtoupper(preg_replace('/[^A-Za-z0-9]+/', '_', substr($d, 0, 20)));
+                    $ins->execute([$d, $code]);
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        try {
+            $appointmentTypes = $pdo->query("SELECT * FROM appointment_types WHERE is_active = 1 ORDER BY name ASC")->fetchAll() ?: [];
+        } catch (\Throwable $e) {
+            $appointmentTypes = [];
+        }
+
         $staffMembers = $pdo->query("SELECT id, name FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll();
         $activeApplications = $pdo->query("SELECT a.id, a.application_number, c.full_name as customer_name, a.customer_id FROM applications a JOIN customers c ON a.customer_id = c.id WHERE a.is_archived = 0 AND a.status NOT IN ('Approved', 'Completed') ORDER BY a.application_number ASC")->fetchAll();
 
@@ -64,7 +99,23 @@ class AppointmentController
         $currentUser = auth_user();
 
         $appId = (int)($_POST['application_id'] ?? 0);
-        $type = trim($_POST['appointment_type'] ?? 'Biometrics');
+        $type = trim($_POST['appointment_type'] ?? 'Biometrics Capture');
+        $customType = trim($_POST['custom_appointment_type'] ?? '');
+        if ($type === 'custom' || (!empty($customType) && $type === '')) {
+            $type = $customType;
+        }
+
+        // If custom type is new, auto-persist to appointment_types
+        if (!empty($type)) {
+            try {
+                $chk = $pdo->prepare("SELECT id FROM appointment_types WHERE name = ? LIMIT 1");
+                $chk->execute([$type]);
+                if (!$chk->fetch()) {
+                    $code = strtoupper(preg_replace('/[^A-Za-z0-9]+/', '_', substr($type, 0, 20)));
+                    $pdo->prepare("INSERT INTO appointment_types (name, code, is_active) VALUES (?, ?, 1)")->execute([$type, $code]);
+                }
+            } catch (\Throwable $e) {}
+        }
         $centerName = trim($_POST['center_name'] ?? '');
         $location = trim($_POST['location_address'] ?? '');
         $date = !empty($_POST['appointment_date']) ? $_POST['appointment_date'] : date('Y-m-d');
@@ -166,5 +217,55 @@ class AppointmentController
         }
 
         redirect($_SERVER['HTTP_REFERER'] ?? '/appointments', 'Invalid appointment status.', 'danger');
+    }
+
+    /**
+     * Store a new custom appointment type.
+     */
+    public function storeType(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+
+        $name = trim($_POST['name'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+
+        if (empty($name)) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/appointments', 'Appointment type name is required.', 'danger');
+        }
+
+        try {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS appointment_types (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE,
+                code TEXT,
+                description TEXT,
+                is_active INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )");
+            $code = strtoupper(preg_replace('/[^A-Za-z0-9]+/', '_', substr($name, 0, 20)));
+            $stmt = $pdo->prepare("INSERT INTO appointment_types (name, code, description, is_active) VALUES (?, ?, ?, 1)");
+            $stmt->execute([$name, $code, $description]);
+            AuditService::log('ADD_APPOINTMENT_TYPE', 'Appointments', (int)$pdo->lastInsertId(), "Created appointment type '{$name}'");
+            redirect($_SERVER['HTTP_REFERER'] ?? '/appointments', "Appointment type '{$name}' added successfully.", 'success');
+        } catch (\Throwable $e) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/appointments', "Failed to add appointment type: " . $e->getMessage(), 'danger');
+        }
+    }
+
+    /**
+     * Delete an appointment type.
+     */
+    public function deleteType(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id > 0) {
+            $pdo->prepare("DELETE FROM appointment_types WHERE id = ?")->execute([$id]);
+            redirect($_SERVER['HTTP_REFERER'] ?? '/appointments', "Appointment type deleted.", 'success');
+        }
+        redirect($_SERVER['HTTP_REFERER'] ?? '/appointments', "Invalid appointment type ID.", 'danger');
     }
 }

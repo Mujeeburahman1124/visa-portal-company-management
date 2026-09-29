@@ -83,12 +83,9 @@ class DatabaseBootstrapper
                 // Already exists
             }
 
-            // Ensure visa_requirements columns exist
+            // Ensure roles column exists
             try {
-                $pdo->exec("ALTER TABLE visa_requirements ADD COLUMN is_active INTEGER DEFAULT 1;");
-            } catch (\Throwable $e) {}
-            try {
-                $pdo->exec("ALTER TABLE visa_requirements ADD COLUMN is_critical INTEGER DEFAULT 0;");
+                $pdo->exec("ALTER TABLE roles ADD COLUMN is_active INTEGER DEFAULT 1;");
             } catch (\Throwable $e) {}
 
             // Ensure password_resets table exists for SQLite

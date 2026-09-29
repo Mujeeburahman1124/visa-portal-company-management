@@ -538,6 +538,14 @@ switch ($uri) {
         (new App\Controllers\AppointmentController())->updateStatus();
         break;
 
+    case '/appointments/types/store':
+        (new App\Controllers\AppointmentController())->storeType();
+        break;
+
+    case '/appointments/types/delete':
+        (new App\Controllers\AppointmentController())->deleteType();
+        break;
+
     // Operational Action Center & Priority Triage
     case '/action-center':
         (new App\Controllers\ActionCenterController())->index();

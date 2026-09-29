@@ -112,8 +112,12 @@ class AuditLogController
 
         $pdo->exec("UPDATE activity_logs SET action = 'RESOLVED_ERROR' WHERE action IN ('SYSTEM_ERROR', 'ERROR', 'EXCEPTION')");
 
+        try {
+            $pdo->exec("UPDATE notifications SET is_read = 1, read_at = CURRENT_TIMESTAMP WHERE is_read = 0 AND (severity = 'danger' OR title LIKE '%Error%' OR title LIKE '%System%')");
+        } catch (\Throwable $e) {}
+
         AuditService::log('RESOLVE_ERRORS', 'System', null, "Super Admin cleared and marked all system error alerts as resolved");
 
-        redirect('/audit-logs', 'All system error alerts have been marked as resolved and the error badge is now cleared.', 'success');
+        redirect('/audit-logs', 'All system error alerts have been marked as resolved and the error badge is now reset to zero.', 'success');
     }
 }

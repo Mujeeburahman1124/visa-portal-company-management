@@ -193,7 +193,29 @@ class EmailService
         // 3. STARTTLS if configured
         if ($encryption === 'tls' || ($encryption !== 'ssl' && $port === 587)) {
             $sendCommand("STARTTLS", [220]);
-            if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT)) {
+            $cryptoMethod = STREAM_CRYPTO_METHOD_TLS_CLIENT;
+            if (defined('STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT')) {
+                $cryptoMethod |= STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT;
+            }
+            if (defined('STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT')) {
+                $cryptoMethod |= STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT;
+            }
+            $cryptoOk = false;
+            for ($attempt = 0; $attempt < 3; $attempt++) {
+                $resCrypto = stream_socket_enable_crypto($socket, true, $cryptoMethod);
+                if ($resCrypto === true) {
+                    $cryptoOk = true;
+                    break;
+                }
+                if ($resCrypto === false) {
+                    break;
+                }
+                usleep(50000);
+            }
+            if (!$cryptoOk) {
+                $cryptoOk = (bool)stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+            }
+            if (!$cryptoOk) {
                 fclose($socket);
                 throw new Exception("SMTP STARTTLS handshake negotiation failed");
             }
@@ -271,34 +293,53 @@ class EmailService
         $fromEmail = (string)Env::get('EMAIL_FROM', 'admin@mshorizonuae.com');
         $fromName = (string)Env::get('EMAIL_FROM_NAME', App::COMPANY_NAME);
 
+        // Derive domain-aligned return-path for SPF on shared hosting
+        $serverHost = $_SERVER['HTTP_HOST'] ?? 'mshorizonuae.com';
+        $serverHost = preg_replace('/:[0-9]+$/', '', $serverHost);
+        $domainFrom = 'noreply@' . $serverHost;
+
         $boundary = "==Multipart_Boundary_x" . md5((string)time()) . "x";
         $headers = [];
         $headers[] = "MIME-Version: 1.0";
         $headers[] = "From: " . self::encodeHeader($fromName) . " <{$fromEmail}>";
         $headers[] = "Reply-To: <{$fromEmail}>";
-        $headers[] = "Return-Path: <{$fromEmail}>";
+        $headers[] = "Return-Path: <{$domainFrom}>";
         $headers[] = "Content-Type: multipart/alternative; boundary=\"{$boundary}\"";
         $headers[] = "X-Mailer: VISA TRACK Enterprise Mailer (PHP/" . phpversion() . ")";
 
-        $body = "--{$boundary}\r\n";
-        $body .= "Content-Type: text/plain; charset=UTF-8\r\n";
-        $body .= "Content-Transfer-Encoding: 8bit\r\n\r\n";
-        $body .= $plainText . "\r\n\r\n";
+        $eol = "\r\n";
+        $body = "--{$boundary}{$eol}";
+        $body .= "Content-Type: text/plain; charset=UTF-8{$eol}";
+        $body .= "Content-Transfer-Encoding: base64{$eol}{$eol}";
+        $body .= chunk_split(base64_encode($plainText)) . "{$eol}";
 
-        $body .= "--{$boundary}\r\n";
-        $body .= "Content-Type: text/html; charset=UTF-8\r\n";
-        $body .= "Content-Transfer-Encoding: 8bit\r\n\r\n";
-        $body .= $htmlBody . "\r\n\r\n";
+        $body .= "--{$boundary}{$eol}";
+        $body .= "Content-Type: text/html; charset=UTF-8{$eol}";
+        $body .= "Content-Transfer-Encoding: base64{$eol}{$eol}";
+        $body .= chunk_split(base64_encode($htmlBody)) . "{$eol}";
         $body .= "--{$boundary}--";
 
-        $headersStr = implode("\r\n", $headers);
-        $extraParam = '-f' . escapeshellarg($fromEmail);
+        $headersStr = implode($eol, $headers);
+        $encodedSubject = self::encodeHeader($subject);
 
-        // Try sending with envelope parameter first (required for SPF on many cPanel/Hostinger servers)
-        $res = @mail($to, $subject, $body, $headersStr, $extraParam);
+        // Try 1: with domain-matched envelope sender (-f noreply@domain)
+        $extraParam = '-f' . $domainFrom;
+        $res = @mail($to, $encodedSubject, $body, $headersStr, $extraParam);
+
+        // Try 2: with fromEmail envelope
+        if (!$res && filter_var($fromEmail, FILTER_VALIDATE_EMAIL)) {
+            $res = @mail($to, $encodedSubject, $body, $headersStr, '-f' . $fromEmail);
+        }
+
+        // Try 3: standard mail() without extra param (for hosts restricting -f)
         if (!$res) {
-            // Fallback without extra parameter if mail wrapper restricts -f
-            $res = @mail($to, $subject, $body, $headersStr);
+            $res = @mail($to, $encodedSubject, $body, $headersStr);
+        }
+
+        // Try 4: using LF on Linux if MTA rejects CRLF
+        if (!$res) {
+            $headersLf = implode("\n", $headers);
+            $res = @mail($to, $encodedSubject, $body, $headersLf);
         }
 
         return [
