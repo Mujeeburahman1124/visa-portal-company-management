@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Config\Database;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\RoleMiddleware;
+use App\Services\AuditService;
 use PDO;
 
 class AuditLogController

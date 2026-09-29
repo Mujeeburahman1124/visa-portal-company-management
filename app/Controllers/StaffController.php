@@ -505,15 +505,32 @@ class StaffController
 
         $name = trim($_POST['name'] ?? '');
         $phone = trim($_POST['phone'] ?? '');
+        $whatsappNumber = trim($_POST['whatsapp_number'] ?? '');
         $designation = trim($_POST['designation'] ?? '');
         $department = trim($_POST['department'] ?? '');
+        $address = trim($_POST['address'] ?? '');
 
         if (empty($name)) {
             redirect('/profile', 'Full Name cannot be empty.', 'danger');
         }
 
-        $stmt = $pdo->prepare("UPDATE users SET name = ?, phone = ?, designation = ?, department = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
-        $stmt->execute([$name, $phone, $designation, $department, (int)$currentUser['id']]);
+        // Safely add columns if they don't exist yet (migration guard)
+        try {
+            $driver = $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
+            if ($driver === 'mysql') {
+                $cols = $pdo->query("SHOW COLUMNS FROM users LIKE 'whatsapp_number'")->fetchColumn();
+                if (!$cols) $pdo->exec("ALTER TABLE users ADD COLUMN whatsapp_number VARCHAR(30) NULL DEFAULT NULL");
+                $colsAddr = $pdo->query("SHOW COLUMNS FROM users LIKE 'address'")->fetchColumn();
+                if (!$colsAddr) $pdo->exec("ALTER TABLE users ADD COLUMN address TEXT NULL DEFAULT NULL");
+            } else {
+                // SQLite: ignore silently as ALTER TABLE ADD COLUMN is supported
+                try { $pdo->exec("ALTER TABLE users ADD COLUMN whatsapp_number TEXT NULL DEFAULT NULL"); } catch (\Throwable $ign) {}
+                try { $pdo->exec("ALTER TABLE users ADD COLUMN address TEXT NULL DEFAULT NULL"); } catch (\Throwable $ign) {}
+            }
+        } catch (\Throwable $ignored) {}
+
+        $stmt = $pdo->prepare("UPDATE users SET name = ?, phone = ?, whatsapp_number = ?, designation = ?, department = ?, address = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+        $stmt->execute([$name, $phone, $whatsappNumber, $designation, $department, $address, (int)$currentUser['id']]);
 
         // Refresh session
         $_SESSION['user']['name'] = $name;
@@ -521,8 +538,81 @@ class StaffController
         $_SESSION['user']['designation'] = $designation;
         $_SESSION['user']['department'] = $department;
 
-        AuditService::log('UPDATE_PROFILE', 'Staff', (int)$currentUser['id'], "Staff user {$name} updated their profile details", null, (int)$currentUser['id']);
+        AuditService::log('UPDATE_PROFILE', 'Staff', (int)$currentUser['id'], "Staff {$name} updated their profile details", null, (int)$currentUser['id']);
 
         redirect('/profile', 'Your profile details have been successfully updated.', 'success');
+    }
+
+    public function uploadPhoto(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $currentUser = auth_user();
+
+        if (empty($_FILES['profile_photo']) || $_FILES['profile_photo']['error'] !== UPLOAD_ERR_OK) {
+            redirect('/profile', 'No photo was uploaded or an upload error occurred.', 'danger');
+        }
+
+        $file = $_FILES['profile_photo'];
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        if (!in_array($mimeType, $allowedMimes)) {
+            redirect('/profile', 'Only JPEG, PNG, GIF, or WebP images are accepted.', 'danger');
+        }
+
+        if ($file['size'] > 2 * 1024 * 1024) {
+            redirect('/profile', 'Profile photo must be smaller than 2MB.', 'danger');
+        }
+
+        $ext = match($mimeType) {
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/gif'  => 'gif',
+            'image/webp' => 'webp',
+            default      => 'jpg',
+        };
+
+        $uploadDir = dirname(__DIR__, 2) . '/public/uploads/avatars';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        // Remove old photo if exists
+        $oldStmt = $pdo->prepare("SELECT profile_photo FROM users WHERE id = ?");
+        $oldStmt->execute([(int)$currentUser['id']]);
+        $oldPhoto = $oldStmt->fetchColumn();
+        if ($oldPhoto && file_exists($uploadDir . '/' . $oldPhoto)) {
+            @unlink($uploadDir . '/' . $oldPhoto);
+        }
+
+        $filename = 'avatar_' . (int)$currentUser['id'] . '_' . time() . '.' . $ext;
+        $destination = $uploadDir . '/' . $filename;
+
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            redirect('/profile', 'Failed to save photo. Please check upload directory permissions.', 'danger');
+        }
+
+        // Ensure column exists
+        try {
+            $driver = $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
+            if ($driver === 'mysql') {
+                $col = $pdo->query("SHOW COLUMNS FROM users LIKE 'profile_photo'")->fetchColumn();
+                if (!$col) $pdo->exec("ALTER TABLE users ADD COLUMN profile_photo VARCHAR(255) NULL DEFAULT NULL");
+            } else {
+                try { $pdo->exec("ALTER TABLE users ADD COLUMN profile_photo TEXT NULL DEFAULT NULL"); } catch (\Throwable $ign) {}
+            }
+        } catch (\Throwable $ignored) {}
+
+        $pdo->prepare("UPDATE users SET profile_photo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+            ->execute([$filename, (int)$currentUser['id']]);
+
+        $_SESSION['user']['profile_photo'] = $filename;
+
+        AuditService::log('UPDATE_PROFILE_PHOTO', 'Staff', (int)$currentUser['id'], "Staff {$currentUser['name']} updated their profile photo", null, (int)$currentUser['id']);
+
+        redirect('/profile', 'Profile photo updated successfully.', 'success');
     }
 }

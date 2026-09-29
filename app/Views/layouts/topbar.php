@@ -20,7 +20,7 @@ $isSuperAdminUser = (($currentUser['role_slug'] ?? '') === 'super-admin' || ($cu
 $systemErrorCount = 0;
 if ($isSuperAdminUser) {
     try {
-        $stmtErr = $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE action IN ('SYSTEM_ERROR', 'ERROR', 'EXCEPTION')");
+        $stmtErr = $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE action IN ('SYSTEM_ERROR', 'ERROR', 'EXCEPTION') AND action != 'RESOLVED_ERROR'");
         $systemErrorCount = (int)$stmtErr->fetchColumn();
     } catch (\Throwable $e) {}
 }

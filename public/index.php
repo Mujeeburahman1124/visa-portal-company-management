@@ -536,6 +536,11 @@ switch ($uri) {
         (new App\Controllers\StaffController())->updateProfile();
         break;
 
+    case '/profile/upload-photo':
+    case '/staff/profile/upload-photo':
+        (new App\Controllers\StaffController())->uploadPhoto();
+        break;
+
     case '/payments/links':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts', 'visa-manager', 'visa-consultant']);
         (new App\Controllers\PaymentController())->links();
