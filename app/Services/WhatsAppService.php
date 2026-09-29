@@ -317,7 +317,8 @@ class WhatsAppService
         }
 
         $formattedTo = 'whatsapp:+' . ltrim($to, '+');
-        $interpolatedText = !empty($text) ? EmailService::interpolate($text, $data) : 'Notification from ' . App::COMPANY_NAME;
+        $cleanPhone = ltrim($to, '+');
+        $shareUrl = "https://api.whatsapp.com/send?phone={$cleanPhone}&text=" . urlencode($interpolatedText);
 
         $isPlaceholder = empty($sid) || empty($token) || str_contains($sid, 'XXXX') || str_contains($token, 'your-twilio') || $sid === 'ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
 
@@ -326,7 +327,8 @@ class WhatsAppService
             return [
                 'success' => true,
                 'message_id' => $simSid,
-                'normalized_phone' => '+' . ltrim($to, '+'),
+                'normalized_phone' => '+' . $cleanPhone,
+                'whatsapp_share_url' => $shareUrl,
                 'provider' => 'twilio_whatsapp (simulated)',
                 'error' => null,
                 'response' => ['sid' => $simSid, 'status' => 'queued', 'simulated' => true],

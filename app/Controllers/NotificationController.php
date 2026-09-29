@@ -374,8 +374,16 @@ class NotificationController
 
             if ($result['success']) {
                 $normPhone = $result['normalized_phone'] ?? $recipient;
-                $simTag = $result['simulated'] ? ' (Simulated)' : '';
-                redirect('/notifications/admin?tab=test', "Test WhatsApp message sent to {$normPhone}! ID: {$result['message_id']}{$simTag}", 'success');
+                $cleanPhone = preg_replace('/[^0-9]/', '', $normPhone);
+                $simTag = !empty($result['simulated']) ? ' (Simulated)' : '';
+
+                if (!empty($result['whatsapp_share_url'])) {
+                    $_SESSION['auto_open_whatsapp'] = $result['whatsapp_share_url'];
+                } else {
+                    $_SESSION['auto_open_whatsapp'] = "https://api.whatsapp.com/send?phone={$cleanPhone}&text=" . urlencode("[TEST MESSAGE]\n\n{$message}");
+                }
+
+                redirect('/notifications/admin?tab=test', "Test WhatsApp message sent to +{$cleanPhone}! ID: {$result['message_id']}{$simTag} — Opening WhatsApp App...", 'success');
             } else {
                 redirect('/notifications/admin?tab=test', "WhatsApp delivery failed: {$result['error']}", 'danger');
             }
