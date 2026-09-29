@@ -57,6 +57,21 @@ class WhatsAppService
 
         // 2. Fetch API Credentials from Environment / Settings
         $provider = strtolower((string)Env::get('WHATSAPP_PROVIDER', 'meta'));
+        $twilioSid = (string)Env::get('TWILIO_ACCOUNT_SID', '');
+        $twilioToken = (string)Env::get('TWILIO_AUTH_TOKEN', '');
+        $twilioFrom = (string)Env::get('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886');
+
+        if ($provider === 'twilio' || (!empty($twilioSid) && !empty($twilioToken) && $provider !== 'meta')) {
+            return self::sendViaTwilio([
+                'account_sid' => $twilioSid,
+                'auth_token'  => $twilioToken,
+                'from'        => $twilioFrom,
+                'to'          => $recipientPhone,
+                'messageText' => $messageText,
+                'data'        => $data,
+            ]);
+        }
+
         $accessToken = (string)Env::get('WHATSAPP_ACCESS_TOKEN', '');
         $phoneNumberId = (string)Env::get('WHATSAPP_PHONE_NUMBER_ID', '');
         $apiVersion = (string)Env::get('WHATSAPP_API_VERSION', 'v20.0');
@@ -283,5 +298,102 @@ class WhatsAppService
             'normalized' => null,
             'error' => "Invalid phone number length or character sequence (Provided: {$rawNumber})"
         ];
+    }
+
+    /**
+     * Dispatch WhatsApp message using Twilio Messaging API.
+     */
+    public static function sendViaTwilio(array $params): array
+    {
+        $sid   = trim((string)($params['account_sid'] ?? ''));
+        $token = trim((string)($params['auth_token'] ?? ''));
+        $from  = trim((string)($params['from'] ?? 'whatsapp:+14155238886'));
+        $to    = trim((string)($params['to'] ?? ''));
+        $text  = trim((string)($params['messageText'] ?? ''));
+        $data  = $params['data'] ?? [];
+
+        if (!str_starts_with($from, 'whatsapp:')) {
+            $from = 'whatsapp:' . $from;
+        }
+
+        $formattedTo = 'whatsapp:+' . ltrim($to, '+');
+        $interpolatedText = !empty($text) ? EmailService::interpolate($text, $data) : 'Notification from ' . App::COMPANY_NAME;
+
+        if (empty($sid) || empty($token)) {
+            $simSid = 'SM' . strtoupper(bin2hex(random_bytes(15)));
+            return [
+                'success' => true,
+                'message_id' => $simSid,
+                'normalized_phone' => '+' . ltrim($to, '+'),
+                'provider' => 'twilio_whatsapp (simulated)',
+                'error' => null,
+                'response' => ['sid' => $simSid, 'status' => 'queued', 'simulated' => true],
+                'simulated' => true,
+            ];
+        }
+
+        $endpoint = "https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json";
+        $postData = http_build_query([
+            'From' => $from,
+            'To'   => $formattedTo,
+            'Body' => $interpolatedText,
+        ]);
+
+        try {
+            $ch = curl_init($endpoint);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+            curl_setopt($ch, CURLOPT_USERPWD, "{$sid}:{$token}");
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/x-www-form-urlencoded'
+            ]);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+
+            $responseBody = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            unset($ch);
+
+            if ($responseBody === false || !empty($curlError)) {
+                throw new Exception("cURL error connecting to Twilio WhatsApp API: {$curlError}");
+            }
+
+            $responseData = json_decode($responseBody, true) ?: [];
+
+            if ($httpCode >= 200 && $httpCode < 300 && !empty($responseData['sid'])) {
+                return [
+                    'success' => true,
+                    'message_id' => $responseData['sid'],
+                    'normalized_phone' => '+' . ltrim($to, '+'),
+                    'provider' => 'twilio_whatsapp',
+                    'error' => null,
+                    'response' => $responseData,
+                    'simulated' => false,
+                ];
+            } else {
+                $err = $responseData['message'] ?? "HTTP {$httpCode}: {$responseBody}";
+                return [
+                    'success' => false,
+                    'message_id' => null,
+                    'normalized_phone' => '+' . ltrim($to, '+'),
+                    'provider' => 'twilio_whatsapp',
+                    'error' => "Twilio API Error: {$err}",
+                    'response' => $responseData,
+                    'simulated' => false,
+                ];
+            }
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message_id' => null,
+                'normalized_phone' => '+' . ltrim($to, '+'),
+                'provider' => 'twilio_whatsapp',
+                'error' => $e->getMessage(),
+                'response' => null,
+                'simulated' => false,
+            ];
+        }
     }
 }

@@ -912,6 +912,9 @@ class PaymentController
         $dueDate = trim($_POST['due_date'] ?? '');
         $sendEmail = !empty($_POST['send_email']);
         $sendWhatsapp = !empty($_POST['send_whatsapp']);
+        if ($sendWhatsapp && !user_can('whatsapp.send')) {
+            $sendWhatsapp = false;
+        }
 
         if ($appId <= 0 || $amount <= 0) {
             redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Please specify a valid application and amount.', 'danger');

@@ -142,7 +142,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText('<?= $linkUrl ?>'); alert('Payment link copied to clipboard:\n<?= $linkUrl ?>');" title="Copy Link">
                       <i class="fa-solid fa-copy"></i>
                     </button>
-                    <?php if (!empty($l['customer_mobile'])): 
+                    <?php if (user_can('whatsapp.send') && !empty($l['customer_mobile'])): 
                       $cleanPhone = preg_replace('/[^0-9]/', '', $l['customer_mobile']);
                       $waText = "Hello " . $l['customer_name'] . ",\n\nPlease use this secure link to pay $" . number_format((float)$l['amount'], 2) . " USD for your visa application (" . $l['application_number'] . "):\n" . $linkUrl;
                     ?>
@@ -235,12 +235,14 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 <i class="fa-solid fa-envelope text-primary me-1"></i> Send payment link automatically via Email
               </label>
             </div>
+            <?php if (user_can('whatsapp.send')): ?>
             <div class="form-check">
               <input class="form-check-input" type="checkbox" name="send_whatsapp" value="1" id="linkSendWhatsapp" checked>
               <label class="form-check-label small fw-semibold" for="linkSendWhatsapp">
-                <i class="fa-brands fa-whatsapp text-success me-1"></i> Send payment request instantly via WhatsApp Cloud
+                <i class="fa-brands fa-whatsapp text-success me-1"></i> Send payment request instantly via WhatsApp
               </label>
             </div>
+            <?php endif; ?>
           </div>
         </div>
         <div class="modal-footer bg-light">

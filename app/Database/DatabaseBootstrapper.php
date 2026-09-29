@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 19;
+    private const SCHEMA_VERSION = 20;
 
     public static function init(bool $force = false): void
     {
@@ -2909,6 +2909,28 @@ class DatabaseBootstrapper
                     $pdo->exec("ALTER TABLE portal_activation_tokens ADD COLUMN {$colName} {$colType}");
                 } catch (\Throwable $e) {}
             }
+        // ── MIGRATION: WHATSAPP PERMISSIONS & TWILIO INTEGRATION (v20) ──────
+        if ($currentVersion < 20) {
+            try {
+                $insPerm = ($driver === 'mysql') ? 'INSERT IGNORE INTO' : 'INSERT OR IGNORE INTO';
+                $pdo->exec("{$insPerm} permissions (name, slug, module, description) VALUES
+                    ('Send WhatsApp Messages', 'whatsapp.send', 'Communications', 'Can dispatch WhatsApp notifications and initiate WhatsApp chats with clients'),
+                    ('Manage WhatsApp Settings', 'whatsapp.manage', 'Settings', 'Can configure Meta/Twilio WhatsApp credentials and template mappings')");
+
+                $grantStmt = ($driver === 'mysql')
+                    ? 'INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)'
+                    : 'INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)';
+                $stmtGrant = $pdo->prepare($grantStmt);
+
+                foreach (['whatsapp.send', 'whatsapp.manage'] as $slug) {
+                    $pId = $pdo->query("SELECT id FROM permissions WHERE slug = '{$slug}'")->fetchColumn();
+                    if ($pId) {
+                        foreach ([1, 2, 3, 4, 5, 8] as $rId) {
+                            try { $stmtGrant->execute([$rId, $pId]); } catch (\Throwable $e) {}
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {}
         }
 
         // ── RECORD SCHEMA VERSION ─────────────────────────────────────────────

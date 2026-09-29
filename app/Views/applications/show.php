@@ -364,7 +364,7 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
                   <a href="tel:<?= e($app['customer_mobile']) ?>" class="text-decoration-none"><?= e($app['customer_mobile']) ?></a>
                   <?php 
                     $cleanCustPhone = preg_replace('/[^0-9]/', '', $app['customer_whatsapp'] ?: $app['customer_mobile'] ?: '');
-                    if ($cleanCustPhone): 
+                    if ($cleanCustPhone && user_can('whatsapp.send')): 
                       $waApplicantMsg = "Hello " . ($app['customer_name'] ?? 'Applicant') . ", regarding your visa application " . ($app['application_number'] ?? '') . " with MS Travel Hub:";
                   ?>
                     <a href="https://api.whatsapp.com/send?phone=<?= $cleanCustPhone ?>&text=<?= urlencode($waApplicantMsg) ?>" 
