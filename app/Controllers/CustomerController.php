@@ -950,16 +950,34 @@ class CustomerController
             redirect($_SERVER['HTTP_REFERER'] ?? '/customers', 'Customer has no registered email address.', 'danger');
         }
 
+        // Defensive self-healing for portal_activation_tokens schema
+        try { $pdo->exec("ALTER TABLE portal_activation_tokens ADD COLUMN is_used INTEGER DEFAULT 0"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE portal_activation_tokens ADD COLUMN customer_id INTEGER NULL"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE portal_activation_tokens ADD COLUMN token_hash TEXT NULL"); } catch (\Throwable $e) {}
+
         // Invalidate prior active tokens for this customer
-        $pdo->prepare("UPDATE portal_activation_tokens SET is_used = 1 WHERE customer_id = ?")->execute([$customerId]);
+        try {
+            $pdo->prepare("UPDATE portal_activation_tokens SET is_used = 1, used_at = CURRENT_TIMESTAMP WHERE (portal_type = 'customer' AND entity_id = ?) OR customer_id = ?")
+                ->execute([$customerId, $customerId]);
+        } catch (\Throwable $e) {
+            try {
+                $pdo->prepare("UPDATE portal_activation_tokens SET used_at = CURRENT_TIMESTAMP WHERE portal_type = 'customer' AND entity_id = ?")
+                    ->execute([$customerId]);
+            } catch (\Throwable $e2) {}
+        }
 
         // Generate token
         $rawToken = bin2hex(random_bytes(32));
         $tokenHash = hash('sha256', $rawToken);
         $expiresAt = date('Y-m-d H:i:s', strtotime('+48 hours'));
 
-        $stmt = $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, customer_id, token, token_hash, expires_at, is_used, created_at) VALUES ('customer', ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)");
-        $stmt->execute([$customerId, $customer['email'], $customerId, $rawToken, $tokenHash, $expiresAt]);
+        try {
+            $stmt = $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, customer_id, token, token_hash, expires_at, is_used, created_at) VALUES ('customer', ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)");
+            $stmt->execute([$customerId, $customer['email'], $customerId, $rawToken, $tokenHash, $expiresAt]);
+        } catch (\Throwable $e) {
+            $stmt = $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, token, expires_at, created_at) VALUES ('customer', ?, ?, ?, ?, CURRENT_TIMESTAMP)");
+            $stmt->execute([$customerId, $customer['email'], $rawToken, $expiresAt]);
+        }
 
         $appUrl = \App\Config\App::url();
         $activationLink = \App\Config\App::url("portal/activate?token={$rawToken}");

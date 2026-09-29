@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 18;
+    private const SCHEMA_VERSION = 19;
 
     public static function init(bool $force = false): void
     {
@@ -473,11 +473,21 @@ class DatabaseBootstrapper
                 portal_type TEXT NOT NULL,
                 entity_id INTEGER NOT NULL,
                 entity_email TEXT NOT NULL,
+                customer_id INTEGER NULL,
                 token TEXT NOT NULL UNIQUE,
+                token_hash TEXT NULL,
+                is_used INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 expires_at DATETIME NOT NULL,
                 used_at DATETIME NULL
             );");
+
+            // Guarantee columns exist on SQLite / MySQL databases created with older schema
+            foreach (['is_used INTEGER DEFAULT 0', 'customer_id INTEGER NULL', 'token_hash TEXT NULL'] as $colDef) {
+                try {
+                    $pdo->exec("ALTER TABLE portal_activation_tokens ADD COLUMN {$colDef};");
+                } catch (\Throwable $e) {}
+            }
 
             // Public Recruitment Jobs Table for SQLite
             $pdo->exec("CREATE TABLE IF NOT EXISTS jobs (
@@ -2880,6 +2890,20 @@ class DatabaseBootstrapper
                     }
                 }
             } catch (\Throwable $e) {}
+        }
+
+        // ── MIGRATION: PORTAL ACTIVATION TOKENS COLUMNS (v19) ────────────────
+        if ($currentVersion < 19) {
+            $cols = [
+                'is_used'     => ($driver === 'mysql' ? 'TINYINT(1) DEFAULT 0' : 'INTEGER DEFAULT 0'),
+                'customer_id' => ($driver === 'mysql' ? 'INT NULL' : 'INTEGER NULL'),
+                'token_hash'  => ($driver === 'mysql' ? 'VARCHAR(64) NULL' : 'TEXT NULL'),
+            ];
+            foreach ($cols as $colName => $colType) {
+                try {
+                    $pdo->exec("ALTER TABLE portal_activation_tokens ADD COLUMN {$colName} {$colType}");
+                } catch (\Throwable $e) {}
+            }
         }
 
         // ── RECORD SCHEMA VERSION ─────────────────────────────────────────────
