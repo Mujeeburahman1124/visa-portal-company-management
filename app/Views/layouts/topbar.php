@@ -114,12 +114,11 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
   </div>
 
   <!-- Topbar Action Items -->
-  <div class="d-flex align-items-center gap-2 gap-md-3 flex-shrink-0">
-    <!-- Quick Actions Button (100% Responsive) -->
-    <div class="dropdown flex-shrink-0">
+    <!-- Quick Actions Button (Responsive: hidden on xs phones, visible on sm+) -->
+    <div class="dropdown flex-shrink-0 d-none d-sm-block">
       <button class="btn btn-primary btn-sm px-2.5 px-md-3 rounded-pill d-flex align-items-center gap-1 shadow-sm topbar-quick-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Quick Action">
         <i class="fa-solid fa-plus"></i>
-        <span class="d-none d-sm-inline ms-1 fw-semibold">Quick Action</span>
+        <span class="d-none d-md-inline ms-1 fw-semibold">Quick Action</span>
       </button>
       <ul class="dropdown-menu dropdown-menu-end shadow border-0 topbar-quick-action-menu" style="font-size: 0.875rem;">
         <li class="dropdown-header small text-uppercase text-muted" style="font-size: 0.7rem;">Visa Operations</li>
@@ -137,15 +136,15 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
 
     <!-- Super Admin System Errors Warning Indicator -->
     <?php if ($isSuperAdminUser && $systemErrorCount > 0): ?>
-      <a href="/audit-logs?action=SYSTEM_ERROR" class="btn btn-outline-danger btn-sm rounded-pill d-flex align-items-center gap-1 px-2.5 shadow-sm" title="System Errors Logged — Click to inspect">
+      <a href="/audit-logs?action=SYSTEM_ERROR" class="btn btn-outline-danger btn-sm rounded-pill d-flex align-items-center gap-1 px-2 px-md-2.5 shadow-sm flex-shrink-0" title="System Errors Logged — Click to inspect">
         <i class="fa-solid fa-triangle-exclamation text-danger"></i>
         <span class="d-none d-md-inline small fw-bold">Errors</span>
         <span class="badge bg-danger rounded-pill"><?= $systemErrorCount ?></span>
       </a>
     <?php endif; ?>
 
-    <!-- Theme Palette Selector -->
-    <div class="theme-selector-wrap flex-shrink-0">
+    <!-- Theme Palette Selector (Responsive: hidden on xs phones, visible on sm+) -->
+    <div class="theme-selector-wrap flex-shrink-0 d-none d-sm-block">
       <button class="theme-selector-btn" type="button" aria-label="Choose Theme" title="Choose Theme">
         <span class="theme-swatch-current"></span>
         <span class="d-none d-xl-inline">Theme</span>
@@ -154,7 +153,7 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
     </div>
 
     <!-- Notification Bell with Dropdown Panel -->
-    <div class="dropdown">
+    <div class="dropdown flex-shrink-0">
       <button class="btn btn-light position-relative p-2 rounded-circle border topbar-icon-btn" id="topbarNotifBtn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
         <i class="fa-solid fa-bell text-secondary"></i>
         <span id="topbarNotifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger <?= $unreadNotifs > 0 ? '' : 'd-none' ?>" style="font-size: 0.65rem;">
@@ -207,7 +206,7 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
     </div>
 
     <!-- User Profile Dropdown -->
-    <div class="dropdown">
+    <div class="dropdown flex-shrink-0">
       <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-dark topbar-user-btn" data-bs-toggle="dropdown" aria-expanded="false" title="<?= e($currentUser['name'] ?? 'User Profile') ?>">
         <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm topbar-user-avatar" style="width: 36px; height: 36px; font-size: 0.9rem;">
           <?= strtoupper(substr($currentUser['name'] ?? 'U', 0, 1)) ?>
@@ -218,12 +217,13 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
         </div>
         <i class="fa-solid fa-chevron-down text-muted small ms-1 d-none d-sm-inline-block"></i>
       </a>
-      <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.875rem; min-width: 220px;">
+      <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.875rem; min-width: 230px;">
         <li class="px-3 py-2 border-bottom bg-light rounded-top">
           <div class="fw-bold text-dark"><?= e($currentUser['name'] ?? '') ?></div>
           <div class="text-muted small text-truncate"><?= e($currentUser['email'] ?? '') ?></div>
           <div class="badge bg-primary mt-1"><?= e($currentUser['role_name'] ?? 'Staff') ?></div>
         </li>
+        <li><a class="dropdown-item py-2" href="/profile"><i class="fa-solid fa-id-badge me-2 text-primary"></i> My Profile &amp; Password</a></li>
         <li><a class="dropdown-item py-2" href="/dashboard"><i class="fa-solid fa-gauge me-2 text-muted"></i> Operations Dashboard</a></li>
         <li><a class="dropdown-item py-2" href="/audit-logs"><i class="fa-solid fa-clock-rotate-left me-2 text-muted"></i> My Activity Log</a></li>
         <?php if (user_has_role(['super-admin', 'admin', 'branch-manager', 'visa-manager'])): ?>

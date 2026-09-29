@@ -527,7 +527,13 @@ switch ($uri) {
         break;
 
     case '/profile':
-        (new App\Controllers\SettingsController())->index();
+    case '/staff/profile':
+        (new App\Controllers\StaffController())->profile();
+        break;
+
+    case '/profile/update':
+    case '/staff/profile/update':
+        (new App\Controllers\StaffController())->updateProfile();
         break;
 
     case '/payments/links':
@@ -952,6 +958,12 @@ switch ($uri) {
     case '/audit-logs/export':
         RoleMiddleware::authorize(['super-admin', 'admin']);
         (new App\Controllers\AuditLogController())->exportCsv();
+        break;
+
+    case '/audit-logs/clear-errors':
+    case '/audit-logs/resolve':
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        (new App\Controllers\AuditLogController())->clearErrors();
         break;
 
     // Administration: Roles & Permissions (Protected: Super Admin / Admin)

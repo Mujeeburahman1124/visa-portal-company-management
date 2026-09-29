@@ -479,4 +479,50 @@ class StaffController
 
         redirect($_SERVER['HTTP_REFERER'] ?? "/staff/show?id={$id}", "Password for {$member['name']} has been reset to: {$newPassword}", 'success');
     }
+
+    public function profile(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $currentUser = auth_user();
+
+        $stmt = $pdo->prepare("SELECT u.*, r.name as role_name, r.slug as role_slug, b.name as branch_name 
+            FROM users u 
+            JOIN roles r ON u.role_id = r.id 
+            LEFT JOIN branches b ON u.branch_id = b.id 
+            WHERE u.id = ?");
+        $stmt->execute([(int)$currentUser['id']]);
+        $staffUser = $stmt->fetch(PDO::FETCH_ASSOC) ?: $currentUser;
+
+        require_once dirname(__DIR__) . '/Views/staff/profile.php';
+    }
+
+    public function updateProfile(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $currentUser = auth_user();
+
+        $name = trim($_POST['name'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
+        $designation = trim($_POST['designation'] ?? '');
+        $department = trim($_POST['department'] ?? '');
+
+        if (empty($name)) {
+            redirect('/profile', 'Full Name cannot be empty.', 'danger');
+        }
+
+        $stmt = $pdo->prepare("UPDATE users SET name = ?, phone = ?, designation = ?, department = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+        $stmt->execute([$name, $phone, $designation, $department, (int)$currentUser['id']]);
+
+        // Refresh session
+        $_SESSION['user']['name'] = $name;
+        $_SESSION['user']['phone'] = $phone;
+        $_SESSION['user']['designation'] = $designation;
+        $_SESSION['user']['department'] = $department;
+
+        AuditService::log('UPDATE_PROFILE', 'Staff', (int)$currentUser['id'], "Staff user {$name} updated their profile details", null, (int)$currentUser['id']);
+
+        redirect('/profile', 'Your profile details have been successfully updated.', 'success');
+    }
 }

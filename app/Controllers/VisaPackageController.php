@@ -64,11 +64,41 @@ class VisaPackageController
         $stmt->execute($params);
         $packages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Fetch Countries, Categories, Visa Types, and Suppliers
         $countries = $pdo->query("SELECT id, name, flag_emoji FROM countries ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $categories = $pdo->query("SELECT vc.*, (SELECT COUNT(*) FROM visa_services vs WHERE vs.category_id = vc.id) as packages_count FROM visa_categories vc ORDER BY vc.name ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $visaTypes = $pdo->query("SELECT * FROM visa_types ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $suppliers = $pdo->query("SELECT id, company_name as name, company_name, contact_person, country FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $visaTypes = [];
+        try {
+            $visaTypes = $pdo->query("SELECT * FROM visa_types ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            try {
+                $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                if ($driver === 'mysql') {
+                    $pdo->exec("CREATE TABLE IF NOT EXISTS visa_types (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        name VARCHAR(100) NOT NULL,
+                        slug VARCHAR(100) NOT NULL,
+                        description TEXT NULL,
+                        icon VARCHAR(50) DEFAULT 'fa-passport',
+                        is_active TINYINT(1) DEFAULT 1,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                } else {
+                    $pdo->exec("CREATE TABLE IF NOT EXISTS visa_types (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL,
+                        slug TEXT NOT NULL,
+                        description TEXT NULL,
+                        icon TEXT DEFAULT 'fa-passport',
+                        is_active INTEGER DEFAULT 1,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )");
+                }
+                $visaTypes = $pdo->query("SELECT * FROM visa_types ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            } catch (\Throwable $e2) {
+                $visaTypes = [];
+            }
+        }
 
         // Inventory / Transaction History with Combinable Filters
         $invFilterDate = trim($_GET['inv_date_preset'] ?? '');

@@ -13,7 +13,7 @@ $flash = get_flash();
   <link rel="apple-touch-icon" href="/assets/images/logo.png">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/main.css?v=7.0.0">
+  <link rel="stylesheet" href="/assets/css/main.css?v=7.1.0">
   <style>
     .auth-login-bg {
       min-height: 100vh;

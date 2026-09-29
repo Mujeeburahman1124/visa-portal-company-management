@@ -27,6 +27,11 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       <p class="text-muted small mb-0">Audit-grade record of administrative actions, stage shifts, payment receipts, document approvals, and login events.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
+      <?php if (($_GET['action'] ?? '') === 'SYSTEM_ERROR' || !empty($_GET['error'])): ?>
+        <a href="/audit-logs/clear-errors" class="btn btn-outline-danger btn-sm px-3 shadow-sm" onclick="return confirm('Mark all recorded system errors as resolved and clear the topbar badge?');">
+          <i class="fa-solid fa-check-double me-1"></i> Clear / Mark Resolved
+        </a>
+      <?php endif; ?>
       <a href="/audit-logs/export" class="btn btn-outline-success btn-sm px-3 bg-white shadow-sm">
         <i class="fa-solid fa-file-excel me-1"></i> Export to CSV
       </a>

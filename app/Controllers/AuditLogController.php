@@ -102,4 +102,17 @@ class AuditLogController
         fclose($out);
         exit;
     }
+
+    public function clearErrors(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        $pdo = Database::getConnection();
+
+        $pdo->exec("UPDATE activity_logs SET action = 'RESOLVED_ERROR' WHERE action IN ('SYSTEM_ERROR', 'ERROR', 'EXCEPTION')");
+
+        AuditService::log('RESOLVE_ERRORS', 'System', null, "Super Admin cleared and marked all system error alerts as resolved");
+
+        redirect('/audit-logs', 'All system error alerts have been marked as resolved and the error badge is now cleared.', 'success');
+    }
 }
