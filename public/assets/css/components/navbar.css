@@ -1,13 +1,4 @@
-.app-main-content {
-  flex: 1;
-  margin-left: var(--sidebar-width);
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: transparent;
-  transition: margin-left var(--vt-transition-normal);
-  width: calc(100% - var(--sidebar-width));
-}
+/* app-main-content layout is managed by responsive.css across all breakpoints */
 
 .app-topbar {
   height: var(--topbar-height);

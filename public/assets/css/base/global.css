@@ -43,9 +43,8 @@ body.app-body, html, body {
 .content-body {
   flex: 1;
   padding: 1.5rem 1.75rem 2.5rem;
-  max-width: 1800px;
   width: 100%;
-  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 /* Scrollbar styling */
