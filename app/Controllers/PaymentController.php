@@ -290,7 +290,7 @@ class PaymentController
                 'currency' => $toCurrency,
                 'paymentMethod' => $paymentMethod,
                 'paymentDate' => $paymentDate,
-                'receiptUrl' => \App\Config\App::url('portal/invoices'),
+                'receiptUrl' => App::url('portal/invoices'),
                 'portal_link' => "/portal/invoices",
                 'link' => "/payments/receipt?id={$paymentId}",
             ]);

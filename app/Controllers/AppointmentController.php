@@ -180,7 +180,7 @@ class AppointmentController
                 'centerName' => $centerName,
                 'locationAddress' => $location ?: 'Consular Visa Application Center',
                 'referenceNumber' => $refNumber,
-                'actionUrl' => \App\Config\App::url('portal/appointments'),
+                'actionUrl' => App::url('portal/appointments'),
                 'portal_link' => "/portal/appointments",
                 'link' => "/applications/show?id={$appId}",
             ]);

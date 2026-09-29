@@ -512,7 +512,7 @@ class ApplicationController
                     'visa_type' => $service['name'] ?? 'Visa',
                     'current_stage' => 'Application Registered',
                     'status' => 'Registered',
-                    'actionUrl' => \App\Config\App::url('portal/dashboard'),
+                    'actionUrl' => App::url('portal/dashboard'),
                 ]);
             } catch (\Throwable $e) {}
 
@@ -903,7 +903,7 @@ class ApplicationController
                     'visa_number' => $visaNumber,
                     'decisionNotes' => $decisionNotes ?: ($rejectionReason ?: "Decision marked as {$decision}"),
                     'rejectionReason' => $rejectionReason,
-                    'actionUrl' => \App\Config\App::url('portal/dashboard'),
+                    'actionUrl' => App::url('portal/dashboard'),
                 ]);
             } catch (\Throwable $e) {}
 

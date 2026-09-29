@@ -511,7 +511,7 @@ class StaffController
 
         // Safely add columns if they don't exist yet (migration guard)
         try {
-            $driver = $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
             if ($driver === 'mysql') {
                 $cols = $pdo->query("SHOW COLUMNS FROM users LIKE 'whatsapp_number'")->fetchColumn();
                 if (!$cols) $pdo->exec("ALTER TABLE users ADD COLUMN whatsapp_number VARCHAR(30) NULL DEFAULT NULL");
@@ -550,9 +550,7 @@ class StaffController
 
         $file = $_FILES['profile_photo'];
         $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mimeType = finfo_file($finfo, $file['tmp_name']);
-        finfo_close($finfo);
+        $mimeType = mime_content_type($file['tmp_name']) ?: '';
 
         if (!in_array($mimeType, $allowedMimes)) {
             redirect('/profile', 'Only JPEG, PNG, GIF, or WebP images are accepted.', 'danger');
@@ -577,7 +575,7 @@ class StaffController
 
         // Ensure column exists first
         try {
-            $driver = $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
             if ($driver === 'mysql') {
                 $col = $pdo->query("SHOW COLUMNS FROM users LIKE 'profile_photo'")->fetchColumn();
                 if (!$col) $pdo->exec("ALTER TABLE users ADD COLUMN profile_photo VARCHAR(255) NULL DEFAULT NULL");

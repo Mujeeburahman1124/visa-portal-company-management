@@ -580,7 +580,7 @@ class DocumentController
                 'application_number' => $app['application_number'] ?? '',
                 'documentName' => $app['doc_type_name'],
                 'notes' => $notes,
-                'actionUrl' => \App\Config\App::url('portal/documents'),
+                'actionUrl' => App::url('portal/documents'),
                 'portal_link' => "/portal/documents",
                 'severity' => 'warning',
             ]);
