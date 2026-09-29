@@ -1315,6 +1315,214 @@ CREATE OR REPLACE VIEW `visa_types` AS SELECT
         `visa_categories`.`created_at` 
     FROM `visa_categories`;
 
+-- Table: `staff_leave_requests`
+CREATE TABLE IF NOT EXISTS `staff_leave_requests` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `leave_type` varchar(50) NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `days_count` decimal(4,1) NOT NULL DEFAULT 1.0,
+  `total_days` int(11) NOT NULL DEFAULT 1,
+  `reason` text NOT NULL,
+  `status` varchar(30) DEFAULT 'Pending',
+  `approved_by` int(11) DEFAULT NULL,
+  `approver_id` int(11) DEFAULT NULL,
+  `approved_at` datetime DEFAULT NULL,
+  `approver_notes` text DEFAULT NULL,
+  `comments` text DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_slr_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: `staff_requests`
+CREATE TABLE IF NOT EXISTS `staff_requests` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `request_type` varchar(100) NOT NULL,
+  `application_id` int(11) DEFAULT NULL,
+  `priority` varchar(30) DEFAULT 'Medium',
+  `description` text NOT NULL,
+  `status` varchar(30) DEFAULT 'Open',
+  `resolved_by` int(11) DEFAULT NULL,
+  `resolved_at` datetime DEFAULT NULL,
+  `resolution_notes` text DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_sr_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: `supplier_wallets`
+CREATE TABLE IF NOT EXISTS `supplier_wallets` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `supplier_id` int(11) NOT NULL,
+  `currency` varchar(10) DEFAULT 'AED',
+  `current_balance` decimal(12,2) DEFAULT 0.00,
+  `total_credited` decimal(12,2) DEFAULT 0.00,
+  `total_debited` decimal(12,2) DEFAULT 0.00,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_supp_wallet` (`supplier_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: `supplier_wallet_transactions`
+CREATE TABLE IF NOT EXISTS `supplier_wallet_transactions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `wallet_id` int(11) NOT NULL,
+  `supplier_id` int(11) NOT NULL,
+  `transaction_type` varchar(20) NOT NULL,
+  `amount` decimal(12,2) NOT NULL,
+  `balance_after` decimal(12,2) NOT NULL,
+  `currency` varchar(10) DEFAULT 'AED',
+  `description` text NOT NULL,
+  `payment_reference` varchar(100) DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_swtx_wallet` (`wallet_id`),
+  KEY `idx_swtx_supp` (`supplier_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: `agent_wallets`
+CREATE TABLE IF NOT EXISTS `agent_wallets` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `agent_id` int(11) NOT NULL,
+  `currency` varchar(10) DEFAULT 'AED',
+  `current_balance` decimal(12,2) DEFAULT 0.00,
+  `total_credited` decimal(12,2) DEFAULT 0.00,
+  `total_debited` decimal(12,2) DEFAULT 0.00,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_agent_wallet` (`agent_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: `agent_wallet_transactions`
+CREATE TABLE IF NOT EXISTS `agent_wallet_transactions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `wallet_id` int(11) NOT NULL,
+  `agent_id` int(11) NOT NULL,
+  `transaction_type` varchar(20) NOT NULL,
+  `amount` decimal(12,2) NOT NULL,
+  `balance_after` decimal(12,2) NOT NULL,
+  `currency` varchar(10) DEFAULT 'AED',
+  `description` text NOT NULL,
+  `payment_reference` varchar(100) DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_awtx_wallet` (`wallet_id`),
+  KEY `idx_awtx_agent` (`agent_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: `inventory_categories`
+CREATE TABLE IF NOT EXISTS `inventory_categories` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `code` varchar(50) NOT NULL,
+  `description` text DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT 1,
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`),
+  UNIQUE KEY `code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: `inventory_items`
+CREATE TABLE IF NOT EXISTS `inventory_items` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `item_code` varchar(50) NOT NULL,
+  `name` varchar(150) NOT NULL,
+  `category_id` int(11) NOT NULL,
+  `supplier_id` int(11) DEFAULT NULL,
+  `branch_id` int(11) DEFAULT NULL,
+  `unit` varchar(30) DEFAULT 'Pcs',
+  `opening_stock` int(11) NOT NULL DEFAULT 0,
+  `current_stock` int(11) NOT NULL DEFAULT 0,
+  `minimum_stock` int(11) NOT NULL DEFAULT 10,
+  `purchase_price` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `selling_price` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `currency` varchar(10) DEFAULT 'AED',
+  `location` varchar(100) DEFAULT NULL,
+  `status` varchar(30) NOT NULL DEFAULT 'In Stock',
+  `notes` text DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `item_code` (`item_code`),
+  KEY `idx_inv_cat` (`category_id`),
+  KEY `idx_inv_supp` (`supplier_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: `inventory_transactions`
+CREATE TABLE IF NOT EXISTS `inventory_transactions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `transaction_code` varchar(50) NOT NULL,
+  `item_id` int(11) NOT NULL,
+  `transaction_type` varchar(50) NOT NULL,
+  `quantity` int(11) NOT NULL,
+  `prev_stock` int(11) NOT NULL,
+  `new_stock` int(11) NOT NULL,
+  `unit_price` decimal(12,2) DEFAULT 0.00,
+  `total_price` decimal(12,2) DEFAULT 0.00,
+  `currency` varchar(10) DEFAULT 'AED',
+  `supplier_id` int(11) DEFAULT NULL,
+  `supplier_invoice_ref` varchar(100) DEFAULT NULL,
+  `source_branch_id` int(11) DEFAULT NULL,
+  `destination_branch_id` int(11) DEFAULT NULL,
+  `reason_notes` text NOT NULL,
+  `performed_by` int(11) DEFAULT NULL,
+  `transaction_date` date NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `transaction_code` (`transaction_code`),
+  KEY `idx_it_item` (`item_id`),
+  KEY `idx_it_supp` (`supplier_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: `visa_package_price_history`
+CREATE TABLE IF NOT EXISTS `visa_package_price_history` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `visa_service_id` int(11) NOT NULL,
+  `supplier_id` int(11) DEFAULT NULL,
+  `supplier_cost` decimal(12,2) DEFAULT 0.00,
+  `service_fee` decimal(12,2) DEFAULT 0.00,
+  `tax_rate` decimal(5,2) DEFAULT 0.00,
+  `selling_price` decimal(12,2) DEFAULT 0.00,
+  `currency` varchar(10) DEFAULT 'USD',
+  `effective_from` datetime NOT NULL,
+  `effective_to` datetime DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_vph_serv` (`visa_service_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: `visa_package_inventory_transactions`
+CREATE TABLE IF NOT EXISTS `visa_package_inventory_transactions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `visa_service_id` int(11) NOT NULL,
+  `action_type` varchar(50) NOT NULL,
+  `prev_cost` decimal(12,2) DEFAULT NULL,
+  `new_cost` decimal(12,2) DEFAULT NULL,
+  `prev_price` decimal(12,2) DEFAULT NULL,
+  `new_price` decimal(12,2) DEFAULT NULL,
+  `currency` varchar(10) DEFAULT 'USD',
+  `supplier_id` int(11) DEFAULT NULL,
+  `application_id` int(11) DEFAULT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `effective_date` date DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_vpit_serv` (`visa_service_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ============================================================================
 -- SEED DATA
 -- ============================================================================

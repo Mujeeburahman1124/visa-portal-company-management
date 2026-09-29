@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 21;
+    private const SCHEMA_VERSION = 22;
 
     public static function init(bool $force = false): void
     {
@@ -45,17 +45,23 @@ class DatabaseBootstrapper
             // Ignore
         }
 
-        // Fast path for HTTP requests: skip expensive DDL if schema is up-to-date
+        // Fast path for HTTP requests: skip expensive DDL if schema is up-to-date and key tables exist
         $autoMigrate = (bool)\App\Config\Env::get('DB_AUTO_MIGRATE', false);
         if (!$force && !$autoMigrate && php_sapi_name() !== 'cli') {
             try {
                 $currentVer = (int)$pdo->query(
                     "SELECT COALESCE(MAX(version),0) FROM schema_migrations"
                 )->fetchColumn();
-                if ($currentVer >= self::SCHEMA_VERSION) {
-                    return; // Schema is current — fast exit
+
+                $hasLeaveRequests = false;
+                try {
+                    $hasLeaveRequests = (bool)$pdo->query("SELECT 1 FROM staff_leave_requests LIMIT 1");
+                } catch (\Throwable $e) {}
+
+                if ($currentVer >= self::SCHEMA_VERSION && $hasLeaveRequests) {
+                    return; // Schema is current and complete — fast exit
                 }
-                // Schema is behind — fall through to run migrations
+                // Schema is behind or incomplete — fall through to run migrations
             } catch (\Throwable $e) {
                 // proceed with full bootstrap
             }
@@ -2947,6 +2953,245 @@ class DatabaseBootstrapper
             } catch (\Throwable $e) {}
         }
 
+        // ── MIGRATION: CRITICAL TABLES RECOVERY & DATA SEEDING (v22) ────────
+        if ($currentVersion < 22) {
+            // 1. staff_leave_requests
+            try {
+                if ($driver === 'mysql') {
+                    $pdo->exec("CREATE TABLE IF NOT EXISTS staff_leave_requests (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        user_id INT NOT NULL,
+                        leave_type VARCHAR(50) NOT NULL,
+                        start_date DATE NOT NULL,
+                        end_date DATE NOT NULL,
+                        days_count DECIMAL(4,1) NOT NULL DEFAULT 1.0,
+                        total_days INT NOT NULL DEFAULT 1,
+                        reason TEXT NOT NULL,
+                        status VARCHAR(30) DEFAULT 'Pending',
+                        approved_by INT NULL,
+                        approver_id INT NULL,
+                        approved_at DATETIME NULL,
+                        approver_notes TEXT NULL,
+                        comments TEXT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        INDEX idx_slr_user (user_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                    try { $pdo->exec("ALTER TABLE staff_leave_requests ADD COLUMN approver_id INT NULL"); } catch (\Throwable $e) {}
+                    try { $pdo->exec("ALTER TABLE staff_leave_requests ADD COLUMN approver_notes TEXT NULL"); } catch (\Throwable $e) {}
+                    try { $pdo->exec("ALTER TABLE staff_leave_requests ADD COLUMN total_days INT DEFAULT 1"); } catch (\Throwable $e) {}
+                }
+            } catch (\Throwable $e) {}
+
+            // 2. staff_requests
+            try {
+                if ($driver === 'mysql') {
+                    $pdo->exec("CREATE TABLE IF NOT EXISTS staff_requests (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        user_id INT NOT NULL,
+                        request_type VARCHAR(100) NOT NULL,
+                        application_id INT NULL,
+                        priority VARCHAR(30) DEFAULT 'Medium',
+                        description TEXT NOT NULL,
+                        status VARCHAR(30) DEFAULT 'Open',
+                        resolved_by INT NULL,
+                        resolved_at DATETIME NULL,
+                        resolution_notes TEXT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        INDEX idx_sr_user (user_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                }
+            } catch (\Throwable $e) {}
+
+            // 3. supplier_wallets & supplier_wallet_transactions
+            try {
+                if ($driver === 'mysql') {
+                    $pdo->exec("CREATE TABLE IF NOT EXISTS supplier_wallets (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        supplier_id INT NOT NULL,
+                        currency VARCHAR(10) DEFAULT 'AED',
+                        current_balance DECIMAL(12,2) DEFAULT 0.00,
+                        total_credited DECIMAL(12,2) DEFAULT 0.00,
+                        total_debited DECIMAL(12,2) DEFAULT 0.00,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        UNIQUE KEY uq_supp_wallet (supplier_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+                    $pdo->exec("CREATE TABLE IF NOT EXISTS supplier_wallet_transactions (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        wallet_id INT NOT NULL,
+                        supplier_id INT NOT NULL,
+                        transaction_type VARCHAR(20) NOT NULL,
+                        amount DECIMAL(12,2) NOT NULL,
+                        balance_after DECIMAL(12,2) NOT NULL,
+                        currency VARCHAR(10) DEFAULT 'AED',
+                        description TEXT NOT NULL,
+                        payment_reference VARCHAR(100) NULL,
+                        created_by INT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        INDEX idx_swtx_wallet (wallet_id),
+                        INDEX idx_swtx_supp (supplier_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                }
+            } catch (\Throwable $e) {}
+
+            // 4. agent_wallets & agent_wallet_transactions
+            try {
+                if ($driver === 'mysql') {
+                    $pdo->exec("CREATE TABLE IF NOT EXISTS agent_wallets (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        agent_id INT NOT NULL,
+                        currency VARCHAR(10) DEFAULT 'AED',
+                        current_balance DECIMAL(12,2) DEFAULT 0.00,
+                        total_credited DECIMAL(12,2) DEFAULT 0.00,
+                        total_debited DECIMAL(12,2) DEFAULT 0.00,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        UNIQUE KEY uq_agent_wallet (agent_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+                    $pdo->exec("CREATE TABLE IF NOT EXISTS agent_wallet_transactions (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        wallet_id INT NOT NULL,
+                        agent_id INT NOT NULL,
+                        transaction_type VARCHAR(20) NOT NULL,
+                        amount DECIMAL(12,2) NOT NULL,
+                        balance_after DECIMAL(12,2) NOT NULL,
+                        currency VARCHAR(10) DEFAULT 'AED',
+                        description TEXT NOT NULL,
+                        payment_reference VARCHAR(100) NULL,
+                        created_by INT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        INDEX idx_awtx_wallet (wallet_id),
+                        INDEX idx_awtx_agent (agent_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                }
+            } catch (\Throwable $e) {}
+
+            // 5. inventory_categories, inventory_items, inventory_transactions
+            try {
+                if ($driver === 'mysql') {
+                    $pdo->exec("CREATE TABLE IF NOT EXISTS inventory_categories (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        name VARCHAR(100) NOT NULL UNIQUE,
+                        code VARCHAR(50) NOT NULL UNIQUE,
+                        description TEXT NULL,
+                        is_active TINYINT(1) DEFAULT 1,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+                    $pdo->exec("CREATE TABLE IF NOT EXISTS inventory_items (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        item_code VARCHAR(50) NOT NULL UNIQUE,
+                        name VARCHAR(150) NOT NULL,
+                        category_id INT NOT NULL,
+                        supplier_id INT NULL,
+                        branch_id INT NULL,
+                        unit VARCHAR(30) DEFAULT 'Pcs',
+                        opening_stock INT NOT NULL DEFAULT 0,
+                        current_stock INT NOT NULL DEFAULT 0,
+                        minimum_stock INT NOT NULL DEFAULT 10,
+                        purchase_price DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                        selling_price DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                        currency VARCHAR(10) DEFAULT 'AED',
+                        location VARCHAR(100) NULL,
+                        status VARCHAR(30) NOT NULL DEFAULT 'In Stock',
+                        notes TEXT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        INDEX idx_inv_cat (category_id),
+                        INDEX idx_inv_supp (supplier_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+                    $pdo->exec("CREATE TABLE IF NOT EXISTS inventory_transactions (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        transaction_code VARCHAR(50) NOT NULL UNIQUE,
+                        item_id INT NOT NULL,
+                        transaction_type VARCHAR(50) NOT NULL,
+                        quantity INT NOT NULL,
+                        prev_stock INT NOT NULL,
+                        new_stock INT NOT NULL,
+                        unit_price DECIMAL(12,2) DEFAULT 0.00,
+                        total_price DECIMAL(12,2) DEFAULT 0.00,
+                        currency VARCHAR(10) DEFAULT 'AED',
+                        supplier_id INT NULL,
+                        supplier_invoice_ref VARCHAR(100) NULL,
+                        source_branch_id INT NULL,
+                        destination_branch_id INT NULL,
+                        reason_notes TEXT NOT NULL,
+                        performed_by INT NULL,
+                        transaction_date DATE NOT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        INDEX idx_it_item (item_id),
+                        INDEX idx_it_supp (supplier_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                }
+            } catch (\Throwable $e) {}
+
+            // 6. visa_package_price_history & visa_package_inventory_transactions
+            try {
+                if ($driver === 'mysql') {
+                    $pdo->exec("CREATE TABLE IF NOT EXISTS visa_package_price_history (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        visa_service_id INT NOT NULL,
+                        supplier_id INT NULL,
+                        supplier_cost DECIMAL(12,2) DEFAULT 0.00,
+                        service_fee DECIMAL(12,2) DEFAULT 0.00,
+                        tax_rate DECIMAL(5,2) DEFAULT 0.00,
+                        selling_price DECIMAL(12,2) DEFAULT 0.00,
+                        currency VARCHAR(10) DEFAULT 'USD',
+                        effective_from DATETIME NOT NULL,
+                        effective_to DATETIME NULL,
+                        notes TEXT NULL,
+                        created_by INT NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        INDEX idx_vph_serv (visa_service_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+                    $pdo->exec("CREATE TABLE IF NOT EXISTS visa_package_inventory_transactions (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        visa_service_id INT NOT NULL,
+                        action_type VARCHAR(50) NOT NULL,
+                        prev_cost DECIMAL(12,2) NULL,
+                        new_cost DECIMAL(12,2) NULL,
+                        prev_price DECIMAL(12,2) NULL,
+                        new_price DECIMAL(12,2) NULL,
+                        currency VARCHAR(10) DEFAULT 'USD',
+                        supplier_id INT NULL,
+                        application_id INT NULL,
+                        user_id INT NULL,
+                        notes TEXT NULL,
+                        effective_date DATE NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        INDEX idx_vpit_serv (visa_service_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                }
+            } catch (\Throwable $e) {}
+
+            // 7. Column additions for tasks and applications
+            try {
+                $colType = ($driver === 'mysql') ? "INT NULL" : "INTEGER NULL";
+                $pdo->exec("ALTER TABLE tasks ADD COLUMN customer_id {$colType}");
+            } catch (\Throwable $e) {}
+            try {
+                $colType = ($driver === 'mysql') ? "VARCHAR(50) DEFAULT 'Unpaid'" : "TEXT DEFAULT 'Unpaid'";
+                $pdo->exec("ALTER TABLE applications ADD COLUMN payment_status {$colType}");
+            } catch (\Throwable $e) {}
+            try {
+                $colType = ($driver === 'mysql') ? "VARCHAR(50) DEFAULT 'Pay Later'" : "TEXT DEFAULT 'Pay Later'";
+                $pdo->exec("ALTER TABLE applications ADD COLUMN payment_type {$colType}");
+            } catch (\Throwable $e) {}
+
+            // 8. DATA RECOVERY: Run SeedData to repopulate missing data (branches, roles, users, countries, services, settings)
+            try {
+                SeedData::seed($pdo);
+            } catch (\Throwable $e) {
+                error_log('[VISA-TRACK] SeedData recovery error: ' . $e->getMessage());
+            }
+        }
+
         // ── RECORD SCHEMA VERSION ─────────────────────────────────────────────
         // Must be the LAST operation so that a failed migration does NOT mark
         // itself as complete — allowing a retry on the next request.
@@ -2973,7 +3218,7 @@ class DatabaseBootstrapper
         try {
             // Count existing tables in current database
             $tableCount = (int)$pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()")->fetchColumn();
-            if ($tableCount < 65) {
+            if ($tableCount < 85) {
                 $sql = file_get_contents($schemaFile);
                 $rawStatements = preg_split('/;\s*(\r\n|\n)/m', $sql);
                 

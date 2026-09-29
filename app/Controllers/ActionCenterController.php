@@ -123,28 +123,38 @@ class ActionCenterController
         $stuckApplications = $pdo->query($stuckSql)->fetchAll(PDO::FETCH_ASSOC);
 
         // 8. Staff Leave Requests
-        $leaveSql = "SELECT slr.*, u.name as staff_name, u.email as staff_email, appu.name as approver_name
-            FROM staff_leave_requests slr
-            JOIN users u ON slr.user_id = u.id
-            LEFT JOIN users appu ON slr.approver_id = appu.id
-            WHERE 1=1";
-        if ($scope === 'my') {
-            $leaveSql .= " AND slr.user_id = {$userId}";
+        $leaveRequests = [];
+        try {
+            $leaveSql = "SELECT slr.*, u.name as staff_name, u.email as staff_email, appu.name as approver_name
+                FROM staff_leave_requests slr
+                JOIN users u ON slr.user_id = u.id
+                LEFT JOIN users appu ON slr.approver_id = appu.id
+                WHERE 1=1";
+            if ($scope === 'my') {
+                $leaveSql .= " AND slr.user_id = {$userId}";
+            }
+            $leaveSql .= " ORDER BY slr.created_at DESC";
+            $leaveRequests = $pdo->query($leaveSql)->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            $leaveRequests = [];
         }
-        $leaveSql .= " ORDER BY slr.created_at DESC";
-        $leaveRequests = $pdo->query($leaveSql)->fetchAll(PDO::FETCH_ASSOC);
 
         // 9. Staff Operational Requests
-        $staffReqSql = "SELECT sr.*, u.name as staff_name, resu.name as resolver_name
-            FROM staff_requests sr
-            JOIN users u ON sr.user_id = u.id
-            LEFT JOIN users resu ON sr.resolved_by = resu.id
-            WHERE 1=1";
-        if ($scope === 'my') {
-            $staffReqSql .= " AND sr.user_id = {$userId}";
+        $staffRequests = [];
+        try {
+            $staffReqSql = "SELECT sr.*, u.name as staff_name, resu.name as resolver_name
+                FROM staff_requests sr
+                JOIN users u ON sr.user_id = u.id
+                LEFT JOIN users resu ON sr.resolved_by = resu.id
+                WHERE 1=1";
+            if ($scope === 'my') {
+                $staffReqSql .= " AND sr.user_id = {$userId}";
+            }
+            $staffReqSql .= " ORDER BY sr.created_at DESC";
+            $staffRequests = $pdo->query($staffReqSql)->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            $staffRequests = [];
         }
-        $staffReqSql .= " ORDER BY sr.created_at DESC";
-        $staffRequests = $pdo->query($staffReqSql)->fetchAll(PDO::FETCH_ASSOC);
 
         // 10. Action Center History (Audit logs for operational activities)
         $actionHistory = [];

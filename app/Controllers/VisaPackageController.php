@@ -60,9 +60,26 @@ class VisaPackageController
         }
 
         $sql .= " ORDER BY c.name ASC, vs.name ASC";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
-        $packages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $packages = [];
+        try {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $packages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            // Fallback: exclude price_history subquery if table not yet created
+            $fallbackSql = str_replace(
+                "(SELECT COUNT(*) FROM visa_package_price_history vph WHERE vph.visa_service_id = vs.id) as price_changes_count",
+                "0 as price_changes_count",
+                $sql
+            );
+            try {
+                $stmt = $pdo->prepare($fallbackSql);
+                $stmt->execute($params);
+                $packages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (\Throwable $e2) {
+                $packages = [];
+            }
+        }
 
         $countries = $pdo->query("SELECT id, name, flag_emoji FROM countries ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $categories = $pdo->query("SELECT vc.*, (SELECT COUNT(*) FROM visa_services vs WHERE vs.category_id = vc.id) as packages_count FROM visa_categories vc ORDER BY vc.name ASC")->fetchAll(PDO::FETCH_ASSOC);

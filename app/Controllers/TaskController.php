@@ -39,7 +39,7 @@ class TaskController
                     creator.name as created_by_name
                 FROM tasks t
                 LEFT JOIN applications a ON t.application_id = a.id
-                LEFT JOIN customers c ON t.customer_id = c.id
+                LEFT JOIN customers c ON a.customer_id = c.id
                 LEFT JOIN users u ON t.assigned_to = u.id
                 LEFT JOIN users completer ON t.completed_by = completer.id
                 LEFT JOIN users creator ON t.created_by = creator.id
@@ -67,9 +67,14 @@ class TaskController
 
         $sql .= " ORDER BY t.status = 'Completed' ASC, t.due_date ASC";
 
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
-        $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $tasks = [];
+        try {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            $tasks = [];
+        }
 
         $staffList = $pdo->query("SELECT id, name, email FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $applications = $pdo->query("SELECT a.id, a.application_number, c.full_name as customer_name, a.customer_id FROM applications a JOIN customers c ON a.customer_id = c.id WHERE a.is_archived = 0 AND a.status NOT IN ('Approved', 'Completed') ORDER BY a.application_number ASC")->fetchAll(PDO::FETCH_ASSOC);

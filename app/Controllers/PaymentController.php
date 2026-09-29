@@ -344,9 +344,14 @@ class PaymentController
             $cwParams[] = $dateTo;
         }
         $cwSql .= " ORDER BY cw.current_balance DESC, c.full_name ASC";
-        $cwStmt = $pdo->prepare($cwSql);
-        $cwStmt->execute($cwParams);
-        $customerWallets = $cwStmt->fetchAll(PDO::FETCH_ASSOC);
+        $customerWallets = [];
+        try {
+            $cwStmt = $pdo->prepare($cwSql);
+            $cwStmt->execute($cwParams);
+            $customerWallets = $cwStmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            $customerWallets = [];
+        }
 
         // 2. Supplier Wallets Filter
         $swSql = "SELECT sw.*, s.company_name as supplier_name, s.company_name, s.country 
@@ -368,9 +373,14 @@ class PaymentController
             $swParams[] = $dateTo;
         }
         $swSql .= " ORDER BY sw.current_balance DESC, s.company_name ASC";
-        $swStmt = $pdo->prepare($swSql);
-        $swStmt->execute($swParams);
-        $supplierWallets = $swStmt->fetchAll(PDO::FETCH_ASSOC);
+        $supplierWallets = [];
+        try {
+            $swStmt = $pdo->prepare($swSql);
+            $swStmt->execute($swParams);
+            $supplierWallets = $swStmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            $supplierWallets = [];
+        }
 
         // 3. Agent Wallets Filter
         $awSql = "SELECT aw.*, COALESCE(ag.company_name, ag.contact_person, u.name, 'Agent') as agent_name, COALESCE(ag.email, u.email, '') as agent_email 
@@ -393,9 +403,14 @@ class PaymentController
             $awParams[] = $dateTo;
         }
         $awSql .= " ORDER BY aw.current_balance DESC";
-        $awStmt = $pdo->prepare($awSql);
-        $awStmt->execute($awParams);
-        $agentWallets = $awStmt->fetchAll(PDO::FETCH_ASSOC);
+        $agentWallets = [];
+        try {
+            $awStmt = $pdo->prepare($awSql);
+            $awStmt->execute($awParams);
+            $agentWallets = $awStmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            $agentWallets = [];
+        }
 
         // 4. Recent Audit Ledger Filter
         $wtSql = "SELECT wt.*, c.full_name as customer_name, u.name as created_by_name 

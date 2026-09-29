@@ -60,20 +60,37 @@ class InventoryController
 
         $sql .= " ORDER BY i.current_stock <= i.minimum_stock DESC, i.name ASC";
 
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
-        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $items = [];
+        try {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $items = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            $items = [];
+        }
 
         // Overall Metrics
         $totalItems = count($items);
         $totalUnits = array_reduce($items, fn($s, $i) => $s + (int)$i['current_stock'], 0);
         $lowStockCount = count(array_filter($items, fn($i) => (int)$i['current_stock'] <= (int)$i['minimum_stock']));
         $totalValuation = array_reduce($items, fn($s, $i) => $s + ((int)$i['current_stock'] * (float)$i['purchase_price']), 0.0);
-        $totalTransactionsCount = (int)$pdo->query("SELECT COUNT(*) FROM inventory_transactions")->fetchColumn();
+        $totalTransactionsCount = 0;
+        try {
+            $totalTransactionsCount = (int)$pdo->query("SELECT COUNT(*) FROM inventory_transactions")->fetchColumn();
+        } catch (\Throwable $e) {}
 
-        $categories = $pdo->query("SELECT id, name, code FROM inventory_categories WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $suppliers = $pdo->query("SELECT id, company_name, supplier_code FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
-        $branches = $pdo->query("SELECT id, name FROM branches ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $categories = [];
+        $suppliers = [];
+        $branches = [];
+        try {
+            $categories = $pdo->query("SELECT id, name, code FROM inventory_categories WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {}
+        try {
+            $suppliers = $pdo->query("SELECT id, company_name, supplier_code FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {}
+        try {
+            $branches = $pdo->query("SELECT id, name FROM branches ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {}
 
         require_once dirname(__DIR__) . '/Views/inventory/index.php';
     }
