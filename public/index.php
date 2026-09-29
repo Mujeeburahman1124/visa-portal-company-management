@@ -224,10 +224,6 @@ switch ($uri) {
         (new App\Controllers\DashboardController())->index();
         break;
 
-    // Core Operations: Visual Tracking Center
-    case '/tracking':
-        (new App\Controllers\TrackingController())->index();
-        break;
 
     case '/tracking/show':
     case '/tracking/view':
@@ -546,10 +542,6 @@ switch ($uri) {
         (new App\Controllers\AppointmentController())->deleteType();
         break;
 
-    // Operational Action Center & Priority Triage
-    case '/action-center':
-        (new App\Controllers\ActionCenterController())->index();
-        break;
 
     case '/action-center/leave/store':
         (new App\Controllers\ActionCenterController())->storeLeave();

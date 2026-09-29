@@ -2863,6 +2863,11 @@ class DatabaseBootstrapper
         }
 
         // ── MIGRATION: TASK PROOF OF WORK & PERMISSIONS (v18) ────────────────
+        $currentVersion = 0;
+        try {
+            $currentVersion = (int)$pdo->query("SELECT COALESCE(MAX(version), 0) FROM schema_migrations")->fetchColumn();
+        } catch (\Throwable $e) {}
+
         if ($currentVersion < 18) {
             // Columns for tasks table
             $taskCols = [

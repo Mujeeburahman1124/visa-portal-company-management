@@ -133,5 +133,5 @@
     if (document.body) {
       observer.observe(document.body, { childList: true, subtree: true });
     }
-  })();
+  });
 })();

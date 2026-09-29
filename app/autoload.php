@@ -118,18 +118,28 @@ function auth_user(): ?array {
 function user_avatar_url(?array $user = null): ?string {
     $u = $user ?: auth_user();
     if (!$u) return null;
-    $photo = $u['profile_photo'] ?? $u['avatar'] ?? null;
+    $photo = trim((string)($u['profile_photo'] ?? $u['avatar'] ?? ''));
     if (empty($photo)) return null;
     if (str_starts_with($photo, 'http://') || str_starts_with($photo, 'https://')) {
         return $photo;
     }
+
+    $publicDir = dirname(__DIR__) . '/public';
+    $relPath = '';
+
     if (str_starts_with($photo, '/')) {
-        return $photo;
+        $relPath = $photo;
+    } elseif (str_starts_with($photo, 'uploads/')) {
+        $relPath = '/' . $photo;
+    } else {
+        $relPath = '/uploads/avatars/' . ltrim($photo, '/');
     }
-    if (str_starts_with($photo, 'uploads/')) {
-        return '/' . $photo;
+
+    if (file_exists($publicDir . $relPath)) {
+        return $relPath;
     }
-    return '/uploads/avatars/' . ltrim($photo, '/');
+
+    return null;
 }
 
 function auth_customer(): ?array {
