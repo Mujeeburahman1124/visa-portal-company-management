@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 20;
+    private const SCHEMA_VERSION = 21;
 
     public static function init(bool $force = false): void
     {
@@ -2909,6 +2909,8 @@ class DatabaseBootstrapper
                     $pdo->exec("ALTER TABLE portal_activation_tokens ADD COLUMN {$colName} {$colType}");
                 } catch (\Throwable $e) {}
             }
+        }
+
         // ── MIGRATION: WHATSAPP PERMISSIONS & TWILIO INTEGRATION (v20) ──────
         if ($currentVersion < 20) {
             try {
@@ -2930,6 +2932,18 @@ class DatabaseBootstrapper
                         }
                     }
                 }
+            } catch (\Throwable $e) {}
+        }
+
+        // ── MIGRATION: ENSURE APPLICATIONS PAYMENT COLUMNS (v21) ────────────
+        if ($currentVersion < 21) {
+            try {
+                $colType = ($driver === 'mysql') ? "VARCHAR(50) DEFAULT 'Unpaid'" : "TEXT DEFAULT 'Unpaid'";
+                $pdo->exec("ALTER TABLE applications ADD COLUMN payment_status {$colType}");
+            } catch (\Throwable $e) {}
+            try {
+                $colType = ($driver === 'mysql') ? "VARCHAR(50) DEFAULT 'Pay Later'" : "TEXT DEFAULT 'Pay Later'";
+                $pdo->exec("ALTER TABLE applications ADD COLUMN payment_type {$colType}");
             } catch (\Throwable $e) {}
         }
 

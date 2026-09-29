@@ -372,19 +372,27 @@ class DashboardController
         $unpaidInvoices = [];
         $recentPayments = [];
         if ($canViewFinance) {
-            $unpaidStmt = $pdo->query("SELECT a.id, a.application_number, a.total_amount, a.paid_amount, a.balance_amount, a.status, a.payment_status, c.full_name as customer_name, c.mobile 
-                FROM applications a 
-                JOIN customers c ON a.customer_id = c.id 
-                WHERE a.is_archived = 0 AND a.balance_amount > 0 
-                ORDER BY a.balance_amount DESC LIMIT 8");
-            $unpaidInvoices = $unpaidStmt ? $unpaidStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            try {
+                $unpaidStmt = $pdo->query("SELECT a.id, a.application_number, a.total_amount, a.paid_amount, a.balance_amount, a.status, c.full_name as customer_name, c.mobile 
+                    FROM applications a 
+                    JOIN customers c ON a.customer_id = c.id 
+                    WHERE a.is_archived = 0 AND a.balance_amount > 0 
+                    ORDER BY a.balance_amount DESC LIMIT 8");
+                $unpaidInvoices = $unpaidStmt ? $unpaidStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            } catch (\Throwable $e) {
+                $unpaidInvoices = [];
+            }
 
-            $recentPaymentsStmt = $pdo->query("SELECT p.*, a.application_number, c.full_name as customer_name 
-                FROM payments p 
-                JOIN applications a ON p.application_id = a.id 
-                JOIN customers c ON a.customer_id = c.id 
-                ORDER BY p.payment_date DESC, p.id DESC LIMIT 8");
-            $recentPayments = $recentPaymentsStmt ? $recentPaymentsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            try {
+                $recentPaymentsStmt = $pdo->query("SELECT p.*, a.application_number, c.full_name as customer_name 
+                    FROM payments p 
+                    JOIN applications a ON p.application_id = a.id 
+                    JOIN customers c ON a.customer_id = c.id 
+                    ORDER BY p.payment_date DESC, p.id DESC LIMIT 8");
+                $recentPayments = $recentPaymentsStmt ? $recentPaymentsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            } catch (\Throwable $e) {
+                $recentPayments = [];
+            }
         }
 
         require_once dirname(__DIR__) . '/Views/dashboard/index.php';
