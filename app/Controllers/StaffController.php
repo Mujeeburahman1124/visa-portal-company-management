@@ -271,27 +271,85 @@ class StaffController
             }
         }
 
-        // Unlink or clean up staff foreign key references
-        try { $pdo->prepare("DELETE FROM application_assignments WHERE assigned_to = ? OR assigned_by = ?")->execute([$id, $id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("UPDATE applications SET assigned_staff_id = NULL WHERE assigned_staff_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("UPDATE tasks SET assigned_to = NULL WHERE assigned_to = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("UPDATE tasks SET created_by = NULL WHERE created_by = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("UPDATE tasks SET completed_by = NULL WHERE completed_by = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("UPDATE appointments SET assigned_staff_id = NULL WHERE assigned_staff_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("UPDATE appointments SET assigned_to = NULL WHERE assigned_to = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("UPDATE appointments SET created_by = NULL WHERE created_by = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("UPDATE visa_approvals SET approved_by = NULL WHERE approved_by = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("UPDATE visa_rejections SET rejected_by = NULL WHERE rejected_by = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("UPDATE visa_returns SET returned_by = NULL WHERE returned_by = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("UPDATE application_stages SET changed_by = NULL WHERE changed_by = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("UPDATE application_status_history SET changed_by = NULL WHERE changed_by = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("UPDATE documents SET verified_by = NULL WHERE verified_by = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("UPDATE documents SET uploaded_by = NULL WHERE uploaded_by = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("DELETE FROM notifications WHERE user_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("DELETE FROM user_sessions WHERE user_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("DELETE FROM activity_logs WHERE user_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-        try { $pdo->prepare("DELETE FROM audit_logs WHERE user_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+
+        // Temporarily disable foreign key checks for clean deletion
+        try {
+            if ($driver === 'sqlite') {
+                $pdo->exec("PRAGMA foreign_keys = OFF;");
+            } else {
+                $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;");
+            }
+        } catch (\Throwable $e) {}
+
+        // Comprehensive unlink and cleanup of staff references across all operational modules
+        $cleanupQueries = [
+            "DELETE FROM staff_leave_requests WHERE user_id = ?",
+            "UPDATE staff_leave_requests SET approved_by = NULL WHERE approved_by = ?",
+            "DELETE FROM staff_requests WHERE user_id = ?",
+            "UPDATE staff_requests SET assigned_to = NULL WHERE assigned_to = ?",
+            "UPDATE staff_requests SET resolved_by = NULL WHERE resolved_by = ?",
+            "DELETE FROM agent_portal_users WHERE user_id = ?",
+            "DELETE FROM supplier_portal_users WHERE user_id = ?",
+            "DELETE FROM user_sessions WHERE user_id = ?",
+            "DELETE FROM notifications WHERE user_id = ?",
+            "DELETE FROM activity_logs WHERE user_id = ?",
+            "DELETE FROM audit_logs WHERE user_id = ?",
+            "DELETE FROM security_incidents WHERE user_id = ?",
+            "DELETE FROM password_resets WHERE email = (SELECT email FROM users WHERE id = ?)",
+            "DELETE FROM application_assignments WHERE assigned_to = ? OR assigned_by = ?",
+            "UPDATE applications SET assigned_staff_id = NULL WHERE assigned_staff_id = ?",
+            "UPDATE applications SET created_by = NULL WHERE created_by = ?",
+            "UPDATE tasks SET assigned_to = NULL WHERE assigned_to = ?",
+            "UPDATE tasks SET created_by = NULL WHERE created_by = ?",
+            "UPDATE tasks SET completed_by = NULL WHERE completed_by = ?",
+            "UPDATE appointments SET assigned_staff_id = NULL WHERE assigned_staff_id = ?",
+            "UPDATE appointments SET assigned_to = NULL WHERE assigned_to = ?",
+            "UPDATE appointments SET created_by = NULL WHERE created_by = ?",
+            "UPDATE visa_approvals SET approved_by = NULL WHERE approved_by = ?",
+            "UPDATE visa_rejections SET rejected_by = NULL WHERE rejected_by = ?",
+            "UPDATE visa_returns SET returned_by = NULL WHERE returned_by = ?",
+            "UPDATE application_stages SET changed_by = NULL WHERE changed_by = ?",
+            "UPDATE application_status_history SET changed_by = NULL WHERE changed_by = ?",
+            "UPDATE documents SET verified_by = NULL WHERE verified_by = ?",
+            "UPDATE documents SET uploaded_by = NULL WHERE uploaded_by = ?",
+            "UPDATE payments SET received_by = NULL WHERE received_by = ?",
+            "UPDATE payments SET created_by = NULL WHERE created_by = ?",
+            "UPDATE expenses SET created_by = NULL WHERE created_by = ?",
+            "UPDATE expenses SET approved_by = NULL WHERE approved_by = ?",
+            "UPDATE customer_notes SET created_by = NULL WHERE created_by = ?",
+            "UPDATE leads SET assigned_to = NULL WHERE assigned_to = ?",
+            "UPDATE leads SET created_by = NULL WHERE created_by = ?",
+            "UPDATE job_applications SET reviewed_by = NULL WHERE reviewed_by = ?",
+            "UPDATE jobs SET created_by = NULL WHERE created_by = ?",
+            "UPDATE branches SET manager_id = NULL WHERE manager_id = ?",
+            "UPDATE visa_package_price_history SET changed_by = NULL WHERE changed_by = ?",
+            "UPDATE visa_package_inventory_transactions SET user_id = NULL WHERE user_id = ?"
+        ];
+
+        foreach ($cleanupQueries as $q) {
+            try {
+                $stmt = $pdo->prepare($q);
+                // Check how many parameters the query needs
+                $paramCount = substr_count($q, '?');
+                $params = array_fill(0, $paramCount, $id);
+                $stmt->execute($params);
+            } catch (\Throwable $e) {
+                // Continue with next cleanup query
+            }
+        }
+
+        // Delete the user record
         $pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$id]);
+
+        // Re-enable foreign key checks
+        try {
+            if ($driver === 'sqlite') {
+                $pdo->exec("PRAGMA foreign_keys = ON;");
+            } else {
+                $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;");
+            }
+        } catch (\Throwable $e) {}
 
         AuditService::log('DELETE_STAFF', 'Staff', $id, "Permanently deleted staff member {$member['name']} ({$member['email']})");
 

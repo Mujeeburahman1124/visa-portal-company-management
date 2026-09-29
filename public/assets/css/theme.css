@@ -89,6 +89,7 @@ html[data-theme="ocean-royal"] {
   --accent-color:           #7c3aed;
   --bs-btn-bg:              #1e40af;
   --bs-btn-border-color:    #1e40af;
+  --mh-gradient-sidebar:    linear-gradient(180deg, #080f1e 0%, #04090f 100%);
 }
 
 /* ─── THEME 2: SUNSET FUSION ───────────────────────────────────────────────── */
@@ -167,6 +168,7 @@ html[data-theme="sunset-fusion"] {
   --accent-color:           #ea580c;
   --bs-btn-bg:              #be185d;
   --bs-btn-border-color:    #be185d;
+  --mh-gradient-sidebar:    linear-gradient(180deg, #1f0a1d 0%, #12030e 100%);
 }
 
 /* ─── THEME 3: EMERALD ROYAL ───────────────────────────────────────────────── */
@@ -245,6 +247,7 @@ html[data-theme="emerald-royal"] {
   --accent-color:           #1d4ed8;
   --bs-btn-bg:              #065f46;
   --bs-btn-border-color:    #065f46;
+  --mh-gradient-sidebar:    linear-gradient(180deg, #022018 0%, #01120d 100%);
 }
 
 /* ─── THEME 4: VIOLET AURORA ───────────────────────────────────────────────── */
@@ -323,6 +326,7 @@ html[data-theme="violet-aurora"] {
   --accent-color:           #db2777;
   --bs-btn-bg:              #5b21b6;
   --bs-btn-border-color:    #5b21b6;
+  --mh-gradient-sidebar:    linear-gradient(180deg, #160829 0%, #0c0417 100%);
 }
 
 /* ─── THEME 5: CRIMSON MIDNIGHT ────────────────────────────────────────────── */
@@ -400,7 +404,7 @@ html[data-theme="crimson-midnight"] {
   --primary-hover:          #b91c1c;
   --accent-color:           #92400e;
   --bs-btn-bg:              #991b1b;
-  --bs-btn-border-color:    #991b1b;
+  --mh-gradient-sidebar:    linear-gradient(180deg, #20070a 0%, #100305 100%);
 }
 
 /* ─── SCOPED THEME COMPONENT OVERRIDES (Guarantees Active Theme Control) ──── */
