@@ -531,9 +531,13 @@ $activeTab = $_GET['tab'] ?? 'logs';
                 </div>
 
                 <div class="mb-3 pb-3 border-bottom">
+                  <?php 
+                    $twSid = (string)\App\Config\Env::get('TWILIO_ACCOUNT_SID', '');
+                    $isTwValid = !empty($twSid) && !str_contains($twSid, 'XXXX') && $twSid !== 'ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
+                  ?>
                   <div class="text-muted small fw-semibold">Twilio WhatsApp API</div>
                   <div class="fw-medium text-dark">Provider: <?= strtoupper((string)\App\Config\Env::get('WHATSAPP_PROVIDER', 'twilio')) ?></div>
-                  <div class="small text-muted">Account SID: <?= !empty(\App\Config\Env::get('TWILIO_ACCOUNT_SID')) ? 'Configured (***)' : 'Not Set (Simulation Mode)' ?></div>
+                  <div class="small text-muted">Account SID: <?= $isTwValid ? 'Configured (' . e(substr($twSid, 0, 6)) . '***)' : 'Not Set (Safe Simulation Mode)' ?></div>
                   <div class="small text-muted">WhatsApp From: <?= e(\App\Config\Env::get('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886')) ?></div>
                 </div>
 

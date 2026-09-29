@@ -319,7 +319,9 @@ class WhatsAppService
         $formattedTo = 'whatsapp:+' . ltrim($to, '+');
         $interpolatedText = !empty($text) ? EmailService::interpolate($text, $data) : 'Notification from ' . App::COMPANY_NAME;
 
-        if (empty($sid) || empty($token)) {
+        $isPlaceholder = empty($sid) || empty($token) || str_contains($sid, 'XXXX') || str_contains($token, 'your-twilio') || $sid === 'ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
+
+        if ($isPlaceholder) {
             $simSid = 'SM' . strtoupper(bin2hex(random_bytes(15)));
             return [
                 'success' => true,
