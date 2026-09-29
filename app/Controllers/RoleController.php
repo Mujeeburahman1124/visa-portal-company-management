@@ -28,6 +28,7 @@ class RoleController
 
         $totalPermissions = (int)$pdo->query("SELECT COUNT(*) FROM permissions")->fetchColumn();
         $allPermissions = $pdo->query("SELECT * FROM permissions ORDER BY module ASC, name ASC")->fetchAll();
+        $modulesList = $pdo->query("SELECT module, COUNT(*) as perm_count FROM permissions GROUP BY module ORDER BY module ASC")->fetchAll();
 
         require_once dirname(__DIR__) . '/Views/roles/index.php';
     }
@@ -104,6 +105,7 @@ class RoleController
         $rpStmt = $pdo->prepare("SELECT permission_id FROM role_permissions WHERE role_id = ?");
         $rpStmt->execute([$id]);
         $activePermIds = $rpStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        $roles = $pdo->query("SELECT id, name, slug FROM roles ORDER BY id ASC")->fetchAll();
 
         require_once dirname(__DIR__) . '/Views/roles/edit.php';
     }
@@ -204,5 +206,179 @@ class RoleController
         AuditService::log('DELETE_ROLE', 'Roles', $id, "Deleted custom role #{$id}");
 
         redirect('/roles', "Custom role deleted successfully.", 'success');
+    }
+
+    /**
+     * Add a dynamic permission module with standard or custom actions.
+     */
+    public function addModule(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        $pdo = Database::getConnection();
+
+        $moduleName = trim($_POST['module_name'] ?? '');
+        $moduleSlug = trim($_POST['module_slug'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $actions = $_POST['actions'] ?? [];
+        $customActions = trim($_POST['custom_actions'] ?? '');
+        $assignRoleIds = $_POST['assign_roles'] ?? [1, 2];
+
+        if (empty($moduleName)) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/roles', 'Module name is required.', 'danger');
+        }
+
+        if (empty($moduleSlug)) {
+            $moduleSlug = strtolower(preg_replace('/[^a-zA-Z0-9_]+/', '_', $moduleName));
+        } else {
+            $moduleSlug = strtolower(preg_replace('/[^a-zA-Z0-9_]+/', '_', $moduleSlug));
+        }
+
+        // Gather actions to create
+        $allActions = [];
+        if (is_array($actions)) {
+            foreach ($actions as $act) {
+                $act = strtolower(trim((string)$act));
+                if ($act !== '') $allActions[] = $act;
+            }
+        }
+        if (!empty($customActions)) {
+            $customList = preg_split('/[\r\n,]+/', $customActions);
+            foreach ($customList as $cAct) {
+                $cAct = strtolower(trim((string)$cAct));
+                if ($cAct !== '') $allActions[] = $cAct;
+            }
+        }
+
+        $allActions = array_unique($allActions);
+        if (empty($allActions)) {
+            $allActions = ['view', 'create', 'edit', 'delete', 'approve', 'assign', 'export'];
+        }
+
+        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $insertIgnore = ($driver === 'mysql') ? 'INSERT IGNORE INTO' : 'INSERT OR IGNORE INTO';
+
+        $permStmt = $pdo->prepare("{$insertIgnore} permissions (name, slug, module, description) VALUES (?, ?, ?, ?)");
+        $createdCount = 0;
+        $createdPermIds = [];
+
+        foreach ($allActions as $act) {
+            $permSlug = $moduleSlug . '.' . $act;
+            $permName = ucfirst($act) . ' ' . $moduleName;
+            $permDesc = !empty($description) ? "{$description} ({$act})" : "Permission to {$act} {$moduleName} records";
+
+            $permStmt->execute([$permName, $permSlug, $moduleName, $permDesc]);
+
+            $idStmt = $pdo->prepare("SELECT id FROM permissions WHERE slug = ? LIMIT 1");
+            $idStmt->execute([$permSlug]);
+            $pId = (int)$idStmt->fetchColumn();
+            if ($pId > 0) {
+                $createdPermIds[] = $pId;
+                $createdCount++;
+            }
+        }
+
+        // Automatically assign newly created permissions to specified roles (Super Admin always gets all)
+        if (!empty($createdPermIds)) {
+            $assignRoleIds = array_unique(array_filter(array_map('intval', (array)$assignRoleIds)));
+            if (!in_array(1, $assignRoleIds, true)) {
+                $assignRoleIds[] = 1;
+            }
+
+            $rpStmt = $pdo->prepare("{$insertIgnore} role_permissions (role_id, permission_id) VALUES (?, ?)");
+            foreach ($assignRoleIds as $rId) {
+                foreach ($createdPermIds as $pId) {
+                    $rpStmt->execute([$rId, $pId]);
+                }
+            }
+        }
+
+        unset($_SESSION['user_permissions']);
+
+        AuditService::log('CREATE_MODULE', 'Roles', null, "Created module '{$moduleName}' with {$createdCount} permissions and assigned to " . count($assignRoleIds) . " roles");
+
+        redirect($_SERVER['HTTP_REFERER'] ?? '/roles', "Module '{$moduleName}' and {$createdCount} permissions created successfully.", 'success');
+    }
+
+    /**
+     * Delete a custom permission module and its associated permissions.
+     */
+    public function deleteModule(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin']);
+        $pdo = Database::getConnection();
+
+        $module = trim($_POST['module'] ?? '');
+        if (empty($module)) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/roles', 'Module name is required.', 'danger');
+        }
+
+        $coreModules = ['Applications', 'Applicants', 'Documents', 'Tasks', 'Payments', 'Staff', 'Settings'];
+        if (in_array($module, $coreModules, true)) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/roles', "Core module '{$module}' cannot be deleted.", 'danger');
+        }
+
+        $pdo->prepare("DELETE FROM role_permissions WHERE permission_id IN (SELECT id FROM permissions WHERE module = ?)")->execute([$module]);
+        $delStmt = $pdo->prepare("DELETE FROM permissions WHERE module = ?");
+        $delStmt->execute([$module]);
+        $count = $delStmt->rowCount();
+
+        unset($_SESSION['user_permissions']);
+
+        AuditService::log('DELETE_MODULE', 'Roles', null, "Deleted module '{$module}' and {$count} permissions");
+
+        redirect($_SERVER['HTTP_REFERER'] ?? '/roles', "Module '{$module}' and its {$count} permissions were removed.", 'success');
+    }
+
+    /**
+     * Add a single custom permission under an existing module.
+     */
+    public function addPermission(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        $pdo = Database::getConnection();
+
+        $module = trim($_POST['module'] ?? '');
+        $permName = trim($_POST['name'] ?? '');
+        $permSlug = trim($_POST['slug'] ?? '');
+        $permDesc = trim($_POST['description'] ?? '');
+        $assignRoles = $_POST['assign_roles'] ?? [1];
+
+        if (empty($module) || empty($permName)) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/roles', 'Module name and permission name are required.', 'danger');
+        }
+
+        if (empty($permSlug)) {
+            $permSlug = strtolower(preg_replace('/[^a-zA-Z0-9_]+/', '_', $module)) . '.' . strtolower(preg_replace('/[^a-zA-Z0-9_]+/', '_', $permName));
+        } else {
+            $permSlug = strtolower(preg_replace('/[^a-zA-Z0-9_\.]+/', '.', $permSlug));
+        }
+
+        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $insertIgnore = ($driver === 'mysql') ? 'INSERT IGNORE INTO' : 'INSERT OR IGNORE INTO';
+
+        $stmt = $pdo->prepare("{$insertIgnore} permissions (name, slug, module, description) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$permName, $permSlug, $module, $permDesc ?: "Permission to {$permName} in {$module}"]);
+
+        $idStmt = $pdo->prepare("SELECT id FROM permissions WHERE slug = ? LIMIT 1");
+        $idStmt->execute([$permSlug]);
+        $pId = (int)$idStmt->fetchColumn();
+
+        if ($pId > 0) {
+            $assignRoles = array_unique(array_filter(array_map('intval', (array)$assignRoles)));
+            if (!in_array(1, $assignRoles, true)) $assignRoles[] = 1;
+            $rpStmt = $pdo->prepare("{$insertIgnore} role_permissions (role_id, permission_id) VALUES (?, ?)");
+            foreach ($assignRoles as $rId) {
+                $rpStmt->execute([$rId, $pId]);
+            }
+        }
+
+        unset($_SESSION['user_permissions']);
+
+        AuditService::log('CREATE_PERMISSION', 'Roles', $pId, "Created permission '{$permSlug}' under module '{$module}'");
+
+        redirect($_SERVER['HTTP_REFERER'] ?? '/roles', "Permission '{$permName}' added to {$module} module.", 'success');
     }
 }

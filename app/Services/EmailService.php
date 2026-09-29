@@ -70,45 +70,47 @@ class EmailService
         $plainText = strip_tags(str_replace(['<br>', '<br/>', '</p>', '</div>'], "\n", $interpolatedContent));
 
         // 5. Check Environment & Provider
-        $envMode = strtolower((string)Env::get('NOTIFICATION_ENV', 'development'));
         $provider = strtolower((string)Env::get('EMAIL_PROVIDER', 'smtp'));
-        $smtpHost = (string)Env::get('SMTP_HOST', 'smtp.gmail.com');
+        $smtpHost = (string)Env::get('SMTP_HOST', 'smtp.hostinger.com');
         $smtpUser = (string)Env::get('SMTP_USER', '');
         $smtpPass = (string)Env::get('SMTP_PASSWORD', '');
 
-        // Safe Development / Mock Simulation if credentials are empty or in test mode
-        if ($envMode === 'development' && empty($smtpUser) && empty($smtpPass)) {
-            $simId = 'sim-email-' . bin2hex(random_bytes(8));
-            return [
-                'success' => true,
-                'message_id' => $simId,
-                'provider' => 'simulation',
-                'subject' => $interpolatedSubject,
-                'to' => $to,
-                'error' => null,
-                'simulated' => true,
-            ];
+        // 6. Dispatch via configured transport with automatic fallback
+        $result = null;
+        if ($provider === 'smtp' && !empty($smtpUser) && !empty($smtpPass)) {
+            try {
+                $result = self::sendSmtp($to, $recipientName, $interpolatedSubject, $fullHtml, $plainText, $params['attachments'] ?? []);
+            } catch (\Throwable $smtpErr) {
+                error_log("[VISA-TRACK] SMTP delivery failed: {$smtpErr->getMessage()} — Falling back to native PHP mail()...");
+                $result = self::sendPhpMail($to, $recipientName, $interpolatedSubject, $fullHtml, $plainText);
+                if ($result['success']) {
+                    $result['provider'] = 'phpmail (fallback from smtp)';
+                } else {
+                    $result['error'] = "SMTP error: {$smtpErr->getMessage()} | PHP mail error: " . ($result['error'] ?? 'mail() failed');
+                }
+            }
+        } else {
+            // Native PHP mail() delivery (standard on Hostinger/cPanel)
+            $result = self::sendPhpMail($to, $recipientName, $interpolatedSubject, $fullHtml, $plainText);
         }
 
-        // 6. Dispatch via configured transport
+        // 7. Audit log to notification_logs
         try {
-            if ($provider === 'smtp') {
-                return self::sendSmtp($to, $recipientName, $interpolatedSubject, $fullHtml, $plainText, $params['attachments'] ?? []);
-            } elseif ($provider === 'mail' || $provider === 'phpmail') {
-                return self::sendPhpMail($to, $recipientName, $interpolatedSubject, $fullHtml, $plainText);
-            } else {
-                // Fallback to SMTP
-                return self::sendSmtp($to, $recipientName, $interpolatedSubject, $fullHtml, $plainText, $params['attachments'] ?? []);
-            }
-        } catch (Exception $e) {
-            return [
-                'success' => false,
-                'message_id' => null,
-                'provider' => $provider,
-                'error' => $e->getMessage(),
-                'simulated' => false,
-            ];
-        }
+            $pdo = \App\Config\Database::getConnection();
+            $logStmt = $pdo->prepare("INSERT INTO notification_logs (event_type, recipient_type, recipient_name, recipient_email, channel, subject, content_preview, status, error_details, provider, message_id, sent_at) VALUES ('email.direct', 'User', ?, ?, 'Email', ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
+            $logStmt->execute([
+                $recipientName ?: $to,
+                $to,
+                $interpolatedSubject,
+                mb_substr($plainText, 0, 250),
+                $result['success'] ? 'Sent' : 'Failed',
+                $result['error'] ?? null,
+                $result['provider'] ?? 'email',
+                $result['message_id'] ?? null
+            ]);
+        } catch (\Throwable $ignored) {}
+
+        return $result;
     }
 
     /**
@@ -122,23 +124,16 @@ class EmailService
         string $plainText,
         array $attachments = []
     ): array {
-        $host = (string)Env::get('SMTP_HOST', '127.0.0.1');
+        $host = (string)Env::get('SMTP_HOST', 'smtp.hostinger.com');
         $port = (int)Env::get('SMTP_PORT', 587);
         $user = (string)Env::get('SMTP_USER', '');
         $pass = (string)Env::get('SMTP_PASSWORD', '');
         $encryption = strtolower((string)Env::get('SMTP_ENCRYPTION', 'tls'));
-        $fromEmail = (string)Env::get('EMAIL_FROM', 'notifications@mstravelhub.com');
+        $fromEmail = (string)Env::get('EMAIL_FROM', 'admin@mshorizonuae.com');
         $fromName = (string)Env::get('EMAIL_FROM_NAME', App::COMPANY_NAME);
 
-        // If credentials are completely missing, gracefully simulate
-        if (empty($user) && empty($pass) && ($host === '127.0.0.1' || $host === 'localhost' || $host === 'smtp.gmail.com')) {
-            return [
-                'success' => true,
-                'message_id' => 'sim-smtp-' . uniqid(),
-                'provider' => 'smtp (simulated - no credentials configured)',
-                'error' => null,
-                'simulated' => true,
-            ];
+        if (empty($user) || empty($pass)) {
+            throw new Exception("SMTP credentials (SMTP_USER / SMTP_PASSWORD) are not configured.");
         }
 
         $timeout = 10;
@@ -269,19 +264,21 @@ class EmailService
     }
 
     /**
-     * Native PHP mail() fallback.
+     * Native PHP mail() fallback with RFC-compliant headers and envelope sender.
      */
     private static function sendPhpMail(string $to, string $recipientName, string $subject, string $htmlBody, string $plainText): array
     {
-        $fromEmail = (string)Env::get('EMAIL_FROM', 'notifications@mstravelhub.com');
+        $fromEmail = (string)Env::get('EMAIL_FROM', 'admin@mshorizonuae.com');
         $fromName = (string)Env::get('EMAIL_FROM_NAME', App::COMPANY_NAME);
 
         $boundary = "==Multipart_Boundary_x" . md5((string)time()) . "x";
         $headers = [];
         $headers[] = "MIME-Version: 1.0";
         $headers[] = "From: " . self::encodeHeader($fromName) . " <{$fromEmail}>";
+        $headers[] = "Reply-To: <{$fromEmail}>";
+        $headers[] = "Return-Path: <{$fromEmail}>";
         $headers[] = "Content-Type: multipart/alternative; boundary=\"{$boundary}\"";
-        $headers[] = "X-Mailer: VISA TRACK PHP/mail()";
+        $headers[] = "X-Mailer: VISA TRACK Enterprise Mailer (PHP/" . phpversion() . ")";
 
         $body = "--{$boundary}\r\n";
         $body .= "Content-Type: text/plain; charset=UTF-8\r\n";
@@ -294,12 +291,21 @@ class EmailService
         $body .= $htmlBody . "\r\n\r\n";
         $body .= "--{$boundary}--";
 
-        $res = @mail($to, $subject, $body, implode("\r\n", $headers));
+        $headersStr = implode("\r\n", $headers);
+        $extraParam = '-f' . escapeshellarg($fromEmail);
+
+        // Try sending with envelope parameter first (required for SPF on many cPanel/Hostinger servers)
+        $res = @mail($to, $subject, $body, $headersStr, $extraParam);
+        if (!$res) {
+            // Fallback without extra parameter if mail wrapper restricts -f
+            $res = @mail($to, $subject, $body, $headersStr);
+        }
+
         return [
-            'success' => $res,
+            'success' => (bool)$res,
             'message_id' => 'phpmail-' . uniqid(),
             'provider' => 'phpmail',
-            'error' => $res ? null : 'Native mail() function returned false',
+            'error' => $res ? null : 'Native mail() function returned false. Check server mail logs or configure SMTP in Settings.',
             'simulated' => false,
         ];
     }

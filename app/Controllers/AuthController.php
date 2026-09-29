@@ -143,12 +143,35 @@ class AuthController
             $ins = $pdo->prepare("INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)");
             $ins->execute([$user['email'], $tokenHash, $expiresAt]);
 
-            AuditService::log('PASSWORD_RESET_REQUEST', 'Auth', (int)$user['id'], "Password reset requested for {$user['email']}", null, (int)$user['id']);
+            // Generate password reset URL
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            $host = $_SERVER['HTTP_HOST'] ?? 'mshorizonuae.com';
+            $resetUrl = "{$scheme}://{$host}/reset-password?token=" . urlencode($token);
+
+            // Dispatch password reset email
+            \App\Services\EmailService::send([
+                'to' => $user['email'],
+                'name' => $user['name'],
+                'subject' => 'Password Reset Request — ' . \App\Config\App::COMPANY_NAME,
+                'bodyHtml' => "
+                    <p>Dear <strong>" . htmlspecialchars($user['name']) . "</strong>,</p>
+                    <p>We received a request to reset the password for your account on <strong>" . htmlspecialchars(\App\Config\App::COMPANY_NAME) . "</strong>.</p>
+                    <p style='text-align: center; margin: 28px 0;'>
+                        <a href='{$resetUrl}' style='background: #2563eb; color: #ffffff; padding: 13px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block; font-size: 15px;'>Reset Password &rarr;</a>
+                    </p>
+                    <p style='font-size: 0.85em; color: #64748b;'>Or copy and paste this link in your browser:<br><a href='{$resetUrl}' style='color: #2563eb;'>{$resetUrl}</a></p>
+                    <p style='font-size: 0.82em; color: #94a3b8;'>This link will expire in 1 hour. If you did not request a password reset, you can safely ignore this email.</p>
+                ",
+                'data' => [
+                    'userName' => $user['name'],
+                    'resetUrl' => $resetUrl,
+                ]
+            ]);
 
             // Only store demo reset link in local/development environments — NEVER in production
             $appEnv = strtolower((string)\App\Config\Env::get('APP_ENV', 'local'));
             if ($appEnv !== 'production' && $appEnv !== 'prod') {
-                $_SESSION['demo_reset_link'] = "/auth/reset-password?token=" . $token;
+                $_SESSION['demo_reset_link'] = "/reset-password?token=" . $token;
             }
         }
 

@@ -28,7 +28,10 @@ $isSuper = ($role['slug'] === 'super-admin' || (int)$role['id'] === 1);
       </div>
       <p class="text-muted small mb-0">Toggle granular module privileges across View, Create, Edit, Delete, Approve, Assign, and Export capabilities.</p>
     </div>
-    <div class="d-flex align-items-center gap-2">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <button type="button" class="btn btn-outline-primary btn-sm px-3 shadow-sm bg-white" data-bs-toggle="modal" data-bs-target="#createModuleModal">
+        <i class="fa-solid fa-folder-plus me-1"></i> Add Module
+      </button>
       <a href="/roles" class="btn btn-outline-secondary btn-sm px-3 bg-white">
         <i class="fa-solid fa-arrow-left me-1"></i> Back to Roles
       </a>
@@ -135,5 +138,95 @@ function toggleModuleGroup(className) {
   });
 }
 </script>
+
+<!-- Modal: Add New Module -->
+<div class="modal fade" id="createModuleModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <form action="/roles/add-module" method="POST">
+        <?= csrf_field() ?>
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold"><i class="fa-solid fa-folder-plus me-2"></i> Add New System Module</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Module Name <span class="text-danger">*</span></label>
+              <input type="text" name="module_name" class="form-control" placeholder="e.g. Finance, Legal Compliance, Reports" required>
+              <div class="form-text small">Display name for the module grouping.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Module Slug (Optional)</label>
+              <input type="text" name="module_slug" class="form-control" placeholder="e.g. finance, legal_compliance">
+              <div class="form-text small">Leave blank to auto-generate from module name.</div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Description</label>
+            <input type="text" name="description" class="form-control" placeholder="e.g. Financial auditing, invoice processing, and account settlements">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold mb-2">Standard Action Permissions to Create</label>
+            <div class="row g-2 p-3 bg-light rounded border">
+              <?php 
+                $standardActions = [
+                  'view' => 'View / Read records',
+                  'create' => 'Create new records',
+                  'edit' => 'Edit / Update records',
+                  'delete' => 'Delete records',
+                  'approve' => 'Approve / Review workflows',
+                  'assign' => 'Assign records / tasks',
+                  'export' => 'Export data (CSV/PDF)'
+                ];
+                foreach ($standardActions as $actKey => $actLabel):
+              ?>
+                <div class="col-md-6">
+                  <div class="form-check small">
+                    <input class="form-check-input" type="checkbox" name="actions[]" value="<?= $actKey ?>" id="edit_act_<?= $actKey ?>" checked>
+                    <label class="form-check-label" for="edit_act_<?= $actKey ?>">
+                      <strong class="text-dark"><?= ucfirst($actKey) ?></strong> <span class="text-muted">(<?= $actLabel ?>)</span>
+                    </label>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Custom Actions (Optional)</label>
+            <input type="text" name="custom_actions" class="form-control" placeholder="e.g. reconcile, audit, generate_invoice (comma separated)">
+            <div class="form-text small">Additional permission actions separated by commas.</div>
+          </div>
+
+          <div>
+            <label class="form-label small fw-semibold mb-2">Assign Newly Created Permissions To Roles</label>
+            <div class="row g-2 p-3 bg-light rounded border">
+              <?php foreach (($roles ?? []) as $r): ?>
+                <div class="col-md-6">
+                  <div class="form-check small">
+                    <input class="form-check-input" type="checkbox" name="assign_roles[]" value="<?= $r['id'] ?>" id="edit_assign_role_<?= $r['id'] ?>" <?= ((int)$r['id'] === (int)$role['id'] || $r['slug'] === 'super-admin' || $r['slug'] === 'admin') ? 'checked' : '' ?> <?= $r['slug'] === 'super-admin' ? 'checked disabled' : '' ?>>
+                    <label class="form-check-label" for="edit_assign_role_<?= $r['id'] ?>">
+                      <strong class="text-dark"><?= e($r['name']) ?></strong> <span class="badge bg-light text-muted border"><?= e($r['slug']) ?></span>
+                    </label>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+            <div class="form-text small text-muted">Super Admin will always receive all permissions automatically.</div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold shadow-sm">
+            <i class="fa-solid fa-check me-1"></i> Create Module &amp; Permissions
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

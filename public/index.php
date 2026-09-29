@@ -958,6 +958,21 @@ switch ($uri) {
         (new App\Controllers\RoleController())->delete();
         break;
 
+    case '/roles/add-module':
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        (new App\Controllers\RoleController())->addModule();
+        break;
+
+    case '/roles/delete-module':
+        RoleMiddleware::authorize(['super-admin']);
+        (new App\Controllers\RoleController())->deleteModule();
+        break;
+
+    case '/roles/add-permission':
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        (new App\Controllers\RoleController())->addPermission();
+        break;
+
     // Administration: System Settings, Countries & Visa Services / Packages (Protected)
     case '/visa-packages/store':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
