@@ -56,12 +56,12 @@ class WhatsAppService
         $recipientPhone = $phoneResult['normalized']; // E.g. '94771234567'
 
         // 2. Fetch API Credentials from Environment / Settings
-        $provider = strtolower((string)Env::get('WHATSAPP_PROVIDER', 'meta'));
+        $provider = strtolower((string)Env::get('WHATSAPP_PROVIDER', 'twilio'));
         $twilioSid = (string)Env::get('TWILIO_ACCOUNT_SID', '');
         $twilioToken = (string)Env::get('TWILIO_AUTH_TOKEN', '');
         $twilioFrom = (string)Env::get('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886');
 
-        if ($provider === 'twilio' || (!empty($twilioSid) && !empty($twilioToken) && $provider !== 'meta')) {
+        if ($provider === 'twilio' || !empty($twilioSid) || !empty($twilioToken)) {
             return self::sendViaTwilio([
                 'account_sid' => $twilioSid,
                 'auth_token'  => $twilioToken,

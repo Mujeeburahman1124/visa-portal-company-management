@@ -531,9 +531,10 @@ $activeTab = $_GET['tab'] ?? 'logs';
                 </div>
 
                 <div class="mb-3 pb-3 border-bottom">
-                  <div class="text-muted small fw-semibold">Meta WhatsApp Cloud API</div>
-                  <div class="fw-medium text-dark">API Version: <?= e(\App\Config\Env::get('WHATSAPP_API_VERSION', 'v20.0')) ?></div>
-                  <div class="small text-muted">Phone Number ID: <?= !empty(\App\Config\Env::get('WHATSAPP_PHONE_NUMBER_ID')) ? 'Configured (***)' : 'Not Set (Simulation Mode)' ?></div>
+                  <div class="text-muted small fw-semibold">Twilio WhatsApp API</div>
+                  <div class="fw-medium text-dark">Provider: <?= strtoupper((string)\App\Config\Env::get('WHATSAPP_PROVIDER', 'twilio')) ?></div>
+                  <div class="small text-muted">Account SID: <?= !empty(\App\Config\Env::get('TWILIO_ACCOUNT_SID')) ? 'Configured (***)' : 'Not Set (Simulation Mode)' ?></div>
+                  <div class="small text-muted">WhatsApp From: <?= e(\App\Config\Env::get('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886')) ?></div>
                 </div>
 
                 <div>
