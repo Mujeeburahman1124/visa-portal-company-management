@@ -8,7 +8,8 @@
   <title><?= e($pageTitle ?? 'MS TRAVEL HUB — Global Visa Management Portal') ?></title>
   
   <!-- Official Favicon -->
-  <link rel="icon" type="image/png" href="/assets/images/logo.png">
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png?v=2">
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2">
   <link rel="apple-touch-icon" href="/assets/images/logo.png">
   
   <!-- Bootstrap 5 CSS -->

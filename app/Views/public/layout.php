@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,6 +6,11 @@
     <title><?= e($pageTitle ?? 'MS Travel Hub â€” Global Visa & Recruitment Services') ?></title>
     <meta name="description" content="<?= e($metaDescription ?? 'Global Visa Processing, Recruitment, and Immigration Management Portal by MS Travel Hub.') ?>">
     <link rel="canonical" href="<?= htmlspecialchars(\App\Config\Env::get('APP_URL', 'https://visatrack.mstravelhub.com') . ($_SERVER['REQUEST_URI'] ?? '/')) ?>">
+
+    <!-- Favicon & Icons -->
+    <link rel="icon" type="image/png" href="/assets/images/favicon.png?v=2">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2">
+    <link rel="apple-touch-icon" href="/assets/images/logo.png">
 
     <!-- Open Graph -->
     <meta property="og:title" content="<?= e($pageTitle ?? 'MS Travel Hub â€” Global Visa & Recruitment Services') ?>">
