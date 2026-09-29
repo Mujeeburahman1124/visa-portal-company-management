@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     phone TEXT,
     avatar TEXT,
+    profile_photo TEXT,
     designation TEXT,
     department TEXT,
     is_active INTEGER DEFAULT 1,

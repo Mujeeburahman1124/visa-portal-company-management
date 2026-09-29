@@ -575,22 +575,7 @@ class StaffController
             mkdir($uploadDir, 0755, true);
         }
 
-        // Remove old photo if exists
-        $oldStmt = $pdo->prepare("SELECT profile_photo FROM users WHERE id = ?");
-        $oldStmt->execute([(int)$currentUser['id']]);
-        $oldPhoto = $oldStmt->fetchColumn();
-        if ($oldPhoto && file_exists($uploadDir . '/' . $oldPhoto)) {
-            @unlink($uploadDir . '/' . $oldPhoto);
-        }
-
-        $filename = 'avatar_' . (int)$currentUser['id'] . '_' . time() . '.' . $ext;
-        $destination = $uploadDir . '/' . $filename;
-
-        if (!move_uploaded_file($file['tmp_name'], $destination)) {
-            redirect('/profile', 'Failed to save photo. Please check upload directory permissions.', 'danger');
-        }
-
-        // Ensure column exists
+        // Ensure column exists first
         try {
             $driver = $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
             if ($driver === 'mysql') {
@@ -600,6 +585,23 @@ class StaffController
                 try { $pdo->exec("ALTER TABLE users ADD COLUMN profile_photo TEXT NULL DEFAULT NULL"); } catch (\Throwable $ign) {}
             }
         } catch (\Throwable $ignored) {}
+
+        // Remove old photo if exists
+        try {
+            $oldStmt = $pdo->prepare("SELECT profile_photo FROM users WHERE id = ?");
+            $oldStmt->execute([(int)$currentUser['id']]);
+            $oldPhoto = $oldStmt->fetchColumn();
+            if ($oldPhoto && file_exists($uploadDir . '/' . $oldPhoto)) {
+                @unlink($uploadDir . '/' . $oldPhoto);
+            }
+        } catch (\Throwable $e) {}
+
+        $filename = 'avatar_' . (int)$currentUser['id'] . '_' . time() . '.' . $ext;
+        $destination = $uploadDir . '/' . $filename;
+
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            redirect('/profile', 'Failed to save photo. Please check upload directory permissions.', 'danger');
+        }
 
         $pdo->prepare("UPDATE users SET profile_photo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
             ->execute([$filename, (int)$currentUser['id']]);

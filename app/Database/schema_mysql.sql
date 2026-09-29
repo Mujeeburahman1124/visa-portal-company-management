@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     phone VARCHAR(50),
     avatar VARCHAR(255),
+    profile_photo VARCHAR(255),
     designation VARCHAR(100),
     department VARCHAR(100),
     is_active TINYINT(1) DEFAULT 1,

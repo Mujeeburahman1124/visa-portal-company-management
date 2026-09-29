@@ -79,9 +79,10 @@ class DatabaseBootstrapper
             // Ensure created_by exists on users table
             try {
                 $pdo->exec("ALTER TABLE users ADD COLUMN created_by INTEGER NULL;");
-            } catch (\Throwable $e) {
-                // Already exists
-            }
+            } catch (\Throwable $e) {}
+            try {
+                $pdo->exec("ALTER TABLE users ADD COLUMN profile_photo TEXT NULL;");
+            } catch (\Throwable $e) {}
 
             // Ensure roles column exists
             try {
