@@ -5,6 +5,11 @@ $activePreset = $_GET['preset'] ?? 'all';
 require_once dirname(__DIR__) . '/layouts/header.php';
 require_once dirname(__DIR__) . '/layouts/sidebar.php';
 require_once dirname(__DIR__) . '/layouts/topbar.php';
+
+$currentView = $_GET['view'] ?? 'table';
+if (!in_array($currentView, ['table', 'grid', 'compact'], true)) {
+    $currentView = 'table';
+}
 ?>
 
 <div class="content-body">
@@ -18,13 +23,26 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </div>
   <?php endif; ?>
 
-  <!-- Page Header -->
+  <!-- Page Header with 3 View Switchers -->
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
     <div>
       <h3 class="fw-bold brand-font mb-1 text-dark" style="letter-spacing: -0.02em;">Visa Applications Registry</h3>
       <p class="text-muted small mb-0">Unified operations directory for tracking, filtering and processing global visa files.</p>
     </div>
-    <div class="d-flex align-items-center gap-2">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <!-- 3 View Mode Switcher -->
+      <div class="btn-group btn-group-sm bg-white shadow-sm border rounded-pill p-1" role="group" aria-label="View Mode">
+        <button type="button" class="btn btn-sm rounded-pill px-3 fw-semibold app-view-btn <?= $currentView === 'table' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" onclick="switchAppView('table')" id="btnAppViewTable" title="Table View">
+          <i class="fa-solid fa-table-list me-1"></i> <span class="d-none d-sm-inline">Table</span>
+        </button>
+        <button type="button" class="btn btn-sm rounded-pill px-3 fw-semibold app-view-btn <?= $currentView === 'grid' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" onclick="switchAppView('grid')" id="btnAppViewGrid" title="Grid Cards View">
+          <i class="fa-solid fa-grip me-1"></i> <span class="d-none d-sm-inline">Grid Cards</span>
+        </button>
+        <button type="button" class="btn btn-sm rounded-pill px-3 fw-semibold app-view-btn <?= $currentView === 'compact' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" onclick="switchAppView('compact')" id="btnAppViewCompact" title="Compact List View">
+          <i class="fa-solid fa-list-ul me-1"></i> <span class="d-none d-sm-inline">Compact List</span>
+        </button>
+      </div>
+
       <a href="/tracking" class="btn btn-outline-primary btn-sm px-3 shadow-sm bg-white">
         <i class="fa-solid fa-route me-1"></i> Visual Tracking Hub
       </a>
@@ -63,7 +81,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   <!-- Multi-Field Search & Filter Toolbar -->
   <div class="card card-enterprise mb-4 shadow-sm">
     <div class="card-body p-3">
-      <form action="/applications" method="GET" class="row g-2 align-items-center">
+      <form action="/applications" method="GET" class="row g-2 align-items-center" id="appFilterForm">
+        <input type="hidden" name="view" id="activeAppViewParam" value="<?= e($currentView) ?>">
         <div class="col-12 col-lg-3">
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-magnifying-glass"></i></span>
@@ -128,9 +147,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </div>
   </div>
 
-  <!-- Applications Master Data Table -->
-  <div class="card card-enterprise shadow-sm">
-    <?php if (empty($applications)): ?>
+  <!-- Applications Master Multi-View Presentation -->
+  <?php if (empty($applications)): ?>
+    <div class="card card-enterprise shadow-sm">
       <div class="empty-state py-5 text-center">
         <div class="empty-state-icon mb-3" style="width: 56px; height: 56px; font-size: 1.5rem;">
           <i class="fa-solid fa-folder-open text-primary"></i>
@@ -140,9 +159,12 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         <a href="/applications" class="btn btn-outline-secondary btn-sm me-2">Clear Filters</a>
         <a href="/applications/create" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus me-1"></i> New Application</a>
       </div>
-    <?php else: ?>
-      <!-- Desktop & Tablet Responsive Table -->
-      <div class="table-responsive">
+    </div>
+  <?php else: ?>
+    <!-- 1. Table View -->
+    <div id="appViewTable" class="app-view-container <?= $currentView === 'table' ? '' : 'd-none' ?>">
+      <div class="card card-enterprise shadow-sm">
+        <div class="table-responsive">
         <table class="table-modern mb-0">
           <thead>
             <tr>
@@ -301,9 +323,160 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <?php endforeach; ?>
           </tbody>
         </table>
+        </div>
       </div>
-    <?php endif; ?>
-  </div>
+    </div>
+
+    <!-- 2. Grid Cards View -->
+    <div id="appViewGrid" class="app-view-container <?= $currentView === 'grid' ? '' : 'd-none' ?>">
+      <div class="row g-3">
+        <?php foreach ($applications as $app): ?>
+          <?php
+            $status = $app['status'] ?? 'Draft';
+            $priority = strtolower($app['priority'] ?? 'normal');
+            $prioBadgeClass = ($priority === 'critical') ? 'badge-priority-critical' : (($priority === 'urgent' || $priority === 'high') ? 'badge-priority-urgent' : 'badge-priority-normal');
+            
+            $dlLabel = '—';
+            $dlBadge = 'bg-light text-secondary border';
+            if (!empty($app['expected_completion_date'])) {
+                $diff = (int)round((strtotime($app['expected_completion_date']) - strtotime(date('Y-m-d'))) / 86400);
+                if ($diff < 0) {
+                    $dlLabel = abs($diff) . 'd overdue';
+                    $dlBadge = 'bg-danger text-white fw-bold';
+                } elseif ($diff === 0) {
+                    $dlLabel = 'Due today';
+                    $dlBadge = 'bg-warning text-dark fw-bold';
+                } elseif ($diff <= 3) {
+                    $dlLabel = $diff . 'd left';
+                    $dlBadge = 'bg-warning-subtle text-dark fw-semibold';
+                } else {
+                    $dlLabel = format_date($app['expected_completion_date']);
+                    $dlBadge = 'bg-light text-dark border';
+                }
+            }
+          ?>
+          <div class="col-12 col-md-6 col-xl-4">
+            <div class="card card-enterprise h-100 shadow-sm border hover-shadow transition">
+              <div class="card-header bg-white border-bottom py-2.5 px-3 d-flex align-items-center justify-content-between">
+                <a href="/applications/show?id=<?= $app['id'] ?>" class="badge bg-primary-subtle text-primary fw-bold text-decoration-none px-2 py-1" style="font-size: 0.8rem; border: 1px solid var(--vt-primary-border);">
+                  <i class="fa-solid fa-folder me-1"></i><?= e($app['application_number']) ?>
+                </a>
+                <div class="d-flex align-items-center gap-1">
+                  <span class="badge <?= $prioBadgeClass ?> text-uppercase" style="font-size: 0.65rem;">
+                    <?= e($app['priority'] ?? 'Normal') ?>
+                  </span>
+                  <span class="badge status-badge status-<?= strtolower(str_replace(' ', '-', $status)) ?>" style="font-size: 0.68rem;">
+                    <?= e($status) ?>
+                  </span>
+                </div>
+              </div>
+              <div class="card-body p-3">
+                <div class="d-flex align-items-start gap-2 mb-2.5">
+                  <div class="fs-3 lh-1 flex-shrink-0"><?= $app['flag_emoji'] ?></div>
+                  <div class="overflow-hidden">
+                    <h6 class="fw-bold text-dark mb-0 text-truncate"><?= e($app['customer_name']) ?></h6>
+                    <div class="text-muted small" style="font-size: 0.75rem;">
+                      <i class="fa-solid fa-passport text-primary me-1"></i><?= e($app['passport_number'] ?: $app['current_passport'] ?: 'N/A') ?>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="p-2.5 bg-light rounded border mb-2.5" style="font-size: 0.78rem;">
+                  <div class="fw-semibold text-dark text-truncate mb-0.5">
+                    <?= e($app['country_name']) ?> &bull; <?= e($app['service_name']) ?>
+                  </div>
+                  <div class="d-flex align-items-center justify-content-between text-muted mt-1" style="font-size: 0.72rem;">
+                    <span><i class="fa-solid fa-bars-progress text-info me-1"></i><?= e($app['stage_name'] ?? 'Initiation') ?></span>
+                    <span class="badge <?= $dlBadge ?> px-1.5 py-0.5" style="font-size: 0.68rem;"><?= $dlLabel ?></span>
+                  </div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between text-muted" style="font-size: 0.75rem;">
+                  <span><i class="fa-solid fa-user-tie text-secondary me-1"></i><?= e($app['assigned_staff_name'] ?: 'Unassigned') ?></span>
+                  <span><i class="fa-regular fa-calendar me-1"></i><?= format_date($app['application_date'] ?? $app['created_at']) ?></span>
+                </div>
+              </div>
+              <div class="card-footer bg-light border-top py-2 px-3 d-flex align-items-center justify-content-between">
+                <?php if (user_has_role(['super-admin', 'admin', 'branch-manager', 'visa-manager'])): ?>
+                  <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" style="font-size: 0.75rem;" onclick="openAppReassignModal(<?= $app['id'] ?>, '<?= e($app['application_number']) ?>', <?= (int)($app['assigned_to'] ?? 0) ?>, event)">
+                    <i class="fa-solid fa-user-pen me-1"></i> Reassign
+                  </button>
+                <?php else: ?>
+                  <span></span>
+                <?php endif; ?>
+                <div class="btn-group btn-group-sm">
+                  <a href="/applications/edit?id=<?= $app['id'] ?>" class="btn btn-outline-secondary btn-sm py-1 px-2" title="Edit Application">
+                    <i class="fa-solid fa-pen"></i>
+                  </a>
+                  <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-primary btn-sm py-1 px-2.5 fw-semibold" style="font-size: 0.75rem;">
+                    <i class="fa-solid fa-arrow-right me-1"></i> Open File
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+
+    <!-- 3. Compact List View -->
+    <div id="appViewCompact" class="app-view-container <?= $currentView === 'compact' ? '' : 'd-none' ?>">
+      <div class="card card-enterprise shadow-sm">
+        <ul class="list-group list-group-flush mb-0">
+          <?php foreach ($applications as $app): ?>
+            <?php
+              $status = $app['status'] ?? 'Draft';
+              $priority = strtolower($app['priority'] ?? 'normal');
+              $prioBadgeClass = ($priority === 'critical') ? 'badge-priority-critical' : (($priority === 'urgent' || $priority === 'high') ? 'badge-priority-urgent' : 'badge-priority-normal');
+            ?>
+            <li class="list-group-item p-3 d-flex flex-wrap align-items-center justify-content-between gap-3 hover-bg-light transition">
+              <div class="d-flex align-items-center gap-3" style="min-width: 240px;">
+                <div class="fs-4"><?= $app['flag_emoji'] ?></div>
+                <div>
+                  <div class="d-flex align-items-center gap-2">
+                    <a href="/applications/show?id=<?= $app['id'] ?>" class="fw-bold brand-font text-primary text-decoration-none">
+                      <?= e($app['application_number']) ?>
+                    </a>
+                    <span class="badge <?= $prioBadgeClass ?>" style="font-size: 0.65rem;"><?= e($app['priority'] ?? 'Normal') ?></span>
+                  </div>
+                  <div class="fw-semibold text-dark small mb-0"><?= e($app['customer_name']) ?></div>
+                </div>
+              </div>
+
+              <div class="d-none d-md-block text-secondary small" style="font-size: 0.8rem; min-width: 200px;">
+                <div><strong><?= e($app['country_name']) ?></strong> &bull; <?= e($app['service_name']) ?></div>
+                <div class="text-muted" style="font-size: 0.72rem;"><i class="fa-solid fa-passport me-1"></i><?= e($app['passport_number'] ?: '—') ?></div>
+              </div>
+
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-info-subtle text-info-emphasis border px-2 py-1 small" style="font-size: 0.72rem;">
+                  <?= e($app['stage_name'] ?? 'Initiation') ?>
+                </span>
+                <span class="badge status-badge status-<?= strtolower(str_replace(' ', '-', $status)) ?>">
+                  <?= e($status) ?>
+                </span>
+              </div>
+
+              <div class="d-flex align-items-center gap-2">
+                <div class="text-end d-none d-lg-block" style="line-height: 1.2;">
+                  <div class="small fw-semibold text-dark"><?= e($app['assigned_staff_name'] ?: 'Unassigned') ?></div>
+                  <div class="text-muted" style="font-size: 0.7rem;"><?= format_date($app['application_date'] ?? $app['created_at']) ?></div>
+                </div>
+                <div class="btn-group btn-group-sm">
+                  <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-outline-primary btn-sm px-2.5 py-1 fw-semibold" style="font-size: 0.75rem;">
+                    <i class="fa-solid fa-eye me-1"></i> View
+                  </a>
+                  <a href="/applications/edit?id=<?= $app['id'] ?>" class="btn btn-outline-secondary btn-sm px-2 py-1" title="Edit">
+                    <i class="fa-solid fa-pen"></i>
+                  </a>
+                </div>
+              </div>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+      </div>
+    </div>
+  <?php endif; ?>
 </div>
 
 <!-- Modal: Quick Reassign Application Staff -->
@@ -360,6 +533,38 @@ function openAppReassignModal(appId, appNumber, staffId, evt) {
     bootstrap.Modal.getOrCreateInstance(modalEl).show();
   }
 }
+
+function switchAppView(view) {
+  document.querySelectorAll('.app-view-container').forEach(el => el.classList.add('d-none'));
+  const target = document.getElementById('appView' + view.charAt(0).toUpperCase() + view.slice(1));
+  if (target) target.classList.remove('d-none');
+
+  document.querySelectorAll('.app-view-btn').forEach(btn => {
+    btn.classList.remove('btn-primary', 'shadow-sm');
+    btn.classList.add('btn-light', 'text-muted');
+  });
+
+  const activeBtn = document.getElementById('btnAppView' + view.charAt(0).toUpperCase() + view.slice(1));
+  if (activeBtn) {
+    activeBtn.classList.remove('btn-light', 'text-muted');
+    activeBtn.classList.add('btn-primary', 'shadow-sm');
+  }
+
+  const viewInput = document.getElementById('activeAppViewParam');
+  if (viewInput) viewInput.value = view;
+
+  try { localStorage.setItem('app_active_view', view); } catch (e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (!urlParams.has('view')) {
+    const saved = localStorage.getItem('app_active_view');
+    if (saved && ['table', 'grid', 'compact'].includes(saved)) {
+      switchAppView(saved);
+    }
+  }
+});
 </script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

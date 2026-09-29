@@ -167,9 +167,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 <?php endforeach; ?>
               </select>
               <div id="visaServiceManualBox" class="mt-2 d-none p-3 bg-light rounded border">
-                <div class="row g-2">
+                <div class="row g-2 mb-2">
                   <div class="col-md-6">
-                    <label class="form-label small fw-semibold text-secondary mb-1">Custom Visa Package Name</label>
+                    <label class="form-label small fw-semibold text-secondary mb-1">Custom Visa Package Name <span class="text-danger">*</span></label>
                     <input type="text" name="custom_visa_type" id="customVisaTypeInput" class="form-control form-control-sm" placeholder="e.g. Express Tourist 30 Days">
                   </div>
                   <div class="col-md-3">
@@ -182,6 +182,20 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                       <option value="Single Entry">Single Entry</option>
                       <option value="Multiple Entry">Multiple Entry</option>
                     </select>
+                  </div>
+                </div>
+                <div class="row g-2">
+                  <div class="col-md-4">
+                    <label class="form-label small fw-semibold text-secondary mb-1">Selling Price ($) <span class="text-danger">*</span></label>
+                    <input type="number" step="0.01" min="0" name="custom_selling_price" id="customSellingPriceInput" class="form-control form-control-sm" placeholder="e.g. 290.00" oninput="updateServiceInfo()">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small fw-semibold text-secondary mb-1">Supplier Cost ($)</label>
+                    <input type="number" step="0.01" min="0" name="custom_supplier_cost" id="customSupplierCostInput" class="form-control form-control-sm" placeholder="e.g. 210.00" oninput="updateServiceInfo()">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label small fw-semibold text-secondary mb-1">Estimated Days</label>
+                    <input type="number" min="1" name="custom_estimated_days" id="customEstimatedDaysInput" class="form-control form-control-sm" placeholder="e.g. 10" value="10" oninput="updateServiceInfo()">
                   </div>
                 </div>
               </div>
@@ -499,14 +513,25 @@ function filterVisaPackages() {
   srvSelect.innerHTML = '';
   const defaultOpt = document.createElement('option');
   defaultOpt.value = '';
-  if (filtered.length === 0) {
-    defaultOpt.textContent = '-- No visa packages available --';
+  if (filtered.length === 0 && !countryId) {
+    defaultOpt.textContent = '-- Choose Visa Type / Duration / Entry --';
+  } else if (filtered.length === 0) {
+    defaultOpt.textContent = '-- No matching pre-configured packages --';
   } else if (isFallback) {
     defaultOpt.textContent = `-- Showing all ${filtered.length} packages for this destination --`;
   } else {
     defaultOpt.textContent = `-- Choose Visa Type / Duration / Entry (${filtered.length} Available) --`;
   }
   srvSelect.appendChild(defaultOpt);
+
+  const customOpt = document.createElement('option');
+  customOpt.value = '__custom__';
+  customOpt.className = 'fw-bold text-primary';
+  customOpt.textContent = '+ Enter Manually / Custom Package...';
+  if (previousVal === '__custom__') {
+    customOpt.selected = true;
+  }
+  srvSelect.appendChild(customOpt);
 
   filtered.forEach(s => {
     const opt = document.createElement('option');
@@ -525,8 +550,8 @@ function filterVisaPackages() {
     srvSelect.appendChild(opt);
   });
 
-  if (filtered.length === 1) {
-    srvSelect.selectedIndex = 1;
+  if (filtered.length === 1 && previousVal !== '__custom__') {
+    srvSelect.selectedIndex = 2; // index 0 is default, 1 is custom, 2 is the only package
   }
 
   updateServiceInfo();
@@ -536,7 +561,14 @@ function filterVisaPackages() {
 function onServiceChanged() {
   const srvSelect = document.getElementById('serviceSelect');
   const selectedId = srvSelect.value;
-  if (selectedId) {
+  if (selectedId === '__custom__') {
+    const box = document.getElementById('visaServiceManualBox');
+    if (box) {
+      box.classList.remove('d-none');
+      const input = box.querySelector('input');
+      if (input) input.focus();
+    }
+  } else if (selectedId) {
     const srv = allServices.find(s => String(s.id) === String(selectedId));
     if (srv) {
       if (srv.country_id) {
@@ -572,26 +604,54 @@ function togglePaymentBox() {
   }
 }
 
+function getAppSellingPrice() {
+  const sel = document.getElementById('serviceSelect');
+  const customBox = document.getElementById('visaServiceManualBox');
+  const isCustomMode = (sel && sel.value === '__custom__') || (customBox && !customBox.classList.contains('d-none'));
+  if (isCustomMode) {
+    const custPriceInput = document.getElementById('customSellingPriceInput');
+    return custPriceInput ? parseFloat(custPriceInput.value || 0) : 0;
+  }
+  const opt = sel ? sel.options[sel.selectedIndex] : null;
+  return opt ? parseFloat(opt.dataset.price || 0) : 0;
+}
+
 function updateServiceInfo() {
   const sel = document.getElementById('serviceSelect');
-  const opt = sel.options[sel.selectedIndex];
+  const customBox = document.getElementById('visaServiceManualBox');
+  const isCustomMode = (sel && sel.value === '__custom__') || (customBox && !customBox.classList.contains('d-none'));
 
-  if (!opt || !opt.value) {
-    document.getElementById('dispSellingPrice').innerText = '$0.00';
-    document.getElementById('dispSupplierCost').innerText = '$0.00';
-    document.getElementById('dispTaxAmount').innerText = '$0.00';
-    document.getElementById('dispTotalAmount').innerText = '$0.00';
-    document.getElementById('dispEstimatedDays').innerText = '-- Days';
-    document.getElementById('dispExpectedDate').innerText = '--';
-    if (document.getElementById('appFormulaText')) document.getElementById('appFormulaText').innerText = 'Base: $0.00 − Discount (0% = $0.00) + Tax $0.00 = $0.00';
-    if (document.getElementById('dispConvertedAED')) document.getElementById('dispConvertedAED').innerText = '0.00 AED (@ 3.6725)';
-    return;
+  let price = 0;
+  let cost = 0;
+  let taxRate = 0;
+  let days = 10;
+
+  if (isCustomMode) {
+    const custPriceInput = document.getElementById('customSellingPriceInput');
+    const custCostInput = document.getElementById('customSupplierCostInput');
+    const custDaysInput = document.getElementById('customEstimatedDaysInput');
+    price = custPriceInput ? parseFloat(custPriceInput.value || 0) : 0;
+    cost = custCostInput ? parseFloat(custCostInput.value || 0) : 0;
+    days = custDaysInput ? (parseInt(custDaysInput.value || 10, 10) || 10) : 10;
+  } else {
+    const opt = sel ? sel.options[sel.selectedIndex] : null;
+    if (!opt || !opt.value) {
+      document.getElementById('dispSellingPrice').innerText = '$0.00';
+      document.getElementById('dispSupplierCost').innerText = '$0.00';
+      document.getElementById('dispTaxAmount').innerText = '$0.00';
+      document.getElementById('dispTotalAmount').innerText = '$0.00';
+      document.getElementById('dispEstimatedDays').innerText = '-- Days';
+      document.getElementById('dispExpectedDate').innerText = '--';
+      if (document.getElementById('appFormulaText')) document.getElementById('appFormulaText').innerText = 'Base: $0.00 − Discount (0% = $0.00) + Tax $0.00 = $0.00';
+      if (document.getElementById('dispConvertedAED')) document.getElementById('dispConvertedAED').innerText = '0.00 AED (@ 3.6725)';
+      return;
+    }
+    price = parseFloat(opt.dataset.price || 0);
+    cost = parseFloat(opt.dataset.cost || 0);
+    taxRate = parseFloat(opt.dataset.tax || 0);
+    days = parseInt(opt.dataset.days || 10, 10);
   }
 
-  const price = parseFloat(opt.dataset.price || 0);
-  const cost = parseFloat(opt.dataset.cost || 0);
-  const taxRate = parseFloat(opt.dataset.tax || 0);
-  const days = parseInt(opt.dataset.days || 10, 10);
   const discountInput = document.getElementById('inputDiscount');
   const discount = discountInput ? parseFloat(discountInput.value || 0) : 0;
 
@@ -624,9 +684,7 @@ function updateServiceInfo() {
 }
 
 function onAppDiscountPercentChange() {
-  const sel = document.getElementById('serviceSelect');
-  const opt = sel ? sel.options[sel.selectedIndex] : null;
-  const price = opt ? parseFloat(opt.dataset.price || 0) : 0;
+  const price = getAppSellingPrice();
   let pct = parseFloat(document.getElementById('inputDiscountPercent').value || 0);
   if (pct < 0) pct = 0;
   if (pct > 100) pct = 100;
@@ -641,9 +699,7 @@ function onAppDiscountPercentChange() {
 }
 
 function onAppDiscountAmountChange() {
-  const sel = document.getElementById('serviceSelect');
-  const opt = sel ? sel.options[sel.selectedIndex] : null;
-  const price = opt ? parseFloat(opt.dataset.price || 0) : 0;
+  const price = getAppSellingPrice();
   let discAmt = parseFloat(document.getElementById('inputDiscount').value || 0);
   if (discAmt < 0) discAmt = 0;
   if (price > 0 && discAmt > price) discAmt = price;
@@ -667,7 +723,7 @@ function checkDuplicateApplication() {
   const srvId = document.getElementById('serviceSelect').value;
   const warnBox = document.getElementById('duplicateWarningBox');
 
-  if (!custId || !srvId) {
+  if (!custId || !srvId || srvId === '__custom__') {
     warnBox.classList.add('d-none');
     return;
   }
@@ -694,29 +750,68 @@ function toggleManualInput(manualBoxId, selectId) {
   if (!box) return;
   if (box.classList.contains('d-none')) {
     box.classList.remove('d-none');
-    if (sel && sel.hasAttribute('required')) {
-      sel.removeAttribute('required');
+    if (sel) {
+      if (sel.querySelector('option[value="__custom__"]')) {
+        sel.value = '__custom__';
+      }
+      if (sel.hasAttribute('required')) {
+        sel.removeAttribute('required');
+        sel.dataset.hadRequired = 'true';
+      }
     }
-    const input = box.querySelector('input');
-    if (input) input.focus();
+    const input = box.querySelector('input, select, textarea');
+    if (input) {
+      if (sel && sel.dataset.hadRequired === 'true') {
+        input.setAttribute('required', 'required');
+      }
+      input.focus();
+    }
   } else {
     box.classList.add('d-none');
-    const input = box.querySelector('input');
-    if (input) input.value = '';
+    const input = box.querySelector('input, select, textarea');
+    if (input) {
+      input.value = '';
+      input.removeAttribute('required');
+    }
+    if (sel) {
+      if (sel.value === '__custom__') {
+        sel.value = '';
+      }
+      if (sel.dataset.hadRequired === 'true') {
+        sel.setAttribute('required', 'required');
+      }
+    }
   }
+  updateServiceInfo();
 }
 
 function checkManualSelect(sel, manualBoxId) {
   const box = document.getElementById(manualBoxId);
   if (!box) return;
+  const input = box.querySelector('input, select, textarea');
   if (sel.value === '__custom__') {
     box.classList.remove('d-none');
     if (sel.hasAttribute('required')) {
       sel.removeAttribute('required');
+      sel.dataset.hadRequired = 'true';
     }
-    const input = box.querySelector('input');
-    if (input) input.focus();
+    if (input) {
+      if (sel.dataset.hadRequired === 'true') {
+        input.setAttribute('required', 'required');
+      }
+      input.focus();
+    }
+  } else {
+    box.classList.add('d-none');
+    if (input) {
+      input.value = '';
+      input.removeAttribute('required');
+    }
+    if (sel.dataset.hadRequired === 'true') {
+      sel.setAttribute('required', 'required');
+    }
   }
+  updateServiceInfo();
 }
 
 document.addEventListener('DOMContentLoaded', function() {

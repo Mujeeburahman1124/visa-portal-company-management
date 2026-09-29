@@ -359,8 +359,20 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
                 <div class="col-sm-5 text-muted">Date of Birth:</div>
                 <div class="col-sm-7"><?= format_date($app['customer_dob']) ?></div>
 
-                <div class="col-sm-5 text-muted">Mobile Phone:</div>
-                <div class="col-sm-7"><a href="tel:<?= e($app['customer_mobile']) ?>" class="text-decoration-none"><?= e($app['customer_mobile']) ?></a></div>
+                <div class="col-sm-5 text-muted">Mobile / WhatsApp:</div>
+                <div class="col-sm-7 d-flex align-items-center gap-2 flex-wrap">
+                  <a href="tel:<?= e($app['customer_mobile']) ?>" class="text-decoration-none"><?= e($app['customer_mobile']) ?></a>
+                  <?php 
+                    $cleanCustPhone = preg_replace('/[^0-9]/', '', $app['customer_whatsapp'] ?: $app['customer_mobile'] ?: '');
+                    if ($cleanCustPhone): 
+                      $waApplicantMsg = "Hello " . ($app['customer_name'] ?? 'Applicant') . ", regarding your visa application " . ($app['application_number'] ?? '') . " with MS Travel Hub:";
+                  ?>
+                    <a href="https://api.whatsapp.com/send?phone=<?= $cleanCustPhone ?>&text=<?= urlencode($waApplicantMsg) ?>" 
+                       target="_blank" class="btn btn-outline-success btn-sm py-0 px-2 fw-semibold" style="font-size: 0.72rem;" title="Chat directly on WhatsApp App">
+                      <i class="fa-brands fa-whatsapp me-1"></i> Chat on WhatsApp
+                    </a>
+                  <?php endif; ?>
+                </div>
 
                 <div class="col-sm-5 text-muted">Email Address:</div>
                 <div class="col-sm-7"><a href="mailto:<?= e($app['customer_email']) ?>" class="text-decoration-none"><?= e($app['customer_email']) ?></a></div>

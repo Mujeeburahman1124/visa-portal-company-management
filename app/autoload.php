@@ -95,7 +95,41 @@ function e(?string $string): string {
 }
 
 function auth_user(): ?array {
-    return $_SESSION['user'] ?? null;
+    if (!isset($_SESSION['user'])) {
+        return null;
+    }
+    if (empty($_SESSION['user']['profile_photo']) && !empty($_SESSION['user']['avatar'])) {
+        $_SESSION['user']['profile_photo'] = $_SESSION['user']['avatar'];
+    }
+    if (empty($_SESSION['user']['profile_photo']) && !empty($_SESSION['user']['id'])) {
+        try {
+            $pdo = \App\Config\Database::getConnection();
+            $stmt = $pdo->prepare("SELECT COALESCE(profile_photo, avatar) FROM users WHERE id = ?");
+            $stmt->execute([(int)$_SESSION['user']['id']]);
+            $photo = $stmt->fetchColumn() ?: null;
+            if ($photo) {
+                $_SESSION['user']['profile_photo'] = $photo;
+            }
+        } catch (\Throwable $e) {}
+    }
+    return $_SESSION['user'];
+}
+
+function user_avatar_url(?array $user = null): ?string {
+    $u = $user ?: auth_user();
+    if (!$u) return null;
+    $photo = $u['profile_photo'] ?? $u['avatar'] ?? null;
+    if (empty($photo)) return null;
+    if (str_starts_with($photo, 'http://') || str_starts_with($photo, 'https://')) {
+        return $photo;
+    }
+    if (str_starts_with($photo, '/')) {
+        return $photo;
+    }
+    if (str_starts_with($photo, 'uploads/')) {
+        return '/' . $photo;
+    }
+    return '/uploads/avatars/' . ltrim($photo, '/');
 }
 
 function auth_customer(): ?array {
@@ -221,17 +255,20 @@ function set_flash(string $message, string $type = 'success'): void {
     ];
 }
 
-function user_permissions(): array {
+function user_permissions(bool $forceFresh = false): array {
+    static $staticCache = [];
     $user = auth_user();
     if (!$user) return [];
-    if (isset($_SESSION['user_permissions'])) {
-        return $_SESSION['user_permissions'];
+    $roleId = (int)($user['role_id'] ?? 0);
+    if (!$forceFresh && isset($staticCache[$roleId])) {
+        return $staticCache[$roleId];
     }
     try {
         $pdo = App\Config\Database::getConnection();
         $stmt = $pdo->prepare("SELECT p.slug FROM role_permissions rp JOIN permissions p ON rp.permission_id = p.id WHERE rp.role_id = ?");
-        $stmt->execute([(int)$user['role_id']]);
+        $stmt->execute([$roleId]);
         $permissions = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        $staticCache[$roleId] = $permissions;
         $_SESSION['user_permissions'] = $permissions;
         return $permissions;
     } catch (\Throwable $e) {
@@ -242,11 +279,40 @@ function user_permissions(): array {
 function user_can(string $permissionSlug): bool {
     $user = auth_user();
     if (!$user) return false;
-    if (($user['role_slug'] ?? '') === 'super-admin' || ($user['role_name'] ?? '') === 'Super Admin' || ($user['role_id'] ?? 0) === 1) {
+    if (($user['role_slug'] ?? '') === 'super-admin' || ($user['role_name'] ?? '') === 'Super Admin' || ((int)($user['role_id'] ?? 0) === 1)) {
         return true;
     }
     $perms = user_permissions();
-    return in_array($permissionSlug, $perms, true);
+    if (in_array($permissionSlug, $perms, true)) {
+        return true;
+    }
+    if (in_array('*', $perms, true)) {
+        return true;
+    }
+    $parts = explode('.', $permissionSlug);
+    if (count($parts) === 2 && in_array($parts[0] . '.*', $perms, true)) {
+        return true;
+    }
+    $aliases = [
+        'customers.view' => ['applicants.view'],
+        'customers.manage' => ['applicants.edit', 'applicants.create'],
+        'applicants.view' => ['customers.view'],
+        'visa_services.view' => ['visa.view', 'visa-services.view', 'visa_packages.view'],
+        'visa.view' => ['visa_services.view', 'visa-services.view'],
+        'finance.view' => ['payments.view'],
+        'finance.manage' => ['payments.manage'],
+        'payments.view' => ['finance.view'],
+        'wallets.view' => ['payments.view', 'finance.view'],
+        'agents.view' => ['suppliers.view'],
+    ];
+    if (isset($aliases[$permissionSlug])) {
+        foreach ($aliases[$permissionSlug] as $alias) {
+            if (in_array($alias, $perms, true)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 function has_permission(string $permissionSlug): bool {

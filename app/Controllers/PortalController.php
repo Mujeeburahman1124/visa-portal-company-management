@@ -424,6 +424,155 @@ class PortalController
         }
     }
 
+    public function showForgotPassword(): void
+    {
+        if (is_customer_authenticated()) {
+            redirect('/portal/dashboard');
+        }
+        $flash = get_flash();
+        require_once dirname(__DIR__) . '/Views/portal/forgot_password.php';
+    }
+
+    public function forgotPassword(): void
+    {
+        $email = trim($_POST['email'] ?? '');
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            redirect('/portal/forgot-password', 'Please enter a valid email address.', 'danger');
+        }
+
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("SELECT id, full_name, email FROM customers WHERE LOWER(email) = LOWER(?) AND is_active = 1");
+        $stmt->execute([$email]);
+        $customer = $stmt->fetch();
+
+        $successMsg = 'If your email is registered with us, a password reset link has been sent.';
+
+        if ($customer) {
+            $token = bin2hex(random_bytes(32));
+            $tokenHash = hash('sha256', $token);
+            $expiresAt = date('Y-m-d H:i:s', time() + 3600);
+
+            $pdo->prepare("DELETE FROM password_resets WHERE email = ? AND reset_type = 'customer'")->execute([$customer['email']]);
+            $pdo->prepare("INSERT INTO password_resets (email, token, expires_at, reset_type) VALUES (?, ?, ?, 'customer')")->execute([$customer['email'], $tokenHash, $expiresAt]);
+
+            $resetUrl = \App\Config\App::url("portal/reset-password?token=" . urlencode($token));
+
+            try {
+                \App\Services\EmailService::send([
+                    'to'      => $customer['email'],
+                    'name'    => $customer['full_name'],
+                    'subject' => 'Applicant Portal — Password Reset Request',
+                    'bodyHtml' => "
+                        <p>Dear <strong>" . htmlspecialchars($customer['full_name']) . "</strong>,</p>
+                        <p>We received a request to reset your password for the <strong>MS Travel Hub Applicant Portal</strong>.</p>
+                        <p style='text-align:center;margin:28px 0;'>
+                            <a href='{$resetUrl}' style='background:#2563eb;color:#fff;padding:13px 28px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block;font-size:15px;'>Reset Password &rarr;</a>
+                        </p>
+                        <p style='font-size:0.85em;color:#64748b;'>Or copy this link: <a href='{$resetUrl}'>{$resetUrl}</a></p>
+                        <p style='font-size:0.82em;color:#94a3b8;'>This link expires in 1 hour. If you did not request this, you may safely ignore this email.</p>
+                    ",
+                    'data' => ['userName' => $customer['full_name'], 'resetUrl' => $resetUrl],
+                ]);
+            } catch (\Throwable $ignored) {}
+        }
+
+        redirect('/portal/forgot-password', $successMsg, 'success');
+    }
+
+    public function showPortalResetPassword(): void
+    {
+        $token = trim($_GET['token'] ?? '');
+        if (empty($token)) {
+            redirect('/portal/login', 'Password reset token is missing or invalid.', 'danger');
+        }
+
+        $pdo = Database::getConnection();
+        $tokenHash = hash('sha256', $token);
+        $stmt = $pdo->prepare("SELECT * FROM password_resets WHERE token = ? AND (reset_type = 'customer' OR reset_type IS NULL) AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP");
+        $stmt->execute([$tokenHash]);
+        $reset = $stmt->fetch();
+
+        if (!$reset) {
+            redirect('/portal/login', 'This password reset link has expired or already been used.', 'danger');
+        }
+
+        $flash = get_flash();
+        require_once dirname(__DIR__) . '/Views/portal/reset_password.php';
+    }
+
+    public function resetPortalPassword(): void
+    {
+        $token = trim($_POST['token'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $confirmPassword = $_POST['password_confirm'] ?? '';
+
+        if (empty($token)) {
+            redirect('/portal/login', 'Invalid reset request.', 'danger');
+        }
+        if (strlen($password) < 6) {
+            redirect("/portal/reset-password?token=" . urlencode($token), 'Password must be at least 6 characters.', 'danger');
+        }
+        if ($password !== $confirmPassword) {
+            redirect("/portal/reset-password?token=" . urlencode($token), 'Passwords do not match.', 'danger');
+        }
+
+        $pdo = Database::getConnection();
+        $tokenHash = hash('sha256', $token);
+        $stmt = $pdo->prepare("SELECT * FROM password_resets WHERE token = ? AND (reset_type = 'customer' OR reset_type IS NULL) AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP");
+        $stmt->execute([$tokenHash]);
+        $reset = $stmt->fetch();
+
+        if (!$reset) {
+            redirect('/portal/login', 'This link has expired or already been used.', 'danger');
+        }
+
+        $newHash = password_hash($password, PASSWORD_DEFAULT);
+        $pdo->prepare("UPDATE customers SET password_hash = ? WHERE LOWER(email) = LOWER(?)")->execute([$newHash, $reset['email']]);
+        $pdo->prepare("UPDATE password_resets SET used_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$reset['id']]);
+
+        redirect('/portal/login', 'Your password has been updated! You can now sign in with your new password.', 'success');
+    }
+
+    public function changePassword(): void
+    {
+        AuthMiddleware::handleCustomer();
+        $customer = auth_customer();
+        if (!$customer) {
+            redirect('/portal/login');
+        }
+
+        $currentPassword = $_POST['current_password'] ?? '';
+        $newPassword = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        if (strlen($newPassword) < 6) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/portal/dashboard', 'New password must be at least 6 characters.', 'danger');
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/portal/dashboard', 'New passwords do not match.', 'danger');
+        }
+
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("SELECT password_hash FROM customers WHERE id = ?");
+        $stmt->execute([(int)$customer['id']]);
+        $custRecord = $stmt->fetch();
+
+        // If customer already has a password set, verify current password
+        if ($custRecord && !empty($custRecord['password_hash'])) {
+            if (empty($currentPassword) || !password_verify($currentPassword, $custRecord['password_hash'])) {
+                redirect($_SERVER['HTTP_REFERER'] ?? '/portal/dashboard', 'Current password was incorrect.', 'danger');
+            }
+        }
+
+        $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $pdo->prepare("UPDATE customers SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$newHash, (int)$customer['id']]);
+
+        AuditService::log('CUSTOMER_PASSWORD_CHANGED', 'Portal', (int)$customer['id'], "Customer {$customer['full_name']} changed password from portal", null, null, (int)$customer['id'], 'Customer');
+
+        redirect($_SERVER['HTTP_REFERER'] ?? '/portal/dashboard', 'Your password has been updated successfully.', 'success');
+    }
+
     public function showActivate(): void
     {
         $token = trim($_GET['token'] ?? '');

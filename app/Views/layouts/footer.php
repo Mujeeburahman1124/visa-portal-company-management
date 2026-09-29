@@ -55,6 +55,26 @@
 <script src="/assets/js/app.js?v=2.1.0"></script>
 <!-- Central Theme Engine -->
 <script src="/assets/js/theme.js?v=2.0"></script>
+
+<?php if (!empty($_SESSION['auto_open_whatsapp'])): 
+  $waAutoUrl = $_SESSION['auto_open_whatsapp'];
+  unset($_SESSION['auto_open_whatsapp']);
+?>
+<script>
+  (function() {
+    var url = <?= json_encode($waAutoUrl) ?>;
+    if (url) {
+      setTimeout(function() {
+        var w = window.open(url, '_blank');
+        if (!w || w.closed || typeof w.closed === 'undefined') {
+          // If browser popup blocker intercepts, redirect gracefully
+          window.location.href = url;
+        }
+      }, 350);
+    }
+  })();
+</script>
+<?php endif; ?>
 </body>
 
 

@@ -67,6 +67,11 @@ $flash = get_flash();
       </button>
     </form>
 
+    <!-- Forgot Password Link -->
+    <div class="text-center mb-2" style="font-size:0.8rem;">
+      <a href="/portal/forgot-password" class="text-primary text-decoration-none"><i class="fa-solid fa-key me-1"></i>Forgot your password?</a>
+    </div>
+
     <!-- Quick Tracking Option -->
     <div class="p-2.5 bg-light rounded border text-center mb-2.5">
       <div class="small fw-semibold text-dark mb-0.5" style="font-size: 0.78rem;">Quick Application Lookup</div>

@@ -1158,6 +1158,28 @@ switch ($uri) {
         }
         break;
 
+    case '/portal/forgot-password':
+        $ctrl = new App\Controllers\PortalController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->forgotPassword();
+        } else {
+            $ctrl->showForgotPassword();
+        }
+        break;
+
+    case '/portal/reset-password':
+        $ctrl = new App\Controllers\PortalController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->resetPortalPassword();
+        } else {
+            $ctrl->showPortalResetPassword();
+        }
+        break;
+
+    case '/portal/change-password':
+        (new App\Controllers\PortalController())->changePassword();
+        break;
+
     // Agent Self-Service Portal (Phase 2)
     // Agent Portal
     case '/agent':
@@ -1230,6 +1252,26 @@ switch ($uri) {
         }
         break;
 
+    case '/agent/forgot-password':
+    case '/agent-portal/forgot-password':
+        $agentCtrl = new App\Controllers\AgentPortalController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $agentCtrl->forgotPassword();
+        } else {
+            $agentCtrl->showForgotPassword();
+        }
+        break;
+
+    case '/agent/reset-password':
+    case '/agent-portal/reset-password':
+        $agentCtrl = new App\Controllers\AgentPortalController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $agentCtrl->resetPassword();
+        } else {
+            $agentCtrl->showResetPassword();
+        }
+        break;
+
     // Supplier Self-Service Portal
     case '/supplier':
     case '/supplier-portal':
@@ -1258,6 +1300,26 @@ switch ($uri) {
             $supCtrl->processActivate();
         } else {
             $supCtrl->showActivate();
+        }
+        break;
+
+    case '/supplier/forgot-password':
+    case '/supplier-portal/forgot-password':
+        $supCtrl = new App\Controllers\SupplierPortalController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $supCtrl->forgotPassword();
+        } else {
+            $supCtrl->showForgotPassword();
+        }
+        break;
+
+    case '/supplier/reset-password':
+    case '/supplier-portal/reset-password':
+        $supCtrl = new App\Controllers\SupplierPortalController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $supCtrl->resetPassword();
+        } else {
+            $supCtrl->showResetPassword();
         }
         break;
 

@@ -1,4 +1,8 @@
-<?php $pageTitle = 'Supplier Portal Login — MS Travel Hub'; $flash = get_flash(); ?>
+<?php
+$pageTitle = 'Reset Password — Supplier Portal';
+$flash = $flash ?? get_flash();
+$token = $_GET['token'] ?? '';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,49 +19,44 @@
   <div class="auth-card-compact">
     <div class="text-center mb-3">
       <div class="d-inline-flex align-items-center justify-content-center text-white rounded-3 shadow-sm mb-2" style="width:48px;height:48px;font-size:1.4rem;background:linear-gradient(135deg,#1e293b 0%,#475569 100%);">
-        <i class="fa-solid fa-building"></i>
+        <i class="fa-solid fa-lock-open"></i>
       </div>
       <h3 class="fw-bold brand-font text-dark mb-0" style="font-size:1.45rem;">MS Travel Hub</h3>
-      <div class="text-muted small">Embassy &amp; Visa Supplier Portal</div>
+      <div class="text-muted small">Supplier Portal — Set New Password</div>
     </div>
-    <div class="text-center mb-3">
-      <h5 class="fw-bold text-dark mb-0">Supplier Sign In</h5>
-      <p class="text-muted small mb-0">Manage assigned visa processing cases</p>
-    </div>
+
     <?php if ($flash): ?>
       <div class="alert alert-<?= e($flash['type']) ?> alert-dismissible fade show py-2 px-3 small mb-3 border-0 shadow-sm">
-        <i class="fa-solid <?= $flash['type']==='danger'?'fa-circle-exclamation':'fa-circle-check' ?> me-1"></i>
+        <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation' : 'fa-circle-check' ?> me-1"></i>
         <?= e($flash['message']) ?>
         <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
       </div>
     <?php endif; ?>
-    <form action="/supplier/login" method="POST">
+
+    <form action="/supplier/reset-password" method="POST" id="supplierResetForm">
       <?= csrf_field() ?>
+      <input type="hidden" name="token" value="<?= e($token) ?>">
       <div class="mb-3">
-        <label class="form-label small fw-semibold">Supplier Email</label>
+        <label class="form-label small fw-semibold">New Password</label>
         <div class="input-group">
-          <span class="input-group-text"><i class="fa-solid fa-envelope text-muted"></i></span>
-          <input type="email" name="email" class="form-control" placeholder="supplier@company.com" value="" required autofocus>
+          <span class="input-group-text"><i class="fa-solid fa-lock text-muted"></i></span>
+          <input type="password" name="password" class="form-control" placeholder="Minimum 6 characters" required minlength="6">
         </div>
       </div>
       <div class="mb-3">
-        <label class="form-label small fw-semibold">Password</label>
+        <label class="form-label small fw-semibold">Confirm Password</label>
         <div class="input-group">
           <span class="input-group-text"><i class="fa-solid fa-lock text-muted"></i></span>
-          <input type="password" name="password" class="form-control" placeholder="••••••••" value="" required>
+          <input type="password" name="password_confirm" class="form-control" placeholder="Repeat password" required>
         </div>
       </div>
       <button type="submit" class="btn btn-dark w-100 fw-semibold py-2">
-        <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In to Supplier Portal
+        <i class="fa-solid fa-shield-check me-2"></i>Update Password
       </button>
     </form>
-    <div class="text-center mt-2 small">
-      <a href="/supplier/forgot-password" class="text-secondary text-decoration-none"><i class="fa-solid fa-key me-1"></i>Forgot your password?</a>
-    </div>
+
     <div class="text-center mt-3 small text-muted">
-      <a href="/auth/login" class="text-decoration-none text-secondary"><i class="fa-solid fa-arrow-left me-1"></i>Staff Login</a>
-      &nbsp;|&nbsp;
-      <a href="/agent/login" class="text-decoration-none text-secondary">Agent Portal</a>
+      <a href="/supplier/login" class="text-decoration-none text-secondary"><i class="fa-solid fa-arrow-left me-1"></i>Back to Supplier Login</a>
     </div>
   </div>
 </div>

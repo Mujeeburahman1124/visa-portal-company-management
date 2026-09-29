@@ -78,19 +78,89 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
         </li>
       </ul>
 
-      <!-- User Profile & Sign Out -->
-      <div class="d-flex align-items-center justify-content-between justify-content-xl-end gap-3 pt-3 pt-xl-0 border-top border-xl-0 border-white border-opacity-10 mt-2 mt-xl-0">
-        <div class="text-white text-start text-xl-end" style="line-height: 1.15;">
-          <div class="fw-bold small text-white"><?= e($customer['full_name'] ?? 'Applicant') ?></div>
-          <div class="text-white-50" style="font-size: 0.72rem;"><i class="fa-solid fa-id-badge me-1"></i><?= e($customer['customer_code'] ?? 'MSV-CUST') ?></div>
+      <!-- User Profile & Account Actions -->
+      <div class="d-flex align-items-center justify-content-between justify-content-xl-end gap-2 pt-3 pt-xl-0 border-top border-xl-0 border-white border-opacity-10 mt-2 mt-xl-0">
+        <div class="dropdown">
+          <button class="btn btn-outline-light btn-sm rounded-pill py-1 px-3 d-flex align-items-center gap-2 border-white border-opacity-25 shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Account Security & Profile">
+            <div class="rounded-circle bg-white text-dark d-flex align-items-center justify-content-center fw-bold" style="width: 26px; height: 26px; font-size: 0.75rem;">
+              <?= strtoupper(substr($customer['full_name'] ?? 'A', 0, 1)) ?>
+            </div>
+            <div class="text-white text-start d-none d-sm-block" style="line-height: 1.15;">
+              <div class="fw-semibold small text-white text-truncate" style="max-width: 140px;"><?= e($customer['full_name'] ?? 'Applicant') ?></div>
+              <div class="text-white-50" style="font-size: 0.68rem;"><?= e($customer['customer_code'] ?? 'MSV-CUST') ?></div>
+            </div>
+            <i class="fa-solid fa-chevron-down text-white-50 small ms-1" style="font-size: 0.65rem;"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; min-width: 220px; z-index: 1060;">
+            <li class="px-3 py-2 border-bottom bg-light rounded-top">
+              <div class="fw-bold text-dark"><?= e($customer['full_name'] ?? 'Applicant') ?></div>
+              <div class="text-muted small text-truncate"><?= e($customer['email'] ?? '') ?></div>
+              <div class="badge bg-primary mt-1"><?= e($customer['customer_code'] ?? '') ?></div>
+            </li>
+            <li>
+              <button type="button" class="dropdown-item py-2 text-dark" data-bs-toggle="modal" data-bs-target="#portalChangePasswordModal">
+                <i class="fa-solid fa-key me-2 text-warning"></i> Reset / Change Password
+              </button>
+            </li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li>
+              <a href="/portal/logout" class="dropdown-item py-2 text-danger">
+                <i class="fa-solid fa-right-from-bracket me-2"></i> Sign Out
+              </a>
+            </li>
+          </ul>
         </div>
-        <a href="/portal/logout" class="btn btn-outline-light btn-sm px-3 rounded-pill fw-semibold shadow-sm">
-          <i class="fa-solid fa-right-from-bracket me-1"></i> Sign Out
-        </a>
       </div>
     </div>
   </div>
 </nav>
+
+<!-- Modal: Reset / Change Password -->
+<div class="modal fade" id="portalChangePasswordModal" tabindex="-1" aria-labelledby="portalChangePasswordModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-light border-bottom py-3">
+        <h6 class="modal-title fw-bold text-dark mb-0" id="portalChangePasswordModalLabel">
+          <i class="fa-solid fa-shield-halved text-primary me-2"></i> Reset / Change Password
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="/portal/change-password" method="POST">
+        <?= csrf_field() ?>
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary">Current Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-lock"></i></span>
+              <input type="password" name="current_password" class="form-control" placeholder="••••••••" required>
+            </div>
+            <div class="form-text text-muted small" style="font-size: 0.72rem;">Enter your current password to authorize change.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary">New Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-key"></i></span>
+              <input type="password" name="new_password" class="form-control" placeholder="Minimum 6 characters" minlength="6" required>
+            </div>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small fw-semibold text-secondary">Confirm New Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-check-double"></i></span>
+              <input type="password" name="confirm_password" class="form-control" placeholder="Re-type new password" minlength="6" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-top py-2 px-4 d-flex justify-content-between">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm px-3 fw-semibold">
+            <i class="fa-solid fa-floppy-disk me-1"></i> Update Password
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 <style>
 .portal-nav-link {

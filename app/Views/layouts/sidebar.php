@@ -9,14 +9,19 @@ $isAdmin = $isSuperAdmin || ($roleSlug === 'admin');
 
 // Helper to check module permission with dynamic user_can() support
 $canViewStaff = $isAdmin || user_can('staff.view');
+$canViewRoles = $isAdmin || user_can('roles.view') || user_can('staff.view');
 $canViewAudit = $isAdmin || user_can('audit.view');
 $canViewSettings = $isAdmin || user_can('settings.view') || ($roleSlug === 'branch-manager');
 $canViewSuppliers = $isAdmin || user_can('suppliers.view');
+$canViewAgents = $isAdmin || user_can('agents.view') || user_can('suppliers.view');
+$canViewCountries = $isAdmin || user_can('visa_services.view') || user_can('visa.view') || user_can('settings.view') || ($roleSlug === 'visa-manager') || ($roleSlug === 'branch-manager');
+$canViewVisaServices = $isAdmin || user_can('visa_services.view') || user_can('visa.view') || user_can('settings.view') || ($roleSlug === 'visa-manager') || ($roleSlug === 'branch-manager');
 $canViewBranches = $isAdmin || user_can('branches.view');
 $canViewReports = $isAdmin || user_can('reports.view');
 $canViewPayments = $isAdmin || user_can('payments.view') || user_can('finance.view');
-$canViewPayroll = $isAdmin || user_can('staff.view') || ($roleSlug === 'accounts');
-$canViewInventory = $isAdmin || user_can('settings.view') || ($roleSlug === 'branch-manager');
+$canViewWallets = $isAdmin || user_can('wallets.view') || user_can('payments.view') || user_can('finance.view') || ($roleSlug === 'accounts');
+$canViewPayroll = $isAdmin || user_can('payroll.view') || user_can('staff.view') || ($roleSlug === 'accounts');
+$canViewInventory = $isAdmin || user_can('inventory.view') || user_can('settings.view') || ($roleSlug === 'branch-manager');
 ?>
 <aside class="app-sidebar" id="appSidebar">
   <!-- Sidebar Brand Header -->
@@ -110,7 +115,7 @@ $canViewInventory = $isAdmin || user_can('settings.view') || ($roleSlug === 'bra
     <?php endif; ?>
 
     <!-- Section: Administration -->
-    <?php if ($canViewSuppliers || $canViewBranches || $canViewStaff || $canViewAudit || $canViewSettings): ?>
+    <?php if ($canViewSuppliers || $canViewAgents || $canViewCountries || $canViewVisaServices || $canViewBranches || $canViewStaff || $canViewRoles || $canViewAudit || $canViewSettings): ?>
     <div class="sidebar-heading mt-2"><span>Administration</span></div>
 
     <?php if ($canViewSuppliers): ?>
@@ -118,16 +123,25 @@ $canViewInventory = $isAdmin || user_can('settings.view') || ($roleSlug === 'bra
       <i class="fa-solid fa-building-flag nav-icon"></i>
       <span class="nav-label">Suppliers</span>
     </a>
+    <?php endif; ?>
+
+    <?php if ($canViewAgents): ?>
     <a href="/agents" class="nav-link-custom <?= str_starts_with($currentUri, '/agents') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="B2B Travel Agents & Partner Network">
       <i class="fa-solid fa-handshake nav-icon text-success"></i>
       <span class="nav-label">Agents &amp; Partners</span>
     </a>
+    <?php endif; ?>
+
+    <?php if ($canViewCountries): ?>
     <a href="/countries" class="nav-link-custom <?= str_starts_with($currentUri, '/countries') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Manage Destination Countries">
       <i class="fa-solid fa-earth-americas nav-icon text-primary"></i>
       <span class="nav-label">Countries</span>
     </a>
+    <?php endif; ?>
+
+    <?php if ($canViewVisaServices): ?>
     <a href="/visa-services" class="nav-link-custom <?= str_starts_with($currentUri, '/visa-services') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Manage Visa Categories & Services">
-      <i class="fa-solid fa-list-check nav-icon text-warning"></i>
+      <i class="fa-solid fa-passport nav-icon text-warning"></i>
       <span class="nav-label">Visa Services</span>
     </a>
     <?php endif; ?>
@@ -144,7 +158,9 @@ $canViewInventory = $isAdmin || user_can('settings.view') || ($roleSlug === 'bra
       <i class="fa-solid fa-users-gear nav-icon"></i>
       <span class="nav-label">Staff</span>
     </a>
+    <?php endif; ?>
 
+    <?php if ($canViewRoles): ?>
     <a href="/roles" class="nav-link-custom <?= str_starts_with($currentUri, '/roles') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Security Roles & Permissions Matrix">
       <i class="fa-solid fa-shield-halved nav-icon"></i>
       <span class="nav-label">Roles &amp; Permissions</span>
@@ -198,9 +214,13 @@ $canViewInventory = $isAdmin || user_can('settings.view') || ($roleSlug === 'bra
   <div class="sidebar-footer">
     <div class="d-flex align-items-center justify-content-between">
       <div class="d-flex align-items-center gap-2 overflow-hidden">
-        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 34px; height: 34px; font-size: 0.85rem;">
-          <?= strtoupper(substr($currentUser['name'] ?? 'U', 0, 1)) ?>
-        </div>
+        <?php $sbAvatar = user_avatar_url($currentUser); if (!empty($sbAvatar)): ?>
+          <img src="<?= e($sbAvatar) ?>" alt="<?= e($currentUser['name'] ?? 'User') ?>" class="rounded-circle flex-shrink-0 shadow-sm border border-secondary" style="width: 34px; height: 34px; object-fit: cover;">
+        <?php else: ?>
+          <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width: 34px; height: 34px; font-size: 0.85rem;">
+            <?= strtoupper(substr($currentUser['name'] ?? 'U', 0, 1)) ?>
+          </div>
+        <?php endif; ?>
         <div class="sidebar-user-details text-truncate">
           <div class="text-white small fw-semibold text-truncate"><?= e($currentUser['name'] ?? 'Staff User') ?></div>
           <div class="text-muted text-truncate" style="font-size: 0.72rem;"><?= e($roleName) ?></div>

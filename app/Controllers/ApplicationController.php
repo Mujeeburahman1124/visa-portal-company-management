@@ -210,6 +210,9 @@ class ApplicationController
         if (!$service) {
             // Find a valid fallback service from database to satisfy foreign keys
             $fb = $pdo->query("SELECT vs.*, ct.name as country_name, ct.iso_code as country_code FROM visa_services vs JOIN countries ct ON vs.country_id = ct.id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+            $customSellingPrice = (float)($_POST['custom_selling_price'] ?? $_POST['selling_price'] ?? 0);
+            $customSupplierCost = (float)($_POST['custom_supplier_cost'] ?? $_POST['supplier_cost'] ?? 0);
+            $customDays = (int)($_POST['custom_estimated_days'] ?? 15);
             $service = $fb ?: [
                 'id' => 1,
                 'country_id' => 1,
@@ -217,10 +220,10 @@ class ApplicationController
                 'name' => $customVisaType ?: 'Custom Visa Service',
                 'country_name' => $customDestCountry ?: 'United Arab Emirates',
                 'country_code' => 'AE',
-                'selling_price' => (float)($_POST['selling_price'] ?? 0),
-                'supplier_cost' => (float)($_POST['supplier_cost'] ?? 0),
+                'selling_price' => $customSellingPrice,
+                'supplier_cost' => $customSupplierCost,
                 'tax_rate' => 0,
-                'estimated_days' => 15,
+                'estimated_days' => $customDays > 0 ? $customDays : 15,
                 'duration' => '30 Days',
                 'entry_type' => 'Single Entry',
                 'processing_type' => 'Normal'
@@ -260,6 +263,10 @@ class ApplicationController
 
         $sellingPrice = (float)($ruleResult['selling_price'] ?? $service['selling_price'] ?? 0.0);
         $supplierCost = (float)($ruleResult['supplier_cost'] ?? $service['supplier_cost'] ?? 0.0);
+        if (!empty($customVisaType) || (!empty($_POST['custom_selling_price']) && (float)$_POST['custom_selling_price'] > 0)) {
+            $sellingPrice = (float)($_POST['custom_selling_price'] ?? $sellingPrice);
+            $supplierCost = (float)($_POST['custom_supplier_cost'] ?? $supplierCost);
+        }
         $discount = (float)($_POST['discount'] ?? 0.0);
         $otherExpenses = (float)($_POST['other_expenses'] ?? 0.0);
         $supplierRef = trim($_POST['supplier_reference'] ?? '');

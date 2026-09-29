@@ -718,22 +718,65 @@ function toggleManualInput(manualBoxId, selectId) {
   if (!box) return;
   if (box.classList.contains('d-none')) {
     box.classList.remove('d-none');
-    const input = box.querySelector('input');
-    if (input) input.focus();
+    if (sel) {
+      if (sel.querySelector('option[value="__custom__"]')) {
+        sel.value = '__custom__';
+      }
+      if (sel.hasAttribute('required')) {
+        sel.removeAttribute('required');
+        sel.dataset.hadRequired = 'true';
+      }
+    }
+    const input = box.querySelector('input, select, textarea');
+    if (input) {
+      if (sel && sel.dataset.hadRequired === 'true') {
+        input.setAttribute('required', 'required');
+      }
+      input.focus();
+    }
   } else {
     box.classList.add('d-none');
-    const input = box.querySelector('input');
-    if (input) input.value = '';
+    const input = box.querySelector('input, select, textarea');
+    if (input) {
+      input.value = '';
+      input.removeAttribute('required');
+    }
+    if (sel) {
+      if (sel.value === '__custom__') {
+        sel.value = '';
+      }
+      if (sel.dataset.hadRequired === 'true') {
+        sel.setAttribute('required', 'required');
+      }
+    }
   }
 }
 
 function checkManualSelect(sel, manualBoxId) {
   const box = document.getElementById(manualBoxId);
   if (!box) return;
+  const input = box.querySelector('input, select, textarea');
   if (sel.value === '__custom__') {
     box.classList.remove('d-none');
-    const input = box.querySelector('input');
-    if (input) input.focus();
+    if (sel.hasAttribute('required')) {
+      sel.removeAttribute('required');
+      sel.dataset.hadRequired = 'true';
+    }
+    if (input) {
+      if (sel.dataset.hadRequired === 'true') {
+        input.setAttribute('required', 'required');
+      }
+      input.focus();
+    }
+  } else {
+    box.classList.add('d-none');
+    if (input) {
+      input.value = '';
+      input.removeAttribute('required');
+    }
+    if (sel.dataset.hadRequired === 'true') {
+      sel.setAttribute('required', 'required');
+    }
   }
 }
 

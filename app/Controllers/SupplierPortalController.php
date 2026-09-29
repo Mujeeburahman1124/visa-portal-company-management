@@ -301,4 +301,109 @@ class SupplierPortalController
 
         redirect('/supplier/login', 'Your account has been activated! You can now log in with your new password.', 'success');
     }
+
+    public function showForgotPassword(): void
+    {
+        session_start_safe();
+        if (!empty($_SESSION['supplier_auth'])) {
+            redirect('/supplier/dashboard');
+        }
+        $flash = get_flash();
+        require_once dirname(__DIR__) . '/Views/supplier-portal/forgot_password.php';
+    }
+
+    public function forgotPassword(): void
+    {
+        session_start_safe();
+        $email = trim($_POST['email'] ?? '');
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            redirect('/supplier/forgot-password', 'Please enter a valid email address.', 'danger');
+        }
+
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("SELECT id, contact_person, email FROM suppliers WHERE LOWER(email) = LOWER(?) AND is_active = 1 AND portal_enabled = 1");
+        $stmt->execute([$email]);
+        $supplier = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $successMsg = 'If your email is registered, a password reset link has been sent.';
+
+        if ($supplier) {
+            $token = bin2hex(random_bytes(32));
+            $tokenHash = hash('sha256', $token);
+            $expiresAt = date('Y-m-d H:i:s', time() + 3600);
+
+            $pdo->prepare("DELETE FROM password_resets WHERE email = ? AND reset_type = 'supplier'")->execute([$supplier['email']]);
+            $pdo->prepare("INSERT INTO password_resets (email, token, expires_at, reset_type) VALUES (?, ?, ?, 'supplier')")->execute([$supplier['email'], $tokenHash, $expiresAt]);
+
+            $resetUrl = \App\Config\App::url("supplier/reset-password?token=" . urlencode($token));
+
+            try {
+                \App\Services\EmailService::send([
+                    'to'      => $supplier['email'],
+                    'name'    => $supplier['contact_person'],
+                    'subject' => 'Supplier Portal — Password Reset Request',
+                    'bodyHtml' => "
+                        <p>Dear <strong>" . htmlspecialchars($supplier['contact_person']) . "</strong>,</p>
+                        <p>We received a request to reset your password for the <strong>MS Travel Hub Supplier Portal</strong>.</p>
+                        <p style='text-align:center;margin:28px 0;'>
+                            <a href='{$resetUrl}' style='background:#7c3aed;color:#fff;padding:13px 28px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block;font-size:15px;'>Reset Password &rarr;</a>
+                        </p>
+                        <p style='font-size:0.85em;color:#64748b;'>Or copy this link: <a href='{$resetUrl}'>{$resetUrl}</a></p>
+                        <p style='font-size:0.82em;color:#94a3b8;'>This link expires in 1 hour.</p>
+                    ",
+                    'data' => ['userName' => $supplier['contact_person'], 'resetUrl' => $resetUrl],
+                ]);
+            } catch (\Throwable $ignored) {}
+        }
+
+        redirect('/supplier/forgot-password', $successMsg, 'success');
+    }
+
+    public function showResetPassword(): void
+    {
+        session_start_safe();
+        $token = trim($_GET['token'] ?? '');
+        if (empty($token)) {
+            redirect('/supplier/login', 'Password reset token is missing.', 'danger');
+        }
+
+        $pdo = Database::getConnection();
+        $tokenHash = hash('sha256', $token);
+        $stmt = $pdo->prepare("SELECT * FROM password_resets WHERE token = ? AND reset_type = 'supplier' AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP");
+        $stmt->execute([$tokenHash]);
+        $reset = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$reset) {
+            redirect('/supplier/login', 'This reset link has expired or already been used.', 'danger');
+        }
+
+        $flash = get_flash();
+        require_once dirname(__DIR__) . '/Views/supplier-portal/reset_password.php';
+    }
+
+    public function resetPassword(): void
+    {
+        session_start_safe();
+        $token = trim($_POST['token'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $confirmPassword = $_POST['password_confirm'] ?? '';
+
+        if (empty($token)) { redirect('/supplier/login', 'Invalid request.', 'danger'); }
+        if (strlen($password) < 6) { redirect("/supplier/reset-password?token=" . urlencode($token), 'Password must be at least 6 characters.', 'danger'); }
+        if ($password !== $confirmPassword) { redirect("/supplier/reset-password?token=" . urlencode($token), 'Passwords do not match.', 'danger'); }
+
+        $pdo = Database::getConnection();
+        $tokenHash = hash('sha256', $token);
+        $stmt = $pdo->prepare("SELECT * FROM password_resets WHERE token = ? AND reset_type = 'supplier' AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP");
+        $stmt->execute([$tokenHash]);
+        $reset = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$reset) { redirect('/supplier/login', 'This link has expired or already been used.', 'danger'); }
+
+        $newHash = password_hash($password, PASSWORD_DEFAULT);
+        $pdo->prepare("UPDATE suppliers SET password_hash = ? WHERE LOWER(email) = LOWER(?)")->execute([$newHash, $reset['email']]);
+        $pdo->prepare("UPDATE password_resets SET used_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$reset['id']]);
+
+        redirect('/supplier/login', 'Password updated! You can now sign in.', 'success');
+    }
 }

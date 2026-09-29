@@ -944,7 +944,7 @@ class PaymentController
             } catch (\Throwable $e) {}
         }
 
-        // Send WhatsApp if requested
+        // Send WhatsApp if requested — automatically queue direct WhatsApp app opening
         if ($sendWhatsapp && !empty($result['customer_mobile'])) {
             try {
                 \App\Services\WhatsAppService::send([
@@ -952,9 +952,19 @@ class PaymentController
                     'messageText' => $result['whatsapp_message'] ?? "Please complete your visa payment here: {$result['url']}"
                 ]);
             } catch (\Throwable $e) {}
+
+            // Set session variable so footer script automatically opens WhatsApp app/web
+            if (!empty($result['whatsapp_share_url'])) {
+                $_SESSION['auto_open_whatsapp'] = $result['whatsapp_share_url'];
+            }
         }
 
-        redirect($_SERVER['HTTP_REFERER'] ?? '/payments', "Payment link generated successfully: {$result['url']}", 'success');
+        $successNotice = "Payment link generated successfully: {$result['url']}";
+        if ($sendWhatsapp && !empty($result['whatsapp_share_url'])) {
+            $successNotice .= " — Opening WhatsApp app to send message...";
+        }
+
+        redirect($_SERVER['HTTP_REFERER'] ?? '/payments', $successNotice, 'success');
     }
 
     /**

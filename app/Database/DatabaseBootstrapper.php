@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 16;
+    private const SCHEMA_VERSION = 18;
 
     public static function init(bool $force = false): void
     {
@@ -94,10 +94,13 @@ class DatabaseBootstrapper
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 email TEXT NOT NULL,
                 token TEXT NOT NULL UNIQUE,
+                reset_type TEXT DEFAULT 'staff',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 expires_at DATETIME NOT NULL,
                 used_at DATETIME NULL
             );");
+            // Add reset_type column if missing (migration)
+            try { $pdo->exec("ALTER TABLE password_resets ADD COLUMN reset_type TEXT DEFAULT 'staff';"); } catch (\Throwable $e) {}
 
             // Ensure document_requests table exists for SQLite
             $pdo->exec("CREATE TABLE IF NOT EXISTS document_requests (
@@ -525,12 +528,15 @@ class DatabaseBootstrapper
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 email VARCHAR(150) NOT NULL,
                 token VARCHAR(255) NOT NULL UNIQUE,
+                reset_type VARCHAR(30) DEFAULT 'staff',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 expires_at DATETIME NOT NULL,
                 used_at DATETIME NULL,
                 INDEX idx_pwd_resets_token (token),
                 INDEX idx_pwd_resets_email (email)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+            // Add reset_type column if missing (migration)
+            try { $pdo->exec("ALTER TABLE password_resets ADD COLUMN reset_type VARCHAR(30) DEFAULT 'staff';"); } catch (\Throwable $e) {}
 
             // Ensure document_requests table exists for MySQL
             $pdo->exec("CREATE TABLE IF NOT EXISTS document_requests (
@@ -2844,6 +2850,36 @@ class DatabaseBootstrapper
                     ]);
                 } catch (\Throwable $e) {}
             }
+        }
+
+        // ── MIGRATION: TASK PROOF OF WORK & PERMISSIONS (v18) ────────────────
+        if ($currentVersion < 18) {
+            // Columns for tasks table
+            $taskCols = [
+                'completion_notes' => 'TEXT NULL',
+                'proof_attachment' => 'VARCHAR(255) NULL',
+                'proof_of_work'    => 'TEXT NULL',
+                'completed_by'     => 'INT NULL',
+            ];
+            foreach ($taskCols as $col => $colDef) {
+                try {
+                    $pdo->exec("ALTER TABLE tasks ADD COLUMN {$col} {$colDef}");
+                } catch (\Throwable $e) {}
+            }
+
+            // Seed tasks.view_all permission
+            try {
+                $pdo->exec("INSERT IGNORE INTO permissions (name, slug, module, description) 
+                    VALUES ('View All Tasks', 'tasks.view_all', 'Tasks', 'Can view all company and branch tasks across all staff officers')");
+                
+                $permId = $pdo->query("SELECT id FROM permissions WHERE slug = 'tasks.view_all'")->fetchColumn();
+                if ($permId) {
+                    $grantStmt = $pdo->prepare("INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)");
+                    foreach ([1, 2, 3] as $rId) {
+                        $grantStmt->execute([$rId, $permId]);
+                    }
+                }
+            } catch (\Throwable $e) {}
         }
 
         // ── RECORD SCHEMA VERSION ─────────────────────────────────────────────

@@ -556,21 +556,26 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         </div>
       </div>
 
-      <!-- My Assigned Tasks & Deadlines -->
+      <!-- My Assigned Tasks & Deadlines (Role Scoped) -->
       <div class="col-lg-5">
-        <div class="card card-enterprise h-100">
-          <div class="card-header d-flex align-items-center justify-content-between">
-            <span class="fw-bold small text-uppercase text-secondary">
-              <i class="fa-solid fa-list-check text-primary me-2"></i> My Assigned Tasks (<?= count($myTasks) ?>)
-            </span>
-            <a href="/tasks" class="btn btn-link btn-sm text-decoration-none p-0" style="font-size: 0.78rem;">Open Task Manager &rarr;</a>
+        <div class="card card-enterprise h-100 shadow-sm border">
+          <div class="card-header d-flex align-items-center justify-content-between py-3 px-3">
+            <div class="d-flex align-items-center gap-2">
+              <span class="fw-bold small text-uppercase text-secondary">
+                <i class="fa-solid fa-list-check text-primary me-1"></i> My Tasks (<?= count($myTasks) ?>)
+              </span>
+              <?php if (!$canViewAllTasks): ?>
+                <span class="badge bg-light text-primary border" style="font-size: 0.68rem;">Personal Workstation</span>
+              <?php endif; ?>
+            </div>
+            <a href="/tasks" class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold" style="font-size: 0.78rem;">Full Board &rarr;</a>
           </div>
           <div class="card-body p-0">
             <div class="table-responsive">
               <table class="table-modern mb-0">
                 <thead>
                   <tr>
-                    <th>Task &amp; Applicant</th>
+                    <th>Task &amp; Linked File</th>
                     <th>Due Date</th>
                     <th>Priority</th>
                     <th class="text-end">Action</th>
@@ -591,20 +596,21 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     </tr>
                   <?php else: ?>
                     <?php foreach ($myTasks as $t): ?>
+                      <?php 
+                        $isOverdue = !empty($t['due_date']) && $t['due_date'] < date('Y-m-d');
+                        $tTitle = $t['task_title'] ?? $t['title'] ?? 'Operational Task';
+                      ?>
                       <tr>
                         <td>
-                          <div class="fw-semibold text-dark text-truncate" style="max-width: 170px;" title="<?= e($t['title']) ?>">
-                            <?= e($t['title']) ?>
+                          <div class="fw-semibold text-dark text-truncate" style="max-width: 170px;" title="<?= e($tTitle) ?>">
+                            <?= e($tTitle) ?>
                           </div>
                           <div class="text-muted small" style="font-size: 0.7rem;">
-                            <?= e($t['application_number'] ?? 'General Task') ?> &bull; <?= e($t['customer_name'] ?? '') ?>
+                            <?= e($t['application_number'] ?? 'General') ?> &bull; <?= e($t['customer_name'] ?? '') ?>
                           </div>
                         </td>
                         <td>
-                          <?php 
-                            $isOverdue = !empty($t['due_date']) && $t['due_date'] < date('Y-m-d');
-                          ?>
-                          <span class="badge <?= $isOverdue ? 'bg-danger' : 'bg-light text-secondary border' ?>" style="font-size: 0.72rem;">
+                          <span class="badge <?= $isOverdue ? 'bg-danger text-white' : 'bg-light text-secondary border' ?>" style="font-size: 0.72rem;">
                             <?= !empty($t['due_date']) ? format_date($t['due_date']) : 'No Deadline' ?>
                           </span>
                         </td>
@@ -613,10 +619,11 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                             <?= e($t['priority']) ?>
                           </span>
                         </td>
-                        <td class="text-end">
-                          <a href="/tasks" class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size: 0.75rem;">
-                            View
-                          </a>
+                        <td class="text-end text-nowrap">
+                          <button type="button" class="btn btn-sm btn-success py-1 px-2 fw-semibold" style="font-size: 0.75rem;"
+                                  onclick="openCompleteTaskModal(<?= (int)$t['id'] ?>, '<?= e(addslashes($tTitle)) ?>')">
+                            <i class="fa-solid fa-check me-1"></i> Complete
+                          </button>
                         </td>
                       </tr>
                     <?php endforeach; ?>
@@ -710,6 +717,121 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                       <a href="/applications/show?id=<?= $uApp['id'] ?>" class="btn btn-sm btn-primary py-1 px-3" style="font-size: 0.78rem;">
                         Resolve <i class="fa-solid fa-arrow-right ms-1"></i>
                       </a>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  <?php endif; ?>
+
+  <?php if ($dashboardType !== 'processing'): ?>
+    <!-- OPERATIONAL TASKS & ASSIGNED WORK (ROLE SCOPED) -->
+    <div class="card card-enterprise mb-4 shadow-sm border">
+      <div class="card-header bg-white border-bottom py-3 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-primary fw-bold px-2 py-1"><i class="fa-solid fa-list-check me-1"></i>OPERATIONAL TASKS</span>
+          <span class="fw-bold text-dark small text-uppercase">
+            <?= ($taskScope ?? 'my') === 'all' && $canViewAllTasks ? 'Team Operational Tasks' : 'My Assigned Operational Tasks' ?> (<?= count($myTasks) ?>)
+          </span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <?php if ($canViewAllTasks): ?>
+            <div class="btn-group btn-group-sm" role="group">
+              <a href="/dashboard?task_scope=my" class="btn <?= ($taskScope ?? 'my') === 'my' ? 'btn-primary fw-bold' : 'btn-light border' ?>">
+                <i class="fa-solid fa-user-check me-1"></i> My Tasks
+              </a>
+              <a href="/dashboard?task_scope=all" class="btn <?= ($taskScope ?? '') === 'all' ? 'btn-primary fw-bold' : 'btn-light border' ?>">
+                <i class="fa-solid fa-users me-1"></i> All Staff Tasks
+              </a>
+            </div>
+          <?php else: ?>
+            <span class="badge bg-light text-primary border" style="font-size: 0.72rem;">
+              <i class="fa-solid fa-lock me-1"></i> My Tasks Only
+            </span>
+          <?php endif; ?>
+          <a href="/tasks" class="btn btn-outline-primary btn-sm py-0 px-2 fw-semibold" style="font-size: 0.78rem;">
+            Full Board &rarr;
+          </a>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table-modern mb-0">
+            <thead>
+              <tr>
+                <th>Task Title &amp; Details</th>
+                <th>Linked Application</th>
+                <th>Priority</th>
+                <th>Assigned Officer</th>
+                <th>Due Date</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php if (empty($myTasks)): ?>
+                <tr>
+                  <td colspan="6" class="text-center py-4">
+                    <div class="empty-state py-2">
+                      <div class="empty-state-icon" style="width: 40px; height: 40px; font-size: 1.1rem;">
+                        <i class="fa-solid fa-circle-check text-success"></i>
+                      </div>
+                      <div class="empty-state-title fs-6">No Pending Tasks</div>
+                      <div class="empty-state-text small mb-0">No active operational tasks in this view.</div>
+                    </div>
+                  </td>
+                </tr>
+              <?php else: ?>
+                <?php foreach ($myTasks as $t): ?>
+                  <?php 
+                    $isOverdue = !empty($t['due_date']) && $t['due_date'] < date('Y-m-d');
+                    $tTitle = $t['task_title'] ?? $t['title'] ?? 'Operational Task';
+                  ?>
+                  <tr>
+                    <td>
+                      <div class="fw-bold text-dark text-truncate" style="max-width: 260px;" title="<?= e($tTitle) ?>">
+                        <?= e($tTitle) ?>
+                      </div>
+                      <?php if (!empty($t['description'])): ?>
+                        <div class="text-muted small text-truncate" style="max-width: 260px; font-size: 0.72rem;" title="<?= e($t['description']) ?>">
+                          <?= e($t['description']) ?>
+                        </div>
+                      <?php endif; ?>
+                    </td>
+                    <td>
+                      <?php if (!empty($t['application_number'])): ?>
+                        <a href="/applications/show?id=<?= $t['application_id'] ?? 0 ?>" class="fw-bold text-primary text-decoration-none">
+                          <i class="fa-solid fa-folder me-1"></i><?= e($t['application_number']) ?>
+                        </a>
+                        <div class="text-muted small" style="font-size: 0.7rem;"><?= e($t['customer_name'] ?? '—') ?></div>
+                      <?php else: ?>
+                        <span class="text-muted small">General Milestone</span>
+                      <?php endif; ?>
+                    </td>
+                    <td>
+                      <span class="badge <?= ($t['priority'] === 'Urgent' || $t['priority'] === 'Critical') ? 'badge-priority-critical' : 'badge-priority-normal' ?>">
+                        <?= e($t['priority']) ?>
+                      </span>
+                    </td>
+                    <td>
+                      <span class="small fw-semibold text-dark"><i class="fa-solid fa-user-circle text-muted me-1"></i><?= e($t['assigned_to_name'] ?? 'Assigned Officer') ?></span>
+                    </td>
+                    <td>
+                      <span class="badge <?= $isOverdue ? 'bg-danger text-white' : 'bg-light text-secondary border' ?>" style="font-size: 0.72rem;">
+                        <?= !empty($t['due_date']) ? format_date($t['due_date']) : 'No Deadline' ?>
+                      </span>
+                      <?php if ($isOverdue): ?>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 0.65rem;">Overdue</span>
+                      <?php endif; ?>
+                    </td>
+                    <td class="text-end text-nowrap">
+                      <button type="button" class="btn btn-sm btn-success py-1 px-3 fw-bold" style="font-size: 0.75rem;"
+                              onclick="openCompleteTaskModal(<?= (int)$t['id'] ?>, '<?= e(addslashes($tTitle)) ?>')">
+                        <i class="fa-solid fa-check me-1"></i> Complete
+                      </button>
                     </td>
                   </tr>
                 <?php endforeach; ?>
@@ -973,7 +1095,66 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         </div>
       </div>
     </div>
+<!-- MODAL: COMPLETE TASK WITH PROOF OF WORK (DASHBOARD) -->
+<div class="modal fade" id="completeTaskModal" tabindex="-1" aria-labelledby="completeTaskModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-success text-white">
+        <h6 class="modal-title fw-bold" id="completeTaskModalLabel">
+          <i class="fa-solid fa-clipboard-check me-2"></i> Complete Task &amp; Submit Proof of Work
+        </h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="/tasks/status" method="POST" enctype="multipart/form-data">
+        <?= csrf_field() ?>
+        <input type="hidden" name="task_id" id="completeTaskId" value="0">
+        <input type="hidden" name="status" value="Completed">
+
+        <div class="modal-body p-4">
+          <div class="p-3 bg-light rounded border mb-3">
+            <div class="fw-bold text-dark small" id="completeTaskTitle">—</div>
+            <div class="text-muted small mt-1" style="font-size: 0.75rem;">
+              <i class="fa-solid fa-circle-info text-primary me-1"></i> Policy requirement: Record verification notes or proof of work performed to complete this task.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">
+              Proof of Work / Completion Notes <span class="text-danger">*</span>
+            </label>
+            <textarea name="completion_notes" id="completeNotes" class="form-control" rows="3" required 
+                      placeholder="e.g. Completed document upload, submitted visa to embassy, reference code #98124..."></textarea>
+            <div class="form-text small">Detailed explanation of the work done to fulfill this operational task.</div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label small fw-bold text-dark">
+              Attach Proof Document / Screenshot / Receipt <small class="text-muted fw-normal">(Optional)</small>
+            </label>
+            <input type="file" name="proof_file" class="form-control" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx,.zip">
+            <div class="form-text small">Accepts PDF, PNG, JPG, DOCX, ZIP files up to 10MB.</div>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light border-top">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success btn-sm px-3 fw-bold">
+            <i class="fa-solid fa-check-double me-1"></i> Submit Proof &amp; Complete Task
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
+
+<script>
+function openCompleteTaskModal(taskId, taskTitle) {
+  document.getElementById('completeTaskId').value = taskId;
+  document.getElementById('completeTaskTitle').textContent = taskTitle;
+  document.getElementById('completeNotes').value = '';
+  var modal = new bootstrap.Modal(document.getElementById('completeTaskModal'));
+  modal.show();
+}
+</script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

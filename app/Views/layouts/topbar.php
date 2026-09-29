@@ -209,9 +209,13 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
     <!-- User Profile Dropdown -->
     <div class="dropdown flex-shrink-0">
       <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-dark topbar-user-btn" data-bs-toggle="dropdown" aria-expanded="false" title="<?= e($currentUser['name'] ?? 'User Profile') ?>">
-        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm topbar-user-avatar" style="width: 36px; height: 36px; font-size: 0.9rem;">
-          <?= strtoupper(substr($currentUser['name'] ?? 'U', 0, 1)) ?>
-        </div>
+        <?php $topbarAvatar = user_avatar_url($currentUser); if (!empty($topbarAvatar)): ?>
+          <img src="<?= e($topbarAvatar) ?>" alt="<?= e($currentUser['name'] ?? 'User Profile') ?>" class="rounded-circle shadow-sm topbar-user-avatar border" style="width: 36px; height: 36px; object-fit: cover;">
+        <?php else: ?>
+          <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm topbar-user-avatar" style="width: 36px; height: 36px; font-size: 0.9rem;">
+            <?= strtoupper(substr($currentUser['name'] ?? 'U', 0, 1)) ?>
+          </div>
+        <?php endif; ?>
         <div class="d-none d-lg-block text-start" style="line-height: 1.1;">
           <div class="fw-semibold small user-name-label"><?= e($currentUser['name'] ?? 'Staff') ?></div>
           <div class="text-muted user-role-label" style="font-size: 0.72rem;"><?= e($currentUser['role_name'] ?? 'Staff') ?></div>

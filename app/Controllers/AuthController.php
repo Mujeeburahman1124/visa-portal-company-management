@@ -144,9 +144,7 @@ class AuthController
             $ins->execute([$user['email'], $tokenHash, $expiresAt]);
 
             // Generate password reset URL
-            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-            $host = $_SERVER['HTTP_HOST'] ?? 'mshorizonuae.com';
-            $resetUrl = "{$scheme}://{$host}/reset-password?token=" . urlencode($token);
+            $resetUrl = \App\Config\App::url("reset-password?token=" . urlencode($token));
 
             // Dispatch password reset email
             \App\Services\EmailService::send([

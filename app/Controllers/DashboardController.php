@@ -294,15 +294,37 @@ class DashboardController
             $upcomingAppointments = $aptStmt ? $aptStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         }
 
-        // 9. Personal Tasks & Milestones (Crucial for Processing Staff)
-        $myTasksStmt = $pdo->prepare("SELECT t.*, a.application_number, c.full_name as customer_name 
-            FROM tasks t 
-            LEFT JOIN applications a ON t.application_id = a.id 
-            LEFT JOIN customers c ON a.customer_id = c.id 
-            WHERE t.assigned_to = ? AND t.status != 'Completed' 
-            ORDER BY CASE WHEN t.due_date < ? THEN 0 ELSE 1 END, t.due_date ASC LIMIT 6");
-        $myTasksStmt->execute([$userId, $today]);
-        $myTasks = $myTasksStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        // 9. Operational Tasks & SLA Milestones (Role Scoped)
+        $canViewAllTasks = user_can('tasks.view_all') || user_can('tasks.manage') || user_can('tasks.*') || $isAdmin || $isSuperAdmin;
+        $taskScope = trim($_GET['task_scope'] ?? ($canViewAllTasks && $dashboardType === 'admin' ? 'all' : 'my'));
+
+        if ($canViewAllTasks && $taskScope === 'all') {
+            $taskWhere = ($scopedBranch > 0)
+                ? "WHERE (t.application_id IS NULL OR a.branch_id = ?) AND t.status != 'Completed'"
+                : "WHERE t.status != 'Completed'";
+            $tParams = ($scopedBranch > 0) ? [$scopedBranch, $today] : [$today];
+
+            $myTasksStmt = $pdo->prepare("SELECT t.*, a.application_number, c.full_name as customer_name, u.name as assigned_to_name 
+                FROM tasks t 
+                LEFT JOIN applications a ON t.application_id = a.id 
+                LEFT JOIN customers c ON a.customer_id = c.id 
+                LEFT JOIN users u ON t.assigned_to = u.id
+                {$taskWhere}
+                ORDER BY CASE WHEN t.due_date < ? THEN 0 ELSE 1 END, t.due_date ASC LIMIT 8");
+            $myTasksStmt->execute($tParams);
+            $myTasks = $myTasksStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } else {
+            // Strictly scoped to assigned staff member
+            $myTasksStmt = $pdo->prepare("SELECT t.*, a.application_number, c.full_name as customer_name, u.name as assigned_to_name 
+                FROM tasks t 
+                LEFT JOIN applications a ON t.application_id = a.id 
+                LEFT JOIN customers c ON a.customer_id = c.id 
+                LEFT JOIN users u ON t.assigned_to = u.id
+                WHERE t.assigned_to = ? AND t.status != 'Completed' 
+                ORDER BY CASE WHEN t.due_date < ? THEN 0 ELSE 1 END, t.due_date ASC LIMIT 8");
+            $myTasksStmt->execute([$userId, $today]);
+            $myTasks = $myTasksStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        }
 
         // 10. Staff Workload Distribution (Only for Admin and Branch Manager)
         $staffWorkload = [];
