@@ -318,7 +318,7 @@ class WhatsAppService
 
         $formattedTo = 'whatsapp:+' . ltrim($to, '+');
         $cleanPhone = ltrim($to, '+');
-        $shareUrl = "https://api.whatsapp.com/send?phone={$cleanPhone}&text=" . urlencode($interpolatedText);
+        $shareUrl = "https://api.whatsapp.com/send?phone={$cleanPhone}&text=" . urlencode($text !== '' ? $text : 'Hello');
 
         $isPlaceholder = empty($sid) || empty($token) || str_contains($sid, 'XXXX') || str_contains($token, 'your-twilio') || $sid === 'ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
 
@@ -340,7 +340,7 @@ class WhatsAppService
         $postData = http_build_query([
             'From' => $from,
             'To'   => $formattedTo,
-            'Body' => $interpolatedText,
+            'Body' => $text !== '' ? $text : 'Hello',
         ]);
 
         try {
