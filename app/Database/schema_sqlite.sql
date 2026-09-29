@@ -342,10 +342,14 @@ CREATE TABLE IF NOT EXISTS applications (
 CREATE TABLE IF NOT EXISTS application_assignments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     application_id INTEGER NOT NULL,
+    staff_id INTEGER,
     assigned_to INTEGER NOT NULL,
     assigned_by INTEGER NOT NULL,
     assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    unassigned_at DATETIME,
+    is_current INTEGER DEFAULT 1,
     notes TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE,
     FOREIGN KEY (assigned_to) REFERENCES users(id),
     FOREIGN KEY (assigned_by) REFERENCES users(id)

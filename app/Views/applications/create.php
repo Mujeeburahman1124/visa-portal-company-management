@@ -115,13 +115,22 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <div class="card-body p-4">
             <div class="row g-3 mb-3">
               <div class="col-md-6">
-                <label class="form-label small fw-semibold text-secondary">Destination Country <span class="text-danger">*</span></label>
-                <select id="countryFilterSelect" class="form-select" onchange="filterVisaPackages()">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label small fw-semibold text-secondary mb-0">Destination Country <span class="text-danger">*</span></label>
+                  <button type="button" class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold text-primary" style="font-size: 0.78rem;" onclick="toggleManualInput('destCountryManualBox', 'countryFilterSelect')">
+                    <i class="fa-solid fa-pen-to-square me-1"></i>+ Enter Manually
+                  </button>
+                </div>
+                <select id="countryFilterSelect" class="form-select" onchange="checkManualSelect(this, 'destCountryManualBox'); filterVisaPackages()">
                   <option value="">-- All Destination Countries --</option>
+                  <option value="__custom__" class="fw-bold text-primary">+ Enter Manually / Other Country...</option>
                   <?php foreach ($countries as $ct): ?>
                     <option value="<?= $ct['id'] ?>"><?= $ct['flag_emoji'] ?> <?= e($ct['name']) ?></option>
                   <?php endforeach; ?>
                 </select>
+                <div id="destCountryManualBox" class="mt-2 d-none">
+                  <input type="text" name="custom_destination_country" id="customDestCountryInput" class="form-control form-control-sm" placeholder="Type destination country (e.g. Poland, Japan, Malaysia)...">
+                </div>
               </div>
               <div class="col-md-6">
                 <label class="form-label small fw-semibold text-secondary">Visa Category</label>
@@ -135,9 +144,15 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             </div>
 
             <div class="mb-3">
-              <label for="serviceSelect" class="form-label small fw-semibold text-secondary">Visa Service Package / Type <span class="text-danger">*</span></label>
-              <select name="visa_service_id" id="serviceSelect" class="form-select" required onchange="onServiceChanged();">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label for="serviceSelect" class="form-label small fw-semibold text-secondary mb-0">Visa Service Package / Type <span class="text-danger">*</span></label>
+                <button type="button" class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold text-primary" style="font-size: 0.78rem;" onclick="toggleManualInput('visaServiceManualBox', 'serviceSelect')">
+                  <i class="fa-solid fa-pen-to-square me-1"></i>+ Enter Manually
+                </button>
+              </div>
+              <select name="visa_service_id" id="serviceSelect" class="form-select" onchange="checkManualSelect(this, 'visaServiceManualBox'); onServiceChanged();">
                 <option value="">-- Choose Visa Type / Duration / Entry --</option>
+                <option value="__custom__" class="fw-bold text-primary">+ Enter Manually / Custom Package...</option>
                 <?php foreach ($services as $srv): ?>
                   <option value="<?= $srv['id'] ?>" 
                           data-country-id="<?= $srv['country_id'] ?>"
@@ -151,6 +166,25 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                   </option>
                 <?php endforeach; ?>
               </select>
+              <div id="visaServiceManualBox" class="mt-2 d-none p-3 bg-light rounded border">
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold text-secondary mb-1">Custom Visa Package Name</label>
+                    <input type="text" name="custom_visa_type" id="customVisaTypeInput" class="form-control form-control-sm" placeholder="e.g. Express Tourist 30 Days">
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label small fw-semibold text-secondary mb-1">Duration</label>
+                    <input type="text" name="custom_visa_duration" class="form-control form-control-sm" placeholder="e.g. 30 Days">
+                  </div>
+                  <div class="col-md-3">
+                    <label class="form-label small fw-semibold text-secondary mb-1">Entry Type</label>
+                    <select name="custom_entry_type" class="form-select form-select-sm">
+                      <option value="Single Entry">Single Entry</option>
+                      <option value="Multiple Entry">Multiple Entry</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="row g-3">
@@ -652,6 +686,35 @@ function checkDuplicateApplication() {
     .catch(() => {
       warnBox.classList.add('d-none');
     });
+function toggleManualInput(manualBoxId, selectId) {
+  const box = document.getElementById(manualBoxId);
+  const sel = document.getElementById(selectId);
+  if (!box) return;
+  if (box.classList.contains('d-none')) {
+    box.classList.remove('d-none');
+    if (sel && sel.hasAttribute('required')) {
+      sel.removeAttribute('required');
+    }
+    const input = box.querySelector('input');
+    if (input) input.focus();
+  } else {
+    box.classList.add('d-none');
+    const input = box.querySelector('input');
+    if (input) input.value = '';
+  }
+}
+
+function checkManualSelect(sel, manualBoxId) {
+  const box = document.getElementById(manualBoxId);
+  if (!box) return;
+  if (sel.value === '__custom__') {
+    box.classList.remove('d-none');
+    if (sel.hasAttribute('required')) {
+      sel.removeAttribute('required');
+    }
+    const input = box.querySelector('input');
+    if (input) input.focus();
+  }
 }
 </script>
 

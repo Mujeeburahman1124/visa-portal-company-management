@@ -70,15 +70,24 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 <input type="date" name="dob" class="form-control" value="<?= e($customer['dob'] ?? '') ?>">
               </div>
               <div class="col-md-4">
-                <label class="form-label small fw-semibold text-secondary">Nationality <span class="text-danger">*</span></label>
-                <select name="nationality" class="form-select" required>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label small fw-semibold text-secondary mb-0">Nationality <span class="text-danger">*</span></label>
+                  <button type="button" class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold text-primary" style="font-size: 0.78rem;" onclick="toggleManualInput('nationalityManualBox', 'nationalitySelect')">
+                    <i class="fa-solid fa-pen-to-square me-1"></i>+ Enter Manually
+                  </button>
+                </div>
+                <select name="nationality" id="nationalitySelect" class="form-select" required onchange="checkManualSelect(this, 'nationalityManualBox')">
                   <option value="">-- Choose Nationality --</option>
+                  <option value="__custom__" class="fw-bold text-primary">+ Enter Manually / Other Country...</option>
                   <?php foreach ($countries as $c): ?>
                     <option value="<?= e($c['name']) ?>" <?= ($customer['nationality'] ?? '') === $c['name'] ? 'selected' : '' ?>>
                       <?= $c['flag_emoji'] ?> <?= e($c['name']) ?>
                     </option>
                   <?php endforeach; ?>
                 </select>
+                <div id="nationalityManualBox" class="mt-2 d-none">
+                  <input type="text" name="custom_nationality" class="form-control form-control-sm" placeholder="Type custom nationality / country...">
+                </div>
               </div>
 
               <div class="col-md-4">
@@ -104,8 +113,23 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 <input type="text" name="religion" class="form-control" value="<?= e($customer['religion'] ?? '') ?>">
               </div>
               <div class="col-md-6">
-                <label class="form-label small fw-semibold text-secondary">Current Residence Country</label>
-                <input type="text" name="current_country" class="form-control" value="<?= e($customer['current_country'] ?? '') ?>">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label small fw-semibold text-secondary mb-0">Current Residence Country</label>
+                  <button type="button" class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold text-primary" style="font-size: 0.78rem;" onclick="toggleManualInput('currentCountryManualBox', 'currentCountrySelect')">
+                    <i class="fa-solid fa-pen-to-square me-1"></i>+ Enter Manually
+                  </button>
+                </div>
+                <select name="current_country" id="currentCountrySelect" class="form-select" onchange="checkManualSelect(this, 'currentCountryManualBox')">
+                  <option value="__custom__" class="fw-bold text-primary">+ Enter Manually / Other Country...</option>
+                  <?php foreach ($countries as $c): ?>
+                    <option value="<?= e($c['name']) ?>" <?= ($customer['current_country'] ?? '') === $c['name'] ? 'selected' : '' ?>>
+                      <?= $c['flag_emoji'] ?> <?= e($c['name']) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+                <div id="currentCountryManualBox" class="mt-2 d-none">
+                  <input type="text" name="custom_current_country" class="form-control form-control-sm" placeholder="Type custom residence country...">
+                </div>
               </div>
             </div>
           </div>
@@ -123,15 +147,24 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 <input type="text" name="passport_number" class="form-control font-monospace fw-bold" value="<?= e($primaryPassport['passport_number'] ?? '') ?>" placeholder="e.g. Z1234567">
               </div>
               <div class="col-md-6">
-                <label class="form-label small fw-semibold text-secondary">Country of Issue</label>
-                <select name="passport_country" class="form-select">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label small fw-semibold text-secondary mb-0">Country of Issue</label>
+                  <button type="button" class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold text-primary" style="font-size: 0.78rem;" onclick="toggleManualInput('passportCountryManualBox', 'passportCountrySelect')">
+                    <i class="fa-solid fa-pen-to-square me-1"></i>+ Enter Manually
+                  </button>
+                </div>
+                <select name="passport_country" id="passportCountrySelect" class="form-select" onchange="checkManualSelect(this, 'passportCountryManualBox')">
                   <option value="">-- Same as Nationality --</option>
+                  <option value="__custom__" class="fw-bold text-primary">+ Enter Manually / Other Country...</option>
                   <?php foreach ($countries as $c): ?>
                     <option value="<?= e($c['name']) ?>" <?= ($primaryPassport['country_of_issue'] ?? '') === $c['name'] ? 'selected' : '' ?>>
                       <?= $c['flag_emoji'] ?> <?= e($c['name']) ?>
                     </option>
                   <?php endforeach; ?>
                 </select>
+                <div id="passportCountryManualBox" class="mt-2 d-none">
+                  <input type="text" name="custom_passport_country" class="form-control form-control-sm" placeholder="Type custom issuing country...">
+                </div>
               </div>
               <div class="col-md-6">
                 <label class="form-label small fw-semibold text-secondary">Issue Date</label>
@@ -244,5 +277,32 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </div>
   </form>
 </div>
+
+<script>
+function toggleManualInput(manualBoxId, selectId) {
+  const box = document.getElementById(manualBoxId);
+  const sel = document.getElementById(selectId);
+  if (!box) return;
+  if (box.classList.contains('d-none')) {
+    box.classList.remove('d-none');
+    const input = box.querySelector('input');
+    if (input) input.focus();
+  } else {
+    box.classList.add('d-none');
+    const input = box.querySelector('input');
+    if (input) input.value = '';
+  }
+}
+
+function checkManualSelect(sel, manualBoxId) {
+  const box = document.getElementById(manualBoxId);
+  if (!box) return;
+  if (sel.value === '__custom__') {
+    box.classList.remove('d-none');
+    const input = box.querySelector('input');
+    if (input) input.focus();
+  }
+}
+</script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

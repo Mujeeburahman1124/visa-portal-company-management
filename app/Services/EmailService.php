@@ -67,7 +67,20 @@ class EmailService
 
         // 4. Wrap with Responsive HTML Email Layout
         $fullHtml = self::wrapEmailTemplate($interpolatedSubject, $interpolatedContent, $data);
+        
+        // Defensive enforcement: replace any localhost or 127.0.0.1 references with the live production domain
+        $liveDomain = 'https://mshorizonuae.com';
+        $fullHtml = str_replace(
+            ['http://localhost:8000', 'https://localhost:8000', 'http://localhost', 'https://localhost', 'http://127.0.0.1:8000', 'http://127.0.0.1'],
+            $liveDomain,
+            $fullHtml
+        );
         $plainText = strip_tags(str_replace(['<br>', '<br/>', '</p>', '</div>'], "\n", $interpolatedContent));
+        $plainText = str_replace(
+            ['http://localhost:8000', 'https://localhost:8000', 'http://localhost', 'https://localhost', 'http://127.0.0.1:8000', 'http://127.0.0.1'],
+            $liveDomain,
+            $plainText
+        );
 
         // 5. Check Environment & Provider
         $provider = strtolower((string)Env::get('EMAIL_PROVIDER', 'smtp'));
@@ -376,6 +389,9 @@ class EmailService
     public static function wrapEmailTemplate(string $title, string $contentHtml, array $data = []): string
     {
         $appUrl = rtrim((string)($data['appUrl'] ?? App::url()), '/');
+        if (empty($appUrl) || str_contains($appUrl, 'localhost') || str_contains($appUrl, '127.0.0.1')) {
+            $appUrl = 'https://mshorizonuae.com';
+        }
         $companyName = htmlspecialchars((string)($data['companyName'] ?? App::COMPANY_NAME), ENT_QUOTES, 'UTF-8');
         $companyEmail = htmlspecialchars((string)($data['companyEmail'] ?? 'mstravelu@gmail.com'), ENT_QUOTES, 'UTF-8');
         $companyPhone = htmlspecialchars((string)($data['companyPhone'] ?? '0585909349'), ENT_QUOTES, 'UTF-8');
@@ -384,7 +400,7 @@ class EmailService
 
         $emailHeaderBg = '#0f172a';
         $emailThemeColor = '#2563eb';
-        $emailLogo = $appUrl . '/assets/images/logo.png';
+        $emailLogo = 'https://mshorizonuae.com/assets/images/logo.png';
         $emailFooterText = 'MS Travel Hub Global Visa Services &bull; Enterprise Visa Operations';
 
         try {

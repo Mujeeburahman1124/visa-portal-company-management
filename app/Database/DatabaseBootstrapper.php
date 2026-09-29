@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 14;
+    private const SCHEMA_VERSION = 15;
 
     public static function init(bool $force = false): void
     {
@@ -1196,11 +1196,24 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN override_processing_days INTEGER NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN preferred_supplier_id INTEGER NULL"); } catch (\Throwable $e) {}
             // Safe ALTER TABLE migrations for SQLite application_assignments table
+            $pdo->exec("CREATE TABLE IF NOT EXISTS application_assignments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                application_id INTEGER NOT NULL,
+                staff_id INTEGER NULL,
+                assigned_to INTEGER NULL,
+                assigned_by INTEGER NULL,
+                assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                unassigned_at DATETIME NULL,
+                is_current INTEGER DEFAULT 1,
+                notes TEXT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );");
             try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN staff_id INTEGER NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN assigned_to INTEGER NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN assigned_by INTEGER NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN assigned_at DATETIME NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN unassigned_at DATETIME NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN is_current INTEGER DEFAULT 1"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE application_assignments ADD COLUMN notes TEXT NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE payments ADD COLUMN supplier_id INTEGER NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE payments ADD COLUMN wallet_transaction_id INTEGER NULL"); } catch (\Throwable $e) {}
@@ -1656,14 +1669,18 @@ class DatabaseBootstrapper
         ];
         // Insert with name, iso_code, flag_emoji, currency, region
         $countryCount = (int)$pdo->query("SELECT COUNT(*) FROM countries")->fetchColumn();
-        if ($countryCount === 0) {
+        if ($countryCount < 180) {
             $stCountry = $pdo->prepare("{$insIgnore} countries (name, iso_code, flag_emoji, currency, region) VALUES (?, ?, ?, ?, ?)");
             foreach ($worldCountries as $c) {
-                $stCountry->execute([$c[0], $c[1], $c[3], $c[5], $c[6]]);
+                try {
+                    $stCountry->execute([$c[0], $c[1], $c[3], $c[5], $c[6]]);
+                } catch (\Throwable $e) {}
             }
             $stUpdate = $pdo->prepare("UPDATE countries SET iso3_code = ?, phone_code = ?, currency = ?, region = ? WHERE iso_code = ?");
             foreach ($worldCountries as $c) {
-                $stUpdate->execute([$c[2], $c[4], $c[5], $c[6], $c[1]]);
+                try {
+                    $stUpdate->execute([$c[2], $c[4], $c[5], $c[6], $c[1]]);
+                } catch (\Throwable $e) {}
             }
         }
 

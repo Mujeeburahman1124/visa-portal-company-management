@@ -558,6 +558,20 @@ CREATE TABLE IF NOT EXISTS notification_templates (
     UNIQUE KEY uq_event_channel (event_type, channel)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS application_assignments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    application_id INT NOT NULL,
+    staff_id INT NULL,
+    assigned_to INT NULL,
+    assigned_by INT NULL,
+    assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    unassigned_at DATETIME NULL,
+    is_current TINYINT(1) DEFAULT 1,
+    notes TEXT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (application_id) REFERENCES applications(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 13. COMPATIBILITY VIEWS
 CREATE OR REPLACE VIEW applicants AS SELECT * FROM customers;
 CREATE OR REPLACE VIEW visa_applications AS SELECT * FROM applications;

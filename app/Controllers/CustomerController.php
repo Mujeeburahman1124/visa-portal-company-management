@@ -94,13 +94,28 @@ class CustomerController
         $gender = trim($_POST['gender'] ?? 'Male');
         $dob = !empty($_POST['dob']) ? $_POST['dob'] : null;
         $nationality = trim($_POST['nationality'] ?? '');
+        if ($nationality === '__custom__' || !empty(trim($_POST['custom_nationality'] ?? ''))) {
+            $customNat = trim($_POST['custom_nationality'] ?? '');
+            if (!empty($customNat)) {
+                $nationality = $customNat;
+            }
+        }
         $placeOfBirth = trim($_POST['place_of_birth'] ?? '');
         $maritalStatus = trim($_POST['marital_status'] ?? 'Single');
         $occupation = trim($_POST['occupation'] ?? '');
         $mobile = trim($_POST['mobile'] ?? '');
         $whatsapp = trim($_POST['whatsapp'] ?? $mobile);
         $email = trim($_POST['email'] ?? '');
-        $currentCountry = trim($_POST['current_country'] ?? 'United Arab Emirates');
+        $currentCountry = trim($_POST['current_country'] ?? '');
+        if ($currentCountry === '__custom__' || !empty(trim($_POST['custom_current_country'] ?? ''))) {
+            $customCurr = trim($_POST['custom_current_country'] ?? '');
+            if (!empty($customCurr)) {
+                $currentCountry = $customCurr;
+            }
+        }
+        if (empty($currentCountry)) {
+            $currentCountry = 'United Arab Emirates';
+        }
         $address = trim($_POST['address'] ?? '');
         $religion = trim($_POST['religion'] ?? '');
         $notes = trim($_POST['notes'] ?? '');
@@ -118,7 +133,16 @@ class CustomerController
 
         // Passport details
         $passportNumber = trim($_POST['passport_number'] ?? '');
-        $passportIssuingCountry = trim($_POST['passport_issuing_country'] ?? $nationality);
+        $passportIssuingCountry = trim($_POST['passport_issuing_country'] ?? '');
+        if ($passportIssuingCountry === '__custom__' || !empty(trim($_POST['custom_passport_issuing_country'] ?? ''))) {
+            $customPass = trim($_POST['custom_passport_issuing_country'] ?? '');
+            if (!empty($customPass)) {
+                $passportIssuingCountry = $customPass;
+            }
+        }
+        if (empty($passportIssuingCountry)) {
+            $passportIssuingCountry = $nationality;
+        }
         $passportIssueDate = !empty($_POST['passport_issue_date']) ? $_POST['passport_issue_date'] : null;
         $passportExpiryDate = !empty($_POST['passport_expiry_date']) ? $_POST['passport_expiry_date'] : null;
         $passportPlaceOfIssue = trim($_POST['passport_place_of_issue'] ?? '');
@@ -696,13 +720,28 @@ class CustomerController
         $gender = trim($_POST['gender'] ?? 'Male');
         $dob = !empty($_POST['dob']) ? $_POST['dob'] : null;
         $nationality = trim($_POST['nationality'] ?? '');
+        if ($nationality === '__custom__' || !empty(trim($_POST['custom_nationality'] ?? ''))) {
+            $customNat = trim($_POST['custom_nationality'] ?? '');
+            if (!empty($customNat)) {
+                $nationality = $customNat;
+            }
+        }
         $placeOfBirth = trim($_POST['place_of_birth'] ?? '');
         $maritalStatus = trim($_POST['marital_status'] ?? 'Single');
         $occupation = trim($_POST['occupation'] ?? '');
         $mobile = trim($_POST['mobile'] ?? '');
         $whatsapp = trim($_POST['whatsapp'] ?? $mobile);
         $email = trim($_POST['email'] ?? '');
-        $currentCountry = trim($_POST['current_country'] ?? 'United Arab Emirates');
+        $currentCountry = trim($_POST['current_country'] ?? '');
+        if ($currentCountry === '__custom__' || !empty(trim($_POST['custom_current_country'] ?? ''))) {
+            $customCurr = trim($_POST['custom_current_country'] ?? '');
+            if (!empty($customCurr)) {
+                $currentCountry = $customCurr;
+            }
+        }
+        if (empty($currentCountry)) {
+            $currentCountry = 'United Arab Emirates';
+        }
         $address = trim($_POST['address'] ?? '');
         $religion = trim($_POST['religion'] ?? '');
         $notes = trim($_POST['notes'] ?? '');
@@ -727,7 +766,16 @@ class CustomerController
         if (!empty($passportNumber)) {
             $passportExpiry = !empty($_POST['passport_expiry']) ? $_POST['passport_expiry'] : null;
             $passportIssue = !empty($_POST['passport_issue_date']) ? $_POST['passport_issue_date'] : null;
-            $passportCountry = trim($_POST['passport_country'] ?? $nationality);
+            $passportCountry = trim($_POST['passport_country'] ?? '');
+            if ($passportCountry === '__custom__' || !empty(trim($_POST['custom_passport_country'] ?? ''))) {
+                $customPass = trim($_POST['custom_passport_country'] ?? '');
+                if (!empty($customPass)) {
+                    $passportCountry = $customPass;
+                }
+            }
+            if (empty($passportCountry)) {
+                $passportCountry = $nationality;
+            }
 
             $existingPass = $pdo->query("SELECT id FROM customer_passports WHERE customer_id = {$id} AND is_primary = 1 LIMIT 1")->fetch();
             if ($existingPass) {

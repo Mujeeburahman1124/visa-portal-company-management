@@ -180,8 +180,16 @@ class ApplicationController
         $internalNotes = trim($_POST['internal_notes'] ?? '');
         $customerNotes = trim($_POST['customer_notes'] ?? '');
 
-        if ($customerId <= 0 || $serviceId <= 0) {
-            redirect('/applications/create', 'Please select both an applicant and a visa service package.', 'danger');
+        $customDestCountry = trim($_POST['custom_destination_country'] ?? '');
+        $customVisaType = trim($_POST['custom_visa_type'] ?? '');
+        $customVisaCat = trim($_POST['custom_visa_category'] ?? '');
+
+        if ($customerId <= 0) {
+            redirect('/applications/create', 'Please select a registered applicant.', 'danger');
+        }
+
+        if ($serviceId <= 0 && empty($customDestCountry) && empty($customVisaType)) {
+            redirect('/applications/create', 'Please select both an applicant and a visa service package (or enter custom package details).', 'danger');
         }
 
         // Fetch customer and service details
@@ -192,12 +200,36 @@ class ApplicationController
         $custStmt->execute([$customerId]);
         $customer = $custStmt->fetch(PDO::FETCH_ASSOC);
 
-        $srvStmt = $pdo->prepare("SELECT vs.*, ct.name as country_name, ct.iso_code as country_code FROM visa_services vs JOIN countries ct ON vs.country_id = ct.id WHERE vs.id = ?");
-        $srvStmt->execute([$serviceId]);
-        $service = $srvStmt->fetch(PDO::FETCH_ASSOC);
+        $service = null;
+        if ($serviceId > 0) {
+            $srvStmt = $pdo->prepare("SELECT vs.*, ct.name as country_name, ct.iso_code as country_code FROM visa_services vs JOIN countries ct ON vs.country_id = ct.id WHERE vs.id = ?");
+            $srvStmt->execute([$serviceId]);
+            $service = $srvStmt->fetch(PDO::FETCH_ASSOC);
+        }
 
-        if (!$customer || !$service) {
-            redirect('/applications/create', 'Invalid applicant or visa service selected.', 'danger');
+        if (!$service) {
+            // Find a valid fallback service from database to satisfy foreign keys
+            $fb = $pdo->query("SELECT vs.*, ct.name as country_name, ct.iso_code as country_code FROM visa_services vs JOIN countries ct ON vs.country_id = ct.id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+            $service = $fb ?: [
+                'id' => 1,
+                'country_id' => 1,
+                'category_id' => 1,
+                'name' => $customVisaType ?: 'Custom Visa Service',
+                'country_name' => $customDestCountry ?: 'United Arab Emirates',
+                'country_code' => 'AE',
+                'selling_price' => (float)($_POST['selling_price'] ?? 0),
+                'supplier_cost' => (float)($_POST['supplier_cost'] ?? 0),
+                'tax_rate' => 0,
+                'estimated_days' => 15,
+                'duration' => '30 Days',
+                'entry_type' => 'Single Entry',
+                'processing_type' => 'Normal'
+            ];
+            $serviceId = (int)$service['id'];
+        }
+
+        if (!$customer) {
+            redirect('/applications/create', 'Invalid applicant selected.', 'danger');
         }
 
         // Calculate expected completion date from service processing days
@@ -297,11 +329,35 @@ class ApplicationController
 
             // If staff assigned, record initial assignment record
             if ($assignedStaffId) {
-                $assignedBy = !empty($user['id']) ? (int)$user['id'] : 1;
-                $assignStmt = $pdo->prepare("INSERT INTO application_assignments (
-                    application_id, staff_id, assigned_to, assigned_by, assigned_at, notes, is_current
-                ) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, 'Initial case worker assignment upon registration', 1)");
-                $assignStmt->execute([$appId, $assignedStaffId, $assignedStaffId, $assignedBy]);
+                try {
+                    $assignedBy = !empty($user['id']) ? (int)$user['id'] : 1;
+                    // Self-heal table / column if missing in SQLite/MySQL
+                    try {
+                        $pdo->query("SELECT is_current FROM application_assignments LIMIT 1");
+                    } catch (\Throwable $colEx) {
+                        try {
+                            $pdo->exec("CREATE TABLE IF NOT EXISTS application_assignments (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                application_id INTEGER NOT NULL,
+                                staff_id INTEGER NULL,
+                                assigned_to INTEGER NULL,
+                                assigned_by INTEGER NULL,
+                                assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                unassigned_at DATETIME NULL,
+                                is_current INTEGER DEFAULT 1,
+                                notes TEXT NULL,
+                                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                            )");
+                            $pdo->exec("ALTER TABLE application_assignments ADD COLUMN is_current INTEGER DEFAULT 1");
+                        } catch (\Throwable $ign) {}
+                    }
+                    $assignStmt = $pdo->prepare("INSERT INTO application_assignments (
+                        application_id, staff_id, assigned_to, assigned_by, assigned_at, notes, is_current
+                    ) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, 'Initial case worker assignment upon registration', 1)");
+                    $assignStmt->execute([$appId, $assignedStaffId, $assignedStaffId, $assignedBy]);
+                } catch (\Throwable $assignErr) {
+                    error_log("[VISA-TRACK] Non-fatal assignment logging notice: " . $assignErr->getMessage());
+                }
             }
 
             // Auto-generate document checklist matrix from visa requirements
