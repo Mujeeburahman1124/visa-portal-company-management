@@ -12,6 +12,17 @@ class SeedData
     {
         $ins = ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql') ? 'INSERT IGNORE INTO' : 'INSERT OR IGNORE INTO';
 
+        // Disable foreign key checks during seeding to allow safe multi-table provisioning
+        if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql') {
+            try { $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;"); } catch (\Throwable $e) {}
+        }
+
+        // 0. Companies (Required as root parent for branches in MySQL)
+        try {
+            $pdo->exec("{$ins} companies (id, name, code, email, phone, address, status) VALUES 
+                (1, 'MS Travel Hub', 'MSTH-01', 'operations@mstravelhub.com', '+971 4 388 9900', 'Business Bay, Dubai, UAE', 'active')");
+        } catch (\Throwable $e) {}
+
         // 1. Roles
         $roles = [
             ['Super Admin', 'super-admin', 'Full system control and unrestricted access'],
@@ -653,6 +664,10 @@ class SeedData
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         foreach ($samplePayments as $sp) {
             try { $stmtPay->execute($sp); } catch (\Throwable $e) {}
+        }
+
+        if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql') {
+            try { $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;"); } catch (\Throwable $e) {}
         }
     }
 }
