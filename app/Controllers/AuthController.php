@@ -27,16 +27,32 @@ class AuthController
             redirect('/auth/login', 'Please enter both email and password.', 'danger');
         }
 
+        $normalizedEmail = strtolower($email);
+        $searchEmail = $normalizedEmail;
+        if (in_array($normalizedEmail, ['admin@system.com', 'admin@admin.com'], true)) {
+            $searchEmail = 'admin@visatrack.com';
+        }
+
         try {
             $pdo = Database::getConnection();
             $stmt = $pdo->prepare("SELECT u.*, r.name as role_name, r.slug as role_slug, b.name as branch_name 
                 FROM users u 
                 LEFT JOIN roles r ON u.role_id = r.id 
                 LEFT JOIN branches b ON u.branch_id = b.id 
-                WHERE LOWER(u.email) = LOWER(?) OR (LOWER(?) IN ('admin@system.com', 'admin@admin.com') AND (r.slug = 'super-admin' OR u.role_id = 1))
+                WHERE LOWER(u.email) = ?
                 ORDER BY u.id ASC LIMIT 1");
-            $stmt->execute([$email, $email]);
+            $stmt->execute([$searchEmail]);
             $user = $stmt->fetch();
+
+            if (!$user && in_array($normalizedEmail, ['admin@system.com', 'admin@admin.com'], true)) {
+                $userStmt = $pdo->query("SELECT u.*, r.name as role_name, r.slug as role_slug, b.name as branch_name 
+                    FROM users u 
+                    LEFT JOIN roles r ON u.role_id = r.id 
+                    LEFT JOIN branches b ON u.branch_id = b.id 
+                    WHERE u.role_id = 1 
+                    ORDER BY u.id ASC LIMIT 1");
+                $user = $userStmt ? $userStmt->fetch() : false;
+            }
 
             if ($user) {
                 // Check if account is active
