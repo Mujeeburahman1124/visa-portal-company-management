@@ -305,13 +305,27 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             </div>
             <div class="row g-2 mb-2">
               <div class="col-6">
-                <label class="form-label small text-muted mb-1" style="font-size: 0.75rem;">Discount ($)</label>
-                <input type="number" step="0.01" name="discount" id="inputDiscount" class="form-control form-control-sm" value="0.00" oninput="updateServiceInfo()">
+                <label class="form-label small text-muted mb-1 d-flex justify-content-between" style="font-size: 0.72rem;">
+                  <span>Discount (%)</span>
+                  <span class="text-primary fw-semibold" id="appDiscountPctTag">0%</span>
+                </label>
+                <div class="input-group input-group-sm">
+                  <input type="number" step="0.1" min="0" max="100" id="inputDiscountPercent" class="form-control form-control-sm text-end" value="0" placeholder="0" oninput="onAppDiscountPercentChange()">
+                  <span class="input-group-text">%</span>
+                </div>
               </div>
               <div class="col-6">
-                <label class="form-label small text-muted mb-1" style="font-size: 0.75rem;">Other Expenses ($)</label>
-                <input type="number" step="0.01" name="other_expenses" id="inputOtherExpenses" class="form-control form-control-sm" value="0.00">
+                <label class="form-label small text-muted mb-1" style="font-size: 0.72rem;">Discount ($)</label>
+                <input type="number" step="0.01" min="0" name="discount" id="inputDiscount" class="form-control form-control-sm text-danger fw-semibold" value="0.00" oninput="onAppDiscountAmountChange()">
               </div>
+            </div>
+            <div class="d-flex flex-wrap gap-1 mb-2">
+              <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" onclick="applyAppQuickDiscount(0)">0%</button>
+              <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" onclick="applyAppQuickDiscount(5)">5%</button>
+              <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" onclick="applyAppQuickDiscount(10)">10%</button>
+              <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" onclick="applyAppQuickDiscount(15)">15%</button>
+              <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" onclick="applyAppQuickDiscount(20)">20%</button>
+              <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" onclick="applyAppQuickDiscount(25)">25%</button>
             </div>
             <div class="d-flex justify-content-between small mb-2">
               <span class="text-muted">Supplier / Embassy Cost:</span>
@@ -322,9 +336,17 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               <span class="text-secondary" id="dispTaxAmount">$0.00</span>
             </div>
             <hr class="my-2">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
               <span class="fw-bold text-dark">Total Invoice Amount:</span>
               <span class="fw-bold text-primary fs-5" id="dispTotalAmount">$0.00</span>
+            </div>
+            <!-- Live Formula Breakdown Banner -->
+            <div class="p-2 mb-3 rounded bg-light border small" style="font-size: 0.73rem;">
+              <div class="text-muted mb-1" id="appFormulaText">Base: $0.00 − Discount (0% = $0.00) + Tax $0.00 = $0.00</div>
+              <div class="d-flex justify-content-between align-items-center pt-1 border-top">
+                <span class="text-muted">Converted in AED:</span>
+                <span class="fw-bold text-success" id="dispConvertedAED">0.00 AED (@ 3.6725)</span>
+              </div>
             </div>
 
             <div class="p-3 bg-light rounded border small">
@@ -527,6 +549,8 @@ function updateServiceInfo() {
     document.getElementById('dispTotalAmount').innerText = '$0.00';
     document.getElementById('dispEstimatedDays').innerText = '-- Days';
     document.getElementById('dispExpectedDate').innerText = '--';
+    if (document.getElementById('appFormulaText')) document.getElementById('appFormulaText').innerText = 'Base: $0.00 − Discount (0% = $0.00) + Tax $0.00 = $0.00';
+    if (document.getElementById('dispConvertedAED')) document.getElementById('dispConvertedAED').innerText = '0.00 AED (@ 3.6725)';
     return;
   }
 
@@ -541,6 +565,11 @@ function updateServiceInfo() {
   const tax = netPrice * (taxRate / 100);
   const total = netPrice + tax;
 
+  const pct = price > 0 ? ((discount / price) * 100) : 0;
+  if (document.getElementById('appDiscountPctTag')) {
+    document.getElementById('appDiscountPctTag').innerText = pct.toFixed(1) + '%';
+  }
+
   document.getElementById('dispSellingPrice').innerText = '$' + price.toFixed(2);
   document.getElementById('dispSupplierCost').innerText = '$' + cost.toFixed(2);
   document.getElementById('dispTaxAmount').innerText = '$' + tax.toFixed(2);
@@ -550,6 +579,53 @@ function updateServiceInfo() {
   const expDate = new Date();
   expDate.setDate(expDate.getDate() + days);
   document.getElementById('dispExpectedDate').innerText = expDate.toISOString().split('T')[0];
+
+  if (document.getElementById('appFormulaText')) {
+    document.getElementById('appFormulaText').innerText = `Base: $${price.toFixed(2)} − Discount (${pct.toFixed(1)}% = $${discount.toFixed(2)}) + Tax $${tax.toFixed(2)} = $${total.toFixed(2)}`;
+  }
+  if (document.getElementById('dispConvertedAED')) {
+    const aed = (total * 3.6725).toFixed(2);
+    document.getElementById('dispConvertedAED').innerText = `${aed} AED (@ 3.6725)`;
+  }
+}
+
+function onAppDiscountPercentChange() {
+  const sel = document.getElementById('serviceSelect');
+  const opt = sel ? sel.options[sel.selectedIndex] : null;
+  const price = opt ? parseFloat(opt.dataset.price || 0) : 0;
+  let pct = parseFloat(document.getElementById('inputDiscountPercent').value || 0);
+  if (pct < 0) pct = 0;
+  if (pct > 100) pct = 100;
+  document.getElementById('inputDiscountPercent').value = pct;
+
+  const discAmt = price * (pct / 100);
+  document.getElementById('inputDiscount').value = discAmt.toFixed(2);
+  if (document.getElementById('appDiscountPctTag')) {
+    document.getElementById('appDiscountPctTag').innerText = pct.toFixed(1) + '%';
+  }
+  updateServiceInfo();
+}
+
+function onAppDiscountAmountChange() {
+  const sel = document.getElementById('serviceSelect');
+  const opt = sel ? sel.options[sel.selectedIndex] : null;
+  const price = opt ? parseFloat(opt.dataset.price || 0) : 0;
+  let discAmt = parseFloat(document.getElementById('inputDiscount').value || 0);
+  if (discAmt < 0) discAmt = 0;
+  if (price > 0 && discAmt > price) discAmt = price;
+  document.getElementById('inputDiscount').value = discAmt.toFixed(2);
+
+  const pct = price > 0 ? ((discAmt / price) * 100) : 0;
+  document.getElementById('inputDiscountPercent').value = pct.toFixed(1);
+  if (document.getElementById('appDiscountPctTag')) {
+    document.getElementById('appDiscountPctTag').innerText = pct.toFixed(1) + '%';
+  }
+  updateServiceInfo();
+}
+
+function applyAppQuickDiscount(pct) {
+  document.getElementById('inputDiscountPercent').value = pct;
+  onAppDiscountPercentChange();
 }
 
 function checkDuplicateApplication() {

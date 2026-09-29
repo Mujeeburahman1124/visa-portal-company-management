@@ -839,9 +839,9 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
                   <div class="row g-2 mb-2">
                     <div class="col-6 col-lg-3">
                       <label class="form-label small fw-semibold">Received Currency</label>
-                      <select name="from_currency" id="appPayFromCur" class="form-select form-select-sm fw-bold" onchange="calcAppPaymentConverter()">
+                      <select name="from_currency" id="appPayFromCur" class="form-select form-select-sm fw-bold" onchange="onAppPayCurrenciesChanged()">
                         <?php foreach (['USD', 'AED', 'LKR', 'EUR', 'GBP', 'SAR', 'QAR', 'INR', 'CAD', 'AUD'] as $c): ?>
-                          <option value="<?= $c ?>" <?= $c === 'USD' ? 'selected' : '' ?>><?= $c ?></option>
+                          <option value="<?= $c ?>" <?= $c === ($app['currency'] ?? 'USD') ? 'selected' : '' ?>><?= $c ?></option>
                         <?php endforeach; ?>
                       </select>
                     </div>
@@ -851,24 +851,30 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
                              value="<?= number_format((float)($app['balance_amount'] ?? 0), 2, '.', '') ?>" placeholder="0.00" required oninput="calcAppPaymentConverter()">
                     </div>
                     <div class="col-6 col-lg-3">
-                      <label class="form-label small fw-semibold">Exchange Rate</label>
-                      <input type="number" step="0.000001" name="exchange_rate" id="appPayRate" class="form-control form-control-sm text-end fw-bold" value="1.000000" oninput="calcAppPaymentConverter()">
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label small fw-semibold mb-0">Exchange Rate</label>
+                        <button type="button" class="btn btn-link btn-xs p-0 text-decoration-none" id="appPayInvertRateBtn" onclick="invertAppPayRate()" title="Invert rate (1 / rate)" style="font-size: 0.68rem;">
+                          <i class="fa-solid fa-arrows-rotate me-0.5"></i> Invert
+                        </button>
+                      </div>
+                      <input type="number" step="0.000001" name="exchange_rate" id="appPayRate" class="form-control form-control-sm text-end fw-bold" value="1.000000" oninput="calcAppPaymentConverter(true)">
                     </div>
                     <div class="col-6 col-lg-3">
-                      <label class="form-label small fw-semibold">Settlement Currency</label>
-                      <select name="to_currency" id="appPayToCur" class="form-select form-select-sm fw-bold" onchange="calcAppPaymentConverter()">
-                        <option value="USD" selected>USD ($)</option>
-                        <option value="AED">AED</option>
-                        <option value="LKR">LKR</option>
-                        <option value="EUR">EUR (€)</option>
-                        <option value="GBP">GBP (£)</option>
+                      <label class="form-label small fw-semibold">Settlement Currency (Invoice)</label>
+                      <select name="to_currency" id="appPayToCur" class="form-select form-select-sm fw-bold" onchange="onAppPayCurrenciesChanged()">
+                        <?php foreach (['USD', 'AED', 'LKR', 'EUR', 'GBP', 'SAR', 'QAR', 'INR', 'CAD', 'AUD'] as $c): ?>
+                          <option value="<?= $c ?>" <?= $c === ($app['currency'] ?? 'USD') ? 'selected' : '' ?>><?= $c ?><?= $c === 'USD' ? ' ($)' : ($c === 'EUR' ? ' (€)' : ($c === 'GBP' ? ' (£)' : '')) ?></option>
+                        <?php endforeach; ?>
                       </select>
                     </div>
                   </div>
                   <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-                    <span class="small fw-semibold text-muted">Settlement Applied to Invoice:</span>
                     <div>
-                      <span class="h6 fw-bold text-success mb-0" id="appPayDisplay">$<?= number_format((float)($app['balance_amount'] ?? 0), 2) ?> USD</span>
+                      <span class="small fw-semibold text-muted">Settlement Applied to Invoice:</span>
+                      <div class="small text-muted" id="appPayFormulaText" style="font-size: 0.73rem;">1:1 Same Currency</div>
+                    </div>
+                    <div class="text-end">
+                      <span class="h6 fw-bold text-success mb-0 fs-5" id="appPayDisplay">$<?= number_format((float)($app['balance_amount'] ?? 0), 2) ?> <?= e($app['currency'] ?? 'USD') ?></span>
                       <input type="hidden" name="amount" id="appPayAmountHidden" value="<?= number_format((float)($app['balance_amount'] ?? 0), 2, '.', '') ?>">
                       <input type="hidden" name="converted_amount" id="appPayConvertedHidden" value="<?= number_format((float)($app['balance_amount'] ?? 0), 2, '.', '') ?>">
                     </div>
@@ -915,15 +921,80 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
                 </div>
               </form>
               <script>
-              function calcAppPaymentConverter() {
+              const APP_CURRENCY_BENCHMARK = {
+                'USD': 1.0,
+                'AED': 3.6725,
+                'LKR': 305.00,
+                'EUR': 0.9200,
+                'GBP': 0.7900,
+                'SAR': 3.7500,
+                'QAR': 3.6400,
+                'INR': 83.5000,
+                'CAD': 1.3600,
+                'AUD': 1.5200
+              };
+
+              function onAppPayCurrenciesChanged() {
+                const from = document.getElementById('appPayFromCur').value || 'USD';
+                const to = document.getElementById('appPayToCur').value || 'USD';
+                const rateInput = document.getElementById('appPayRate');
+
+                if (from === to) {
+                  rateInput.value = '1.000000';
+                  rateInput.readOnly = true;
+                  rateInput.classList.add('bg-light');
+                } else {
+                  rateInput.readOnly = false;
+                  rateInput.classList.remove('bg-light');
+                  const fromBench = APP_CURRENCY_BENCHMARK[from] || 1.0;
+                  const toBench = APP_CURRENCY_BENCHMARK[to] || 1.0;
+                  const crossRate = toBench / fromBench;
+                  rateInput.value = crossRate.toFixed(6);
+                }
+                calcAppPaymentConverter(false);
+              }
+
+              function invertAppPayRate() {
+                const rateInput = document.getElementById('appPayRate');
+                const currRate = parseFloat(rateInput.value) || 1;
+                if (currRate > 0) {
+                  rateInput.value = (1 / currRate).toFixed(6);
+                  calcAppPaymentConverter(true);
+                }
+              }
+
+              function calcAppPaymentConverter(isManualRate) {
                 const orig = parseFloat(document.getElementById('appPayOrigAmount').value) || 0;
-                const rate = parseFloat(document.getElementById('appPayRate').value) || 1;
-                const cur = document.getElementById('appPayToCur').value || 'USD';
+                const from = document.getElementById('appPayFromCur').value || 'USD';
+                const to = document.getElementById('appPayToCur').value || 'USD';
+                let rate = parseFloat(document.getElementById('appPayRate').value);
+
+                if (from === to) {
+                  rate = 1.0;
+                  document.getElementById('appPayRate').value = '1.000000';
+                } else if (isNaN(rate) || rate <= 0) {
+                  rate = 1.0;
+                }
+
                 const conv = (orig * rate).toFixed(2);
-                document.getElementById('appPayDisplay').innerText = (cur === 'USD' ? '$' : '') + conv + ' ' + cur;
+                const sym = to === 'USD' ? '$' : (to === 'EUR' ? '€' : (to === 'GBP' ? '£' : ''));
+                document.getElementById('appPayDisplay').innerText = sym + conv + ' ' + to;
                 document.getElementById('appPayAmountHidden').value = conv;
                 document.getElementById('appPayConvertedHidden').value = conv;
+
+                const formulaEl = document.getElementById('appPayFormulaText');
+                if (formulaEl) {
+                  if (from === to) {
+                    formulaEl.innerHTML = `<span class="badge bg-secondary-subtle text-secondary">Same Currency</span> ${orig.toFixed(2)} ${from} = <strong>${conv} ${to}</strong> (1:1)`;
+                  } else {
+                    formulaEl.innerHTML = `Calculation: <strong>${orig.toFixed(2)} ${from}</strong> × ${rate.toFixed(4)} = <strong class="text-success">${sym}${conv} ${to}</strong> applied to invoice`;
+                  }
+                }
               }
+
+              document.addEventListener('DOMContentLoaded', function () {
+                onAppPayCurrenciesChanged();
+              });
               </script>
             </div>
           </div>

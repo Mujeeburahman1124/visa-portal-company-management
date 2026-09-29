@@ -497,11 +497,21 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <div class="row g-2 align-items-center">
             <div class="col-md-2 col-6">
               <label class="form-label small text-muted mb-1" style="font-size: 0.72rem;">Selling Price ($)</label>
-              <input type="number" step="0.01" name="selling_price" id="custSellingPrice" class="form-control form-control-sm fw-bold" value="0.00" oninput="calcTotalCustomerPrice()">
+              <input type="number" step="0.01" name="selling_price" id="custSellingPrice" class="form-control form-control-sm fw-bold" value="0.00" oninput="onCustSellingPriceChange()">
+            </div>
+            <div class="col-md-2 col-6">
+              <label class="form-label small text-muted mb-1 d-flex justify-content-between" style="font-size: 0.72rem;">
+                <span>Discount (%)</span>
+                <span class="text-primary fw-semibold" id="custDiscountPctTag">0%</span>
+              </label>
+              <div class="input-group input-group-sm">
+                <input type="number" step="0.1" min="0" max="100" id="custDiscountPercent" class="form-control form-control-sm text-end" value="0" placeholder="0" oninput="onCustDiscountPercentChange()">
+                <span class="input-group-text">%</span>
+              </div>
             </div>
             <div class="col-md-2 col-6">
               <label class="form-label small text-muted mb-1" style="font-size: 0.72rem;">Discount ($)</label>
-              <input type="number" step="0.01" name="discount" id="custDiscount" class="form-control form-control-sm" value="0.00" oninput="calcTotalCustomerPrice()">
+              <input type="number" step="0.01" min="0" name="discount" id="custDiscount" class="form-control form-control-sm text-danger fw-semibold" value="0.00" oninput="onCustDiscountAmountChange()">
             </div>
             <div class="col-md-2 col-6">
               <label class="form-label small text-muted mb-1" style="font-size: 0.72rem;">Supplier Cost ($)</label>
@@ -512,15 +522,68 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               <input type="number" step="0.01" name="tax_amount" id="custTaxAmount" class="form-control form-control-sm" value="0.00" oninput="calcTotalCustomerPrice()">
             </div>
             <div class="col-md-2 col-6">
-              <label class="form-label small text-muted mb-1" style="font-size: 0.72rem;">Exchange Rate</label>
-              <input type="number" step="0.000001" name="exchange_rate" id="custExchangeRate" class="form-control form-control-sm" value="1.000000" placeholder="e.g. 0.012" oninput="calcTotalCustomerPrice()">
-            </div>
-            <div class="col-md-2 col-6">
               <label class="form-label small fw-bold text-dark mb-1 d-flex justify-content-between" style="font-size: 0.72rem;">
                 <span>Total Invoice ($)</span>
                 <a href="javascript:void(0)" onclick="resetAutoTotal()" class="text-decoration-none text-muted" title="Recalculate auto total"><i class="fa-solid fa-calculator"></i></a>
               </label>
               <input type="number" step="0.01" name="total_amount" id="custTotalAmountInput" class="form-control form-control-sm fw-bold text-primary border-primary" value="0.00" oninput="markManualTotal()">
+            </div>
+          </div>
+
+          <!-- Currency Conversion & Detailed Calculation Breakdown Banner -->
+          <div class="mt-2.5 pt-2 border-top">
+            <div class="row g-2 align-items-center">
+              <div class="col-md-3 col-6">
+                <label class="form-label small text-muted mb-1" style="font-size: 0.72rem;">Convert To Currency</label>
+                <select id="custTargetCurrency" class="form-select form-select-sm fw-semibold" onchange="onCustTargetCurrencyChange()">
+                  <option value="AED" selected>AED (UAE Dirham)</option>
+                  <option value="USD">USD (US Dollar)</option>
+                  <option value="LKR">LKR (Sri Lankan Rupee)</option>
+                  <option value="EUR">EUR (Euro)</option>
+                  <option value="GBP">GBP (British Pound)</option>
+                  <option value="SAR">SAR (Saudi Riyal)</option>
+                  <option value="QAR">QAR (Qatari Riyal)</option>
+                  <option value="INR">INR (Indian Rupee)</option>
+                  <option value="CAD">CAD (Canadian Dollar)</option>
+                  <option value="AUD">AUD (Australian Dollar)</option>
+                </select>
+              </div>
+              <div class="col-md-3 col-6">
+                <label class="form-label small text-muted mb-1 d-flex justify-content-between" style="font-size: 0.72rem;">
+                  <span>Exchange Rate</span>
+                  <span class="text-muted" id="custExchangeRateLabel">1 USD = 3.6725</span>
+                </label>
+                <input type="number" step="0.000001" name="exchange_rate" id="custExchangeRate" class="form-control form-control-sm fw-semibold text-end" value="3.672500" oninput="onCustCustomRateInput()">
+              </div>
+              <div class="col-md-6 col-12">
+                <label class="form-label small text-muted mb-1" style="font-size: 0.72rem;">Converted Total in Local Currency</label>
+                <div class="p-1 px-2.5 rounded bg-white border d-flex align-items-center justify-content-between" style="min-height: 31px;">
+                  <span class="small text-muted" id="custConversionFormula">$0.00 × 3.6725</span>
+                  <span class="fw-bold text-success fs-6" id="custConvertedTotal">0.00 AED</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Clear Transparent Formula Breakdown -->
+            <div class="mt-2 p-2 rounded bg-white border border-light-subtle d-flex flex-wrap align-items-center justify-content-between gap-2" style="font-size: 0.76rem;">
+              <div class="d-flex align-items-center gap-1.5 text-muted flex-wrap">
+                <i class="fa-solid fa-calculator text-primary"></i>
+                <span class="fw-semibold text-dark">Clear Calculation:</span>
+                <span>Selling Price (<strong id="lblCustBasePrice">$0.00</strong>)</span>
+                <span>&minus; Discount <span class="badge bg-danger-subtle text-danger" id="lblCustDiscountBadge">0% = $0.00</span></span>
+                <span>+ Tax (<strong id="lblCustTaxAmount">$0.00</strong>)</span>
+                <span>= <strong class="text-primary fs-6" id="lblCustNetTotal">$0.00</strong></span>
+              </div>
+              <div class="text-muted d-flex align-items-center gap-1">
+                <span class="me-1">Quick Discount:</span>
+                <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" onclick="applyCustQuickDiscount(0)">0%</button>
+                <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" onclick="applyCustQuickDiscount(5)">5%</button>
+                <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" onclick="applyCustQuickDiscount(10)">10%</button>
+                <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" onclick="applyCustQuickDiscount(15)">15%</button>
+                <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" onclick="applyCustQuickDiscount(20)">20%</button>
+                <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" onclick="applyCustQuickDiscount(25)">25%</button>
+                <button type="button" class="btn btn-outline-secondary btn-xs py-0 px-1" onclick="applyCustQuickDiscount(50)">50%</button>
+              </div>
             </div>
           </div>
         </div>
@@ -705,13 +768,96 @@ function updateServiceInfo() {
 
 let isManualTotalOverridden = false;
 
+const CUST_CURRENCY_RATES = {
+  'USD': 1.0,
+  'AED': 3.6725,
+  'LKR': 305.00,
+  'EUR': 0.9200,
+  'GBP': 0.7900,
+  'SAR': 3.7500,
+  'QAR': 3.6400,
+  'INR': 83.5000,
+  'CAD': 1.3600,
+  'AUD': 1.5200
+};
+
 function markManualTotal() {
   isManualTotalOverridden = true;
+  updateCustomerConversion();
 }
 
 function resetAutoTotal() {
   isManualTotalOverridden = false;
   calcTotalCustomerPrice();
+}
+
+function onCustSellingPriceChange() {
+  const pct = parseFloat(document.getElementById('custDiscountPercent').value || 0);
+  if (pct > 0) {
+    const price = parseFloat(document.getElementById('custSellingPrice').value || 0);
+    const disc = price * (pct / 100);
+    document.getElementById('custDiscount').value = disc.toFixed(2);
+  }
+  calcTotalCustomerPrice();
+}
+
+function onCustDiscountPercentChange() {
+  const price = parseFloat(document.getElementById('custSellingPrice').value || 0);
+  let pct = parseFloat(document.getElementById('custDiscountPercent').value || 0);
+  if (pct < 0) pct = 0;
+  if (pct > 100) pct = 100;
+  document.getElementById('custDiscountPercent').value = pct;
+  
+  const discAmt = price * (pct / 100);
+  document.getElementById('custDiscount').value = discAmt.toFixed(2);
+  document.getElementById('custDiscountPctTag').innerText = pct.toFixed(1) + '%';
+  calcTotalCustomerPrice();
+}
+
+function onCustDiscountAmountChange() {
+  const price = parseFloat(document.getElementById('custSellingPrice').value || 0);
+  let discAmt = parseFloat(document.getElementById('custDiscount').value || 0);
+  if (discAmt < 0) discAmt = 0;
+  if (price > 0 && discAmt > price) discAmt = price;
+  document.getElementById('custDiscount').value = discAmt.toFixed(2);
+  
+  const pct = price > 0 ? ((discAmt / price) * 100) : 0;
+  document.getElementById('custDiscountPercent').value = pct.toFixed(1);
+  document.getElementById('custDiscountPctTag').innerText = pct.toFixed(1) + '%';
+  calcTotalCustomerPrice();
+}
+
+function applyCustQuickDiscount(pct) {
+  document.getElementById('custDiscountPercent').value = pct;
+  onCustDiscountPercentChange();
+}
+
+function onCustTargetCurrencyChange() {
+  const cur = document.getElementById('custTargetCurrency').value || 'AED';
+  const rate = CUST_CURRENCY_RATES[cur] || 1.0;
+  document.getElementById('custExchangeRate').value = rate.toFixed(6);
+  document.getElementById('custExchangeRateLabel').innerText = `1 USD = ${rate}`;
+  updateCustomerConversion();
+}
+
+function onCustCustomRateInput() {
+  const cur = document.getElementById('custTargetCurrency').value || 'AED';
+  const rate = parseFloat(document.getElementById('custExchangeRate').value || 1);
+  document.getElementById('custExchangeRateLabel').innerText = `1 USD = ${rate}`;
+  updateCustomerConversion();
+}
+
+function updateCustomerConversion() {
+  const totalInput = document.getElementById('custTotalAmountInput');
+  const total = parseFloat(totalInput ? totalInput.value : 0) || 0;
+  const cur = document.getElementById('custTargetCurrency') ? document.getElementById('custTargetCurrency').value : 'AED';
+  const rate = parseFloat(document.getElementById('custExchangeRate') ? document.getElementById('custExchangeRate').value : 1) || 1;
+  const converted = (total * rate).toFixed(2);
+
+  const formulaEl = document.getElementById('custConversionFormula');
+  const convertedEl = document.getElementById('custConvertedTotal');
+  if (formulaEl) formulaEl.innerText = `$${total.toFixed(2)} USD × ${rate.toFixed(4)}`;
+  if (convertedEl) convertedEl.innerText = `${converted} ${cur}`;
 }
 
 function calcTotalCustomerPrice() {
@@ -725,6 +871,15 @@ function calcTotalCustomerPrice() {
   if (totalInput && !isManualTotalOverridden) {
     totalInput.value = autoTotal.toFixed(2);
   }
+
+  // Update clear formula breakdown tags
+  const pct = price > 0 ? ((discount / price) * 100) : 0;
+  if (document.getElementById('lblCustBasePrice')) document.getElementById('lblCustBasePrice').innerText = '$' + price.toFixed(2);
+  if (document.getElementById('lblCustDiscountBadge')) document.getElementById('lblCustDiscountBadge').innerText = `${pct.toFixed(1)}% = $${discount.toFixed(2)}`;
+  if (document.getElementById('lblCustTaxAmount')) document.getElementById('lblCustTaxAmount').innerText = '$' + tax.toFixed(2);
+  if (document.getElementById('lblCustNetTotal')) document.getElementById('lblCustNetTotal').innerText = '$' + (totalInput ? parseFloat(totalInput.value || 0).toFixed(2) : autoTotal.toFixed(2));
+
+  updateCustomerConversion();
 }
 
 function toggleCustPaymentBox() {

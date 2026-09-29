@@ -200,15 +200,22 @@ class PaymentController
         $fromCurrency = strtoupper(trim($_POST['from_currency'] ?? 'USD'));
         $toCurrency = strtoupper(trim($_POST['to_currency'] ?? 'USD'));
         $exchangeRate = (float)($_POST['exchange_rate'] ?? 1.000000);
-        if ($exchangeRate <= 0) {
-            $exchangeRate = 1.000000;
-        }
         $originalAmount = (float)($_POST['original_amount'] ?? $amount);
         $convertedAmount = (float)($_POST['converted_amount'] ?? $amount);
 
-        // If converted amount provided and differs, base payment amount is the converted amount
-        if ($convertedAmount > 0 && abs($convertedAmount - $amount) > 0.001) {
-            $amount = $convertedAmount;
+        // If currencies are identical, strictly enforce 1:1 conversion to prevent erroneous multiplication
+        if ($fromCurrency === $toCurrency) {
+            $exchangeRate = 1.000000;
+            $convertedAmount = $originalAmount;
+            $amount = $originalAmount;
+        } else {
+            if ($exchangeRate <= 0) {
+                $exchangeRate = 1.000000;
+            }
+            // If converted amount provided and differs, base payment amount is the converted amount
+            if ($convertedAmount > 0 && abs($convertedAmount - $amount) > 0.001) {
+                $amount = $convertedAmount;
+            }
         }
 
         if ($appId <= 0 || $amount <= 0) {
@@ -586,8 +593,12 @@ class PaymentController
 
         $wallet = \App\Services\WalletService::getOrCreateWallet($customerId);
         $walletCurrency = $wallet['currency'] ?: 'USD';
-
-        $finalCreditAmount = $exchangeRate > 0 && $convertedAmount > 0 ? $convertedAmount : $amount;
+        if ($fromCurrency === $walletCurrency) {
+            $exchangeRate = 1.000000;
+            $finalCreditAmount = $amount;
+        } else {
+            $finalCreditAmount = $exchangeRate > 0 && $convertedAmount > 0 ? $convertedAmount : $amount;
+        }
 
         try {
             $desc = "Office Wallet Deposit via {$paymentMethod}" . ($txnRef ? " (Ref: {$txnRef})" : '') . ($notes ? " - {$notes}" : '');
