@@ -300,7 +300,7 @@ $flash = get_flash();
           <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.68rem;">Default Password: password</span>
         </div>
         <div class="d-flex flex-wrap gap-1.5">
-          <button type="button" class="btn btn-outline-primary btn-sm py-1 px-2 fw-semibold" style="font-size: 0.73rem;" onclick="fillCreds('admin@visatrack.com', 'password')">
+          <button type="button" class="btn btn-outline-primary btn-sm py-1 px-2 fw-semibold" style="font-size: 0.73rem;" onclick="fillCreds('admin@system.com', 'admin123')">
             <i class="fa-solid fa-user-shield me-1"></i> Super Admin
           </button>
           <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2 fw-semibold" style="font-size: 0.73rem;" onclick="fillCreds('manager@visatrack.com', 'password')">

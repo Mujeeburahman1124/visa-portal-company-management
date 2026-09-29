@@ -49,8 +49,11 @@ class SeedData
         $defaultPasswordHash = password_hash('password', PASSWORD_DEFAULT);
         $adminPasswordHash = password_hash('password', PASSWORD_DEFAULT);
 
+        $admin123Hash = password_hash('admin123', PASSWORD_DEFAULT);
+
         $users = [
             [1, 1, 'Tariq Al-Mansoor', 'admin@visatrack.com', $adminPasswordHash, '+971 50 111 2233', 'Director of Visa Operations', 'Management'],
+            [1, 1, 'Super Admin', 'admin@system.com', $admin123Hash, '+971 50 111 2234', 'System Administrator', 'Management'],
             [2, 1, 'Sarah Jenkins', 'manager@visatrack.com', $defaultPasswordHash, '+971 50 222 3344', 'Senior Visa Operations Manager', 'Visa Department'],
             [3, 1, 'Alexander Chen', 'branch.manager@visatrack.com', $defaultPasswordHash, '+44 7700 900123', 'London Branch Manager', 'Branch Management'],
             [4, 1, 'Fatima Al-Zaabi', 'officer@visatrack.com', $defaultPasswordHash, '+971 50 333 4455', 'Senior Visa Officer', 'Visa Department'],
