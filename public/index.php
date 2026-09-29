@@ -135,86 +135,41 @@ if (empty($uri)) {
 switch ($uri) {
     case '':
     case '/':
-        (new App\Controllers\PublicWebsiteController())->home();
-        break;
-
     case '/about':
-        (new App\Controllers\PublicWebsiteController())->about();
-        break;
+    case '/jobs':
+    case '/job':
+    case '/jobs/detail':
+    case '/jobs/apply':
+    case '/visa-enquiry':
+    case '/contact':
+    case '/faq':
+    case '/home':
+        if (isset($_SESSION['user']) || isset($_SESSION['user_id'])) {
+            header('Location: /dashboard');
+        } elseif (isset($_SESSION['customer']) || isset($_SESSION['customer_id'])) {
+            header('Location: /portal/dashboard');
+        } else {
+            header('Location: /login');
+        }
+        exit;
 
     case '/visa':
     case '/visa-services':
-        if (is_authenticated()) {
-            RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'visa-manager']);
-            (new App\Controllers\VisaPackageController())->index();
-        } else {
-            (new App\Controllers\PublicWebsiteController())->visaServices();
-        }
-        break;
-
     case '/visa-packages':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'visa-manager']);
         (new App\Controllers\VisaPackageController())->index();
         break;
 
-    case '/visa-service':
-    case '/visa-services/detail':
-        (new App\Controllers\PublicWebsiteController())->visaServiceDetail();
-        break;
-
-    case '/jobs':
-        (new App\Controllers\PublicWebsiteController())->jobs();
-        break;
-
-    case '/job':
-    case '/jobs/detail':
-        (new App\Controllers\PublicWebsiteController())->jobDetail();
-        break;
-
-    case '/jobs/apply':
-        $pubCtrl = new App\Controllers\PublicWebsiteController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $pubCtrl->submitJobApplication();
-        } else {
-            $pubCtrl->applyJob();
-        }
-        break;
-
-    case '/visa-enquiry':
-        $pubCtrl = new App\Controllers\PublicWebsiteController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $pubCtrl->submitVisaEnquiry();
-        } else {
-            $pubCtrl->visaEnquiry();
-        }
-        break;
-
-    case '/contact':
-        $pubCtrl = new App\Controllers\PublicWebsiteController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $pubCtrl->submitContact();
-        } else {
-            $pubCtrl->contact();
-        }
-        break;
-
-    case '/faq':
-        (new App\Controllers\PublicWebsiteController())->faq();
-        break;
-
     case '/track':
     case '/public-track':
     case '/tracking':
-        (new App\Controllers\PublicWebsiteController())->tracking();
+        (new App\Controllers\TrackingController())->index();
         break;
 
     case '/sitemap.xml':
-        (new App\Controllers\PublicWebsiteController())->sitemap();
-        break;
-
     case '/robots.txt':
-        (new App\Controllers\PublicWebsiteController())->robots();
-        break;
+        http_response_code(404);
+        exit;
 
     // Authentication Routes
     case '/login':

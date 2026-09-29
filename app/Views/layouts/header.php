@@ -22,9 +22,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Central Theme Engine — must load BEFORE main.css -->
-  <link rel="stylesheet" href="/assets/css/theme.css?v=2.2">
+  <link rel="stylesheet" href="/assets/css/theme.css?v=2.3">
   <!-- Application CSS -->
-  <link rel="stylesheet" href="/assets/css/main.css?v=7.1.0">
+  <link rel="stylesheet" href="/assets/css/main.css?v=7.2.0">
   <!-- Flatpickr Datepicker CSS -->
   <link rel="stylesheet" href="/assets/css/flatpickr.min.css">
 

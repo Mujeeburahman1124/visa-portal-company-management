@@ -114,6 +114,7 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
   </div>
 
   <!-- Topbar Action Items -->
+  <div class="d-flex align-items-center gap-2 ms-auto topbar-actions-group">
     <!-- Quick Actions Button (Responsive: hidden on xs phones, visible on sm+) -->
     <div class="dropdown flex-shrink-0 d-none d-sm-block">
       <button class="btn btn-primary btn-sm px-2.5 px-md-3 rounded-pill d-flex align-items-center gap-1 shadow-sm topbar-quick-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Quick Action">

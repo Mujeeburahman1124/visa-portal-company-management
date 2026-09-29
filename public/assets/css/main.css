@@ -30,5 +30,5 @@
 @import url("./pages/supplier.css");
 
 /* 4. Utilities & Overrides Layer */
-@import url("./utilities/helpers.css");
-@import url("./utilities/responsive.css");
+@import url("./utilities/helpers.css?v=7.2.0");
+@import url("./utilities/responsive.css?v=7.2.0");
