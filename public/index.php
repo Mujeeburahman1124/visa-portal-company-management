@@ -135,37 +135,86 @@ if (empty($uri)) {
 switch ($uri) {
     case '':
     case '/':
+        (new App\Controllers\PublicWebsiteController())->home();
+        break;
+
     case '/about':
+        (new App\Controllers\PublicWebsiteController())->about();
+        break;
+
     case '/visa':
     case '/visa-services':
+        if (is_authenticated()) {
+            RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'visa-manager']);
+            (new App\Controllers\VisaPackageController())->index();
+        } else {
+            (new App\Controllers\PublicWebsiteController())->visaServices();
+        }
+        break;
+
+    case '/visa-packages':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'visa-manager']);
+        (new App\Controllers\VisaPackageController())->index();
+        break;
+
     case '/visa-service':
     case '/visa-services/detail':
+        (new App\Controllers\PublicWebsiteController())->visaServiceDetail();
+        break;
+
     case '/jobs':
+        (new App\Controllers\PublicWebsiteController())->jobs();
+        break;
+
     case '/job':
     case '/jobs/detail':
+        (new App\Controllers\PublicWebsiteController())->jobDetail();
+        break;
+
     case '/jobs/apply':
-    case '/visa-enquiry':
-    case '/contact':
-    case '/faq':
-        if (isset($_SESSION['user_id'])) {
-            header('Location: /dashboard');
-        } elseif (isset($_SESSION['customer_id'])) {
-            header('Location: /portal/dashboard');
+        $pubCtrl = new App\Controllers\PublicWebsiteController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $pubCtrl->submitJobApplication();
         } else {
-            header('Location: /login');
+            $pubCtrl->applyJob();
         }
-        exit;
+        break;
+
+    case '/visa-enquiry':
+        $pubCtrl = new App\Controllers\PublicWebsiteController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $pubCtrl->submitVisaEnquiry();
+        } else {
+            $pubCtrl->visaEnquiry();
+        }
+        break;
+
+    case '/contact':
+        $pubCtrl = new App\Controllers\PublicWebsiteController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $pubCtrl->submitContact();
+        } else {
+            $pubCtrl->contact();
+        }
+        break;
+
+    case '/faq':
+        (new App\Controllers\PublicWebsiteController())->faq();
+        break;
 
     case '/track':
     case '/public-track':
     case '/tracking':
-        (new App\Controllers\TrackingController())->index();
+        (new App\Controllers\PublicWebsiteController())->tracking();
         break;
 
     case '/sitemap.xml':
+        (new App\Controllers\PublicWebsiteController())->sitemap();
+        break;
+
     case '/robots.txt':
-        http_response_code(404);
-        exit;
+        (new App\Controllers\PublicWebsiteController())->robots();
+        break;
 
     // Authentication Routes
     case '/login':
@@ -938,12 +987,6 @@ switch ($uri) {
         break;
 
     // Administration: System Settings, Countries & Visa Services / Packages (Protected)
-    case '/visa-packages':
-    case '/visa-services':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'visa-manager']);
-        (new App\Controllers\VisaPackageController())->index();
-        break;
-
     case '/visa-packages/store':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
         (new App\Controllers\VisaPackageController())->store();

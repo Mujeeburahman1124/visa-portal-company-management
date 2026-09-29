@@ -5,8 +5,8 @@
     RewriteEngine On
     RewriteBase /
 
-    # Prevent direct HTTP access to sensitive non-public directories
-    RewriteRule ^(app|config|data|storage|tests|scripts|\.git) - [F,L]
+    # Prevent direct HTTP access to sensitive non-public directories (exact folder match only)
+    RewriteRule ^(app|config|data|storage|tests|scripts|\.git)(/|$) - [F,L]
 
     # Block access to environment, configuration, and database dump files
     RewriteRule \.(env|sqlite|sql|db|json|md|yml|yaml|log)$ - [F,L]

@@ -147,12 +147,17 @@ class ActionCenterController
         $staffRequests = $pdo->query($staffReqSql)->fetchAll(PDO::FETCH_ASSOC);
 
         // 10. Action Center History (Audit logs for operational activities)
-        $historySql = "SELECT al.*, al.module as entity_type, al.record_id as entity_id, u.name as user_name
-            FROM audit_logs al
-            LEFT JOIN users u ON al.user_id = u.id
-            WHERE al.module IN ('Tasks', 'Documents', 'Applications', 'StaffLeave', 'StaffRequest', 'ActionCenter')
-            ORDER BY al.created_at DESC LIMIT 100";
-        $actionHistory = $pdo->query($historySql)->fetchAll(PDO::FETCH_ASSOC);
+        $actionHistory = [];
+        try {
+            $historySql = "SELECT al.*, al.module as entity_type, al.record_id as entity_id, u.name as user_name
+                FROM activity_logs al
+                LEFT JOIN users u ON al.user_id = u.id
+                WHERE al.module IN ('Tasks', 'Documents', 'Applications', 'StaffLeave', 'StaffRequest', 'ActionCenter')
+                ORDER BY al.created_at DESC LIMIT 100";
+            $actionHistory = $pdo->query($historySql)->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            $actionHistory = [];
+        }
 
         // Supporting data for modals
         $staffList = $pdo->query("SELECT u.id, u.name, COALESCE(r.name, '') as role FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.is_active = 1 ORDER BY u.name ASC")->fetchAll(PDO::FETCH_ASSOC);
