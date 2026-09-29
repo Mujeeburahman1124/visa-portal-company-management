@@ -94,12 +94,17 @@ class EmailService
             try {
                 $result = self::sendSmtp($to, $recipientName, $interpolatedSubject, $fullHtml, $plainText, $params['attachments'] ?? []);
             } catch (\Throwable $smtpErr) {
-                error_log("[VISA-TRACK] SMTP delivery failed: {$smtpErr->getMessage()} — Falling back to native PHP mail()...");
-                $result = self::sendPhpMail($to, $recipientName, $interpolatedSubject, $fullHtml, $plainText);
-                if ($result['success']) {
-                    $result['provider'] = 'phpmail (fallback from smtp)';
-                } else {
-                    $result['error'] = "SMTP error: {$smtpErr->getMessage()} | PHP mail error: " . ($result['error'] ?? 'mail() failed');
+                // Secondary retry on SSL port 465 if 587/TLS failed
+                try {
+                    $result = self::sendSmtp($to, $recipientName, $interpolatedSubject, $fullHtml, $plainText, $params['attachments'] ?? [], 465, 'ssl');
+                } catch (\Throwable $smtpErr2) {
+                    error_log("[VISA-TRACK] SMTP delivery failed: {$smtpErr->getMessage()} / {$smtpErr2->getMessage()} — Falling back to native PHP mail()...");
+                    $result = self::sendPhpMail($to, $recipientName, $interpolatedSubject, $fullHtml, $plainText);
+                    if ($result['success']) {
+                        $result['provider'] = 'phpmail (fallback from smtp)';
+                    } else {
+                        $result['error'] = "SMTP error: {$smtpErr->getMessage()} | PHP mail error: " . ($result['error'] ?? 'mail() failed');
+                    }
                 }
             }
         } else {
@@ -135,13 +140,15 @@ class EmailService
         string $subject,
         string $htmlBody,
         string $plainText,
-        array $attachments = []
+        array $attachments = [],
+        ?int $overridePort = null,
+        ?string $overrideEncryption = null
     ): array {
         $host = (string)Env::get('SMTP_HOST', 'smtp.hostinger.com');
-        $port = (int)Env::get('SMTP_PORT', 587);
+        $port = $overridePort ?: (int)Env::get('SMTP_PORT', 587);
         $user = (string)Env::get('SMTP_USER', '');
         $pass = (string)Env::get('SMTP_PASSWORD', '');
-        $encryption = strtolower((string)Env::get('SMTP_ENCRYPTION', 'tls'));
+        $encryption = $overrideEncryption ?: strtolower((string)Env::get('SMTP_ENCRYPTION', 'tls'));
         $fromEmail = (string)Env::get('EMAIL_FROM', 'admin@mshorizonuae.com');
         $fromName = (string)Env::get('EMAIL_FROM_NAME', App::COMPANY_NAME);
 
@@ -152,15 +159,16 @@ class EmailService
         $timeout = 10;
         $remoteSocket = ($encryption === 'ssl' ? 'ssl://' : 'tcp://') . $host . ':' . $port;
         
-        $verifyPeer = (bool)Env::get('SMTP_VERIFY_PEER', true);
-        $verifyPeerName = (bool)Env::get('SMTP_VERIFY_PEER_NAME', true);
-        $allowSelfSigned = (bool)Env::get('SMTP_ALLOW_SELF_SIGNED', false);
+        $verifyPeer = (bool)Env::get('SMTP_VERIFY_PEER', false);
+        $verifyPeerName = (bool)Env::get('SMTP_VERIFY_PEER_NAME', false);
+        $allowSelfSigned = (bool)Env::get('SMTP_ALLOW_SELF_SIGNED', true);
 
         $context = stream_context_create([
             'ssl' => [
                 'verify_peer' => $verifyPeer,
                 'verify_peer_name' => $verifyPeerName,
                 'allow_self_signed' => $allowSelfSigned,
+                'crypto_method' => STREAM_CRYPTO_METHOD_TLS_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT,
             ]
         ]);
 
