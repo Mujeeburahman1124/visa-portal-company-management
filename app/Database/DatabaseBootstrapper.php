@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 15;
+    private const SCHEMA_VERSION = 16;
 
     public static function init(bool $force = false): void
     {
@@ -517,6 +517,9 @@ class DatabaseBootstrapper
                 $insTheme->execute($td);
             }
         } else {
+            // Ensure complete 65 tables/views exist for MySQL
+            self::bootstrapMySQLFullSchema($pdo);
+
             // Ensure password_resets table exists for MySQL
             $pdo->exec("CREATE TABLE IF NOT EXISTS password_resets (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -2855,4 +2858,48 @@ class DatabaseBootstrapper
             error_log('[VISA-TRACK] Could not record schema version: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Ensures all 65 tables and compatibility views are present in MySQL (e.g. on Hostinger).
+     */
+    public static function bootstrapMySQLFullSchema(PDO $pdo): void
+    {
+        $schemaFile = __DIR__ . '/schema_mysql.sql';
+        if (!file_exists($schemaFile)) {
+            return;
+        }
+
+        try {
+            // Count existing tables in current database
+            $tableCount = (int)$pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()")->fetchColumn();
+            if ($tableCount < 65) {
+                $sql = file_get_contents($schemaFile);
+                $rawStatements = preg_split('/;\s*(\r\n|\n)/m', $sql);
+                
+                try { $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;"); } catch (\Throwable $e) {}
+
+                foreach ($rawStatements as $stmt) {
+                    $clean = trim($stmt);
+                    if ($clean === '' || str_starts_with($clean, '--') || str_starts_with($clean, '/*')) {
+                        $lines = array_filter(explode("\n", $clean), function($l) {
+                            $t = trim($l);
+                            return $t !== '' && !str_starts_with($t, '--') && !str_starts_with($t, '/*');
+                        });
+                        $clean = trim(implode("\n", $lines));
+                        if ($clean === '') continue;
+                    }
+                    try {
+                        $pdo->exec($clean);
+                    } catch (\Throwable $e) {
+                        // Table/view or column might already exist; continue
+                    }
+                }
+
+                try { $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;"); } catch (\Throwable $e) {}
+            }
+        } catch (\Throwable $e) {
+            error_log('[VISA-TRACK] bootstrapMySQLFullSchema error: ' . $e->getMessage());
+        }
+    }
 }
+

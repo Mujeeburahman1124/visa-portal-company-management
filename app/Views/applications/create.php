@@ -686,6 +686,8 @@ function checkDuplicateApplication() {
     .catch(() => {
       warnBox.classList.add('d-none');
     });
+}
+
 function toggleManualInput(manualBoxId, selectId) {
   const box = document.getElementById(manualBoxId);
   const sel = document.getElementById(selectId);
@@ -716,6 +718,11 @@ function checkManualSelect(sel, manualBoxId) {
     if (input) input.focus();
   }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+  updateServiceInfo();
+  checkDuplicateApplication();
+});
 </script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>
