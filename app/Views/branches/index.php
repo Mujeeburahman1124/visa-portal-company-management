@@ -183,7 +183,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             </div>
             <div class="col-6">
               <label class="form-label small fw-semibold">Email</label>
-              <input type="email" name="email" class="form-control" placeholder="desk@mstravelhub.com">
+              <input type="email" name="email" class="form-control" placeholder="branch@mshorizonuae.com">
             </div>
           </div>
         </div>

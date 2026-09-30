@@ -20,7 +20,7 @@ class SeedData
         // 0. Companies (Required as root parent for branches in MySQL)
         try {
             $pdo->exec("{$ins} companies (id, name, code, email, phone, address, status) VALUES 
-                (1, 'MS Travel Hub', 'MSTH-01', 'operations@mstravelhub.com', '+971 4 388 9900', 'Business Bay, Dubai, UAE', 'active')");
+                (1, 'MS Travel Hub Global Visa Services', 'MSTH-01', 'mstravelu@gmail.com', '0585909349', 'Dubai, United Arab Emirates', 'active')");
         } catch (\Throwable $e) {}
 
         // 1. Roles
@@ -45,7 +45,7 @@ class SeedData
 
         // 2. Branches
         $branches = [
-            ['Dubai Head Office', 'DXB-01', 'United Arab Emirates', 'Dubai', 'Business Bay, Tower B, Level 14', '+971 4 388 9900', 'dubai@mstravelhub.com'],
+            ['Dubai Head Office', 'DXB-01', 'United Arab Emirates', 'Dubai', 'Dubai, United Arab Emirates', '0585909349', 'mstravelu@gmail.com'],
             ['London Branch', 'LON-01', 'United Kingdom', 'London', '125 Kingsway, Holborn', '+44 20 7946 0991', 'london@mstravelhub.com'],
             ['New York Branch', 'NYC-01', 'United States', 'New York', '450 Lexington Ave, Suite 2200', '+1 212 555 0199', 'ny@mstravelhub.com'],
             ['Riyadh Branch', 'RUH-01', 'Saudi Arabia', 'Riyadh', 'King Fahd Road, Al Olaya', '+966 11 445 6789', 'riyadh@mstravelhub.com'],
@@ -619,9 +619,10 @@ class SeedData
         $settings = [
             ['company_name', 'MS Travel Hub Global Visa Services', 'Company', 'Registered global business name'],
             ['company_tagline', 'Staff Visa Tracking & Global Management Portal', 'Company', 'Portal branding subtitle'],
-            ['company_email', 'operations@mstravelhub.com', 'Company', 'Primary operational email'],
-            ['company_phone', '+971 4 388 9900', 'Company', 'Main contact telephone'],
-            ['company_address', 'Level 14, Business Bay Tower B, Dubai, UAE', 'Company', 'Headquarters address'],
+            ['company_email', 'mstravelu@gmail.com', 'Company', 'Primary operational email'],
+            ['company_phone', '0585909349', 'Company', 'Main contact telephone'],
+            ['company_address', 'Dubai, United Arab Emirates', 'Company', 'Headquarters address'],
+            ['company_website', 'https://mshorizonuae.com', 'Company', 'Official public portal domain'],
             ['base_currency', 'USD', 'Finance', 'Default currency code'],
             ['currency_symbol', '$', 'Finance', 'Default currency display symbol'],
             ['expiry_alert_days', '90,60,30,15,7', 'Alerts', 'Comma separated days for document expiry warnings'],

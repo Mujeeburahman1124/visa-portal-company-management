@@ -307,23 +307,34 @@ class EmailService
     }
 
     /**
-     * Native PHP mail() fallback with RFC-compliant headers and envelope sender.
+     * Native PHP mail() delivery with domain-aligned SPF/DMARC headers and envelope sender.
      */
     private static function sendPhpMail(string $to, string $recipientName, string $subject, string $htmlBody, string $plainText): array
     {
-        $fromEmail = (string)Env::get('EMAIL_FROM', 'admin@mshorizonuae.com');
+        $configuredFrom = (string)Env::get('EMAIL_FROM', 'notifications@mshorizonuae.com');
         $fromName = (string)Env::get('EMAIL_FROM_NAME', App::COMPANY_NAME);
 
         // Derive domain-aligned return-path for SPF on shared hosting
         $serverHost = $_SERVER['HTTP_HOST'] ?? 'mshorizonuae.com';
         $serverHost = preg_replace('/:[0-9]+$/', '', $serverHost);
-        $domainFrom = 'noreply@' . $serverHost;
+        if (empty($serverHost) || str_contains($serverHost, 'localhost') || str_starts_with($serverHost, '127.0.0.1')) {
+            $serverHost = 'mshorizonuae.com';
+        }
+        $domainFrom = 'notifications@' . $serverHost;
+
+        // CRITICAL SPF/DMARC RULE:
+        // If the configured sender is a public domain like @gmail.com or @yahoo.com,
+        // sending via Hostinger webserver using that @gmail.com From address will fail DMARC (p=reject).
+        // We send From: notifications@{serverHost} and set Reply-To: {configuredFrom}.
+        $isExternalMailbox = (bool)preg_match('/@(gmail|googlemail|yahoo|hotmail|outlook|live|icloud|aol|proton)\.com$/i', $configuredFrom);
+        $fromEmail = $isExternalMailbox ? $domainFrom : $configuredFrom;
+        $replyToEmail = !empty($configuredFrom) ? $configuredFrom : (string)Env::get('COMPANY_EMAIL', 'mstravelu@gmail.com');
 
         $boundary = "==Multipart_Boundary_x" . md5((string)time()) . "x";
         $headers = [];
         $headers[] = "MIME-Version: 1.0";
         $headers[] = "From: " . self::encodeHeader($fromName) . " <{$fromEmail}>";
-        $headers[] = "Reply-To: <{$fromEmail}>";
+        $headers[] = "Reply-To: " . self::encodeHeader($fromName) . " <{$replyToEmail}>";
         $headers[] = "Return-Path: <{$domainFrom}>";
         $headers[] = "Content-Type: multipart/alternative; boundary=\"{$boundary}\"";
         $headers[] = "X-Mailer: VISA TRACK Enterprise Mailer (PHP/" . phpversion() . ")";
@@ -343,21 +354,21 @@ class EmailService
         $headersStr = implode($eol, $headers);
         $encodedSubject = self::encodeHeader($subject);
 
-        // Try 1: with domain-matched envelope sender (-f noreply@domain)
+        // Try 1: with domain-matched envelope sender (-f notifications@domain)
         $extraParam = '-f' . $domainFrom;
         $res = @mail($to, $encodedSubject, $body, $headersStr, $extraParam);
 
-        // Try 2: with fromEmail envelope
-        if (!$res && filter_var($fromEmail, FILTER_VALIDATE_EMAIL)) {
-            $res = @mail($to, $encodedSubject, $body, $headersStr, '-f' . $fromEmail);
-        }
-
-        // Try 3: standard mail() without extra param (for hosts restricting -f)
+        // Try 2: with standard mail() without extra param (for hosts restricting -f)
         if (!$res) {
             $res = @mail($to, $encodedSubject, $body, $headersStr);
         }
 
-        // Try 4: using LF on Linux if MTA rejects CRLF
+        // Try 3: using LF on Linux if MTA rejects CRLF in header strings
+        if (!$res) {
+            $headersLf = implode("\n", $headers);
+            $res = @mail($to, $encodedSubject, $body, $headersLf, $extraParam);
+        }
+
         if (!$res) {
             $headersLf = implode("\n", $headers);
             $res = @mail($to, $encodedSubject, $body, $headersLf);

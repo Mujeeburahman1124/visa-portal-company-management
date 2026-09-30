@@ -564,7 +564,7 @@ class PublicWebsiteController
      */
     public function sitemap(): void
     {
-        $baseUrl = rtrim((string)Env::get('APP_URL', 'https://visatrack.mstravelhub.com'), '/');
+        $baseUrl = rtrim((string)Env::get('APP_URL', 'https://mshorizonuae.com'), '/');
         $pdo = Database::getConnection();
 
         $services = $pdo->query("SELECT id, slug, updated_at FROM visa_services WHERE is_active = 1")->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -616,7 +616,7 @@ class PublicWebsiteController
      */
     public function robotsTxt(): void
     {
-        $baseUrl = rtrim((string)Env::get('APP_URL', 'https://visatrack.mstravelhub.com'), '/');
+        $baseUrl = rtrim((string)Env::get('APP_URL', 'https://mshorizonuae.com'), '/');
 
         header('Content-Type: text/plain; charset=utf-8');
         echo "User-agent: *\n";

@@ -55,7 +55,7 @@ $flash = get_flash();
               </div>
               <div class="text-muted small mb-3">Direct real-time assistance with document prep and visa queries.</div>
             </div>
-            <a href="https://wa.me/971501112233" target="_blank" class="btn btn-outline-success btn-sm w-100 fw-semibold shadow-sm">
+            <a href="https://wa.me/971585909349" target="_blank" class="btn btn-outline-success btn-sm w-100 fw-semibold shadow-sm">
               <i class="fa-brands fa-whatsapp me-1.5"></i> Chat on WhatsApp &rarr;
             </a>
           </div>
@@ -70,12 +70,12 @@ $flash = get_flash();
                 </div>
                 <div class="fw-bold text-dark fs-6">Support Hotline</div>
               </div>
-              <a href="tel:<?= e(preg_replace('/[^0-9+]/', '', $settings['company_phone'] ?? '+97143889900')) ?>" class="text-decoration-none text-dark fw-bold fs-6 d-block mb-1">
-                <i class="fa-solid fa-phone me-1 text-primary"></i><?= e($settings['company_phone'] ?? '+971 4 388 9900') ?>
+              <a href="tel:<?= e(preg_replace('/[^0-9+]/', '', $settings['company_phone'] ?? '0585909349')) ?>" class="text-decoration-none text-dark fw-bold fs-6 d-block mb-1">
+                <i class="fa-solid fa-phone me-1 text-primary"></i><?= e($settings['company_phone'] ?? '0585909349') ?>
               </a>
               <div class="text-secondary small mb-3"><i class="fa-regular fa-clock me-1 text-muted"></i>Mon - Sat: 9:00 AM - 6:00 PM</div>
             </div>
-            <a href="tel:<?= e(preg_replace('/[^0-9+]/', '', $settings['company_phone'] ?? '+97143889900')) ?>" class="btn btn-outline-primary btn-sm w-100 fw-semibold shadow-sm">
+            <a href="tel:<?= e(preg_replace('/[^0-9+]/', '', $settings['company_phone'] ?? '0585909349')) ?>" class="btn btn-outline-primary btn-sm w-100 fw-semibold shadow-sm">
               <i class="fa-solid fa-phone me-1.5"></i> Call Hotline Now
             </a>
           </div>

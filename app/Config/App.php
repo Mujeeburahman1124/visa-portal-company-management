@@ -9,6 +9,10 @@ class App
     public const SHORT_NAME = 'VISA TRACK';
     public const VERSION = '1.0.0';
     public const COMPANY_NAME = 'MS Travel Hub Global Visa Services';
+    public const COMPANY_EMAIL = 'mstravelu@gmail.com';
+    public const COMPANY_PHONE = '0585909349';
+    public const COMPANY_WEBSITE = 'https://mshorizonuae.com';
+    public const COMPANY_ADDRESS = 'Dubai, United Arab Emirates';
     public const BASE_CURRENCY = 'USD';
     public const CURRENCY_SYMBOL = '$';
     

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
     <title><?= e($pageTitle ?? 'MS Travel Hub â€” Global Visa & Recruitment Services') ?></title>
     <meta name="description" content="<?= e($metaDescription ?? 'Global Visa Processing, Recruitment, and Immigration Management Portal by MS Travel Hub.') ?>">
-    <link rel="canonical" href="<?= htmlspecialchars(\App\Config\Env::get('APP_URL', 'https://visatrack.mstravelhub.com') . ($_SERVER['REQUEST_URI'] ?? '/')) ?>">
+    <link rel="canonical" href="<?= htmlspecialchars(\App\Config\Env::get('APP_URL', 'https://mshorizonuae.com') . ($_SERVER['REQUEST_URI'] ?? '/')) ?>">
 
     <!-- Favicon & Icons -->
     <link rel="icon" type="image/png" href="/assets/images/favicon.png?v=2">

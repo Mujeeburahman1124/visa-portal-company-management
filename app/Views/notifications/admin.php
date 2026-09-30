@@ -527,7 +527,7 @@ $activeTab = $_GET['tab'] ?? 'logs';
                 <div class="mb-3 pb-3 border-bottom">
                   <div class="text-muted small fw-semibold">Email Provider</div>
                   <div class="fw-medium text-dark"><?= strtoupper((string)\App\Config\Env::get('EMAIL_PROVIDER', 'smtp')) ?> (Host: <?= e(\App\Config\Env::get('SMTP_HOST', 'smtp.gmail.com')) ?>:<?= e(\App\Config\Env::get('SMTP_PORT', 587)) ?>)</div>
-                  <div class="small text-muted">From: <?= e(\App\Config\Env::get('EMAIL_FROM', 'notifications@mstravelhub.com')) ?></div>
+                  <div class="small text-muted">From: <?= e(\App\Config\Env::get('EMAIL_FROM', 'notifications@mshorizonuae.com')) ?></div>
                 </div>
 
                 <div class="mb-3 pb-3 border-bottom">

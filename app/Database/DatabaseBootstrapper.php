@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 23;
+    private const SCHEMA_VERSION = 24;
 
     public static function init(bool $force = false): void
     {
@@ -1713,10 +1713,11 @@ class DatabaseBootstrapper
         // Seed system_settings default keys
         $insertIgnore = $driver === 'mysql' ? 'INSERT IGNORE INTO' : 'INSERT OR IGNORE INTO';
         $defaultSettings = [
-            ['company_name', 'Visa Track & MS Travel Hub', 'General', 'Primary business name'],
-            ['company_email', 'info@visatrack.com', 'General', 'Official business support email'],
-            ['company_phone', '+94 11 234 5678', 'General', 'Customer service hotline'],
-            ['company_website', 'https://visatrack.mstravelhub.com', 'General', 'Portal public domain'],
+            ['company_name', 'MS Travel Hub Global Visa Services', 'General', 'Primary business name'],
+            ['company_email', 'mstravelu@gmail.com', 'General', 'Official business support email'],
+            ['company_phone', '0585909349', 'General', 'Customer service hotline'],
+            ['company_website', 'https://mshorizonuae.com', 'General', 'Portal public domain'],
+            ['company_address', 'Dubai, United Arab Emirates', 'General', 'Headquarters address'],
             ['currency', 'USD', 'Finance', 'System default currency'],
             ['currency_symbol', '$', 'Finance', 'Default currency display symbol'],
             ['tax_rate', '5', 'Finance', 'Standard VAT rate percentage'],
@@ -3197,6 +3198,16 @@ class DatabaseBootstrapper
             self::restoreFromProductionBackup($pdo, $driver);
         }
 
+        // ── MIGRATION 24: Synchronize Real Company Details and Global Settings ──
+        if ($currentVer < 24) {
+            self::synchronizeRealCompanySettings($pdo, $driver);
+        }
+
+        // Unconditional sync: ensure company details match real contact info
+        try {
+            self::synchronizeRealCompanySettings($pdo, $driver);
+        } catch (\Throwable $e) {}
+
         // Unconditional data recovery check: if customers count < 10, restore all backup records
         try {
             $custCount = (int)$pdo->query("SELECT COUNT(*) FROM customers")->fetchColumn();
@@ -3216,6 +3227,63 @@ class DatabaseBootstrapper
         } catch (\Throwable $e) {
             error_log('[VISA-TRACK] Could not record schema version: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Migration 24: Synchronizes real MS Travel Hub company contact and localization settings across database tables.
+     */
+    public static function synchronizeRealCompanySettings(PDO $pdo, string $driver): void
+    {
+        $realSettings = [
+            ['company_name', 'MS Travel Hub Global Visa Services', 'Company', 'Registered global business name'],
+            ['company_email', 'mstravelu@gmail.com', 'Company', 'Primary operational email'],
+            ['company_phone', '0585909349', 'Company', 'Main contact telephone'],
+            ['company_website', 'https://mshorizonuae.com', 'Company', 'Official public portal domain'],
+            ['company_address', 'Dubai, United Arab Emirates', 'Company', 'Headquarters address'],
+            ['company_tagline', 'Global Visa & Document Attestation Services', 'Company', 'Portal branding subtitle'],
+            ['portal_brand_text', 'MS Travel Hub', 'Localization', 'Portal brand header title'],
+            ['portal_tagline', 'Global Visa Services & Document Management', 'Localization', 'Portal header subtitle'],
+            ['email_theme_footer', 'MS Travel Hub Global Visa Services • Enterprise Visa Operations', 'Theme', 'Email notification footer'],
+            ['trade_license', 'MS-TRAVEL-UAE', 'Company', 'Registered trade license reference'],
+        ];
+
+        foreach ($realSettings as $st) {
+            try {
+                $check = $pdo->prepare("SELECT COUNT(*) FROM system_settings WHERE setting_key = ?");
+                $check->execute([$st[0]]);
+                if ((int)$check->fetchColumn() > 0) {
+                    $upd = $pdo->prepare("UPDATE system_settings SET setting_value = ? WHERE setting_key = ?");
+                    $upd->execute([$st[1], $st[0]]);
+                } else {
+                    $ins = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value, setting_group, description) VALUES (?, ?, ?, ?)");
+                    $ins->execute($st);
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        // Update root companies record (ID 1)
+        try {
+            $pdo->prepare("UPDATE companies SET name = ?, email = ?, phone = ?, address = ? WHERE id = 1")->execute([
+                'MS Travel Hub Global Visa Services',
+                'mstravelu@gmail.com',
+                '0585909349',
+                'Dubai, United Arab Emirates'
+            ]);
+        } catch (\Throwable $e) {}
+
+        // Update Dubai Head Office branch record
+        try {
+            $pdo->prepare("UPDATE branches SET name = 'Dubai Head Office', phone = ?, email = ?, address = ? WHERE id = 1 OR code = 'DXB-01'")->execute([
+                '0585909349',
+                'mstravelu@gmail.com',
+                'Dubai, United Arab Emirates'
+            ]);
+        } catch (\Throwable $e) {}
+
+        // Ensure notification_settings for applicant.registered has email enabled
+        try {
+            $pdo->exec("UPDATE notification_settings SET email_enabled = 1, applicant_enabled = 1 WHERE event_type = 'applicant.registered'");
+        } catch (\Throwable $e) {}
     }
 
     /**

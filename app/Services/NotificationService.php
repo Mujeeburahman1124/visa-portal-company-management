@@ -57,8 +57,11 @@ class NotificationService
         $data = self::buildTemplateData($context, $customer, $staff, $app);
 
         // Generate automatic idempotency key if not provided
+        // Generate automatic unique idempotency key if not provided
         if (empty($idempotencyKey)) {
-            $idempotencyKey = 'evt_' . substr(md5($eventType . '_' . ($customer['id'] ?? 0) . '_' . ($app['id'] ?? 0) . '_' . date('YmdHi')), 0, 24);
+            $custRef = $customer['id'] ?? $context['customer_id'] ?? $context['customerCode'] ?? uniqid();
+            $appRef = $app['id'] ?? $context['application_id'] ?? $context['applicationNumber'] ?? '0';
+            $idempotencyKey = 'evt_' . substr(md5($eventType . '_' . $custRef . '_' . $appRef . '_' . microtime(true) . '_' . mt_rand(1000, 9999)), 0, 24);
         }
 
         // 6. Check Duplicate Prevention (Idempotency)
@@ -84,8 +87,8 @@ class NotificationService
             if (in_array('Email', $alreadySentChannels, true)) {
                 $results['email'] = ['enabled' => true, 'status' => 'Skipped', 'reason' => 'Duplicate idempotency key'];
             } else {
-                $recipientEmail = $customer['email'] ?? $context['recipient_email'] ?? $staff['email'] ?? null;
-                $recipientName = $customer['full_name'] ?? $customer['name'] ?? $staff['name'] ?? 'Valued Customer';
+                $recipientEmail = $customer['email'] ?? $context['applicantEmail'] ?? $context['applicant_email'] ?? $context['recipient_email'] ?? $context['email'] ?? $staff['email'] ?? null;
+                $recipientName = $customer['full_name'] ?? $customer['name'] ?? $context['applicantName'] ?? $context['applicant_name'] ?? $context['recipient_name'] ?? $context['name'] ?? $staff['name'] ?? 'Valued Customer';
 
                 if (!empty($recipientEmail)) {
                     // Fetch Email Template
@@ -149,8 +152,8 @@ class NotificationService
             if (in_array('WhatsApp', $alreadySentChannels, true)) {
                 $results['whatsapp'] = ['enabled' => true, 'status' => 'Skipped', 'reason' => 'Duplicate idempotency key'];
             } else {
-                $rawPhone = $customer['whatsapp'] ?? $customer['mobile'] ?? $context['recipient_phone'] ?? null;
-                $recipientName = $customer['full_name'] ?? $customer['name'] ?? 'Customer';
+                $rawPhone = $customer['whatsapp'] ?? $customer['mobile'] ?? $context['applicantPhone'] ?? $context['applicant_phone'] ?? $context['whatsapp'] ?? $context['mobile'] ?? $context['recipient_phone'] ?? null;
+                $recipientName = $customer['full_name'] ?? $customer['name'] ?? $context['applicantName'] ?? $context['applicant_name'] ?? 'Customer';
 
                 if (!empty($rawPhone)) {
                     $tmpl = self::fetchTemplate($eventType, 'WhatsApp', $pdo);

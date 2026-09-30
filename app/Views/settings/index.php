@@ -113,11 +113,11 @@ $activeTab = $_GET['tab'] ?? 'company';
               <div class="row g-2 mb-3">
                 <div class="col-6">
                   <label class="form-label small fw-semibold">Official Contact Email</label>
-                  <input type="email" name="settings[company_email]" class="form-control" value="<?= e($settings['company_email'] ?? 'support@mstravelhub.com') ?>">
+                  <input type="email" name="settings[company_email]" class="form-control" value="<?= e($settings['company_email'] ?? 'mstravelu@gmail.com') ?>">
                 </div>
                 <div class="col-6">
                   <label class="form-label small fw-semibold">Hotline / WhatsApp</label>
-                  <input type="text" name="settings[company_phone]" class="form-control" value="<?= e($settings['company_phone'] ?? '+971 4 388 9900') ?>">
+                  <input type="text" name="settings[company_phone]" class="form-control" value="<?= e($settings['company_phone'] ?? '0585909349') ?>">
                 </div>
               </div>
             </div>
@@ -134,7 +134,7 @@ $activeTab = $_GET['tab'] ?? 'company';
               </div>
               <div class="mb-3">
                 <label class="form-label small fw-semibold">Official Address</label>
-                <textarea name="settings[company_address]" class="form-control" rows="2"><?= e($settings['company_address'] ?? 'Tower B, Level 14, Business Bay, Dubai, UAE') ?></textarea>
+                <textarea name="settings[company_address]" class="form-control" rows="2"><?= e($settings['company_address'] ?? 'Dubai, United Arab Emirates') ?></textarea>
               </div>
             </div>
           </div>
