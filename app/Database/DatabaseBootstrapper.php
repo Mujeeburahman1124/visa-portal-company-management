@@ -3335,6 +3335,8 @@ class DatabaseBootstrapper
             'designation'     => ($driver === 'mysql') ? 'VARCHAR(100) NULL' : 'TEXT NULL',
             'department'      => ($driver === 'mysql') ? 'VARCHAR(100) NULL' : 'TEXT NULL',
             'phone'           => ($driver === 'mysql') ? 'VARCHAR(50) NULL' : 'TEXT NULL',
+            'whatsapp_number' => ($driver === 'mysql') ? 'VARCHAR(50) NULL' : 'TEXT NULL',
+            'address'         => ($driver === 'mysql') ? 'TEXT NULL' : 'TEXT NULL',
             'basic_salary'    => ($driver === 'mysql') ? 'DECIMAL(12,2) DEFAULT 0.00' : 'REAL DEFAULT 0.00',
             'salary_currency' => ($driver === 'mysql') ? 'VARCHAR(10) DEFAULT \'AED\'' : 'TEXT DEFAULT \'AED\'',
             'joining_date'    => ($driver === 'mysql') ? 'DATE NULL' : 'TEXT NULL',

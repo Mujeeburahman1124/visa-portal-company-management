@@ -182,6 +182,16 @@ class StaffController
             }
         } catch (\Throwable $e) {}
 
+        // Ensure created_by column exists on users table
+        if (!empty($userCols) && !in_array('created_by', $userCols, true)) {
+            try {
+                $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                $def = ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL';
+                $pdo->exec("ALTER TABLE users ADD COLUMN created_by {$def}");
+                $userCols[] = 'created_by';
+            } catch (\Throwable $e) {}
+        }
+
         $insertData = [
             'role_id' => $roleId,
             'name' => $name,
@@ -403,10 +413,44 @@ class StaffController
             redirect("/staff/show?id={$id}", "Email '{$email}' is already in use by another officer.", 'danger');
         }
 
-        $stmt = $pdo->prepare("UPDATE users SET 
-            name = ?, email = ?, role_id = ?, branch_id = ?, phone = ?, designation = ?, department = ?, updated_at = CURRENT_TIMESTAMP 
-            WHERE id = ?");
-        $stmt->execute([$name, $email, $roleId, $branchId, $phone, $designation, $department, $id]);
+        // Inspect columns to avoid SQL errors
+        $userCols = [];
+        try {
+            if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql') {
+                $colsStmt = $pdo->query("SHOW COLUMNS FROM users");
+                $userCols = $colsStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+            } else {
+                $colsStmt = $pdo->query("PRAGMA table_info(users)");
+                $userCols = array_map(fn($r) => $r['name'], $colsStmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
+            }
+        } catch (\Throwable $e) {}
+
+        $fields = ['name = ?', 'email = ?', 'role_id = ?'];
+        $params = [$name, $email, $roleId];
+
+        if (empty($userCols) || in_array('branch_id', $userCols, true)) {
+            $fields[] = 'branch_id = ?';
+            $params[] = $branchId;
+        }
+        if (empty($userCols) || in_array('phone', $userCols, true)) {
+            $fields[] = 'phone = ?';
+            $params[] = $phone;
+        }
+        if (empty($userCols) || in_array('designation', $userCols, true)) {
+            $fields[] = 'designation = ?';
+            $params[] = $designation;
+        }
+        if (empty($userCols) || in_array('department', $userCols, true)) {
+            $fields[] = 'department = ?';
+            $params[] = $department;
+        }
+
+        $fields[] = 'updated_at = CURRENT_TIMESTAMP';
+        $params[] = $id;
+
+        $setClause = implode(', ', $fields);
+        $stmt = $pdo->prepare("UPDATE users SET {$setClause} WHERE id = ?");
+        $stmt->execute($params);
 
         AuditService::log('UPDATE_STAFF', 'Staff', $id, "Updated staff profile details for {$name}");
 
