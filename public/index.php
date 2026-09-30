@@ -140,10 +140,18 @@ switch ($uri) {
     case '/job':
     case '/jobs/detail':
     case '/jobs/apply':
+    case '/apply':
     case '/visa-enquiry':
+    case '/visa-service':
+    case '/visa-services-public':
+    case '/visa-service-detail':
     case '/contact':
     case '/faq':
     case '/home':
+    case '/public':
+    case '/index':
+    case '/index.php':
+    case '/index.html':
         if (isset($_SESSION['user']) || isset($_SESSION['user_id'])) {
             header('Location: /dashboard');
         } elseif (isset($_SESSION['customer']) || isset($_SESSION['customer_id'])) {

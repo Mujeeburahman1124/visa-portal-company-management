@@ -16,78 +16,19 @@ $_SERVER['SERVER_PROTOCOL'] = 'HTTP/1.1';
 require_once dirname(__DIR__) . '/app/autoload.php';
 
 use App\Database\DatabaseBootstrapper;
-use App\Controllers\PublicWebsiteController;
 use App\Controllers\AuthController;
-use App\Controllers\Api\SearchApiController;
 
 // Ensure database is bootstrapped
 DatabaseBootstrapper::init(true);
 
 $tests = [
-    'Home Page (/)' => function() {
+    'Portal Login (/portal/login)' => function() {
         $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['REQUEST_URI'] = '/';
+        $_SERVER['REQUEST_URI'] = '/portal/login';
         ob_start();
-        (new PublicWebsiteController())->home();
+        (new App\Controllers\PortalController())->showLogin();
         $out = ob_get_clean();
-        if (strlen($out) < 500) throw new \RuntimeException("Output too short: " . strlen($out));
-        if (stripos($out, 'Visa') === false) throw new \RuntimeException("Missing 'Visa' in content");
-        return strlen($out) . " bytes";
-    },
-    'About Page (/about)' => function() {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['REQUEST_URI'] = '/about';
-        ob_start();
-        (new PublicWebsiteController())->about();
-        $out = ob_get_clean();
-        if (strlen($out) < 500) throw new \RuntimeException("Output too short: " . strlen($out));
-        if (stripos($out, 'About') === false) throw new \RuntimeException("Missing 'About' in content");
-        return strlen($out) . " bytes";
-    },
-    'Visa Services (/visa)' => function() {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['REQUEST_URI'] = '/visa';
-        ob_start();
-        (new PublicWebsiteController())->visaServices();
-        $out = ob_get_clean();
-        if (strlen($out) < 500) throw new \RuntimeException("Output too short: " . strlen($out));
-        if (stripos($out, 'Visa') === false) throw new \RuntimeException("Missing 'Visa' in content");
-        return strlen($out) . " bytes";
-    },
-    'Recruitment Jobs (/jobs)' => function() {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['REQUEST_URI'] = '/jobs';
-        ob_start();
-        (new PublicWebsiteController())->jobs();
-        $out = ob_get_clean();
-        if (strlen($out) < 500) throw new \RuntimeException("Output too short: " . strlen($out));
-        return strlen($out) . " bytes";
-    },
-    'FAQ (/faq)' => function() {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['REQUEST_URI'] = '/faq';
-        ob_start();
-        (new PublicWebsiteController())->faq();
-        $out = ob_get_clean();
-        if (strlen($out) < 500) throw new \RuntimeException("Output too short: " . strlen($out));
-        return strlen($out) . " bytes";
-    },
-    'Contact (/contact)' => function() {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['REQUEST_URI'] = '/contact';
-        ob_start();
-        (new PublicWebsiteController())->contact();
-        $out = ob_get_clean();
-        if (strlen($out) < 500) throw new \RuntimeException("Output too short: " . strlen($out));
-        return strlen($out) . " bytes";
-    },
-    'Track Application (/track)' => function() {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['REQUEST_URI'] = '/track';
-        ob_start();
-        (new PublicWebsiteController())->tracking();
-        $out = ob_get_clean();
-        if (strlen($out) < 500) throw new \RuntimeException("Output too short: " . strlen($out));
+        if (strlen($out) < 200) throw new \RuntimeException("Output too short: " . strlen($out));
         return strlen($out) . " bytes";
     },
     'Login Page (/login)' => function() {
