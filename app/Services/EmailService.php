@@ -82,37 +82,134 @@ class EmailService
             $plainText
         );
 
-        // 5. Check Environment & Provider
-        $provider = strtolower((string)Env::get('EMAIL_PROVIDER', 'smtp'));
-        $smtpHost = (string)Env::get('SMTP_HOST', 'smtp.hostinger.com');
-        $smtpUser = (string)Env::get('SMTP_USER', '');
-        $smtpPass = (string)Env::get('SMTP_PASSWORD', '');
+        // 5. Build Transport Priority Chain (Hostinger SMTP + Google Gmail SMTP + Server mail fallback)
+        $transports = [];
 
-        // 6. Dispatch via configured transport with automatic fallback
-        $result = null;
-        if ($provider === 'smtp' && !empty($smtpUser) && !empty($smtpPass)) {
-            try {
-                $result = self::sendSmtp($to, $recipientName, $interpolatedSubject, $fullHtml, $plainText, $params['attachments'] ?? []);
-            } catch (\Throwable $smtpErr) {
-                // Secondary retry on SSL port 465 if 587/TLS failed
-                try {
-                    $result = self::sendSmtp($to, $recipientName, $interpolatedSubject, $fullHtml, $plainText, $params['attachments'] ?? [], 465, 'ssl');
-                } catch (\Throwable $smtpErr2) {
-                    error_log("[VISA-TRACK] SMTP delivery failed: {$smtpErr->getMessage()} / {$smtpErr2->getMessage()} — Falling back to native PHP mail()...");
-                    $result = self::sendPhpMail($to, $recipientName, $interpolatedSubject, $fullHtml, $plainText);
-                    if ($result['success']) {
-                        $result['provider'] = 'phpmail (fallback from smtp)';
-                    } else {
-                        $result['error'] = "SMTP error: {$smtpErr->getMessage()} | PHP mail error: " . ($result['error'] ?? 'mail() failed');
-                    }
-                }
-            }
-        } else {
-            // Native PHP mail() delivery (standard on Hostinger/cPanel)
-            $result = self::sendPhpMail($to, $recipientName, $interpolatedSubject, $fullHtml, $plainText);
+        // Transport 1: Primary SMTP (Hostinger or configured via MAIL_* or SMTP_* variables)
+        $pHost = (string)(Env::get('MAIL_HOST') ?: Env::get('SMTP_HOST', 'smtp.hostinger.com'));
+        $pPort = (int)(Env::get('MAIL_PORT') ?: Env::get('SMTP_PORT', 465));
+        $pUser = (string)(Env::get('MAIL_USERNAME') ?: Env::get('SMTP_USER', ''));
+        $pPass = (string)(Env::get('MAIL_PASSWORD') ?: Env::get('SMTP_PASSWORD', ''));
+        $pEnc  = strtolower((string)(Env::get('MAIL_ENCRYPTION') ?: Env::get('SMTP_ENCRYPTION', ($pPort === 465 ? 'ssl' : 'tls'))));
+        $pFrom = (string)(Env::get('MAIL_FROM_ADDRESS') ?: Env::get('EMAIL_FROM', 'travelhub@mshorizonuae.com'));
+        $pFromName = (string)(Env::get('MAIL_FROM_NAME') ?: Env::get('EMAIL_FROM_NAME', 'TravelHub'));
+
+        if (!empty($pUser) && !empty($pPass)) {
+            $transports[] = [
+                'name' => str_contains(strtolower($pHost), 'hostinger') ? 'Hostinger Business SMTP' : 'Primary SMTP',
+                'host' => $pHost,
+                'port' => $pPort,
+                'user' => $pUser,
+                'pass' => $pPass,
+                'encryption' => $pEnc,
+                'fromEmail' => $pFrom,
+                'fromName' => $pFromName,
+            ];
         }
 
-        // 7. Audit log to notification_logs
+        // Transport 2: Google Gmail SMTP (Backup / Secondary)
+        $gHost = (string)(Env::get('GMAIL_SMTP_HOST') ?: Env::get('GOOGLE_SMTP_HOST', 'smtp.gmail.com'));
+        $gPort = (int)(Env::get('GMAIL_SMTP_PORT') ?: Env::get('GOOGLE_SMTP_PORT', 587));
+        $gUser = (string)(Env::get('GMAIL_SMTP_USER') ?: Env::get('GOOGLE_SMTP_USER', ''));
+        $gPass = (string)(Env::get('GMAIL_SMTP_PASSWORD') ?: Env::get('GOOGLE_SMTP_PASSWORD', ''));
+        $gEnc  = strtolower((string)(Env::get('GMAIL_SMTP_ENCRYPTION') ?: Env::get('GOOGLE_SMTP_ENCRYPTION', 'tls')));
+        $gFrom = (string)(Env::get('GMAIL_EMAIL_FROM') ?: Env::get('GOOGLE_EMAIL_FROM', $gUser ?: $pFrom));
+        $gFromName = (string)(Env::get('GMAIL_FROM_NAME') ?: Env::get('GOOGLE_FROM_NAME', $pFromName));
+
+        if (!empty($gUser) && !empty($gPass) && $gUser !== $pUser) {
+            $transports[] = [
+                'name' => 'Google Gmail SMTP',
+                'host' => $gHost,
+                'port' => $gPort,
+                'user' => $gUser,
+                'pass' => $gPass,
+                'encryption' => $gEnc,
+                'fromEmail' => $gFrom,
+                'fromName' => $gFromName,
+            ];
+        }
+
+        // 6. Attempt Dispatch along the Multi-Transport Chain
+        $result = null;
+        $attemptErrors = [];
+
+        foreach ($transports as $tr) {
+            try {
+                $result = self::sendSmtpSocket(
+                    $tr['host'],
+                    $tr['port'],
+                    $tr['user'],
+                    $tr['pass'],
+                    $tr['encryption'],
+                    $tr['fromEmail'],
+                    $tr['fromName'],
+                    $to,
+                    $recipientName,
+                    $interpolatedSubject,
+                    $fullHtml,
+                    $plainText,
+                    $params['attachments'] ?? []
+                );
+                if (!empty($result['success'])) {
+                    $result['provider'] = $tr['name'];
+                    break;
+                }
+            } catch (\Throwable $smtpErr) {
+                $attemptErrors[] = "{$tr['name']} (port {$tr['port']}): " . $smtpErr->getMessage();
+                error_log("[VISA-TRACK] {$tr['name']} failed for {$to}: " . $smtpErr->getMessage() . " — Attempting alternate port/transport...");
+
+                // Retry alternate port (465 SSL <-> 587 TLS)
+                $altPort = ($tr['port'] === 465) ? 587 : 465;
+                $altEnc  = ($altPort === 465) ? 'ssl' : 'tls';
+                try {
+                    $result = self::sendSmtpSocket(
+                        $tr['host'],
+                        $altPort,
+                        $tr['user'],
+                        $tr['pass'],
+                        $altEnc,
+                        $tr['fromEmail'],
+                        $tr['fromName'],
+                        $to,
+                        $recipientName,
+                        $interpolatedSubject,
+                        $fullHtml,
+                        $plainText,
+                        $params['attachments'] ?? []
+                    );
+                    if (!empty($result['success'])) {
+                        $result['provider'] = "{$tr['name']} (port {$altPort})";
+                        break;
+                    }
+                } catch (\Throwable $altErr) {
+                    $attemptErrors[] = "{$tr['name']} (port {$altPort}): " . $altErr->getMessage();
+                }
+            }
+        }
+
+        // 7. Fallback to Native Server PHP mail() if all SMTP transports failed or unconfigured
+        if (empty($result) || empty($result['success'])) {
+            $phpRes = self::sendPhpMail($to, $recipientName, $interpolatedSubject, $fullHtml, $plainText);
+            if (!empty($phpRes['success'])) {
+                $result = $phpRes;
+                if (!empty($attemptErrors)) {
+                    $result['provider'] = 'phpmail (fallback after ' . count($attemptErrors) . ' SMTP attempts)';
+                    $result['warning'] = implode(' | ', $attemptErrors);
+                }
+            } else {
+                $result = [
+                    'success' => false,
+                    'message_id' => null,
+                    'provider' => 'none',
+                    'error' => !empty($attemptErrors)
+                        ? implode(' | ', $attemptErrors) . ' | Server mail: ' . ($phpRes['error'] ?? 'failed')
+                        : ($phpRes['error'] ?? 'mail() failed'),
+                    'simulated' => false,
+                ];
+            }
+        }
+
+        // 8. Audit log to notification_logs
         try {
             $pdo = \App\Config\Database::getConnection();
             $logStmt = $pdo->prepare("INSERT INTO notification_logs (event_type, recipient_type, recipient_name, recipient_email, channel, subject, content_preview, status, error_details, provider, message_id, sent_at) VALUES ('email.direct', 'User', ?, ?, 'Email', ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)");
@@ -134,26 +231,23 @@ class EmailService
     /**
      * Native Production-Grade SMTP Socket Client with STARTTLS, SSL/TLS, AUTH LOGIN/PLAIN.
      */
-    private static function sendSmtp(
+    private static function sendSmtpSocket(
+        string $host,
+        int $port,
+        string $user,
+        string $pass,
+        string $encryption,
+        string $fromEmail,
+        string $fromName,
         string $to,
         string $recipientName,
         string $subject,
         string $htmlBody,
         string $plainText,
-        array $attachments = [],
-        ?int $overridePort = null,
-        ?string $overrideEncryption = null
+        array $attachments = []
     ): array {
-        $host = (string)Env::get('SMTP_HOST', 'smtp.hostinger.com');
-        $port = $overridePort ?: (int)Env::get('SMTP_PORT', 587);
-        $user = (string)Env::get('SMTP_USER', '');
-        $pass = (string)Env::get('SMTP_PASSWORD', '');
-        $encryption = $overrideEncryption ?: strtolower((string)Env::get('SMTP_ENCRYPTION', 'tls'));
-        $fromEmail = (string)Env::get('EMAIL_FROM', 'admin@mshorizonuae.com');
-        $fromName = (string)Env::get('EMAIL_FROM_NAME', App::COMPANY_NAME);
-
         if (empty($user) || empty($pass)) {
-            throw new Exception("SMTP credentials (SMTP_USER / SMTP_PASSWORD) are not configured.");
+            throw new Exception("SMTP credentials (username / password) are not configured.");
         }
 
         $timeout = 10;
@@ -304,6 +398,30 @@ class EmailService
             'error' => null,
             'simulated' => false,
         ];
+    }
+
+    /**
+     * Backward-compatible sendSmtp wrapper.
+     */
+    private static function sendSmtp(
+        string $to,
+        string $recipientName,
+        string $subject,
+        string $htmlBody,
+        string $plainText,
+        array $attachments = [],
+        ?int $overridePort = null,
+        ?string $overrideEncryption = null
+    ): array {
+        $host = (string)(Env::get('MAIL_HOST') ?: Env::get('SMTP_HOST', 'smtp.hostinger.com'));
+        $port = $overridePort ?: (int)(Env::get('MAIL_PORT') ?: Env::get('SMTP_PORT', 465));
+        $user = (string)(Env::get('MAIL_USERNAME') ?: Env::get('SMTP_USER', ''));
+        $pass = (string)(Env::get('MAIL_PASSWORD') ?: Env::get('SMTP_PASSWORD', ''));
+        $enc  = $overrideEncryption ?: strtolower((string)(Env::get('MAIL_ENCRYPTION') ?: Env::get('SMTP_ENCRYPTION', ($port === 465 ? 'ssl' : 'tls'))));
+        $from = (string)(Env::get('MAIL_FROM_ADDRESS') ?: Env::get('EMAIL_FROM', 'travelhub@mshorizonuae.com'));
+        $name = (string)(Env::get('MAIL_FROM_NAME') ?: Env::get('EMAIL_FROM_NAME', App::COMPANY_NAME));
+
+        return self::sendSmtpSocket($host, $port, $user, $pass, $enc, $from, $name, $to, $recipientName, $subject, $htmlBody, $plainText, $attachments);
     }
 
     /**
