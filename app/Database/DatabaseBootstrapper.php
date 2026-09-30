@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 22;
+    private const SCHEMA_VERSION = 23;
 
     public static function init(bool $force = false): void
     {
@@ -3192,6 +3192,19 @@ class DatabaseBootstrapper
             }
         }
 
+        // ── MIGRATION 23: Complete Data Recovery from Production Backup ──
+        if ($currentVer < 23) {
+            self::restoreFromProductionBackup($pdo, $driver);
+        }
+
+        // Unconditional data recovery check: if customers count < 10, restore all backup records
+        try {
+            $custCount = (int)$pdo->query("SELECT COUNT(*) FROM customers")->fetchColumn();
+            if ($custCount < 10) {
+                self::restoreFromProductionBackup($pdo, $driver);
+            }
+        } catch (\Throwable $e) {}
+
         // ── RECORD SCHEMA VERSION ─────────────────────────────────────────────
         // Must be the LAST operation so that a failed migration does NOT mark
         // itself as complete — allowing a retry on the next request.
@@ -3202,6 +3215,73 @@ class DatabaseBootstrapper
             $pdo->exec($ins);
         } catch (\Throwable $e) {
             error_log('[VISA-TRACK] Could not record schema version: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Recovers complete customer, application, document, and transactional records from backup SQL files.
+     */
+    public static function restoreFromProductionBackup(PDO $pdo, string $driver): void
+    {
+        $backupDirs = [
+            dirname(__DIR__, 2) . '/storage/backups',
+            __DIR__ . '/../../storage/backups',
+        ];
+
+        $backupFiles = [
+            'db_backup_20260827_120310.sql',
+            'db_backup_20260826_182316.sql',
+        ];
+
+        $targetFile = null;
+        foreach ($backupDirs as $dir) {
+            foreach ($backupFiles as $f) {
+                $p = $dir . '/' . $f;
+                if (file_exists($p) && filesize($p) > 100000) {
+                    $targetFile = $p;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$targetFile) {
+            return;
+        }
+
+        try {
+            if ($driver === 'mysql') {
+                try { $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;"); } catch (\Throwable $e) {}
+            }
+
+            $handle = fopen($targetFile, 'r');
+            if ($handle) {
+                $buffer = '';
+                while (($line = fgets($handle)) !== false) {
+                    $trimmed = trim($line);
+                    if ($trimmed === '' || str_starts_with($trimmed, '--') || str_starts_with($trimmed, '/*')) {
+                        continue;
+                    }
+                    $buffer .= $line;
+                    if (str_ends_with($trimmed, ';')) {
+                        $sqlStmt = trim($buffer);
+                        $buffer = '';
+                        if (str_starts_with($sqlStmt, 'INSERT INTO')) {
+                            $insPrefix = ($driver === 'mysql') ? 'INSERT IGNORE INTO ' : 'INSERT OR IGNORE INTO ';
+                            $sqlStmt = preg_replace('/^INSERT INTO /i', $insPrefix, $sqlStmt);
+                            try {
+                                $pdo->exec($sqlStmt);
+                            } catch (\Throwable $e) {}
+                        }
+                    }
+                }
+                fclose($handle);
+            }
+
+            if ($driver === 'mysql') {
+                try { $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;"); } catch (\Throwable $e) {}
+            }
+        } catch (\Throwable $e) {
+            error_log('[VISA-TRACK] restoreFromProductionBackup error: ' . $e->getMessage());
         }
     }
 

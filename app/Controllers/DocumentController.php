@@ -37,11 +37,11 @@ class DocumentController
                     u.name as verified_by_name,
                     uploader.name as uploaded_by_name
                 FROM documents d 
-                JOIN document_types dt ON d.document_type_id = dt.id 
+                LEFT JOIN document_types dt ON d.document_type_id = dt.id 
                 LEFT JOIN applications a ON d.application_id = a.id 
                 LEFT JOIN visa_services vs ON a.visa_service_id = vs.id
                 LEFT JOIN countries ct ON vs.country_id = ct.id
-                JOIN customers c ON d.customer_id = c.id 
+                LEFT JOIN customers c ON d.customer_id = c.id 
                 LEFT JOIN customer_passports cp ON c.id = cp.customer_id AND cp.is_primary = 1
                 LEFT JOIN users u ON d.verified_by = u.id 
                 LEFT JOIN users uploader ON (d.uploaded_by_type = 'Staff' AND d.uploaded_by_id = uploader.id)

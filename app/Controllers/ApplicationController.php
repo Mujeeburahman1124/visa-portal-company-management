@@ -56,9 +56,9 @@ class ApplicationController
                     u.name as staff_name, b.name as branch_name,
                     cp.passport_number as current_passport
                 FROM applications a
-                JOIN customers c ON a.customer_id = c.id
-                JOIN visa_services vs ON a.visa_service_id = vs.id
-                JOIN countries ct ON vs.country_id = ct.id
+                LEFT JOIN customers c ON a.customer_id = c.id
+                LEFT JOIN visa_services vs ON a.visa_service_id = vs.id
+                LEFT JOIN countries ct ON vs.country_id = ct.id
                 LEFT JOIN customer_passports cp ON c.id = cp.customer_id AND cp.is_primary = 1
                 LEFT JOIN users u ON a.assigned_staff_id = u.id
                 LEFT JOIN branches b ON a.branch_id = b.id

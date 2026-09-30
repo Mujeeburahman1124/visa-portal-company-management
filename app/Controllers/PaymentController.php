@@ -39,10 +39,10 @@ class PaymentController
                     s.company_name as supplier_name,
                     u.name as received_by_name
                 FROM payments p
-                JOIN applications a ON p.application_id = a.id
-                JOIN customers c ON p.customer_id = c.id
-                JOIN visa_services vs ON a.visa_service_id = vs.id
-                JOIN countries ct ON vs.country_id = ct.id
+                LEFT JOIN applications a ON p.application_id = a.id
+                LEFT JOIN customers c ON p.customer_id = c.id
+                LEFT JOIN visa_services vs ON a.visa_service_id = vs.id
+                LEFT JOIN countries ct ON vs.country_id = ct.id
                 LEFT JOIN suppliers s ON a.supplier_id = s.id
                 LEFT JOIN users u ON p.received_by = u.id
                 WHERE 1=1";
