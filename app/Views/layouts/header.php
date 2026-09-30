@@ -134,6 +134,10 @@
         console.error('Modal element not found: ' + modalId);
         return;
       }
+      // Promote modal directly to document.body so it breaks out of container stacking contexts/overflow
+      if (el.parentNode !== document.body) {
+        document.body.appendChild(el);
+      }
       try {
         if (window.bootstrap && bootstrap.Modal) {
           var modalInstance = bootstrap.Modal.getOrCreateInstance(el);
@@ -147,12 +151,14 @@
       el.style.display = 'block';
       el.removeAttribute('aria-hidden');
       el.setAttribute('aria-modal', 'true');
+      el.style.zIndex = '1065';
       document.body.classList.add('modal-open');
       var backdrop = document.getElementById('vt-modal-backdrop');
       if (!backdrop) {
         backdrop = document.createElement('div');
         backdrop.id = 'vt-modal-backdrop';
         backdrop.className = 'modal-backdrop fade show';
+        backdrop.style.zIndex = '1050';
         document.body.appendChild(backdrop);
       }
     };

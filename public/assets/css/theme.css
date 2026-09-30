@@ -1285,3 +1285,31 @@ img { max-width: 100%; height: auto; }
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
 }
+
+/* ==========================================================================
+   MODAL LAYERING & POINTER-EVENT GUARANTEES
+   ========================================================================== */
+.modal {
+  z-index: 1065 !important;
+}
+.modal-backdrop, #vt-modal-backdrop {
+  z-index: 1050 !important;
+}
+.modal-dialog {
+  z-index: 1070 !important;
+  position: relative !important;
+  pointer-events: auto !important;
+}
+.modal-content {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 1;
+}
+.modal-footer button,
+.modal-footer .btn {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  position: relative;
+  z-index: 5;
+}
+

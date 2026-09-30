@@ -1435,13 +1435,13 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
 
 <!-- 1. Stage Transition Modal -->
 <div class="modal fade" id="stageTransitionModal" tabindex="-1" aria-labelledby="stageTransitionModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content border-0 shadow">
       <div class="modal-header bg-primary text-white">
         <h5 class="modal-title fw-bold fs-6" id="stageTransitionModalLabel"><i class="fa-solid fa-forward-step me-2"></i> Advance Visa Lifecycle Stage</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="/applications/update-stage" method="POST">
+      <form action="/applications/update-stage" method="POST" id="stageTransitionForm">
         <?= csrf_field() ?>
         <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
 
@@ -1452,7 +1452,7 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
 
           <div class="mb-3">
             <label class="form-label small fw-semibold text-secondary">Select Target Stage <span class="text-danger">*</span></label>
-            <select name="new_stage" class="form-select" required>
+            <select name="new_stage" id="newStageSelect" class="form-select" required>
               <?php foreach ($lifecycleStages as $ls): ?>
                 <option value="<?= e($ls) ?>" <?= $ls === $app['current_stage'] ? 'selected' : '' ?>>
                   <?= e($ls) ?>
@@ -1466,7 +1466,7 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
 
           <div class="mb-3">
             <label class="form-label small fw-semibold text-secondary">Application Status</label>
-            <select name="new_status" class="form-select">
+            <select name="new_status" id="newStatusSelect" class="form-select">
               <option value="In Process" <?= $app['status'] === 'In Process' ? 'selected' : '' ?>>In Process</option>
               <option value="Documents Under Verification" <?= $app['status'] === 'Documents Under Verification' ? 'selected' : '' ?>>Documents Under Verification</option>
               <option value="Submitted" <?= $app['status'] === 'Submitted' ? 'selected' : '' ?>>Submitted</option>
@@ -1493,7 +1493,7 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
 
         <div class="modal-footer bg-light border-top">
           <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-check me-1"></i> Confirm Stage Update</button>
+          <button type="submit" id="confirmStageUpdateBtn" class="btn btn-primary fw-semibold"><i class="fa-solid fa-check me-1"></i> Confirm Stage Update</button>
         </div>
       </form>
     </div>
@@ -2100,25 +2100,50 @@ window.openModalById = function (modalId, evt) {
     console.error('Modal element not found: ' + modalId);
     return;
   }
+  // Move modal directly to document.body to avoid stacking context / overflow:hidden traps
+  if (el.parentNode !== document.body) {
+    document.body.appendChild(el);
+  }
   try {
     if (window.bootstrap && bootstrap.Modal) {
       bootstrap.Modal.getOrCreateInstance(el).show();
       return;
     }
-  } catch (err) {}
+  } catch (err) {
+    console.warn('Bootstrap modal instance failed, using fallback:', err);
+  }
   el.classList.add('show');
   el.style.display = 'block';
   el.removeAttribute('aria-hidden');
   el.setAttribute('aria-modal', 'true');
+  el.style.zIndex = '1065';
   document.body.classList.add('modal-open');
   var backdrop = document.getElementById('vt-modal-backdrop');
   if (!backdrop) {
     backdrop = document.createElement('div');
     backdrop.id = 'vt-modal-backdrop';
     backdrop.className = 'modal-backdrop fade show';
+    backdrop.style.zIndex = '1050';
     document.body.appendChild(backdrop);
   }
 };
+
+// Stage transition form submission protection & instant user feedback
+document.addEventListener('DOMContentLoaded', function () {
+  var stageForm = document.getElementById('stageTransitionForm');
+  var stageBtn = document.getElementById('confirmStageUpdateBtn');
+  if (stageForm && stageBtn) {
+    stageForm.addEventListener('submit', function (e) {
+      if (!stageForm.checkValidity()) {
+        e.preventDefault();
+        stageForm.reportValidity();
+        return;
+      }
+      stageBtn.disabled = true;
+      stageBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Confirming...';
+    });
+  }
+});
 
 function toggleDecisionFields() {
   const dec = document.getElementById('decisionSelect')?.value;

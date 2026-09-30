@@ -16,6 +16,10 @@ window.openModalById = function (modalId, evt) {
     console.error('Modal element not found: ' + modalId);
     return;
   }
+  // Move modal directly to document.body to avoid stacking context / overflow:hidden traps
+  if (el.parentNode !== document.body) {
+    document.body.appendChild(el);
+  }
   try {
     if (window.bootstrap && bootstrap.Modal) {
       const modalInstance = bootstrap.Modal.getOrCreateInstance(el);
@@ -31,6 +35,7 @@ window.openModalById = function (modalId, evt) {
   el.style.display = 'block';
   el.removeAttribute('aria-hidden');
   el.setAttribute('aria-modal', 'true');
+  el.style.zIndex = '1065';
   document.body.classList.add('modal-open');
 
   let backdrop = document.getElementById('vt-modal-backdrop');
@@ -38,6 +43,7 @@ window.openModalById = function (modalId, evt) {
     backdrop = document.createElement('div');
     backdrop.id = 'vt-modal-backdrop';
     backdrop.className = 'modal-backdrop fade show';
+    backdrop.style.zIndex = '1050';
     document.body.appendChild(backdrop);
   }
 };
@@ -72,6 +78,13 @@ window.closeModalById = function (modalId) {
 
 document.addEventListener('DOMContentLoaded', function () {
   'use strict';
+
+  // Automatically promote all modals to document.body so they never get trapped in container stacking contexts
+  document.querySelectorAll('.modal').forEach(function(modalEl) {
+    if (modalEl.parentNode !== document.body) {
+      document.body.appendChild(modalEl);
+    }
+  });
 
   // 1. Safe Initialize Bootstrap Tooltips
   try {

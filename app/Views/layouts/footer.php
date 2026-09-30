@@ -50,6 +50,7 @@
 </div>
 
 <!-- Core JS Dependencies -->
+<script src="/assets/js/bootstrap.bundle.min.js"></script>
 <script src="/assets/js/flatpickr.min.js"></script>
 <script src="/assets/js/app-datepicker.js?v=1.0.0"></script>
 <script src="/assets/js/app.js?v=2.1.0"></script>
