@@ -33,16 +33,17 @@ class PayrollController
                        pr.approved_paid_leave_days, pr.unpaid_leave_days, pr.overtime_hours, pr.overtime_amount, pr.allowances,
                        pr.deductions, pr.unpaid_absence_deductions, pr.advance_salary, pr.net_salary, pr.payment_status, pr.payment_date,
                        pr.payment_method, pr.transaction_reference,
-                       (SELECT COUNT(*) FROM staff_attendance sa WHERE sa.user_id = u.id AND strftime('%Y-%m', sa.attendance_date) = ? AND sa.status = 'Present') as recorded_present_days,
-                       (SELECT COUNT(*) FROM staff_attendance sa WHERE sa.user_id = u.id AND strftime('%Y-%m', sa.attendance_date) = ? AND sa.status = 'Absent') as recorded_absent_days,
-                       (SELECT COALESCE(SUM(sa.overtime_hours), 0) FROM staff_attendance sa WHERE sa.user_id = u.id AND strftime('%Y-%m', sa.attendance_date) = ?) as recorded_ot_hours
+                       (SELECT COUNT(*) FROM staff_attendance sa WHERE sa.user_id = u.id AND sa.attendance_date LIKE ? AND sa.status = 'Present') as recorded_present_days,
+                       (SELECT COUNT(*) FROM staff_attendance sa WHERE sa.user_id = u.id AND sa.attendance_date LIKE ? AND sa.status = 'Absent') as recorded_absent_days,
+                       (SELECT COALESCE(SUM(sa.overtime_hours), 0) FROM staff_attendance sa WHERE sa.user_id = u.id AND sa.attendance_date LIKE ?) as recorded_ot_hours
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
                 LEFT JOIN branches b ON u.branch_id = b.id
                 LEFT JOIN payroll_records pr ON pr.user_id = u.id AND pr.payroll_month = ?
                 WHERE u.is_active = 1";
 
-        $params = [$selectedMonth, $selectedMonth, $selectedMonth, $selectedMonth];
+        $monthPattern = $selectedMonth . '%';
+        $params = [$monthPattern, $monthPattern, $monthPattern, $selectedMonth];
 
         if ($branchId > 0) {
             $sql .= " AND u.branch_id = ?";
@@ -118,8 +119,8 @@ class PayrollController
                 SUM(CASE WHEN status = 'Half-Day' THEN 0.5 ELSE 0 END) as half_cnt,
                 COALESCE(SUM(overtime_hours), 0) as ot_hrs
                 FROM staff_attendance 
-                WHERE user_id = ? AND strftime('%Y-%m', attendance_date) = ?");
-            $attStmt->execute([$userId, $month]);
+                WHERE user_id = ? AND attendance_date LIKE ?");
+            $attStmt->execute([$userId, $month . '%']);
             $att = $attStmt->fetch(PDO::FETCH_ASSOC);
 
             $recordedPresent = (float)($att['present_cnt'] ?? 0) + (float)($att['half_cnt'] ?? 0);

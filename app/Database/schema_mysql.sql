@@ -84,13 +84,18 @@ CREATE TABLE IF NOT EXISTS `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `role_id` int(11) NOT NULL,
   `branch_id` int(11) DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL,
   `name` varchar(150) NOT NULL,
   `email` varchar(150) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
   `phone` varchar(50) DEFAULT NULL,
   `avatar` varchar(255) DEFAULT NULL,
+  `profile_photo` varchar(255) DEFAULT NULL,
   `designation` varchar(100) DEFAULT NULL,
   `department` varchar(100) DEFAULT NULL,
+  `basic_salary` decimal(12,2) DEFAULT 0.00,
+  `salary_currency` varchar(10) DEFAULT 'AED',
+  `joining_date` date DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT 1,
   `last_login_at` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp(),
@@ -100,6 +105,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   KEY `idx_users_email` (`email`),
   KEY `idx_users_role` (`role_id`),
   KEY `idx_users_branch` (`branch_id`),
+  KEY `idx_users_created_by` (`created_by`),
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`),
   CONSTRAINT `users_ibfk_2` FOREIGN KEY (`branch_id`) REFERENCES `branches` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -1521,6 +1527,43 @@ CREATE TABLE IF NOT EXISTS `visa_package_inventory_transactions` (
   `created_at` datetime DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `idx_vpit_serv` (`visa_service_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: `task_history`
+CREATE TABLE IF NOT EXISTS `task_history` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `task_id` int(11) NOT NULL,
+  `action` varchar(100) NOT NULL,
+  `from_status` varchar(50) DEFAULT NULL,
+  `to_status` varchar(50) DEFAULT NULL,
+  `assigned_from` int(11) DEFAULT NULL,
+  `assigned_to` int(11) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `performed_by` int(11) DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_th_task` (`task_id`),
+  KEY `idx_th_action` (`action`),
+  CONSTRAINT `task_history_ibfk_1` FOREIGN KEY (`task_id`) REFERENCES `tasks` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table: `portal_activation_tokens`
+CREATE TABLE IF NOT EXISTS `portal_activation_tokens` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `portal_type` varchar(50) NOT NULL,
+  `entity_id` int(11) NOT NULL,
+  `entity_email` varchar(150) NOT NULL,
+  `customer_id` int(11) DEFAULT NULL,
+  `token` varchar(255) NOT NULL,
+  `token_hash` varchar(255) DEFAULT NULL,
+  `is_used` tinyint(1) DEFAULT 0,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `expires_at` datetime NOT NULL,
+  `used_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token` (`token`),
+  KEY `idx_pat_token` (`token`),
+  KEY `idx_pat_email` (`entity_email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================

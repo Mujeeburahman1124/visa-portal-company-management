@@ -137,24 +137,29 @@ class ReportController
             case 'expiry':
                 $title = 'Passport, ID & Visa Expiry Report';
                 $columns = ['Customer Name', 'Document Type', 'Document Number', 'Expiry Date', 'Status / Warning'];
-                $stmt = $pdo->query("SELECT c.full_name as col_1, 'Passport' as col_2, cp.passport_number as col_3, cp.expiry_date as col_4,
+                $today = date('Y-m-d');
+                $d30 = date('Y-m-d', strtotime('+30 days'));
+                $d60 = date('Y-m-d', strtotime('+60 days'));
+                $d90 = date('Y-m-d', strtotime('+90 days'));
+                $stmt = $pdo->prepare("SELECT c.full_name as col_1, 'Passport' as col_2, cp.passport_number as col_3, cp.expiry_date as col_4,
                     CASE 
-                        WHEN cp.expiry_date < CURRENT_DATE THEN 'EXPIRED'
-                        WHEN cp.expiry_date <= DATE_ADD(CURRENT_DATE, INTERVAL 30 DAY) THEN 'Critical (< 30 Days)'
-                        WHEN cp.expiry_date <= DATE_ADD(CURRENT_DATE, INTERVAL 60 DAY) THEN 'Warning (< 60 Days)'
+                        WHEN cp.expiry_date < ? THEN 'EXPIRED'
+                        WHEN cp.expiry_date <= ? THEN 'Critical (< 30 Days)'
+                        WHEN cp.expiry_date <= ? THEN 'Warning (< 60 Days)'
                         ELSE 'Expiring (< 90 Days)'
                     END as col_5
                     FROM customer_passports cp JOIN customers c ON cp.customer_id = c.id
-                    WHERE cp.expiry_date <= DATE_ADD(CURRENT_DATE, INTERVAL 90 DAY)
+                    WHERE cp.expiry_date <= ?
                     UNION ALL
                     SELECT c.full_name as col_1, 'National / Emirates ID' as col_2, nid.id_number as col_3, nid.expiry_date as col_4,
                     CASE 
-                        WHEN nid.expiry_date < CURRENT_DATE THEN 'EXPIRED'
+                        WHEN nid.expiry_date < ? THEN 'EXPIRED'
                         ELSE 'Expiring Soon'
                     END as col_5
                     FROM customer_national_ids nid JOIN customers c ON nid.customer_id = c.id
-                    WHERE nid.expiry_date <= DATE_ADD(CURRENT_DATE, INTERVAL 60 DAY)
+                    WHERE nid.expiry_date <= ?
                     ORDER BY col_4 ASC");
+                $stmt->execute([$today, $d30, $d60, $d90, $today, $d60]);
                 $data = $stmt->fetchAll();
                 break;
 

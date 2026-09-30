@@ -66,7 +66,7 @@ class AttendanceController
             WHERE sa.attendance_date = '{$todayStr}' AND sa.status = 'Leave' AND u.is_active = 1")->fetchColumn();
 
         $monthOtHours = (float)$pdo->query("SELECT COALESCE(SUM(overtime_hours), 0) FROM staff_attendance 
-            WHERE strftime('%Y-%m', attendance_date) = '{$currentMonthStr}'")->fetchColumn();
+            WHERE attendance_date LIKE '{$currentMonthStr}%'")->fetchColumn();
 
         // 2. Query Attendance Records
         $sql = "SELECT sa.*, u.name as staff_name, u.email as staff_email, u.phone as staff_phone,

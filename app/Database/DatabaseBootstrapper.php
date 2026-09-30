@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 24;
+    private const SCHEMA_VERSION = 26;
 
     public static function init(bool $force = false): void
     {
@@ -45,20 +45,28 @@ class DatabaseBootstrapper
             // Ignore
         }
 
+        $currentVer = 0;
+        try {
+            $currentVer = (int)$pdo->query(
+                "SELECT COALESCE(MAX(version),0) FROM schema_migrations"
+            )->fetchColumn();
+        } catch (\Throwable $e) {}
+
         // Fast path for HTTP requests: skip expensive DDL if schema is up-to-date and key tables exist
         $autoMigrate = (bool)\App\Config\Env::get('DB_AUTO_MIGRATE', false);
         if (!$force && !$autoMigrate && php_sapi_name() !== 'cli') {
             try {
-                $currentVer = (int)$pdo->query(
-                    "SELECT COALESCE(MAX(version),0) FROM schema_migrations"
-                )->fetchColumn();
-
                 $hasLeaveRequests = false;
                 try {
                     $hasLeaveRequests = (bool)$pdo->query("SELECT 1 FROM staff_leave_requests LIMIT 1");
                 } catch (\Throwable $e) {}
 
-                if ($currentVer >= self::SCHEMA_VERSION && $hasLeaveRequests) {
+                $hasTaskHistory = false;
+                try {
+                    $hasTaskHistory = (bool)$pdo->query("SELECT 1 FROM task_history LIMIT 1");
+                } catch (\Throwable $e) {}
+
+                if ($currentVer >= self::SCHEMA_VERSION && $hasLeaveRequests && $hasTaskHistory) {
                     return; // Schema is current and complete — fast exit
                 }
                 // Schema is behind or incomplete — fall through to run migrations
@@ -3194,6 +3202,12 @@ class DatabaseBootstrapper
         }
 
         // ── MIGRATION 23: Complete Data Recovery from Production Backup ──
+        if (!isset($currentVer)) {
+            $currentVer = 0;
+            try {
+                $currentVer = (int)$pdo->query("SELECT COALESCE(MAX(version),0) FROM schema_migrations")->fetchColumn();
+            } catch (\Throwable $e) {}
+        }
         if ($currentVer < 23) {
             self::restoreFromProductionBackup($pdo, $driver);
         }
@@ -3202,6 +3216,16 @@ class DatabaseBootstrapper
         if ($currentVer < 24) {
             self::synchronizeRealCompanySettings($pdo, $driver);
         }
+
+        // ── MIGRATION 25 & 26: Universal Schema Synchronization (MySQL + SQLite) ──
+        if ($currentVer < 26) {
+            self::synchronizeUniversalSchema($pdo, $driver);
+        }
+
+        // Unconditional universal schema synchronization to guarantee table & column presence on all drivers
+        try {
+            self::synchronizeUniversalSchema($pdo, $driver);
+        } catch (\Throwable $e) {}
 
         // Unconditional sync: ensure company details match real contact info
         try {
@@ -3226,6 +3250,115 @@ class DatabaseBootstrapper
             $pdo->exec($ins);
         } catch (\Throwable $e) {
             error_log('[VISA-TRACK] Could not record schema version: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Migration 25/26: Guarantees essential tables, columns, and indexes exist across both MySQL (Hostinger) and SQLite.
+     */
+    public static function synchronizeUniversalSchema(PDO $pdo, string $driver): void
+    {
+        // 1. task_history table
+        try {
+            if ($driver === 'mysql') {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS task_history (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    task_id INT NOT NULL,
+                    action VARCHAR(100) NOT NULL,
+                    from_status VARCHAR(50) NULL,
+                    to_status VARCHAR(50) NULL,
+                    assigned_from INT NULL,
+                    assigned_to INT NULL,
+                    notes TEXT NULL,
+                    performed_by INT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_th_task (task_id),
+                    INDEX idx_th_action (action)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+            } else {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS task_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    task_id INTEGER NOT NULL,
+                    action TEXT NOT NULL,
+                    from_status TEXT NULL,
+                    to_status TEXT NULL,
+                    assigned_from INTEGER NULL,
+                    assigned_to INTEGER NULL,
+                    notes TEXT NULL,
+                    performed_by INTEGER NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+                );");
+            }
+        } catch (\Throwable $e) {}
+
+        // 2. portal_activation_tokens table
+        try {
+            if ($driver === 'mysql') {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS portal_activation_tokens (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    portal_type VARCHAR(50) NOT NULL,
+                    entity_id INT NOT NULL,
+                    entity_email VARCHAR(150) NOT NULL,
+                    customer_id INT NULL,
+                    token VARCHAR(255) NOT NULL UNIQUE,
+                    token_hash VARCHAR(255) NULL,
+                    is_used TINYINT(1) DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    expires_at DATETIME NOT NULL,
+                    used_at DATETIME NULL,
+                    INDEX idx_pat_token (token),
+                    INDEX idx_pat_email (entity_email)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
+            } else {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS portal_activation_tokens (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    portal_type TEXT NOT NULL,
+                    entity_id INTEGER NOT NULL,
+                    entity_email TEXT NOT NULL,
+                    customer_id INTEGER NULL,
+                    token TEXT NOT NULL UNIQUE,
+                    token_hash TEXT NULL,
+                    is_used INTEGER DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    expires_at DATETIME NOT NULL,
+                    used_at DATETIME NULL
+                );");
+            }
+        } catch (\Throwable $e) {}
+
+        // 3. users table columns
+        $userCols = [
+            'created_by'      => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'profile_photo'   => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+            'avatar'          => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+            'designation'     => ($driver === 'mysql') ? 'VARCHAR(100) NULL' : 'TEXT NULL',
+            'department'      => ($driver === 'mysql') ? 'VARCHAR(100) NULL' : 'TEXT NULL',
+            'phone'           => ($driver === 'mysql') ? 'VARCHAR(50) NULL' : 'TEXT NULL',
+            'basic_salary'    => ($driver === 'mysql') ? 'DECIMAL(12,2) DEFAULT 0.00' : 'REAL DEFAULT 0.00',
+            'salary_currency' => ($driver === 'mysql') ? 'VARCHAR(10) DEFAULT \'AED\'' : 'TEXT DEFAULT \'AED\'',
+            'joining_date'    => ($driver === 'mysql') ? 'DATE NULL' : 'TEXT NULL',
+        ];
+        foreach ($userCols as $col => $def) {
+            try {
+                $pdo->exec("ALTER TABLE users ADD COLUMN {$col} {$def};");
+            } catch (\Throwable $e) {}
+        }
+
+        // 4. tasks table columns
+        $taskCols = [
+            'completion_notes' => 'TEXT NULL',
+            'proof_attachment' => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+            'proof_of_work'    => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+            'completed_at'     => ($driver === 'mysql') ? 'DATETIME NULL' : 'TEXT NULL',
+            'completed_by'     => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'reassigned_to'    => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'department'       => ($driver === 'mysql') ? 'VARCHAR(100) NULL' : 'TEXT NULL',
+        ];
+        foreach ($taskCols as $col => $def) {
+            try {
+                $pdo->exec("ALTER TABLE tasks ADD COLUMN {$col} {$def};");
+            } catch (\Throwable $e) {}
         }
     }
 

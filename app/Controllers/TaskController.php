@@ -120,8 +120,12 @@ class TaskController
         $taskId = (int)$pdo->lastInsertId();
 
         // Log task history
-        $stmtHist = $pdo->prepare("INSERT INTO task_history (task_id, action, to_status, assigned_to, notes, performed_by, created_at) VALUES (?, 'CREATE', 'Pending', ?, ?, ?, CURRENT_TIMESTAMP)");
-        $stmtHist->execute([$taskId, $assignedTo, "Task created: {$title}", $currentUser['id']]);
+        try {
+            $stmtHist = $pdo->prepare("INSERT INTO task_history (task_id, action, to_status, assigned_to, notes, performed_by, created_at) VALUES (?, 'CREATE', 'Pending', ?, ?, ?, CURRENT_TIMESTAMP)");
+            $stmtHist->execute([$taskId, $assignedTo, "Task created: {$title}", $currentUser['id']]);
+        } catch (\Throwable $eHist) {
+            error_log('[TaskController] task_history create log error: ' . $eHist->getMessage());
+        }
 
         AuditService::log('CREATE_TASK', 'Tasks', $taskId, "Created task: {$title}");
 
@@ -195,8 +199,12 @@ class TaskController
             if ($proofAttachment) {
                 $historyNote .= " [Proof File Attached: {$proofAttachment}]";
             }
-            $stmtHist = $pdo->prepare("INSERT INTO task_history (task_id, action, from_status, to_status, notes, performed_by, created_at) VALUES (?, 'STATUS_CHANGE', ?, ?, ?, ?, CURRENT_TIMESTAMP)");
-            $stmtHist->execute([$taskId, $prevStatus, $status, $historyNote, $currentUser['id']]);
+            try {
+                $stmtHist = $pdo->prepare("INSERT INTO task_history (task_id, action, from_status, to_status, notes, performed_by, created_at) VALUES (?, 'STATUS_CHANGE', ?, ?, ?, ?, CURRENT_TIMESTAMP)");
+                $stmtHist->execute([$taskId, $prevStatus, $status, $historyNote, $currentUser['id']]);
+            } catch (\Throwable $eHist) {
+                error_log('[TaskController] task_history log error: ' . $eHist->getMessage());
+            }
 
             // Notify creator when task is marked Completed
             if ($status === 'Completed' && $taskCreatorId > 0 && $taskCreatorId !== (int)$currentUser['id']) {
@@ -254,8 +262,12 @@ class TaskController
                 $pdo->prepare("UPDATE tasks SET assigned_to = ?, reassigned_to = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
                     ->execute([$assignedTo, $assignedTo, $taskId]);
 
-                $stmtHist = $pdo->prepare("INSERT INTO task_history (task_id, action, assigned_from, assigned_to, notes, performed_by, created_at) VALUES (?, 'REASSIGN', ?, ?, ?, ?, CURRENT_TIMESTAMP)");
-                $stmtHist->execute([$taskId, $prevAssignee, $assignedTo, $reason, $currentUser['id']]);
+                try {
+                    $stmtHist = $pdo->prepare("INSERT INTO task_history (task_id, action, assigned_from, assigned_to, notes, performed_by, created_at) VALUES (?, 'REASSIGN', ?, ?, ?, ?, CURRENT_TIMESTAMP)");
+                    $stmtHist->execute([$taskId, $prevAssignee, $assignedTo, $reason, $currentUser['id']]);
+                } catch (\Throwable $eHist) {
+                    error_log('[TaskController] task_history reassign log error: ' . $eHist->getMessage());
+                }
 
                 AuditService::log('REASSIGN_TASK', 'Tasks', $taskId, "Reassigned task #{$taskId} to user #{$assignedTo}: {$reason}");
 
@@ -386,8 +398,12 @@ class TaskController
             $stmt = $pdo->prepare("INSERT INTO task_comments (task_id, user_id, comment, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)");
             $stmt->execute([$taskId, $currentUser['id'], $comment]);
 
-            $stmtHist = $pdo->prepare("INSERT INTO task_history (task_id, action, notes, performed_by, created_at) VALUES (?, 'COMMENT', ?, ?, CURRENT_TIMESTAMP)");
-            $stmtHist->execute([$taskId, $comment, $currentUser['id']]);
+            try {
+                $stmtHist = $pdo->prepare("INSERT INTO task_history (task_id, action, notes, performed_by, created_at) VALUES (?, 'COMMENT', ?, ?, CURRENT_TIMESTAMP)");
+                $stmtHist->execute([$taskId, $comment, $currentUser['id']]);
+            } catch (\Throwable $eHist) {
+                error_log('[TaskController] task_history comment log error: ' . $eHist->getMessage());
+            }
 
             AuditService::log('COMMENT_TASK', 'Tasks', $taskId, "Added comment on task #{$taskId}");
             redirect($_SERVER['HTTP_REFERER'] ?? '/action-center?tab=tasks', 'Comment added successfully.', 'success');
@@ -428,27 +444,37 @@ class TaskController
         }
 
         // Comments
-        $stmtCom = $pdo->prepare("SELECT tc.*, u.name as user_name 
-            FROM task_comments tc 
-            LEFT JOIN users u ON tc.user_id = u.id 
-            WHERE tc.task_id = ? 
-            ORDER BY tc.created_at ASC");
-        $stmtCom->execute([$taskId]);
-        $comments = $stmtCom->fetchAll(PDO::FETCH_ASSOC);
+        $comments = [];
+        try {
+            $stmtCom = $pdo->prepare("SELECT tc.*, u.name as user_name 
+                FROM task_comments tc 
+                LEFT JOIN users u ON tc.user_id = u.id 
+                WHERE tc.task_id = ? 
+                ORDER BY tc.created_at ASC");
+            $stmtCom->execute([$taskId]);
+            $comments = $stmtCom->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $eCom) {
+            $comments = [];
+        }
 
         // History
-        $stmtHist = $pdo->prepare("SELECT th.*, 
-                u.name as performed_by_name,
-                u_from.name as assigned_from_name,
-                u_to.name as assigned_to_name
-            FROM task_history th
-            LEFT JOIN users u ON th.performed_by = u.id
-            LEFT JOIN users u_from ON th.assigned_from = u_from.id
-            LEFT JOIN users u_to ON th.assigned_to = u_to.id
-            WHERE th.task_id = ?
-            ORDER BY th.created_at DESC");
-        $stmtHist->execute([$taskId]);
-        $history = $stmtHist->fetchAll(PDO::FETCH_ASSOC);
+        $history = [];
+        try {
+            $stmtHist = $pdo->prepare("SELECT th.*, 
+                    u.name as performed_by_name,
+                    u_from.name as assigned_from_name,
+                    u_to.name as assigned_to_name
+                FROM task_history th
+                LEFT JOIN users u ON th.performed_by = u.id
+                LEFT JOIN users u_from ON th.assigned_from = u_from.id
+                LEFT JOIN users u_to ON th.assigned_to = u_to.id
+                WHERE th.task_id = ?
+                ORDER BY th.created_at DESC");
+            $stmtHist->execute([$taskId]);
+            $history = $stmtHist->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $eHist) {
+            $history = [];
+        }
 
         echo json_encode([
             'success' => true,

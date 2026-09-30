@@ -170,10 +170,36 @@ class StaffController
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
         $createdBy = (int)($currentUser['id'] ?? 1);
 
-        $stmt = $pdo->prepare("INSERT INTO users (
-            role_id, branch_id, name, email, password_hash, phone, designation, department, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$roleId, $branchId, $name, $email, $passwordHash, $phone, $designation, $department, $createdBy]);
+        // Dynamically inspect users table columns to guarantee zero column mismatch errors
+        $userCols = [];
+        try {
+            if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql') {
+                $colsStmt = $pdo->query("SHOW COLUMNS FROM users");
+                $userCols = $colsStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+            } else {
+                $colsStmt = $pdo->query("PRAGMA table_info(users)");
+                $userCols = array_map(fn($r) => $r['name'], $colsStmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
+            }
+        } catch (\Throwable $e) {}
+
+        $insertData = [
+            'role_id' => $roleId,
+            'name' => $name,
+            'email' => $email,
+            'password_hash' => $passwordHash,
+        ];
+        if (empty($userCols) || in_array('branch_id', $userCols, true)) $insertData['branch_id'] = $branchId;
+        if (empty($userCols) || in_array('phone', $userCols, true)) $insertData['phone'] = $phone;
+        if (empty($userCols) || in_array('designation', $userCols, true)) $insertData['designation'] = $designation;
+        if (empty($userCols) || in_array('department', $userCols, true)) $insertData['department'] = $department;
+        if (in_array('created_by', $userCols, true)) $insertData['created_by'] = $createdBy;
+        if (in_array('is_active', $userCols, true)) $insertData['is_active'] = 1;
+        if (in_array('status', $userCols, true)) $insertData['status'] = 'active';
+
+        $colNames = implode(', ', array_keys($insertData));
+        $placeholders = implode(', ', array_fill(0, count($insertData), '?'));
+        $stmt = $pdo->prepare("INSERT INTO users ({$colNames}) VALUES ({$placeholders})");
+        $stmt->execute(array_values($insertData));
         $newId = (int)$pdo->lastInsertId();
 
         // If custom permissions were explicitly given/checked in the form, sync with role_permissions
