@@ -474,8 +474,9 @@ $activeTab = $_GET['tab'] ?? 'logs';
                 <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-vial text-primary me-2"></i> Safe Admin Test Message Sender</h6>
               </div>
               <div class="card-body p-4">
-                <form action="/notifications/test" method="POST">
+                <form action="/notifications/test" method="POST" id="tabTestForm">
                   <?= csrf_field() ?>
+                  <div id="tabTestAlert" class="alert d-none mb-3"></div>
 
                   <div class="mb-3">
                     <label class="form-label small fw-semibold">Delivery Channel</label>
@@ -502,7 +503,7 @@ $activeTab = $_GET['tab'] ?? 'logs';
                   </div>
 
                   <div class="d-flex justify-content-end">
-                    <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
+                    <button type="submit" id="btnTabSendTest" class="btn btn-primary px-4 fw-semibold shadow-sm">
                       <i class="fa-solid fa-paper-plane me-1"></i> Send Test Notification
                     </button>
                   </div>
@@ -563,13 +564,14 @@ $activeTab = $_GET['tab'] ?? 'logs';
 <div class="modal fade" id="testNotificationModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow-lg">
-      <form action="/notifications/test" method="POST">
+      <form action="/notifications/test" method="POST" id="quickTestNotificationForm">
         <?= csrf_field() ?>
         <div class="modal-header bg-light">
           <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-paper-plane text-primary me-2"></i> Send Quick Test Notification</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-4">
+          <div id="quickTestAlert" class="alert d-none mb-3"></div>
           <div class="mb-3">
             <label class="form-label small fw-semibold">Channel</label>
             <select name="channel" class="form-select" id="quickTestChannel" onchange="toggleQuickTestFields()">
@@ -592,7 +594,7 @@ $activeTab = $_GET['tab'] ?? 'logs';
         </div>
         <div class="modal-footer bg-light">
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary fw-semibold">Send Test Now</button>
+          <button type="submit" id="btnQuickSendTest" class="btn btn-primary fw-semibold"><i class="fa-solid fa-paper-plane me-1"></i> Send Test Now</button>
         </div>
       </form>
     </div>
@@ -785,6 +787,114 @@ function viewLogPayload(log) {
 
   const modal = new bootstrap.Modal(document.getElementById('logInspectModal'));
   modal.show();
+}
+
+// Attach AJAX Test Handler for Quick Modal
+const quickForm = document.getElementById('quickTestNotificationForm');
+if (quickForm) {
+  quickForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnQuickSendTest');
+    const alertBox = document.getElementById('quickTestAlert');
+    const origHtml = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Sending Test...';
+    alertBox.className = 'alert d-none mb-3';
+
+    const formData = new FormData(quickForm);
+    formData.append('ajax', '1');
+
+    fetch('/notifications/test', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      }
+    })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+      if (data.success) {
+        alertBox.className = 'alert alert-success mb-3';
+        alertBox.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i> ' + (data.message || 'Test notification dispatched successfully!');
+        alertBox.classList.remove('d-none');
+        if (data.share_url) {
+          window.open(data.share_url, '_blank');
+        }
+        setTimeout(() => {
+          const modalEl = document.getElementById('testNotificationModal');
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          if (modal) modal.hide();
+          window.location.reload();
+        }, 1800);
+      } else {
+        alertBox.className = 'alert alert-danger mb-3';
+        alertBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-2"></i> ' + (data.error || 'Test delivery failed.');
+        alertBox.classList.remove('d-none');
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+      alertBox.className = 'alert alert-danger mb-3';
+      alertBox.innerHTML = '<i class="fa-solid fa-circle-exclamation me-2"></i> Connection or delivery timeout: ' + err.message;
+      alertBox.classList.remove('d-none');
+    });
+  });
+}
+
+// Attach AJAX Test Handler for Tab 4 Form
+const tabForm = document.getElementById('tabTestForm');
+if (tabForm) {
+  tabForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnTabSendTest');
+    const alertBox = document.getElementById('tabTestAlert');
+    const origHtml = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Sending Test Notification...';
+    alertBox.className = 'alert d-none mb-3';
+
+    const formData = new FormData(tabForm);
+    formData.append('ajax', '1');
+
+    fetch('/notifications/test', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      }
+    })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+      if (data.success) {
+        alertBox.className = 'alert alert-success mb-3';
+        alertBox.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i> ' + (data.message || 'Test notification dispatched successfully!');
+        alertBox.classList.remove('d-none');
+        if (data.share_url) {
+          window.open(data.share_url, '_blank');
+        }
+      } else {
+        alertBox.className = 'alert alert-danger mb-3';
+        alertBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-2"></i> ' + (data.error || 'Test delivery failed.');
+        alertBox.classList.remove('d-none');
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.innerHTML = origHtml;
+      alertBox.className = 'alert alert-danger mb-3';
+      alertBox.innerHTML = '<i class="fa-solid fa-circle-exclamation me-2"></i> Connection or delivery timeout: ' + err.message;
+      alertBox.classList.remove('d-none');
+    });
+  });
 }
 </script>
 

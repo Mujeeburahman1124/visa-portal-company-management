@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 26;
+    private const SCHEMA_VERSION = 27;
 
     public static function init(bool $force = false): void
     {
@@ -3360,6 +3360,78 @@ class DatabaseBootstrapper
         foreach ($taskCols as $col => $def) {
             try {
                 $pdo->exec("ALTER TABLE tasks ADD COLUMN {$col} {$def};");
+            } catch (\Throwable $e) {}
+        }
+
+        // 5. wallet_transactions table columns (Customer Wallets)
+        $walletCols = [
+            'invoice_id'         => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'payment_method'     => ($driver === 'mysql') ? "VARCHAR(50) DEFAULT 'Bank Transfer'" : "TEXT DEFAULT 'Bank Transfer'",
+            'reference'          => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+            'currency'           => ($driver === 'mysql') ? "VARCHAR(10) DEFAULT 'USD'" : "TEXT DEFAULT 'USD'",
+            'original_amount'    => ($driver === 'mysql') ? 'DECIMAL(12,2) NULL' : 'REAL NULL',
+            'original_currency'  => ($driver === 'mysql') ? 'VARCHAR(10) NULL' : 'TEXT NULL',
+            'exchange_rate'      => ($driver === 'mysql') ? 'DECIMAL(12,4) DEFAULT 1.0000' : 'REAL DEFAULT 1.0000',
+            'converted_amount'   => ($driver === 'mysql') ? 'DECIMAL(12,2) NULL' : 'REAL NULL',
+            'converted_currency' => ($driver === 'mysql') ? 'VARCHAR(10) NULL' : 'TEXT NULL',
+            'payment_id'         => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'application_id'     => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'created_by'         => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+        ];
+        foreach ($walletCols as $col => $def) {
+            try {
+                $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN {$col} {$def};");
+            } catch (\Throwable $e) {}
+        }
+
+        // 6. supplier_wallet_transactions table columns
+        $supplierWalletCols = [
+            'original_amount'    => ($driver === 'mysql') ? 'DECIMAL(12,2) NULL' : 'REAL NULL',
+            'original_currency'  => ($driver === 'mysql') ? 'VARCHAR(10) NULL' : 'TEXT NULL',
+            'exchange_rate'      => ($driver === 'mysql') ? 'DECIMAL(12,4) DEFAULT 1.0000' : 'REAL DEFAULT 1.0000',
+            'converted_amount'   => ($driver === 'mysql') ? 'DECIMAL(12,2) NULL' : 'REAL NULL',
+            'converted_currency' => ($driver === 'mysql') ? 'VARCHAR(10) NULL' : 'TEXT NULL',
+            'payment_method'     => ($driver === 'mysql') ? "VARCHAR(50) DEFAULT 'Bank Transfer'" : "TEXT DEFAULT 'Bank Transfer'",
+            'reference'          => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+            'application_id'     => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'payment_id'         => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'created_by'         => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+        ];
+        foreach ($supplierWalletCols as $col => $def) {
+            try {
+                $pdo->exec("ALTER TABLE supplier_wallet_transactions ADD COLUMN {$col} {$def};");
+            } catch (\Throwable $e) {}
+        }
+
+        // 7. agent_wallet_transactions table columns
+        $agentWalletCols = [
+            'original_amount'    => ($driver === 'mysql') ? 'DECIMAL(12,2) NULL' : 'REAL NULL',
+            'original_currency'  => ($driver === 'mysql') ? 'VARCHAR(10) NULL' : 'TEXT NULL',
+            'exchange_rate'      => ($driver === 'mysql') ? 'DECIMAL(12,4) DEFAULT 1.0000' : 'REAL DEFAULT 1.0000',
+            'converted_amount'   => ($driver === 'mysql') ? 'DECIMAL(12,2) NULL' : 'REAL NULL',
+            'converted_currency' => ($driver === 'mysql') ? 'VARCHAR(10) NULL' : 'TEXT NULL',
+            'payment_method'     => ($driver === 'mysql') ? "VARCHAR(50) DEFAULT 'Bank Transfer'" : "TEXT DEFAULT 'Bank Transfer'",
+            'reference'          => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+            'application_id'     => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'payment_id'         => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'created_by'         => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+        ];
+        foreach ($agentWalletCols as $col => $def) {
+            try {
+                $pdo->exec("ALTER TABLE agent_wallet_transactions ADD COLUMN {$col} {$def};");
+            } catch (\Throwable $e) {}
+        }
+
+        // 8. portal_activation_tokens table columns
+        $patCols = [
+            'customer_id' => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'token_hash'  => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+            'is_used'     => ($driver === 'mysql') ? 'TINYINT(1) DEFAULT 0' : 'INTEGER DEFAULT 0',
+            'used_at'     => ($driver === 'mysql') ? 'DATETIME NULL' : 'TEXT NULL',
+        ];
+        foreach ($patCols as $col => $def) {
+            try {
+                $pdo->exec("ALTER TABLE portal_activation_tokens ADD COLUMN {$col} {$def};");
             } catch (\Throwable $e) {}
         }
     }

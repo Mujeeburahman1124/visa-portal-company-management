@@ -241,22 +241,27 @@ switch ($uri) {
 
     // Core Operations: Visa Applications
     case '/applications':
+        require_permission('applications.view');
         (new App\Controllers\ApplicationController())->index();
         break;
 
     case '/applications/create':
+        require_permission('applications.create');
         (new App\Controllers\ApplicationController())->create();
         break;
 
     case '/applications/store':
+        require_permission('applications.create');
         (new App\Controllers\ApplicationController())->store();
         break;
 
     case '/applications/show':
+        require_permission('applications.view');
         (new App\Controllers\ApplicationController())->show();
         break;
 
     case '/applications/edit':
+        require_permission('applications.manage');
         (new App\Controllers\ApplicationController())->edit();
         break;
 
@@ -314,42 +319,50 @@ switch ($uri) {
 
     // Core Operations: Action Center
     case '/action-center':
+        require_permission('applications.view');
         (new App\Controllers\ActionCenterController())->index();
         break;
 
     // Management & Workflow: Customers / Applicants
     case '/customers':
     case '/applicants':
+        require_permission('customers.view');
         (new App\Controllers\CustomerController())->index();
         break;
 
     case '/customers/create':
     case '/applicants/create':
+        require_permission('customers.manage');
         (new App\Controllers\CustomerController())->create();
         break;
 
     case '/customers/store':
     case '/applicants/store':
+        require_permission('customers.manage');
         (new App\Controllers\CustomerController())->store();
         break;
 
     case '/customers/show':
     case '/applicants/show':
+        require_permission('customers.view');
         (new App\Controllers\CustomerController())->show();
         break;
 
     case '/customers/edit':
     case '/applicants/edit':
+        require_permission('customers.manage');
         (new App\Controllers\CustomerController())->edit();
         break;
 
     case '/customers/update':
     case '/applicants/update':
+        require_permission('customers.manage');
         (new App\Controllers\CustomerController())->update();
         break;
 
     case '/customers/delete':
     case '/applicants/delete':
+        RoleMiddleware::authorize(['super-admin', 'admin']);
         (new App\Controllers\CustomerController())->delete();
         break;
 
@@ -372,6 +385,7 @@ switch ($uri) {
 
     // Management & Workflow: Documents
     case '/documents':
+        require_permission('documents.view');
         (new App\Controllers\DocumentController())->index();
         break;
 
@@ -405,6 +419,14 @@ switch ($uri) {
 
     case '/documents/download':
         (new App\Controllers\DocumentController())->download();
+        break;
+
+    case '/documents/under-review':
+        (new App\Controllers\DocumentController())->setUnderReview();
+        break;
+
+    case '/documents/delete':
+        (new App\Controllers\DocumentController())->delete();
         break;
 
     case '/documents/export':
@@ -531,22 +553,27 @@ switch ($uri) {
 
     // Management & Workflow: Appointments
     case '/appointments':
+        require_permission('appointments.view');
         (new App\Controllers\AppointmentController())->index();
         break;
 
     case '/appointments/store':
+        require_permission('appointments.manage');
         (new App\Controllers\AppointmentController())->store();
         break;
 
     case '/appointments/status':
+        require_permission('appointments.manage');
         (new App\Controllers\AppointmentController())->updateStatus();
         break;
 
     case '/appointments/types/store':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
         (new App\Controllers\AppointmentController())->storeType();
         break;
 
     case '/appointments/types/delete':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
         (new App\Controllers\AppointmentController())->deleteType();
         break;
 
@@ -573,26 +600,32 @@ switch ($uri) {
 
     // Management & Workflow: Tasks
     case '/tasks':
+        require_permission('tasks.view');
         (new App\Controllers\TaskController())->index();
         break;
 
     case '/tasks/store':
+        require_permission('tasks.manage');
         (new App\Controllers\TaskController())->store();
         break;
 
     case '/tasks/status':
+        require_permission('tasks.view');
         (new App\Controllers\TaskController())->updateStatus();
         break;
 
     case '/tasks/reassign':
+        require_permission('tasks.manage');
         (new App\Controllers\TaskController())->reassign();
         break;
 
     case '/tasks/comment':
+        require_permission('tasks.view');
         (new App\Controllers\TaskController())->addComment();
         break;
 
     case '/tasks/details':
+        require_permission('tasks.view');
         (new App\Controllers\TaskController())->details();
         break;
 

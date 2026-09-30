@@ -5,23 +5,40 @@ $roleSlug = $currentUser['role_slug'] ?? '';
 $roleName = $currentUser['role_name'] ?? 'Staff';
 
 $isSuperAdmin = ($roleSlug === 'super-admin' || (int)($currentUser['role_id'] ?? 0) === 1 || $roleName === 'Super Admin');
-$isAdmin = $isSuperAdmin || ($roleSlug === 'admin');
+$isAdmin      = $isSuperAdmin || ($roleSlug === 'admin');
 
-// Helper to check module permission with dynamic user_can() support
-$canViewStaff = $isAdmin || user_can('staff.view');
-$canViewRoles = $isAdmin || user_can('roles.view') || user_can('staff.view');
-$canViewAudit = $isAdmin || user_can('audit.view');
-$canViewSettings = $isAdmin || user_can('settings.view') || ($roleSlug === 'branch-manager');
-$canViewSuppliers = $isAdmin || user_can('suppliers.view');
-$canViewAgents = $isAdmin || user_can('agents.view') || user_can('suppliers.view');
-$canViewCountries = $isAdmin || user_can('visa_services.view') || user_can('visa.view') || user_can('settings.view') || ($roleSlug === 'visa-manager') || ($roleSlug === 'branch-manager');
-$canViewVisaServices = $isAdmin || user_can('visa_services.view') || user_can('visa.view') || user_can('settings.view') || ($roleSlug === 'visa-manager') || ($roleSlug === 'branch-manager');
-$canViewBranches = $isAdmin || user_can('branches.view');
-$canViewReports = $isAdmin || user_can('reports.view');
-$canViewPayments = $isAdmin || user_can('payments.view') || user_can('finance.view');
-$canViewWallets = $isAdmin || user_can('wallets.view') || user_can('payments.view') || user_can('finance.view') || ($roleSlug === 'accounts');
-$canViewPayroll = $isAdmin || user_can('payroll.view') || user_can('staff.view') || ($roleSlug === 'accounts');
-$canViewInventory = $isAdmin || user_can('inventory.view') || user_can('settings.view') || ($roleSlug === 'branch-manager');
+// ── Permission flags — ALL modules gated ──────────────────────────────────────
+// Core Operations: Dashboard, Tracking, Applications, Action Center always visible
+$canViewDashboard   = true; // Everyone can see the dashboard
+$canViewTracking    = true; // Everyone can view visa tracking
+$canViewApplications = $isAdmin || user_can('applications.view') || user_can('applications.manage') || user_can('applications.*');
+$canViewActionCenter = $isAdmin || user_can('applications.view') || user_can('applications.manage') || user_can('tasks.view') || user_can('leave.approve') || user_can('leave.reject');
+
+// Management & Workflow
+$canViewCustomers   = $isAdmin || user_can('customers.view') || user_can('applicants.view') || user_can('customers.manage');
+$canViewDocuments   = $isAdmin || user_can('documents.view') || user_can('documents.manage') || user_can('customers.view') || user_can('applications.view');
+$canViewPayments    = $isAdmin || user_can('payments.view') || user_can('finance.view') || user_can('payments.manage');
+$canViewWallets     = $isAdmin || user_can('wallets.view') || user_can('payments.view') || user_can('finance.view') || ($roleSlug === 'accounts');
+$canViewInventory   = $isAdmin || user_can('inventory.view') || user_can('inventory.manage') || ($roleSlug === 'branch-manager');
+$canViewAppointments = $isAdmin || user_can('appointments.view') || user_can('appointments.manage') || user_can('applications.view');
+$canViewTasks       = $isAdmin || user_can('tasks.view') || user_can('tasks.manage') || user_can('tasks.view_all') || user_can('tasks.*');
+$canViewReports     = $isAdmin || user_can('reports.view') || user_can('reports.manage');
+
+// Administration
+$canViewSuppliers   = $isAdmin || user_can('suppliers.view') || user_can('suppliers.manage');
+$canViewAgents      = $isAdmin || user_can('agents.view') || user_can('agents.manage') || user_can('suppliers.view');
+$canViewCountries   = $isAdmin || user_can('visa_services.view') || user_can('visa.view') || user_can('settings.view') || ($roleSlug === 'visa-manager') || ($roleSlug === 'branch-manager');
+$canViewVisaServices = $isAdmin || user_can('visa_services.view') || user_can('visa.view') || ($roleSlug === 'visa-manager');
+$canViewBranches    = $isAdmin || user_can('branches.view') || user_can('branches.manage');
+$canViewStaff       = $isAdmin || user_can('staff.view') || user_can('staff.manage');
+$canViewRoles       = $isAdmin || user_can('roles.view') || user_can('roles.manage');
+$canViewPayroll     = $isAdmin || user_can('payroll.view') || user_can('payroll.manage') || ($roleSlug === 'accounts');
+$canViewAudit       = $isAdmin || user_can('audit.view') || user_can('audit.manage');
+$canViewSettings    = $isAdmin || user_can('settings.view') || user_can('settings.manage') || ($roleSlug === 'branch-manager');
+$canViewNotifAdmin  = $isAdmin || user_has_role(['branch-manager', 'visa-manager']) || user_can('notifications.admin');
+
+// Payroll/Attendance is HR-gated
+$canViewAttendance  = $isAdmin || user_can('payroll.view') || user_can('staff.view') || ($roleSlug === 'accounts') || ($roleSlug === 'branch-manager');
 ?>
 <aside class="app-sidebar" id="appSidebar">
   <!-- Sidebar Brand Header -->
@@ -42,53 +59,68 @@ $canViewInventory = $isAdmin || user_can('inventory.view') || user_can('settings
   <div class="sidebar-menu" id="sidebarMenu">
     <!-- Section: Core Operations -->
     <div class="sidebar-heading"><span>Core Operations</span></div>
-    
+
+    <?php if ($canViewDashboard): ?>
     <a href="/dashboard" class="nav-link-custom <?= $currentUri === '/dashboard' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Operations Dashboard">
       <i class="fa-solid fa-gauge-high nav-icon"></i>
       <span class="nav-label">Dashboard</span>
     </a>
+    <?php endif; ?>
 
+    <?php if ($canViewTracking): ?>
     <a href="/tracking" class="nav-link-custom nav-link-tracking <?= $currentUri === '/tracking' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Visual Visa Journey & Tracking">
       <i class="fa-solid fa-route nav-icon"></i>
       <span class="nav-label fw-semibold">Visa Tracking</span>
       <span class="badge bg-primary sidebar-badge">CORE</span>
     </a>
+    <?php endif; ?>
 
+    <?php if ($canViewApplications): ?>
     <a href="/applications" class="nav-link-custom <?= (str_starts_with($currentUri, '/applications') && !str_starts_with($currentUri, '/applications/track')) ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Visa Applications Registry">
       <i class="fa-solid fa-folder-open nav-icon"></i>
       <span class="nav-label">Applications</span>
     </a>
+    <?php endif; ?>
 
+    <?php if ($canViewActionCenter): ?>
     <a href="/action-center" class="nav-link-custom <?= $currentUri === '/action-center' ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Action Center & Priority Queue">
       <i class="fa-solid fa-bolt text-warning nav-icon"></i>
       <span class="nav-label">Action Center</span>
       <span class="badge bg-danger sidebar-badge">Queue</span>
     </a>
+    <?php endif; ?>
 
     <!-- Section: Management & Workflow -->
+    <?php if ($canViewCustomers || $canViewDocuments || $canViewPayments || $canViewWallets || $canViewInventory || $canViewAppointments || $canViewTasks || $canViewReports): ?>
     <div class="sidebar-heading mt-2"><span>Management &amp; Workflow</span></div>
 
+    <?php if ($canViewCustomers): ?>
     <a href="/customers" class="nav-link-custom <?= str_starts_with($currentUri, '/customers') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Applicants & Customer Profiles">
       <i class="fa-solid fa-users nav-icon"></i>
       <span class="nav-label">Applicants / Customers</span>
     </a>
+    <?php endif; ?>
 
+    <?php if ($canViewDocuments): ?>
     <a href="/documents" class="nav-link-custom <?= str_starts_with($currentUri, '/documents') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Document Verification & Vault">
       <i class="fa-solid fa-file-circle-check nav-icon"></i>
       <span class="nav-label">Documents</span>
     </a>
+    <?php endif; ?>
 
     <?php if ($canViewPayments): ?>
     <a href="/payments" class="nav-link-custom <?= ($currentUri === '/payments' || str_starts_with($currentUri, '/payments/history') || str_starts_with($currentUri, '/payments/links')) ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Payments, Invoicing & Cost Tracking">
       <i class="fa-solid fa-receipt nav-icon"></i>
       <span class="nav-label">Payments &amp; Invoices</span>
     </a>
+    <?php endif; ?>
+
+    <?php if ($canViewWallets): ?>
     <a href="/payments/wallets" class="nav-link-custom <?= str_starts_with($currentUri, '/payments/wallets') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Customer, Supplier & Agent Digital Wallets">
       <i class="fa-solid fa-wallet nav-icon text-success"></i>
       <span class="nav-label">Wallets &amp; Ledgers</span>
     </a>
     <?php endif; ?>
-
 
     <?php if ($canViewInventory): ?>
     <a href="/inventory" class="nav-link-custom <?= str_starts_with($currentUri, '/inventory') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Office Inventory, Supplies & Stock Control">
@@ -97,15 +129,19 @@ $canViewInventory = $isAdmin || user_can('inventory.view') || user_can('settings
     </a>
     <?php endif; ?>
 
+    <?php if ($canViewAppointments): ?>
     <a href="/appointments" class="nav-link-custom <?= str_starts_with($currentUri, '/appointments') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Embassy & Biometrics Appointments">
       <i class="fa-solid fa-calendar-check nav-icon"></i>
       <span class="nav-label">Appointments</span>
     </a>
+    <?php endif; ?>
 
+    <?php if ($canViewTasks): ?>
     <a href="/tasks" class="nav-link-custom <?= str_starts_with($currentUri, '/tasks') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Staff Tasks & Deadlines">
       <i class="fa-solid fa-list-check nav-icon"></i>
       <span class="nav-label">Tasks</span>
     </a>
+    <?php endif; ?>
 
     <?php if ($canViewReports): ?>
     <a href="/reports" class="nav-link-custom <?= str_starts_with($currentUri, '/reports') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Operational Reports & Performance Analytics">
@@ -113,9 +149,10 @@ $canViewInventory = $isAdmin || user_can('inventory.view') || user_can('settings
       <span class="nav-label">Reports &amp; Analytics</span>
     </a>
     <?php endif; ?>
+    <?php endif; // end management section ?>
 
     <!-- Section: Administration -->
-    <?php if ($canViewSuppliers || $canViewAgents || $canViewCountries || $canViewVisaServices || $canViewBranches || $canViewStaff || $canViewRoles || $canViewAudit || $canViewSettings): ?>
+    <?php if ($canViewSuppliers || $canViewAgents || $canViewCountries || $canViewVisaServices || $canViewBranches || $canViewStaff || $canViewRoles || $canViewPayroll || $canViewAttendance || $canViewAudit || $canViewSettings): ?>
     <div class="sidebar-heading mt-2"><span>Administration</span></div>
 
     <?php if ($canViewSuppliers): ?>
@@ -167,12 +204,26 @@ $canViewInventory = $isAdmin || user_can('inventory.view') || user_can('settings
     </a>
     <?php endif; ?>
 
+    <?php if ($canViewPayroll): ?>
+    <a href="/payroll" class="nav-link-custom <?= str_starts_with($currentUri, '/payroll') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Staff Payroll & Salary Management">
+      <i class="fa-solid fa-money-bill-wave nav-icon text-success"></i>
+      <span class="nav-label">Payroll</span>
+    </a>
+    <?php endif; ?>
+
+    <?php if ($canViewAttendance): ?>
+    <a href="/attendance" class="nav-link-custom <?= str_starts_with($currentUri, '/attendance') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Attendance & Leave Management">
+      <i class="fa-solid fa-clock nav-icon text-info"></i>
+      <span class="nav-label">Attendance</span>
+    </a>
+    <?php endif; ?>
+
     <a href="/notifications" class="nav-link-custom <?= ($currentUri === '/notifications' || $currentUri === '/notifications/preferences') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Internal Alerts & System Notifications">
       <i class="fa-solid fa-bell nav-icon"></i>
       <span class="nav-label">Notifications</span>
     </a>
 
-    <?php if (user_has_role(['super-admin', 'admin', 'branch-manager', 'visa-manager'])): ?>
+    <?php if ($canViewNotifAdmin): ?>
     <a href="/notifications/admin" class="nav-link-custom <?= str_starts_with($currentUri, '/notifications/admin') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Real-Time Notification Ops, WhatsApp Logs & Settings">
       <i class="fa-solid fa-tower-broadcast text-info nav-icon"></i>
       <span class="nav-label">Notification Ops</span>
@@ -193,7 +244,7 @@ $canViewInventory = $isAdmin || user_can('inventory.view') || user_can('settings
       <span class="nav-label">Settings</span>
     </a>
     <?php endif; ?>
-    <?php endif; ?>
+    <?php endif; // end administration section ?>
 
     <div class="sidebar-heading mt-2"><span>External Portals</span></div>
     <a href="/portal/dashboard" target="_blank" class="nav-link-custom" style="color: #a5b4fc;" data-bs-toggle="tooltip" data-bs-placement="right" title="Open Customer Self-Service Portal">

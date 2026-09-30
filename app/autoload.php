@@ -304,21 +304,47 @@ function user_can(string $permissionSlug): bool {
         return true;
     }
     $aliases = [
-        'customers.view' => ['applicants.view'],
-        'customers.manage' => ['applicants.edit', 'applicants.create'],
-        'applicants.view' => ['customers.view'],
-        'visa_services.view' => ['visa.view', 'visa-services.view', 'visa_packages.view'],
-        'visa.view' => ['visa_services.view', 'visa-services.view'],
-        'finance.view' => ['payments.view'],
-        'finance.manage' => ['payments.manage'],
-        'payments.view' => ['finance.view'],
-        'wallets.view' => ['payments.view', 'finance.view'],
-        'agents.view' => ['suppliers.view'],
+        // customers ↔ applicants (bidirectional)
+        'customers.view'    => ['applicants.view', 'applicants.*'],
+        'customers.manage'  => ['applicants.edit', 'applicants.create', 'applicants.*', 'customers.edit', 'customers.create'],
+        'customers.create'  => ['applicants.create', 'applicants.*'],
+        'customers.edit'    => ['applicants.edit', 'applicants.*'],
+        'customers.delete'  => ['applicants.delete', 'applicants.*'],
+        'applicants.view'   => ['customers.view', 'customers.*'],
+        'applicants.manage' => ['customers.manage', 'customers.*'],
+        // applications
+        'applications.manage' => ['applications.edit', 'applications.create', 'applications.*'],
+        // documents
+        'documents.view'    => ['documents.*'],
+        'documents.manage'  => ['documents.create', 'documents.edit', 'documents.*'],
+        // tasks
+        'tasks.view'        => ['tasks.*'],
+        'tasks.manage'      => ['tasks.create', 'tasks.edit', 'tasks.*'],
+        // appointments
+        'appointments.view'   => ['appointments.*'],
+        'appointments.manage' => ['appointments.create', 'appointments.edit', 'appointments.*'],
+        // finance
+        'visa_services.view' => ['visa.view', 'visa-services.view', 'visa_packages.view', 'visa_services.*'],
+        'visa.view'          => ['visa_services.view', 'visa-services.view'],
+        'finance.view'       => ['payments.view', 'payments.*'],
+        'finance.manage'     => ['payments.manage', 'payments.*'],
+        'payments.view'      => ['finance.view', 'payments.*'],
+        'wallets.view'       => ['payments.view', 'finance.view', 'wallets.*'],
+        'agents.view'        => ['suppliers.view', 'agents.*'],
     ];
     if (isset($aliases[$permissionSlug])) {
         foreach ($aliases[$permissionSlug] as $alias) {
             if (in_array($alias, $perms, true)) {
                 return true;
+            }
+            // support wildcard aliases like 'applicants.*'
+            if (str_ends_with($alias, '.*')) {
+                $base = substr($alias, 0, -2);
+                foreach ($perms as $perm) {
+                    if ($perm === $alias || str_starts_with($perm, $base . '.')) {
+                        return true;
+                    }
+                }
             }
         }
     }

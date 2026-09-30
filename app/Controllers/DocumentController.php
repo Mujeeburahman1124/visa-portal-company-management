@@ -374,6 +374,47 @@ class DocumentController
     }
 
     /**
+     * Reset document status back to UNDER_REVIEW
+     */
+    public function setUnderReview(): void
+    {
+        AuthMiddleware::handle();
+        $currentUser = auth_user();
+
+        $docId = (int)($_POST['document_id'] ?? 0);
+        $notes = trim($_POST['notes'] ?? '');
+
+        if ($docId <= 0) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/documents', 'Invalid document record.', 'danger');
+        }
+
+        $res = DocumentVerificationService::setUnderReview($docId, (int)$currentUser['id'], $notes);
+        redirect($_SERVER['HTTP_REFERER'] ?? '/documents', $res['message'], $res['success'] ? 'info' : 'danger');
+    }
+
+    /**
+     * Permanently delete a document
+     */
+    public function delete(): void
+    {
+        AuthMiddleware::handle();
+        $currentUser = auth_user();
+
+        $docId = (int)($_POST['document_id'] ?? 0);
+        if ($docId <= 0) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/documents', 'Invalid document selected for deletion.', 'danger');
+        }
+
+        // Permission check
+        if (!user_has_role(['super-admin', 'admin']) && !user_can('documents.manage') && !user_can('documents.delete')) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/documents', 'You do not have permission to delete document records.', 'danger');
+        }
+
+        $res = DocumentVerificationService::delete($docId, (int)$currentUser['id']);
+        redirect($_SERVER['HTTP_REFERER'] ?? '/documents', $res['message'], $res['success'] ? 'success' : 'danger');
+    }
+
+    /**
      * Verify ownership / role access for a document
      */
     public static function authorizeDocumentAccess(array $doc): bool

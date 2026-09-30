@@ -326,7 +326,7 @@ class NotificationController
     public function sendTest(): void
     {
         AuthMiddleware::handle();
-        RoleMiddleware::authorize(['super-admin', 'admin']);
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
 
         $channel = trim($_POST['channel'] ?? 'Email');
         $recipient = trim($_POST['recipient'] ?? '');
@@ -334,16 +334,38 @@ class NotificationController
         $message = trim($_POST['message'] ?? 'This is a test notification from the VISA TRACK Operations System.');
         $templateName = trim($_POST['template_name'] ?? '');
 
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+            || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
+            || isset($_POST['ajax']);
+
         if (empty($recipient)) {
-            redirect('/notifications/admin?tab=test', 'Please provide a valid test recipient email or phone number.', 'danger');
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'Please provide a valid test recipient email or phone number.']);
+                exit;
+            }
+            redirect($_SERVER['HTTP_REFERER'] ?? '/notifications/admin?tab=test', 'Please provide a valid test recipient email or phone number.', 'danger');
         }
 
+        $pdo = Database::getConnection();
+        $currentUser = auth_user();
+        $adminName = $currentUser['name'] ?? 'Administrator';
+
         if ($channel === 'Email') {
+            if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'error' => 'Please provide a valid email address (e.g. user@example.com).']);
+                    exit;
+                }
+                redirect($_SERVER['HTTP_REFERER'] ?? '/notifications/admin?tab=test', 'Please provide a valid email address.', 'danger');
+            }
+
             $result = EmailService::send([
                 'to' => $recipient,
                 'name' => 'Admin Test Recipient',
                 'subject' => '[TEST] ' . $subject,
-                'bodyHtml' => "<p><strong>TEST MESSAGE</strong></p><p>" . nl2br(htmlspecialchars($message)) . "</p><p style='font-size:12px; color:#64748b;'>Sent by Administrator: " . htmlspecialchars(auth_user()['name'] ?? 'Admin') . " at " . date('Y-m-d H:i:s') . "</p>",
+                'bodyHtml' => "<p><strong>TEST MESSAGE</strong></p><p>" . nl2br(htmlspecialchars($message)) . "</p><p style='font-size:12px; color:#64748b;'>Sent by {$adminName} at " . date('Y-m-d H:i:s') . "</p>",
                 'data' => [
                     'applicantName' => 'Test Applicant',
                     'applicationNumber' => 'VISA-TEST-00001',
@@ -352,11 +374,48 @@ class NotificationController
                 ]
             ]);
 
+            // Log test event into notification_logs
+            try {
+                NotificationService::recordLog([
+                    'event_type' => 'admin.test',
+                    'recipient_type' => 'Staff',
+                    'recipient_id' => $currentUser['id'] ?? null,
+                    'recipient_name' => 'Admin Test Recipient',
+                    'recipient_email' => $recipient,
+                    'recipient_phone' => null,
+                    'channel' => 'Email',
+                    'template_name' => $templateName ?: 'admin_test_email',
+                    'subject' => '[TEST] ' . $subject,
+                    'content_preview' => mb_strimwidth(strip_tags($message), 0, 150, '...'),
+                    'idempotency_key' => 'test_' . uniqid(),
+                    'status' => $result['success'] ? 'Sent' : 'Failed',
+                    'provider_message_id' => $result['message_id'] ?? null,
+                    'request_payload' => json_encode(['recipient' => $recipient, 'subject' => $subject, 'message' => $message]),
+                    'response_payload' => json_encode($result),
+                    'error_message' => $result['error'] ?? null,
+                    'sent_at' => $result['success'] ? date('Y-m-d H:i:s') : null,
+                ], $pdo);
+            } catch (\Throwable $eLog) {
+                error_log('[sendTest] notification_logs write error: ' . $eLog->getMessage());
+            }
+
             if ($result['success']) {
-                $providerInfo = $result['provider'] . ($result['simulated'] ? ' (Simulation Mode)' : '');
-                redirect('/notifications/admin?tab=test', "Test Email dispatched successfully via {$providerInfo}! Message ID: {$result['message_id']}", 'success');
+                $providerInfo = ($result['provider'] ?? 'SMTP') . (!empty($result['simulated']) ? ' (Simulation Mode)' : '');
+                $msg = "Test Email dispatched successfully via {$providerInfo}! Message ID: " . ($result['message_id'] ?? 'OK');
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'message' => $msg, 'message_id' => $result['message_id'] ?? '']);
+                    exit;
+                }
+                redirect($_SERVER['HTTP_REFERER'] ?? '/notifications/admin?tab=test', $msg, 'success');
             } else {
-                redirect('/notifications/admin?tab=test', "Email delivery failed: {$result['error']}", 'danger');
+                $err = $result['error'] ?? 'Unknown email delivery failure';
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'error' => "Email delivery failed: {$err}"]);
+                    exit;
+                }
+                redirect($_SERVER['HTTP_REFERER'] ?? '/notifications/admin?tab=test', "Email delivery failed: {$err}", 'danger');
             }
         } elseif ($channel === 'WhatsApp') {
             $result = WhatsAppService::send([
@@ -372,24 +431,65 @@ class NotificationController
                 ]
             ]);
 
+            // Log test event into notification_logs
+            try {
+                NotificationService::recordLog([
+                    'event_type' => 'admin.test',
+                    'recipient_type' => 'Staff',
+                    'recipient_id' => $currentUser['id'] ?? null,
+                    'recipient_name' => 'Admin Test Recipient',
+                    'recipient_email' => null,
+                    'recipient_phone' => $result['normalized_phone'] ?? $recipient,
+                    'channel' => 'WhatsApp',
+                    'template_name' => $templateName ?: 'admin_test_whatsapp',
+                    'subject' => 'WhatsApp Test Alert',
+                    'content_preview' => mb_strimwidth(strip_tags($message), 0, 150, '...'),
+                    'idempotency_key' => 'test_' . uniqid(),
+                    'status' => $result['success'] ? 'Sent' : 'Failed',
+                    'provider_message_id' => $result['message_id'] ?? null,
+                    'request_payload' => json_encode(['recipient' => $recipient, 'message' => $message]),
+                    'response_payload' => json_encode($result),
+                    'error_message' => $result['error'] ?? null,
+                    'sent_at' => $result['success'] ? date('Y-m-d H:i:s') : null,
+                ], $pdo);
+            } catch (\Throwable $eLog) {
+                error_log('[sendTest] notification_logs write error: ' . $eLog->getMessage());
+            }
+
             if ($result['success']) {
                 $normPhone = $result['normalized_phone'] ?? $recipient;
                 $cleanPhone = preg_replace('/[^0-9]/', '', $normPhone);
                 $simTag = !empty($result['simulated']) ? ' (Simulated)' : '';
+                $shareUrl = !empty($result['whatsapp_share_url']) 
+                    ? $result['whatsapp_share_url'] 
+                    : ("https://api.whatsapp.com/send?phone={$cleanPhone}&text=" . urlencode("[TEST MESSAGE]\n\n{$message}"));
 
-                if (!empty($result['whatsapp_share_url'])) {
-                    $_SESSION['auto_open_whatsapp'] = $result['whatsapp_share_url'];
-                } else {
-                    $_SESSION['auto_open_whatsapp'] = "https://api.whatsapp.com/send?phone={$cleanPhone}&text=" . urlencode("[TEST MESSAGE]\n\n{$message}");
+                $_SESSION['auto_open_whatsapp'] = $shareUrl;
+                $msg = "Test WhatsApp message sent to +{$cleanPhone}! ID: " . ($result['message_id'] ?? 'OK') . "{$simTag}";
+
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'message' => $msg, 'share_url' => $shareUrl]);
+                    exit;
                 }
-
-                redirect('/notifications/admin?tab=test', "Test WhatsApp message sent to +{$cleanPhone}! ID: {$result['message_id']}{$simTag} — Opening WhatsApp App...", 'success');
+                redirect($_SERVER['HTTP_REFERER'] ?? '/notifications/admin?tab=test', $msg . " — Opening WhatsApp App...", 'success');
             } else {
-                redirect('/notifications/admin?tab=test', "WhatsApp delivery failed: {$result['error']}", 'danger');
+                $err = $result['error'] ?? 'WhatsApp delivery failed';
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'error' => "WhatsApp delivery failed: {$err}"]);
+                    exit;
+                }
+                redirect($_SERVER['HTTP_REFERER'] ?? '/notifications/admin?tab=test', "WhatsApp delivery failed: {$err}", 'danger');
             }
         }
 
-        redirect('/notifications/admin?tab=test', 'Unsupported test channel.', 'danger');
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'Unsupported test channel.']);
+            exit;
+        }
+        redirect($_SERVER['HTTP_REFERER'] ?? '/notifications/admin?tab=test', 'Unsupported test channel.', 'danger');
     }
 
     /**

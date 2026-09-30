@@ -160,12 +160,21 @@ class StaffController
             redirect('/staff', 'Please provide staff name and work email.', 'danger');
         }
 
-        // Strict duplicate check on email BEFORE taking ANY action
+        // Cross-table email uniqueness: block if email exists in users table
         $stmt = $pdo->prepare("SELECT id FROM users WHERE LOWER(TRIM(email)) = ? LIMIT 1");
         $stmt->execute([$email]);
         if ($stmt->fetch()) {
-            redirect('/staff', "Registration blocked: A user with email '{$email}' already exists. No new account or notification was dispatched.", 'danger');
+            redirect('/staff', "Registration blocked: A staff account with email '{$email}' already exists.", 'danger');
         }
+
+        // Cross-table email uniqueness: block if email exists in customers table
+        try {
+            $custStmt = $pdo->prepare("SELECT id FROM customers WHERE LOWER(TRIM(email)) = ? LIMIT 1");
+            $custStmt->execute([$email]);
+            if ($custStmt->fetch()) {
+                redirect('/staff', "Registration blocked: The email '{$email}' is already registered as a customer account. Staff and customer accounts cannot share the same email.", 'danger');
+            }
+        } catch (\Throwable $e) {}
 
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
         $createdBy = (int)($currentUser['id'] ?? 1);

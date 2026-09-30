@@ -178,6 +178,17 @@ class CustomerController
             }
         }
 
+        // Cross-table email uniqueness: block if email already belongs to a staff account
+        if (!empty($email)) {
+            try {
+                $staffEmailStmt = $pdo->prepare("SELECT id FROM users WHERE LOWER(TRIM(email)) = ? LIMIT 1");
+                $staffEmailStmt->execute([strtolower($email)]);
+                if ($staffEmailStmt->fetch()) {
+                    redirect('/customers/create', "Registration blocked: The email '{$email}' is already registered as a staff account. Customer and staff accounts cannot share the same email.", 'danger');
+                }
+            } catch (\Throwable $e) {}
+        }
+
         // Generate Customer Code: MSC-XXXXXX
         $count = (int)$pdo->query("SELECT COUNT(*) FROM customers")->fetchColumn() + 1;
         $customerCode = sprintf("MSC-%06d", $count);

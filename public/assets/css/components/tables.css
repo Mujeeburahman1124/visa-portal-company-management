@@ -47,3 +47,7 @@
 .table-responsive .table-enterprise {
   min-width: 920px;
 }
+
+.table-responsive .dropdown-menu {
+  z-index: 1065 !important;
+}

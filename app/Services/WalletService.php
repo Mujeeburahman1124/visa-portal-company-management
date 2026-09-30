@@ -60,6 +60,7 @@ class WalletService
         }
 
         $pdo = Database::getConnection();
+        self::ensureWalletTransactionColumns($pdo);
         $pdo->beginTransaction();
 
         try {
@@ -124,6 +125,7 @@ class WalletService
         }
 
         $pdo = Database::getConnection();
+        self::ensureWalletTransactionColumns($pdo);
         $pdo->beginTransaction();
 
         try {
@@ -236,6 +238,7 @@ class WalletService
         }
 
         $pdo = Database::getConnection();
+        self::ensureSupplierWalletColumns($pdo);
         $pdo->beginTransaction();
 
         try {
@@ -288,6 +291,7 @@ class WalletService
         }
 
         $pdo = Database::getConnection();
+        self::ensureSupplierWalletColumns($pdo);
         $pdo->beginTransaction();
 
         try {
@@ -388,6 +392,7 @@ class WalletService
         }
 
         $pdo = Database::getConnection();
+        self::ensureAgentWalletColumns($pdo);
         $pdo->beginTransaction();
 
         try {
@@ -440,6 +445,7 @@ class WalletService
         }
 
         $pdo = Database::getConnection();
+        self::ensureAgentWalletColumns($pdo);
         $pdo->beginTransaction();
 
         try {
@@ -491,5 +497,82 @@ class WalletService
         $stmt->bindValue(2, $limit, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public static function ensureWalletTransactionColumns(?PDO $pdo = null): void
+    {
+        static $done = false;
+        if ($done) return;
+        $done = true;
+
+        $pdo = $pdo ?: Database::getConnection();
+        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $cols = [
+            'invoice_id'         => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'payment_method'     => ($driver === 'mysql') ? "VARCHAR(50) DEFAULT 'Bank Transfer'" : "TEXT DEFAULT 'Bank Transfer'",
+            'reference'          => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+            'currency'           => ($driver === 'mysql') ? "VARCHAR(10) DEFAULT 'USD'" : "TEXT DEFAULT 'USD'",
+            'original_amount'    => ($driver === 'mysql') ? 'DECIMAL(12,2) NULL' : 'REAL NULL',
+            'original_currency'  => ($driver === 'mysql') ? 'VARCHAR(10) NULL' : 'TEXT NULL',
+            'exchange_rate'      => ($driver === 'mysql') ? 'DECIMAL(12,4) DEFAULT 1.0000' : 'REAL DEFAULT 1.0000',
+            'converted_amount'   => ($driver === 'mysql') ? 'DECIMAL(12,2) NULL' : 'REAL NULL',
+            'converted_currency' => ($driver === 'mysql') ? 'VARCHAR(10) NULL' : 'TEXT NULL',
+            'payment_id'         => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'application_id'     => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'created_by'         => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+        ];
+        foreach ($cols as $col => $def) {
+            try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN {$col} {$def}"); } catch (\Throwable $e) {}
+        }
+    }
+
+    public static function ensureSupplierWalletColumns(?PDO $pdo = null): void
+    {
+        static $done = false;
+        if ($done) return;
+        $done = true;
+
+        $pdo = $pdo ?: Database::getConnection();
+        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $cols = [
+            'original_amount'    => ($driver === 'mysql') ? 'DECIMAL(12,2) NULL' : 'REAL NULL',
+            'original_currency'  => ($driver === 'mysql') ? 'VARCHAR(10) NULL' : 'TEXT NULL',
+            'exchange_rate'      => ($driver === 'mysql') ? 'DECIMAL(12,4) DEFAULT 1.0000' : 'REAL DEFAULT 1.0000',
+            'converted_amount'   => ($driver === 'mysql') ? 'DECIMAL(12,2) NULL' : 'REAL NULL',
+            'converted_currency' => ($driver === 'mysql') ? 'VARCHAR(10) NULL' : 'TEXT NULL',
+            'payment_method'     => ($driver === 'mysql') ? "VARCHAR(50) DEFAULT 'Bank Transfer'" : "TEXT DEFAULT 'Bank Transfer'",
+            'reference'          => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+            'application_id'     => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'payment_id'         => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'created_by'         => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+        ];
+        foreach ($cols as $col => $def) {
+            try { $pdo->exec("ALTER TABLE supplier_wallet_transactions ADD COLUMN {$col} {$def}"); } catch (\Throwable $e) {}
+        }
+    }
+
+    public static function ensureAgentWalletColumns(?PDO $pdo = null): void
+    {
+        static $done = false;
+        if ($done) return;
+        $done = true;
+
+        $pdo = $pdo ?: Database::getConnection();
+        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $cols = [
+            'original_amount'    => ($driver === 'mysql') ? 'DECIMAL(12,2) NULL' : 'REAL NULL',
+            'original_currency'  => ($driver === 'mysql') ? 'VARCHAR(10) NULL' : 'TEXT NULL',
+            'exchange_rate'      => ($driver === 'mysql') ? 'DECIMAL(12,4) DEFAULT 1.0000' : 'REAL DEFAULT 1.0000',
+            'converted_amount'   => ($driver === 'mysql') ? 'DECIMAL(12,2) NULL' : 'REAL NULL',
+            'converted_currency' => ($driver === 'mysql') ? 'VARCHAR(10) NULL' : 'TEXT NULL',
+            'payment_method'     => ($driver === 'mysql') ? "VARCHAR(50) DEFAULT 'Bank Transfer'" : "TEXT DEFAULT 'Bank Transfer'",
+            'reference'          => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+            'application_id'     => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'payment_id'         => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'created_by'         => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+        ];
+        foreach ($cols as $col => $def) {
+            try { $pdo->exec("ALTER TABLE agent_wallet_transactions ADD COLUMN {$col} {$def}"); } catch (\Throwable $e) {}
+        }
     }
 }

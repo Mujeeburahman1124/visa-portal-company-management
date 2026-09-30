@@ -39,81 +39,93 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   <!-- 2. Real Database Statistics Cards (Vibrant 6 Grid) -->
   <div class="row g-2 g-md-3 mb-4">
     <div class="col-6 col-md-4 col-xl-2">
-      <div class="stat-card stat-card-blue h-100">
-        <div class="stat-icon-wrapper">
-          <i class="fa-solid fa-file-lines"></i>
+      <a href="/documents" class="text-decoration-none d-block h-100">
+        <div class="stat-card stat-card-blue h-100">
+          <div class="stat-icon-wrapper">
+            <i class="fa-solid fa-file-lines"></i>
+          </div>
+          <div class="stat-card-content">
+            <div class="stat-title">Total Docs</div>
+            <div class="stat-value"><?= $stats['total'] ?></div>
+            <div class="stat-trend"><i class="fa-solid fa-vault me-1"></i>All records</div>
+          </div>
         </div>
-        <div class="stat-card-content">
-          <div class="stat-title">Total Docs</div>
-          <div class="stat-value"><?= $stats['total'] ?></div>
-          <div class="stat-trend"><i class="fa-solid fa-vault me-1"></i>All records</div>
-        </div>
-      </div>
+      </a>
     </div>
 
     <div class="col-6 col-md-4 col-xl-2">
-      <div class="stat-card stat-card-warning h-100">
-        <div class="stat-icon-wrapper">
-          <i class="fa-solid fa-clock"></i>
+      <a href="/documents?status=UNDER_REVIEW" class="text-decoration-none d-block h-100">
+        <div class="stat-card stat-card-warning h-100">
+          <div class="stat-icon-wrapper">
+            <i class="fa-solid fa-clock"></i>
+          </div>
+          <div class="stat-card-content">
+            <div class="stat-title">Pending Review</div>
+            <div class="stat-value"><?= $stats['pending_review'] ?></div>
+            <div class="stat-trend"><i class="fa-solid fa-hourglass-start me-1"></i>Needs check</div>
+          </div>
         </div>
-        <div class="stat-card-content">
-          <div class="stat-title">Pending Review</div>
-          <div class="stat-value"><?= $stats['pending_review'] ?></div>
-          <div class="stat-trend"><i class="fa-solid fa-hourglass-start me-1"></i>Needs check</div>
-        </div>
-      </div>
+      </a>
     </div>
 
     <div class="col-6 col-md-4 col-xl-2">
-      <div class="stat-card stat-card-success h-100">
-        <div class="stat-icon-wrapper">
-          <i class="fa-solid fa-circle-check"></i>
+      <a href="/documents?status=VERIFIED" class="text-decoration-none d-block h-100">
+        <div class="stat-card stat-card-success h-100">
+          <div class="stat-icon-wrapper">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <div class="stat-card-content">
+            <div class="stat-title">Verified</div>
+            <div class="stat-value"><?= $stats['verified'] ?></div>
+            <div class="stat-trend"><i class="fa-solid fa-shield-check me-1"></i>Compliant</div>
+          </div>
         </div>
-        <div class="stat-card-content">
-          <div class="stat-title">Verified</div>
-          <div class="stat-value"><?= $stats['verified'] ?></div>
-          <div class="stat-trend"><i class="fa-solid fa-shield-check me-1"></i>Compliant</div>
-        </div>
-      </div>
+      </a>
     </div>
 
     <div class="col-6 col-md-4 col-xl-2">
-      <div class="stat-card stat-card-danger h-100">
-        <div class="stat-icon-wrapper">
-          <i class="fa-solid fa-circle-xmark"></i>
+      <a href="/documents?status=REJECTED" class="text-decoration-none d-block h-100">
+        <div class="stat-card stat-card-danger h-100">
+          <div class="stat-icon-wrapper">
+            <i class="fa-solid fa-circle-xmark"></i>
+          </div>
+          <div class="stat-card-content">
+            <div class="stat-title">Rejected</div>
+            <div class="stat-value"><?= $stats['rejected'] ?></div>
+            <div class="stat-trend"><i class="fa-solid fa-ban me-1"></i>Resubmit</div>
+          </div>
         </div>
-        <div class="stat-card-content">
-          <div class="stat-title">Rejected</div>
-          <div class="stat-value"><?= $stats['rejected'] ?></div>
-          <div class="stat-trend"><i class="fa-solid fa-ban me-1"></i>Resubmit</div>
-        </div>
-      </div>
+      </a>
     </div>
 
     <div class="col-6 col-md-4 col-xl-2">
-      <div class="stat-card stat-card-warning h-100">
-        <div class="stat-icon-wrapper">
-          <i class="fa-solid fa-triangle-exclamation"></i>
+      <a href="/documents?status=EXPIRING_SOON" class="text-decoration-none d-block h-100">
+        <div class="stat-card stat-card-warning h-100">
+          <div class="stat-icon-wrapper">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div class="stat-card-content">
+            <div class="stat-title">Expiring Soon</div>
+            <div class="stat-value"><?= $stats['expiring_soon'] ?></div>
+            <div class="stat-trend"><i class="fa-solid fa-clock me-1"></i>&le; 30 days</div>
+          </div>
         </div>
-        <div class="stat-card-content">
-          <div class="stat-title">Expiring Soon</div>
-          <div class="stat-value"><?= $stats['expiring_soon'] ?></div>
-          <div class="stat-trend"><i class="fa-solid fa-clock me-1"></i>&le; 30 days</div>
-        </div>
-      </div>
+      </a>
     </div>
 
     <div class="col-6 col-md-4 col-xl-2">
-      <div class="stat-card stat-card-purple h-100">
-        <div class="stat-icon-wrapper">
-          <i class="fa-solid fa-calendar-xmark"></i>
+      <a href="/documents?status=EXPIRED" class="text-decoration-none d-block h-100">
+        <div class="stat-card stat-card-purple h-100">
+          <div class="stat-icon-wrapper">
+            <i class="fa-solid fa-calendar-xmark"></i>
+          </div>
+          <div class="stat-card-content">
+            <div class="stat-title">Expired Files</div>
+            <div class="stat-value"><?= $stats['expired'] ?></div>
+            <div class="stat-trend"><i class="fa-solid fa-fire me-1"></i>Action required</div>
+          </div>
         </div>
-        <div class="stat-card-content">
-          <div class="stat-title">Expired Files</div>
-          <div class="stat-value"><?= $stats['expired'] ?></div>
-          <div class="stat-trend"><i class="fa-solid fa-fire me-1"></i>Action required</div>
-        </div>
-      </div>
+      </a>
     </div>
   </div>
 
@@ -371,10 +383,50 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                   <?php endif; ?>
                 </td>
                 <td>
-                  <span class="badge bg-light text-secondary border"><?= e($doc['doc_type_name']) ?></span>
-                </td>
-                <td>
-                  <span class="<?= $statusBadgeClass ?> px-2 py-1"><?= e($doc['status']) ?></span>
+                  <!-- Interactive Status Button Dropdown -->
+                  <div class="dropdown d-inline-block">
+                    <button class="btn btn-sm dropdown-toggle p-0 border-0 bg-transparent text-decoration-none shadow-none" 
+                            type="button" 
+                            data-bs-toggle="dropdown" 
+                            data-bs-popper-config='{"strategy":"fixed"}'
+                            data-bs-display="static"
+                            aria-expanded="false" 
+                            title="Click to change document compliance status">
+                      <span class="<?= $statusBadgeClass ?> px-2.5 py-1 d-inline-flex align-items-center gap-1 shadow-xs" style="cursor: pointer;">
+                        <?= e($doc['status']) ?> <i class="fa-solid fa-chevron-down" style="font-size: 0.6rem; opacity: 0.8;"></i>
+                      </span>
+                    </button>
+                    <ul class="dropdown-menu shadow border-0" style="font-size: 0.85rem; z-index: 1065;">
+                      <li class="dropdown-header text-uppercase small py-1" style="font-size: 0.68rem; letter-spacing: 0.5px;">Update Status</li>
+                      <li>
+                        <button type="button" 
+                                class="dropdown-item py-2 <?= $doc['status'] === 'VERIFIED' ? 'active fw-bold' : 'text-success' ?>" 
+                                data-doc-id="<?= (int)$doc['id'] ?>"
+                                data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                                onclick="openVerifyModal(this)">
+                          <i class="fa-solid fa-circle-check me-2 text-success"></i> Mark as Verified
+                        </button>
+                      </li>
+                      <li>
+                        <button type="button" 
+                                class="dropdown-item py-2 <?= $doc['status'] === 'UNDER_REVIEW' ? 'active fw-bold' : 'text-warning text-dark' ?>" 
+                                data-doc-id="<?= (int)$doc['id'] ?>"
+                                data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                                onclick="openUnderReviewModal(this)">
+                          <i class="fa-solid fa-clock me-2 text-warning"></i> Set Under Review
+                        </button>
+                      </li>
+                      <li>
+                        <button type="button" 
+                                class="dropdown-item py-2 <?= $doc['status'] === 'REJECTED' ? 'active fw-bold' : 'text-danger' ?>" 
+                                data-doc-id="<?= (int)$doc['id'] ?>"
+                                data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                                onclick="openRejectModal(this)">
+                          <i class="fa-solid fa-circle-xmark me-2 text-danger"></i> Mark as Rejected
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
                   <?php if (!empty($doc['rejection_reason'])): ?>
                     <div class="text-danger small mt-1" style="font-size: 0.7rem;" title="<?= e($doc['rejection_reason']) ?>">
                       <i class="fa-solid fa-circle-exclamation me-1"></i><?= e(substr($doc['rejection_reason'], 0, 30)) ?>...
@@ -398,25 +450,90 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 </td>
                 <td class="text-end">
                   <div class="btn-group btn-group-sm">
-                    <button type="button" class="btn btn-outline-primary" onclick="openDocPreview(<?= $doc['id'] ?>, '<?= e(addslashes($doc['document_title'])) ?>', '<?= e(addslashes($doc['customer_name'])) ?>', '<?= e($doc['file_name']) ?>', '<?= e($doc['status']) ?>', '<?= e(addslashes($doc['rejection_reason'] ?? '')) ?>', '<?= e($doc['expiry_date'] ?? '') ?>')" title="Preview Document">
+                    <button type="button" 
+                            class="btn btn-outline-primary" 
+                            data-doc-id="<?= (int)$doc['id'] ?>"
+                            data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                            data-doc-applicant="<?= htmlspecialchars($doc['customer_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                            data-doc-filename="<?= htmlspecialchars($doc['file_name'], ENT_QUOTES, 'UTF-8') ?>"
+                            data-doc-status="<?= htmlspecialchars($doc['status'], ENT_QUOTES, 'UTF-8') ?>"
+                            data-doc-reason="<?= htmlspecialchars($doc['rejection_reason'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                            data-doc-expiry="<?= htmlspecialchars($doc['expiry_date'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                            onclick="openDocPreview(this)" 
+                            title="Preview Document">
                       <i class="fa-solid fa-eye"></i>
                     </button>
                     <a href="/documents/download?id=<?= $doc['id'] ?>" class="btn btn-outline-secondary" title="Download File">
                       <i class="fa-solid fa-download"></i>
                     </a>
-                    <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button type="button" 
+                            class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" 
+                            data-bs-toggle="dropdown" 
+                            data-bs-popper-config='{"strategy":"fixed"}'
+                            data-bs-display="static"
+                            aria-expanded="false">
                       <span class="visually-hidden">Actions</span>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem;">
-                      <?php if ($doc['status'] !== 'VERIFIED'): ?>
-                        <li><button class="dropdown-item py-2 text-success" onclick="openVerifyModal(<?= $doc['id'] ?>, '<?= e(addslashes($doc['document_title'])) ?>')"><i class="fa-solid fa-check-circle me-2"></i> Verify Document</button></li>
-                      <?php endif; ?>
-                      <?php if ($doc['status'] !== 'REJECTED'): ?>
-                        <li><button class="dropdown-item py-2 text-danger" onclick="openRejectModal(<?= $doc['id'] ?>, '<?= e(addslashes($doc['document_title'])) ?>')"><i class="fa-solid fa-times-circle me-2"></i> Reject Document</button></li>
-                      <?php endif; ?>
-                      <li><button class="dropdown-item py-2" onclick="openReplaceModal(<?= $doc['id'] ?>, '<?= e(addslashes($doc['document_title'])) ?>')"><i class="fa-solid fa-cloud-arrow-up text-primary me-2"></i> Upload Replacement</button></li>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; z-index: 1065;">
+                      <li class="dropdown-header text-uppercase small py-1" style="font-size: 0.68rem; letter-spacing: 0.5px;">Status &amp; Verification</li>
+                      <li>
+                        <button type="button" 
+                                class="dropdown-item py-2 <?= $doc['status'] === 'VERIFIED' ? 'disabled text-muted' : 'text-success' ?>" 
+                                data-doc-id="<?= (int)$doc['id'] ?>"
+                                data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                                onclick="openVerifyModal(this)">
+                          <i class="fa-solid fa-circle-check me-2 text-success"></i> Verify Document
+                        </button>
+                      </li>
+                      <li>
+                        <button type="button" 
+                                class="dropdown-item py-2 <?= $doc['status'] === 'UNDER_REVIEW' ? 'disabled text-muted' : 'text-warning text-dark' ?>" 
+                                data-doc-id="<?= (int)$doc['id'] ?>"
+                                data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                                onclick="openUnderReviewModal(this)">
+                          <i class="fa-solid fa-clock me-2 text-warning"></i> Set Under Review
+                        </button>
+                      </li>
+                      <li>
+                        <button type="button" 
+                                class="dropdown-item py-2 <?= $doc['status'] === 'REJECTED' ? 'disabled text-muted' : 'text-danger' ?>" 
+                                data-doc-id="<?= (int)$doc['id'] ?>"
+                                data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                                onclick="openRejectModal(this)">
+                          <i class="fa-solid fa-circle-xmark me-2 text-danger"></i> Reject Document
+                        </button>
+                      </li>
                       <li><hr class="dropdown-divider my-1"></li>
-                      <li><button class="dropdown-item py-2" onclick="openVersionHistoryModal(<?= $doc['id'] ?>, '<?= e(addslashes($doc['document_title'])) ?>')"><i class="fa-solid fa-clock-rotate-left text-secondary me-2"></i> Version History (v<?= (int)$doc['version'] ?>)</button></li>
+                      <li class="dropdown-header text-uppercase small py-1" style="font-size: 0.68rem; letter-spacing: 0.5px;">File Management</li>
+                      <li>
+                        <button type="button" 
+                                class="dropdown-item py-2" 
+                                data-doc-id="<?= (int)$doc['id'] ?>"
+                                data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                                onclick="openReplaceModal(this)">
+                          <i class="fa-solid fa-cloud-arrow-up text-primary me-2"></i> Upload Replacement
+                        </button>
+                      </li>
+                      <li>
+                        <button type="button" 
+                                class="dropdown-item py-2" 
+                                data-doc-id="<?= (int)$doc['id'] ?>"
+                                data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                                onclick="openVersionHistoryModal(<?= (int)$doc['id'] ?>, '<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>')">
+                          <i class="fa-solid fa-clock-rotate-left text-secondary me-2"></i> Version History (v<?= (int)$doc['version'] ?>)
+                        </button>
+                      </li>
+                      <li><hr class="dropdown-divider my-1"></li>
+                      <li>
+                        <button type="button" 
+                                class="dropdown-item py-2 text-danger fw-semibold" 
+                                data-doc-id="<?= (int)$doc['id'] ?>"
+                                data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                                data-doc-applicant="<?= htmlspecialchars($doc['customer_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                                onclick="openDeleteDocModal(this)">
+                          <i class="fa-solid fa-trash-can me-2"></i> Delete Document
+                        </button>
+                      </li>
                     </ul>
                   </div>
                 </td>
@@ -452,22 +569,65 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <?php endif; ?>
 
             <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-              <button type="button" class="btn btn-outline-primary btn-sm py-1 px-3" onclick="openDocPreview(<?= $doc['id'] ?>, '<?= e(addslashes($doc['document_title'])) ?>', '<?= e(addslashes($doc['customer_name'])) ?>', '<?= e($doc['file_name']) ?>', '<?= e($doc['status']) ?>', '<?= e(addslashes($doc['rejection_reason'] ?? '')) ?>', '<?= e($doc['expiry_date'] ?? '') ?>')">
+              <button type="button" 
+                      class="btn btn-outline-primary btn-sm py-1 px-2.5" 
+                      data-doc-id="<?= (int)$doc['id'] ?>"
+                      data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                      data-doc-applicant="<?= htmlspecialchars($doc['customer_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                      data-doc-filename="<?= htmlspecialchars($doc['file_name'], ENT_QUOTES, 'UTF-8') ?>"
+                      data-doc-status="<?= htmlspecialchars($doc['status'], ENT_QUOTES, 'UTF-8') ?>"
+                      data-doc-reason="<?= htmlspecialchars($doc['rejection_reason'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                      data-doc-expiry="<?= htmlspecialchars($doc['expiry_date'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                      onclick="openDocPreview(this)">
                 <i class="fa-solid fa-eye me-1"></i> Preview
               </button>
               <div class="d-flex gap-1">
                 <?php if ($doc['status'] !== 'VERIFIED'): ?>
-                  <button type="button" class="btn btn-success btn-sm py-1 px-2" onclick="openVerifyModal(<?= $doc['id'] ?>, '<?= e(addslashes($doc['document_title'])) ?>')" title="Verify">
+                  <button type="button" 
+                          class="btn btn-success btn-sm py-1 px-2" 
+                          data-doc-id="<?= (int)$doc['id'] ?>"
+                          data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                          onclick="openVerifyModal(this)" 
+                          title="Verify Document">
                     <i class="fa-solid fa-check"></i>
                   </button>
                 <?php endif; ?>
+                <?php if ($doc['status'] !== 'UNDER_REVIEW'): ?>
+                  <button type="button" 
+                          class="btn btn-warning btn-sm py-1 px-2 text-dark" 
+                          data-doc-id="<?= (int)$doc['id'] ?>"
+                          data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                          onclick="openUnderReviewModal(this)" 
+                          title="Set Under Review">
+                    <i class="fa-solid fa-clock"></i>
+                  </button>
+                <?php endif; ?>
                 <?php if ($doc['status'] !== 'REJECTED'): ?>
-                  <button type="button" class="btn btn-danger btn-sm py-1 px-2" onclick="openRejectModal(<?= $doc['id'] ?>, '<?= e(addslashes($doc['document_title'])) ?>')" title="Reject">
+                  <button type="button" 
+                          class="btn btn-danger btn-sm py-1 px-2" 
+                          data-doc-id="<?= (int)$doc['id'] ?>"
+                          data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                          onclick="openRejectModal(this)" 
+                          title="Reject Document">
                     <i class="fa-solid fa-xmark"></i>
                   </button>
                 <?php endif; ?>
-                <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" onclick="openReplaceModal(<?= $doc['id'] ?>, '<?= e(addslashes($doc['document_title'])) ?>')" title="Replace">
+                <button type="button" 
+                        class="btn btn-outline-secondary btn-sm py-1 px-2" 
+                        data-doc-id="<?= (int)$doc['id'] ?>"
+                        data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                        onclick="openReplaceModal(this)" 
+                        title="Upload Replacement">
                   <i class="fa-solid fa-cloud-arrow-up"></i>
+                </button>
+                <button type="button" 
+                        class="btn btn-outline-danger btn-sm py-1 px-2" 
+                        data-doc-id="<?= (int)$doc['id'] ?>"
+                        data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-applicant="<?= htmlspecialchars($doc['customer_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        onclick="openDeleteDocModal(this)" 
+                        title="Delete Document">
+                  <i class="fa-solid fa-trash-can"></i>
                 </button>
               </div>
             </div>
@@ -533,12 +693,24 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <!-- Populated dynamically via JS -->
         </div>
       </div>
-      <div class="modal-footer bg-white border-top d-flex justify-content-between">
+      <div class="modal-footer bg-white border-top d-flex flex-wrap align-items-center justify-content-between gap-2">
         <div id="previewStatusBadge"></div>
-        <div class="d-flex gap-2">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <button type="button" id="previewVerifyBtn" class="btn btn-success btn-sm px-2.5">
+            <i class="fa-solid fa-circle-check me-1"></i> Verify
+          </button>
+          <button type="button" id="previewUnderReviewBtn" class="btn btn-warning text-dark btn-sm px-2.5">
+            <i class="fa-solid fa-clock me-1"></i> Under Review
+          </button>
+          <button type="button" id="previewRejectBtn" class="btn btn-outline-danger btn-sm px-2.5">
+            <i class="fa-solid fa-circle-xmark me-1"></i> Reject
+          </button>
           <a href="#" id="previewDownloadBtn" class="btn btn-outline-secondary btn-sm" target="_blank">
-            <i class="fa-solid fa-download me-1"></i> Download File
+            <i class="fa-solid fa-download me-1"></i> Download
           </a>
+          <button type="button" id="previewDeleteBtn" class="btn btn-danger btn-sm px-2.5">
+            <i class="fa-solid fa-trash-can me-1"></i> Delete
+          </button>
           <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
         </div>
       </div>
@@ -588,8 +760,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         <input type="hidden" name="document_id" id="rejectDocId" value="">
 
         <div class="modal-body p-4">
+          <p class="mb-3">Reject <strong id="rejectDocTitle">this document</strong>? This will mark the application as <strong>Action Required</strong> and notify the case officer.</p>
           <div class="alert alert-warning py-2 small mb-3">
-            <i class="fa-solid fa-triangle-exclamation me-1"></i> Rejecting this document will mark the application as <strong>Action Required</strong> and notify the case officer.
+            <i class="fa-solid fa-triangle-exclamation me-1"></i> A mandatory rejection reason must be provided. The applicant will be notified to upload a replacement.
           </div>
 
           <div class="mb-3">
@@ -606,6 +779,67 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         <div class="modal-footer bg-light border-top">
           <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn btn-danger fw-semibold"><i class="fa-solid fa-ban me-1"></i> Confirm Rejection</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 3b. Under Review Confirmation Modal -->
+<div class="modal fade" id="underReviewModal" tabindex="-1" aria-labelledby="underReviewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title fw-bold fs-6" id="underReviewModalLabel"><i class="fa-solid fa-clock me-2"></i> Reset Document to Under Review</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="/documents/under-review" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="document_id" id="underReviewDocId" value="">
+
+        <div class="modal-body p-4">
+          <p class="mb-3">Reset <strong id="underReviewDocTitle">this document</strong> status back to <span class="badge bg-warning text-dark">Under Review</span>? Any previous rejection or approval state will be cleared for re-examination.</p>
+          <div class="mb-0">
+            <label class="form-label small fw-semibold text-secondary">Notes <small class="text-muted">(Optional)</small></label>
+            <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Document returned to review queue for verification."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light border-top">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning text-dark fw-semibold"><i class="fa-solid fa-rotate-left me-1"></i> Confirm Under Review</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 3c. Delete Document Confirmation Modal -->
+<div class="modal fade" id="deleteDocModal" tabindex="-1" aria-labelledby="deleteDocModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-bold fs-6" id="deleteDocModalLabel"><i class="fa-solid fa-trash-can me-2"></i> Delete Document Permanently</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="/documents/delete" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="document_id" id="deleteDocId" value="">
+
+        <div class="modal-body p-4">
+          <div class="alert alert-danger py-2 small mb-3">
+            <i class="fa-solid fa-triangle-exclamation me-1"></i> <strong>Warning:</strong> This action cannot be undone. The uploaded file and all version archives will be permanently removed.
+          </div>
+          <p class="mb-2">Are you sure you want to permanently delete:</p>
+          <div class="p-3 bg-light rounded border mb-2">
+            <div class="fw-bold text-dark" id="deleteDocTitle">Document</div>
+            <div class="small text-muted" id="deleteDocApplicant">Applicant</div>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light border-top">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger fw-semibold"><i class="fa-solid fa-trash-can me-1"></i> Delete Document Permanently</button>
         </div>
       </form>
     </div>
@@ -734,58 +968,255 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 </div>
 
 <script>
-function openDocPreview(id, title, applicant, filename, status, reason, expiry) {
-  document.getElementById('previewModalDocTitle').innerText = title;
-  document.getElementById('previewModalSubtitle').innerText = 'Applicant: ' + applicant + ' • File: ' + filename;
-  document.getElementById('previewDownloadBtn').href = '/documents/download?id=' + id;
+function getDocData(target, defaultTitle, defaultApplicant) {
+  if (target && typeof target === 'object' && target.dataset) {
+    return {
+      id: target.dataset.docId || target.dataset.id || '',
+      title: target.dataset.docTitle || target.dataset.title || defaultTitle || 'Document',
+      applicant: target.dataset.docApplicant || target.dataset.applicant || defaultApplicant || '',
+      filename: target.dataset.docFilename || '',
+      status: target.dataset.docStatus || '',
+      reason: target.dataset.docReason || '',
+      expiry: target.dataset.docExpiry || ''
+    };
+  }
+  return {
+    id: target || '',
+    title: defaultTitle || 'Document',
+    applicant: defaultApplicant || '',
+    filename: '',
+    status: '',
+    reason: '',
+    expiry: ''
+  };
+}
 
-  let badge = '<span class="badge bg-secondary">' + status + '</span>';
-  if (status === 'VERIFIED') badge = '<span class="badge bg-success">Verified Document</span>';
-  else if (status === 'REJECTED') badge = '<span class="badge bg-danger">Rejected: ' + (reason || 'Action Required') + '</span>';
-  else if (status === 'UNDER_REVIEW') badge = '<span class="badge bg-warning text-dark">Under Review</span>';
+function showModalSafely(modalId) {
+  // Close any currently active Bootstrap dropdowns to prevent backdrop/focus interference
+  try {
+    document.querySelectorAll('.dropdown-toggle.show, .dropdown-menu.show').forEach(function(el) {
+      el.classList.remove('show');
+      el.setAttribute('aria-expanded', 'false');
+    });
+  } catch (e) {}
+
+  const el = document.getElementById(modalId);
+  if (!el) {
+    console.warn('Modal not found:', modalId);
+    return;
+  }
+
+  // Ensure modal lives directly under body to avoid container stacking contexts
+  if (el.parentNode !== document.body) {
+    document.body.appendChild(el);
+  }
+
+  try {
+    if (window.bootstrap && bootstrap.Modal) {
+      const inst = bootstrap.Modal.getOrCreateInstance(el);
+      inst.show();
+      return;
+    }
+  } catch (err) {
+    console.warn('Bootstrap modal show warning:', err);
+  }
+
+  el.classList.add('show');
+  el.style.display = 'block';
+  el.removeAttribute('aria-hidden');
+  el.setAttribute('aria-modal', 'true');
+  document.body.classList.add('modal-open');
+}
+
+function hideModalSafely(modalId) {
+  const el = document.getElementById(modalId);
+  if (!el) return;
+  try {
+    if (window.bootstrap && bootstrap.Modal) {
+      const inst = bootstrap.Modal.getInstance(el);
+      if (inst) {
+        inst.hide();
+        return;
+      }
+    }
+  } catch (e) {}
+
+  el.classList.remove('show');
+  el.style.display = 'none';
+  el.setAttribute('aria-hidden', 'true');
+  el.removeAttribute('aria-modal');
+  if (document.querySelectorAll('.modal.show').length === 0) {
+    document.body.classList.remove('modal-open');
+  }
+}
+
+function switchModal(fromModalId, toModalId, callback) {
+  const fromEl = document.getElementById(fromModalId);
+  if (fromEl && (fromEl.classList.contains('show') || fromEl.style.display === 'block')) {
+    hideModalSafely(fromModalId);
+    let called = false;
+    const runOnce = function() {
+      if (!called) {
+        called = true;
+        if (typeof callback === 'function') callback();
+      }
+    };
+    fromEl.addEventListener('hidden.bs.modal', runOnce, { once: true });
+    setTimeout(runOnce, 280);
+  } else {
+    if (typeof callback === 'function') callback();
+  }
+}
+
+function openDocPreview(idOrEl, maybeTitle, maybeApplicant, maybeFilename, maybeStatus, maybeReason, maybeExpiry) {
+  let id, title, applicant, filename, status, reason, expiry;
+
+  if (idOrEl && typeof idOrEl === 'object' && idOrEl.dataset) {
+    const d = getDocData(idOrEl);
+    id = d.id;
+    title = d.title;
+    applicant = d.applicant;
+    filename = d.filename;
+    status = d.status;
+    reason = d.reason;
+    expiry = d.expiry;
+  } else {
+    id = idOrEl;
+    title = maybeTitle || 'Document';
+    applicant = maybeApplicant || '';
+    filename = maybeFilename || '';
+    status = maybeStatus || '';
+    reason = maybeReason || '';
+    expiry = maybeExpiry || '';
+  }
+
+  const titleEl = document.getElementById('previewModalDocTitle');
+  if (titleEl) titleEl.innerText = title;
+
+  const subEl = document.getElementById('previewModalSubtitle');
+  if (subEl) subEl.innerText = (applicant ? 'Applicant: ' + applicant + ' • ' : '') + 'File: ' + (filename || 'Document');
+
+  const dlBtn = document.getElementById('previewDownloadBtn');
+  if (dlBtn) dlBtn.href = '/documents/download?id=' + id;
+
+  let badge = '<span class="badge bg-secondary">' + (status || 'UNDER_REVIEW') + '</span>';
+  if (status === 'VERIFIED') badge = '<span class="badge bg-success"><i class="fa-solid fa-circle-check me-1"></i> Verified</span>';
+  else if (status === 'REJECTED') badge = '<span class="badge bg-danger"><i class="fa-solid fa-circle-xmark me-1"></i> Rejected' + (reason ? ': ' + reason : '') + '</span>';
+  else if (status === 'UNDER_REVIEW') badge = '<span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i> Under Review</span>';
 
   if (expiry) {
     badge += ' <span class="badge bg-light text-dark border ms-1">Expiry: ' + expiry + '</span>';
   }
-  document.getElementById('previewStatusBadge').innerHTML = badge;
+  const statusEl = document.getElementById('previewStatusBadge');
+  if (statusEl) statusEl.innerHTML = badge;
 
-  const ext = filename.split('.').pop().toLowerCase();
-  const container = document.getElementById('previewContainer');
+  // Configure action buttons in preview modal using smooth transition helper
+  const vBtn = document.getElementById('previewVerifyBtn');
+  const uBtn = document.getElementById('previewUnderReviewBtn');
+  const rBtn = document.getElementById('previewRejectBtn');
+  const dBtn = document.getElementById('previewDeleteBtn');
 
-  if (ext === 'pdf') {
-    container.innerHTML = '<iframe src="/documents/preview?id=' + id + '" style="width: 100%; height: 600px; border: none; border-radius: 6px;"></iframe>';
-  } else if (['jpg', 'jpeg', 'png'].includes(ext)) {
-    container.innerHTML = '<img src="/documents/preview?id=' + id + '" class="img-fluid rounded shadow-sm" style="max-height: 550px; object-fit: contain;">';
-  } else {
-    container.innerHTML = '<div class="text-center p-5"><i class="fa-solid fa-file-lines fs-1 text-secondary mb-3"></i><h5>Preview not supported for ' + ext.toUpperCase() + '</h5><p class="text-muted small">Please download the file to inspect its contents.</p><a href="/documents/download?id=' + id + '" class="btn btn-primary btn-sm"><i class="fa-solid fa-download me-1"></i> Download ' + filename + '</a></div>';
+  if (vBtn) {
+    vBtn.disabled = (status === 'VERIFIED');
+    vBtn.onclick = function() {
+      switchModal('previewModal', 'verifyModal', function() {
+        openVerifyModal(id, title);
+      });
+    };
   }
 
-  const modal = new bootstrap.Modal(document.getElementById('previewModal'));
-  modal.show();
+  if (uBtn) {
+    uBtn.disabled = (status === 'UNDER_REVIEW');
+    uBtn.onclick = function() {
+      switchModal('previewModal', 'underReviewModal', function() {
+        openUnderReviewModal(id, title);
+      });
+    };
+  }
+
+  if (rBtn) {
+    rBtn.disabled = (status === 'REJECTED');
+    rBtn.onclick = function() {
+      switchModal('previewModal', 'rejectModal', function() {
+        openRejectModal(id, title);
+      });
+    };
+  }
+
+  if (dBtn) {
+    dBtn.onclick = function() {
+      switchModal('previewModal', 'deleteDocModal', function() {
+        openDeleteDocModal(id, title, applicant);
+      });
+    };
+  }
+
+  const ext = (filename || '').split('.').pop().toLowerCase();
+  const container = document.getElementById('previewContainer');
+
+  if (container) {
+    if (ext === 'pdf') {
+      container.innerHTML = '<iframe src="/documents/preview?id=' + id + '" style="width: 100%; height: 600px; border: none; border-radius: 6px;"></iframe>';
+    } else if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+      container.innerHTML = '<img src="/documents/preview?id=' + id + '" class="img-fluid rounded shadow-sm" style="max-height: 550px; object-fit: contain;">';
+    } else {
+      container.innerHTML = '<div class="text-center p-5"><i class="fa-solid fa-file-lines fs-1 text-secondary mb-3"></i><h5>Preview not supported for ' + (ext ? ext.toUpperCase() : 'file') + '</h5><p class="text-muted small">Please download the file to inspect its contents.</p><a href="/documents/download?id=' + id + '" class="btn btn-primary btn-sm"><i class="fa-solid fa-download me-1"></i> Download ' + (filename || 'File') + '</a></div>';
+    }
+  }
+
+  showModalSafely('previewModal');
 }
 
-function openVerifyModal(id, title) {
-  document.getElementById('verifyDocId').value = id;
-  document.getElementById('verifyDocTitle').innerText = title;
-  const modal = new bootstrap.Modal(document.getElementById('verifyModal'));
-  modal.show();
+function openVerifyModal(idOrEl, maybeTitle) {
+  const data = getDocData(idOrEl, maybeTitle);
+  const idInput = document.getElementById('verifyDocId');
+  if (idInput) idInput.value = data.id;
+  const titleEl = document.getElementById('verifyDocTitle');
+  if (titleEl) titleEl.innerText = data.title;
+  showModalSafely('verifyModal');
 }
 
-function openRejectModal(id, title) {
-  document.getElementById('rejectDocId').value = id;
-  const modal = new bootstrap.Modal(document.getElementById('rejectModal'));
-  modal.show();
+function openUnderReviewModal(idOrEl, maybeTitle) {
+  const data = getDocData(idOrEl, maybeTitle);
+  const idInput = document.getElementById('underReviewDocId');
+  if (idInput) idInput.value = data.id;
+  const titleEl = document.getElementById('underReviewDocTitle');
+  if (titleEl) titleEl.innerText = data.title;
+  showModalSafely('underReviewModal');
 }
 
-function openReplaceModal(id, title) {
-  document.getElementById('replaceDocId').value = id;
-  const modal = new bootstrap.Modal(document.getElementById('replaceModal'));
-  modal.show();
+function openRejectModal(idOrEl, maybeTitle) {
+  const data = getDocData(idOrEl, maybeTitle);
+  const idInput = document.getElementById('rejectDocId');
+  if (idInput) idInput.value = data.id;
+  const titleEl = document.getElementById('rejectDocTitle');
+  if (titleEl) titleEl.innerText = data.title;
+  showModalSafely('rejectModal');
+}
+
+function openReplaceModal(idOrEl, maybeTitle) {
+  const data = getDocData(idOrEl, maybeTitle);
+  const idInput = document.getElementById('replaceDocId');
+  if (idInput) idInput.value = data.id;
+  showModalSafely('replaceModal');
+}
+
+function openDeleteDocModal(idOrEl, maybeTitle, maybeApplicant) {
+  const data = getDocData(idOrEl, maybeTitle, maybeApplicant);
+  const idInput = document.getElementById('deleteDocId');
+  if (idInput) idInput.value = data.id;
+  const titleEl = document.getElementById('deleteDocTitle');
+  if (titleEl) titleEl.innerText = data.title;
+  const appEl = document.getElementById('deleteDocApplicant');
+  if (appEl) appEl.innerText = data.applicant ? 'Applicant: ' + data.applicant : '';
+  showModalSafely('deleteDocModal');
 }
 
 function openVersionHistoryModal(id, title) {
   const body = document.getElementById('versionHistoryBody');
-  body.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary mb-2"></div><div>Loading version archive...</div></div>';
+  if (body) {
+    body.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary mb-2"></div><div>Loading version archive...</div></div>';
+  }
 
   fetch('/documents/history?id=' + id)
     .then(r => r.json())
@@ -796,18 +1227,35 @@ function openVersionHistoryModal(id, title) {
           html += '<tr><td><span class="badge bg-secondary">v' + v.version_number + '</span></td><td>' + v.file_name + '</td><td>' + (parseFloat(v.file_size) / 1024).toFixed(1) + ' KB</td><td>' + (v.uploader_name || v.uploaded_by_type) + '</td><td class="small text-muted">' + v.created_at + '</td><td class="small text-danger">' + (v.rejection_reason || '—') + '</td></tr>';
         });
         html += '</tbody></table></div>';
-        body.innerHTML = html;
+        if (body) body.innerHTML = html;
       } else {
-        body.innerHTML = '<div class="p-4 text-center text-muted">No previous version history archived for this document (Current is Version 1).</div>';
+        if (body) body.innerHTML = '<div class="p-4 text-center text-muted">No previous version history archived for this document (Current is Version 1).</div>';
       }
     })
     .catch(() => {
-      body.innerHTML = '<div class="p-4 text-center text-danger">Failed to load version history.</div>';
+      if (body) body.innerHTML = '<div class="p-4 text-center text-danger">Failed to load version history.</div>';
     });
 
-  const modal = new bootstrap.Modal(document.getElementById('versionHistoryModal'));
-  modal.show();
+  showModalSafely('versionHistoryModal');
 }
+
+// Automatically configure Popper fixed positioning for all table dropdowns
+document.addEventListener('DOMContentLoaded', function() {
+  function initFixedDropdowns() {
+    if (window.bootstrap && bootstrap.Dropdown) {
+      document.querySelectorAll('.table-responsive [data-bs-toggle="dropdown"]').forEach(function(el) {
+        new bootstrap.Dropdown(el, {
+          popperConfig: function(defaultConfig) {
+            return Object.assign({}, defaultConfig, { strategy: 'fixed' });
+          }
+        });
+      });
+    }
+  }
+  initFixedDropdowns();
+  // Run again slightly later in case scripts loaded in footer initialized afterwards
+  setTimeout(initFixedDropdowns, 200);
+});
 </script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

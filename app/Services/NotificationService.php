@@ -304,7 +304,7 @@ class NotificationService
     /**
      * Record delivery log entry.
      */
-    private static function recordLog(array $log, PDO $pdo): void
+    public static function recordLog(array $log, PDO $pdo): void
     {
         $stmt = $pdo->prepare("INSERT INTO notification_logs 
             (event_type, recipient_type, recipient_id, recipient_name, recipient_email, recipient_phone, channel, template_name, subject, content_preview, idempotency_key, status, provider_message_id, request_payload, response_payload, error_message, sent_at, created_at)

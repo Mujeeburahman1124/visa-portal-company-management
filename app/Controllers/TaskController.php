@@ -178,6 +178,8 @@ class TaskController
                 }
             }
 
+            self::ensureTaskColumns($pdo);
+
             $completedAt = ($status === 'Completed') ? date('Y-m-d H:i:s') : null;
             $completedBy = ($status === 'Completed') ? (int)$currentUser['id'] : null;
 
@@ -192,7 +194,13 @@ class TaskController
             $updateSql .= ", updated_at = CURRENT_TIMESTAMP WHERE id = ?";
             $updateParams[] = $taskId;
 
-            $pdo->prepare($updateSql)->execute($updateParams);
+            try {
+                $pdo->prepare($updateSql)->execute($updateParams);
+            } catch (\Throwable $eUpdate) {
+                // If column error, forcefully ensure columns and retry once
+                self::ensureTaskColumns($pdo);
+                $pdo->prepare($updateSql)->execute($updateParams);
+            }
 
             // Log into task_history
             $historyNote = $completionNotes ?: "Status changed to {$status}";
@@ -259,6 +267,7 @@ class TaskController
             $task = $stmtPrev->fetch(PDO::FETCH_ASSOC);
             if ($task) {
                 $prevAssignee = (int)$task['assigned_to'];
+                self::ensureTaskColumns($pdo);
                 $pdo->prepare("UPDATE tasks SET assigned_to = ?, reassigned_to = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
                     ->execute([$assignedTo, $assignedTo, $taskId]);
 
@@ -483,5 +492,27 @@ class TaskController
             'history' => $history
         ]);
         exit;
+    }
+
+    public static function ensureTaskColumns(?PDO $pdo = null): void
+    {
+        static $done = false;
+        if ($done) return;
+        $done = true;
+
+        $pdo = $pdo ?: Database::getConnection();
+        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $taskCols = [
+            'completion_notes' => 'TEXT NULL',
+            'proof_attachment' => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+            'proof_of_work'    => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+            'completed_at'     => ($driver === 'mysql') ? 'DATETIME NULL' : 'TEXT NULL',
+            'completed_by'     => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'reassigned_to'    => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'department'       => ($driver === 'mysql') ? 'VARCHAR(100) NULL' : 'TEXT NULL',
+        ];
+        foreach ($taskCols as $col => $def) {
+            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN {$col} {$def}"); } catch (\Throwable $e) {}
+        }
     }
 }

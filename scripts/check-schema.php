@@ -44,7 +44,7 @@ $requirements = [
     'payments'                     => ['id','payment_number','application_id','customer_id','amount','status'],
     'refunds'                      => ['id','refund_number','application_id','customer_id','amount'],
     'supplier_payments'            => ['id','payment_reference','supplier_id','application_id','paid_amount'],
-    'tasks'                        => ['id','application_id','task_title','status','assigned_to'],
+    'tasks'                        => ['id','application_id','task_title','status','assigned_to','completion_notes','proof_of_work','proof_attachment'],
     'notifications'                => ['id','title','message','is_read'],
     'activity_logs'                => ['id','action','module'],
     'system_settings'              => ['id','setting_key','setting_value'],
@@ -56,6 +56,12 @@ $requirements = [
     'staff_attendance'             => ['id','user_id','attendance_date','status'],
     'jobs'                         => ['id','job_title','status'],
     'agent_applications'           => ['id','agent_id','application_id'],
+    'customer_wallets'             => ['id','customer_id','currency','current_balance'],
+    'wallet_transactions'          => ['id','transaction_id','customer_id','wallet_id','invoice_id','payment_method','reference'],
+    'supplier_wallets'             => ['id','supplier_id','currency','current_balance'],
+    'supplier_wallet_transactions' => ['id','transaction_id','supplier_id','wallet_id','original_amount','exchange_rate','converted_amount','payment_method','reference'],
+    'agent_wallets'                => ['id','agent_id','currency','current_balance'],
+    'agent_wallet_transactions'    => ['id','transaction_id','agent_id','wallet_id','original_amount','exchange_rate','converted_amount','payment_method','reference'],
     'schema_migrations'            => ['id','version','applied_at'],
 ];
 
