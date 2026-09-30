@@ -15,6 +15,9 @@ $_SERVER['SERVER_PROTOCOL'] = 'HTTP/1.1';
 
 require_once dirname(__DIR__) . '/app/autoload.php';
 
+putenv('DB_ALLOW_SQLITE_FALLBACK=true');
+$_ENV['DB_ALLOW_SQLITE_FALLBACK'] = 'true';
+
 use App\Database\DatabaseBootstrapper;
 use App\Controllers\AuthController;
 
@@ -53,7 +56,7 @@ $tests = [
         $_SERVER['REQUEST_URI'] = '/api/search?q=dubai';
         $_GET['q'] = 'dubai';
         ob_start();
-        (new SearchApiController())->search();
+        (new App\Controllers\Api\SearchApiController())->search();
         $out = ob_get_clean();
         unset($_SESSION['user']);
         $json = json_decode($out, true);

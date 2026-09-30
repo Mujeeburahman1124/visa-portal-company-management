@@ -178,7 +178,8 @@ class StaffController
 
         // If custom permissions were explicitly given/checked in the form, sync with role_permissions
         if (!empty($customPerms) && is_array($customPerms)) {
-            $rpIns = $pdo->prepare("INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)");
+            $insPrefix = ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql') ? 'INSERT IGNORE INTO' : 'INSERT OR IGNORE INTO';
+            $rpIns = $pdo->prepare("{$insPrefix} role_permissions (role_id, permission_id) VALUES (?, ?)");
             foreach ($customPerms as $cpId) {
                 $rpIns->execute([$roleId, (int)$cpId]);
             }

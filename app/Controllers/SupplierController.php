@@ -175,6 +175,49 @@ class SupplierController
         $stmt->execute([$code, $name, $contact, $email, $mobile, $whatsapp, $country, $address, $services, $bankDetails, $passwordHash]);
         $supplierId = (int)$pdo->lastInsertId();
 
+        // Dispatch Welcome Onboarding Email to Supplier with Auto-Generated Password
+        if (!empty($email)) {
+            try {
+                $portalUrl = \App\Config\App::url('supplier/login');
+                $subject = "Welcome to " . \App\Config\App::COMPANY_NAME . " — Supplier Vendor Portal Credentials";
+                $bodyHtml = "
+                    <p>Dear <strong>" . htmlspecialchars($contact ?: $name) . "</strong>,</p>
+                    <p>Welcome to <strong>" . \App\Config\App::COMPANY_NAME . "</strong>. Your supplier vendor account has been registered in our portal.</p>
+                    <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin: 20px 0;'>
+                        <h4 style='margin-top: 0; color: #1e3a8a;'>Your Supplier Portal Login Credentials</h4>
+                        <p style='margin: 6px 0;'><strong>Supplier Code:</strong> <span style='font-family: monospace; font-weight: bold;'>{$code}</span></p>
+                        <p style='margin: 6px 0;'><strong>Company / Vendor:</strong> " . htmlspecialchars($name) . "</p>
+                        <p style='margin: 6px 0;'><strong>Login Email:</strong> {$email}</p>
+                        <p style='margin: 6px 0;'><strong>Auto-Generated Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #0f172a;'>{$rawPassword}</code></p>
+                    </div>
+                    <p style='color: #0369a1; font-weight: 500;'>You can log in to view your payment ledgers, account statements, and assigned visa cases. <strong>You can change your password anytime after logging in via Profile Settings.</strong></p>
+                    <p style='text-align: center; margin: 25px 0;'>
+                        <a href='{$portalUrl}' style='background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>Access Supplier Portal &rarr;</a>
+                    </p>
+                ";
+
+                \App\Services\EmailService::send([
+                    'to' => $email,
+                    'name' => $contact ?: $name,
+                    'subject' => $subject,
+                    'bodyHtml' => $bodyHtml,
+                    'data' => [
+                        'supplier_name' => $name,
+                        'supplier_code' => $code,
+                        'email' => $email,
+                        'password' => $rawPassword,
+                        'portal_url' => $portalUrl,
+                    ]
+                ]);
+
+                // Record Notification Log
+                try {
+                    $pdo->prepare("INSERT INTO notification_logs (event_type, recipient_type, recipient_id, recipient_name, recipient_email, channel, template_name, subject, content_preview, status, sent_at) VALUES ('supplier.registered', 'Supplier', ?, ?, ?, 'Email', 'supplier_welcome_email', ?, ?, 'Sent', CURRENT_TIMESTAMP)")
+                        ->execute([$supplierId, $name, $email, $subject, "Supplier welcome email with password {$rawPassword}"]);
+                } catch (\Throwable $eLog) {}
+            } catch (\Throwable $e) {}
+        }
+
         AuditService::log('CREATE_SUPPLIER', 'Suppliers', $supplierId, "Created supplier {$name} ({$code}) with auto password");
 
         redirect('/suppliers', "Supplier '{$name}' created with auto password: {$rawPassword}", 'success');

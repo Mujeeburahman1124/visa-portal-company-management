@@ -4,7 +4,43 @@
   padding: 0.55rem 0.85rem;
   font-size: 0.9rem;
   color: var(--vt-text-main);
+  background-color: #ffffff;
   transition: border-color var(--vt-transition-fast), box-shadow var(--vt-transition-fast);
+}
+
+.form-select option {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+.form-select optgroup {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  font-weight: 700;
+  padding: 6px 10px;
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select,
+[data-theme-mode="dark"] .form-control,
+[data-theme-mode="dark"] .form-select {
+  background-color: #131c31 !important;
+  color: #f1f5f9 !important;
+  border-color: #1e293b !important;
+}
+
+[data-theme="dark"] .form-select option,
+[data-theme-mode="dark"] .form-select option {
+  background-color: #131c31 !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .form-select optgroup,
+[data-theme-mode="dark"] .form-select optgroup {
+  background-color: #0b1120 !important;
+  color: #94a3b8 !important;
 }
 
 .form-control:focus, .form-select:focus {

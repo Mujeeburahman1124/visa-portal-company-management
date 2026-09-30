@@ -101,11 +101,25 @@ class AgentController
                             <p style='margin: 6px 0;'><strong>Login Email:</strong> {$email}</p>
                             <p style='margin: 6px 0;'><strong>Auto-Generated Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #0f172a;'>{$rawPassword}</code></p>
                         </div>
-                        <p style='text-align: center; margin-top: 25px;'>
+                        <p style='color: #0369a1; font-weight: 500;'>You can log in to submit visa applications, view commissions, and monitor client files. <strong>You can change your password anytime after logging in via Agent Profile Settings.</strong></p>
+                        <p style='text-align: center; margin: 25px 0;'>
                             <a href='{$portalUrl}' style='background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>Access Agent Portal &rarr;</a>
                         </p>
-                    "
+                    ",
+                    'data' => [
+                        'agent_name' => $company,
+                        'agent_code' => $code,
+                        'email' => $email,
+                        'password' => $rawPassword,
+                        'portal_url' => $portalUrl,
+                    ]
                 ]);
+
+                // Record Notification Log
+                try {
+                    $pdo->prepare("INSERT INTO notification_logs (event_type, recipient_type, recipient_id, recipient_name, recipient_email, channel, template_name, subject, content_preview, status, sent_at) VALUES ('agent.registered', 'Agent', ?, ?, ?, 'Email', 'agent_welcome_email', ?, ?, 'Sent', CURRENT_TIMESTAMP)")
+                        ->execute([$agentId, $company, $email, 'Welcome to ' . \App\Config\App::COMPANY_NAME . ' — B2B Agent Portal Access Credentials', "Agent welcome email with password {$rawPassword}"]);
+                } catch (\Throwable $eLog) {}
             } catch (\Throwable $e) {}
         }
 

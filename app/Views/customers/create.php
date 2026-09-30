@@ -712,6 +712,24 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 </div>
 
 <script>
+const ALL_VISA_PACKAGES = <?= json_encode(array_map(function($srv) {
+    return [
+        'id' => (int)$srv['id'],
+        'country_id' => (string)$srv['country_id'],
+        'category_id' => (string)($srv['category_id'] ?? ''),
+        'name' => $srv['name'],
+        'country_name' => $srv['country_name'] ?? '',
+        'flag_emoji' => $srv['flag_emoji'] ?? '🌐',
+        'duration' => $srv['duration'] ?? '30 Days',
+        'entry_type' => $srv['entry_type'] ?? 'Single Entry',
+        'processing_type' => $srv['processing_type'] ?? 'Normal',
+        'selling_price' => (float)($srv['selling_price'] ?? 0),
+        'supplier_cost' => (float)($srv['supplier_cost'] ?? 0),
+        'tax_rate' => (float)($srv['tax_rate'] ?? 5.0),
+        'estimated_days' => (int)($srv['estimated_days'] ?? 15),
+    ];
+}, $services), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
 function toggleManualInput(manualBoxId, selectId) {
   const box = document.getElementById(manualBoxId);
   const sel = document.getElementById(selectId);
@@ -781,15 +799,91 @@ function checkManualSelect(sel, manualBoxId) {
 }
 
 function filterVisaPackages() {
-  const countryId = document.getElementById('countrySelect').value;
-  const categoryId = document.getElementById('categorySelect').value;
+  const countrySel = document.getElementById('countrySelect');
+  const catSel = document.getElementById('categorySelect');
   const srvSelect = document.getElementById('serviceSelect');
+  if (!srvSelect) return;
+
+  const countryVal = countrySel ? (countrySel.value || '').trim() : '';
+  const catVal = catSel ? (catSel.value || '').trim() : '';
+  const currentVal = srvSelect.value;
+
+  // Clear current options
+  srvSelect.innerHTML = '';
   
-  for (let i = 1; i < srvSelect.options.length; i++) {
-    const opt = srvSelect.options[i];
-    const matchCountry = !countryId || opt.dataset.countryId == countryId;
-    const matchCat = !categoryId || opt.dataset.categoryId == categoryId;
-    opt.style.display = (matchCountry && matchCat) ? '' : 'none';
+  const defaultOpt = document.createElement('option');
+  defaultOpt.value = '';
+  defaultOpt.textContent = '-- Choose Visa Type / Duration / Entry --';
+  srvSelect.appendChild(defaultOpt);
+
+  let matching = [];
+  let others = [];
+
+  ALL_VISA_PACKAGES.forEach(pkg => {
+    const matchCountry = !countryVal || countryVal === '__custom__' || String(pkg.country_id) === String(countryVal);
+    const matchCat = !catVal || String(pkg.category_id) === String(catVal);
+
+    if (matchCountry && matchCat) {
+      matching.push(pkg);
+    } else {
+      others.push(pkg);
+    }
+  });
+
+  const appendPkgOption = (parent, pkg) => {
+    const opt = document.createElement('option');
+    opt.value = pkg.id;
+    opt.dataset.countryId = pkg.country_id;
+    opt.dataset.categoryId = pkg.category_id;
+    opt.dataset.price = pkg.selling_price;
+    opt.dataset.cost = pkg.supplier_cost;
+    opt.dataset.tax = pkg.tax_rate;
+    opt.dataset.days = pkg.estimated_days;
+    opt.dataset.duration = pkg.duration;
+    opt.dataset.entry = pkg.entry_type;
+    opt.dataset.processing = pkg.processing_type;
+    opt.textContent = `${pkg.flag_emoji} ${pkg.country_name} — ${pkg.name} (${pkg.duration} • ${pkg.entry_type} • $${pkg.selling_price.toFixed(2)})`;
+    if (String(pkg.id) === String(currentVal)) {
+      opt.selected = true;
+    }
+    parent.appendChild(opt);
+  };
+
+  if (matching.length > 0) {
+    if (countryVal || catVal) {
+      const matchGroup = document.createElement('optgroup');
+      matchGroup.label = 'Matching Visa Packages';
+      matching.forEach(pkg => appendPkgOption(matchGroup, pkg));
+      srvSelect.appendChild(matchGroup);
+
+      if (others.length > 0) {
+        const otherGroup = document.createElement('optgroup');
+        otherGroup.label = 'Other Available Packages';
+        others.forEach(pkg => appendPkgOption(otherGroup, pkg));
+        srvSelect.appendChild(otherGroup);
+      }
+    } else {
+      matching.forEach(pkg => appendPkgOption(srvSelect, pkg));
+    }
+  } else {
+    // No exact matches for this country/category filter
+    const emptyNotice = document.createElement('option');
+    emptyNotice.value = '';
+    emptyNotice.disabled = true;
+    emptyNotice.textContent = 'ℹ️ No predefined package for this filter (Use "+ Enter Manually" or choose from all below)';
+    srvSelect.appendChild(emptyNotice);
+
+    if (others.length > 0) {
+      const allGroup = document.createElement('optgroup');
+      allGroup.label = 'All Available Packages';
+      others.forEach(pkg => appendPkgOption(allGroup, pkg));
+      srvSelect.appendChild(allGroup);
+    }
+  }
+
+  // If a package was selected, update pricing info
+  if (srvSelect.value) {
+    updateServiceInfo();
   }
 }
 
@@ -994,6 +1088,9 @@ function removeCustomerDocRow(btn) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  // Initialize dynamic visa packages dropdown
+  filterVisaPackages();
+
   // Prevent duplicate submission on form submit
   const regForm = document.getElementById('registerApplicantForm');
   if (regForm) {

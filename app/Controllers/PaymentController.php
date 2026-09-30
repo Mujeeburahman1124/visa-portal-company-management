@@ -281,6 +281,10 @@ class PaymentController
 
         // Dispatch Central Real-Time Notification (Email + WhatsApp + In-App)
         try {
+            $custInfoStmt = $pdo->prepare("SELECT full_name, email, mobile, whatsapp FROM customers WHERE id = ?");
+            $custInfoStmt->execute([$customerId]);
+            $custInfo = $custInfoStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
             \App\Services\NotificationService::trigger('payment.received', [
                 'application_id' => $appId,
                 'customer_id' => $customerId,
@@ -290,10 +294,51 @@ class PaymentController
                 'currency' => $toCurrency,
                 'paymentMethod' => $paymentMethod,
                 'paymentDate' => $paymentDate,
+                'applicantName' => $custInfo['full_name'] ?? 'Valued Customer',
+                'applicantEmail' => $custInfo['email'] ?? '',
+                'applicantPhone' => $custInfo['whatsapp'] ?: ($custInfo['mobile'] ?? ''),
                 'receiptUrl' => App::url('portal/invoices'),
                 'portal_link' => "/portal/invoices",
                 'link' => "/payments/receipt?id={$paymentId}",
             ]);
+
+            // Guaranteed direct email receipt dispatch if customer has email
+            if (!empty($custInfo['email'])) {
+                try {
+                    $receiptSubject = "Payment Receipt Confirmed — {$receiptNumber} (" . \App\Config\App::COMPANY_NAME . ")";
+                    $receiptBody = "
+                        <p>Dear <strong>" . htmlspecialchars($custInfo['full_name'] ?? 'Valued Customer') . "</strong>,</p>
+                        <p>We have successfully received and processed your payment for visa application <strong>{$app['application_number']}</strong>.</p>
+                        <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin: 20px 0;'>
+                            <h4 style='margin-top: 0; color: #1e3a8a;'>Official Payment Receipt Details</h4>
+                            <p style='margin: 6px 0;'><strong>Receipt Number:</strong> <span style='font-family: monospace; font-weight: bold;'>{$receiptNumber}</span></p>
+                            <p style='margin: 6px 0;'><strong>Invoice Number:</strong> {$invoiceNumber}</p>
+                            <p style='margin: 6px 0;'><strong>Application Ref:</strong> {$app['application_number']}</p>
+                            <p style='margin: 6px 0;'><strong>Amount Paid:</strong> <strong style='color: #16a34a; font-size: 1.1em;'>{$toCurrency} " . number_format($amount, 2) . "</strong></p>
+                            <p style='margin: 6px 0;'><strong>Payment Method:</strong> {$paymentMethod}</p>
+                            <p style='margin: 6px 0;'><strong>Payment Date:</strong> {$paymentDate}</p>
+                        </div>
+                        <p>You can view and download your full tax invoice and payment vouchers anytime from the Customer Portal.</p>
+                        <p style='text-align: center; margin: 25px 0;'>
+                            <a href='" . App::url('portal/invoices') . "' style='background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>View Invoices &amp; Receipts &rarr;</a>
+                        </p>
+                    ";
+
+                    \App\Services\EmailService::send([
+                        'to' => $custInfo['email'],
+                        'name' => $custInfo['full_name'] ?? 'Valued Customer',
+                        'subject' => $receiptSubject,
+                        'bodyHtml' => $receiptBody,
+                        'data' => [
+                            'paymentNumber' => $receiptNumber,
+                            'amount' => number_format($amount, 2),
+                            'currency' => $toCurrency,
+                            'applicantName' => $custInfo['full_name'] ?? '',
+                            'applicationNumber' => $app['application_number'] ?? '',
+                        ]
+                    ]);
+                } catch (\Throwable $eDirect) {}
+            }
         } catch (\Throwable $e) {}
 
         AuditService::log('PAYMENT_RECEIVED', 'Payments', $paymentId, "Received payment of {$toCurrency} " . number_format($amount, 2) . " (Receipt {$receiptNumber}) for {$app['application_number']}" . ($fromCurrency !== $toCurrency ? " [Converted from {$fromCurrency} " . number_format($originalAmount, 2) . " @ {$exchangeRate}]" : '') . ($overpaidExcess > 0 ? " (Excess {$toCurrency} " . number_format($overpaidExcess, 2) . " credited to wallet)" : ''), [

@@ -142,9 +142,12 @@ class TaskController
         $completionNotes = trim($_POST['completion_notes'] ?? '');
 
         if ($taskId > 0 && in_array($status, ['Pending', 'In Progress', 'Completed', 'Overdue', 'Cancelled'], true)) {
-            $prevStmt = $pdo->prepare("SELECT status FROM tasks WHERE id = ?");
+            $prevStmt = $pdo->prepare("SELECT id, task_title, created_by, status FROM tasks WHERE id = ?");
             $prevStmt->execute([$taskId]);
-            $prevStatus = $prevStmt->fetchColumn() ?: 'Pending';
+            $taskRow = $prevStmt->fetch(PDO::FETCH_ASSOC);
+            $prevStatus = $taskRow['status'] ?? 'Pending';
+            $taskTitle = $taskRow['task_title'] ?? 'Operational Task';
+            $taskCreatorId = (int)($taskRow['created_by'] ?? 0);
 
             // When completing a task, require proof of work done
             $proofAttachment = null;
@@ -194,6 +197,32 @@ class TaskController
             }
             $stmtHist = $pdo->prepare("INSERT INTO task_history (task_id, action, from_status, to_status, notes, performed_by, created_at) VALUES (?, 'STATUS_CHANGE', ?, ?, ?, ?, CURRENT_TIMESTAMP)");
             $stmtHist->execute([$taskId, $prevStatus, $status, $historyNote, $currentUser['id']]);
+
+            // Notify creator when task is marked Completed
+            if ($status === 'Completed' && $taskCreatorId > 0 && $taskCreatorId !== (int)$currentUser['id']) {
+                try {
+                    $uStmt = $pdo->prepare("SELECT name, email FROM users WHERE id = ?");
+                    $uStmt->execute([$taskCreatorId]);
+                    $creatorUser = $uStmt->fetch(PDO::FETCH_ASSOC);
+                    if ($creatorUser && !empty($creatorUser['email'])) {
+                        EmailService::send([
+                            'to' => $creatorUser['email'],
+                            'name' => $creatorUser['name'],
+                            'subject' => "[Task Completed] {$taskTitle} — Updated by " . $currentUser['name'],
+                            'bodyHtml' => "
+                                <p>Dear <strong>" . htmlspecialchars($creatorUser['name']) . "</strong>,</p>
+                                <p>The task <strong>" . htmlspecialchars($taskTitle) . "</strong> has been marked as <strong style='color:#16a34a;'>Completed</strong> by <strong>" . htmlspecialchars($currentUser['name']) . "</strong>.</p>
+                                <div style='background: #f8fafc; border-left: 4px solid #16a34a; padding: 14px 18px; margin: 18px 0;'>
+                                    <p style='margin: 0 0 6px 0;'><strong>Task:</strong> " . htmlspecialchars($taskTitle) . "</p>
+                                    <p style='margin: 0 0 6px 0;'><strong>Completed By:</strong> " . htmlspecialchars($currentUser['name']) . "</p>
+                                    <p style='margin: 0;'><strong>Notes:</strong><br>" . nl2br(htmlspecialchars($completionNotes ?: 'No notes')) . "</p>
+                                </div>
+                                <p><a href='" . App::url('tasks') . "' style='padding: 10px 20px; background: #16a34a; color: #fff; text-decoration: none; border-radius: 5px; font-weight: bold;'>View in Task Board &rarr;</a></p>
+                            "
+                        ]);
+                    }
+                } catch (\Throwable $eNotify) {}
+            }
 
             AuditService::log('UPDATE_TASK', 'Tasks', $taskId, "Updated task status from {$prevStatus} to {$status} with proof of work");
             redirect($this->getRedirectUrl(), "Task marked as {$status} with verified proof of work.", 'success');

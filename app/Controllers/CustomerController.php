@@ -217,11 +217,25 @@ class CustomerController
                             <p style='margin: 6px 0;'><strong>Auto-Generated Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #0f172a;'>{$rawPassword}</code></p>
                         </div>
                         <p>You can use these credentials to log in to the Customer Portal to track your visa applications, upload documents, view invoices, and manage your wallet.</p>
+                        <p style='color: #0369a1; font-weight: 500;'><strong>Security Notice:</strong> You can easily change your temporary password at any time after logging in by visiting your Portal Profile Settings.</p>
                         <p style='text-align: center; margin-top: 25px;'>
                             <a href='{$portalUrl}' style='background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>Access Customer Portal &rarr;</a>
                         </p>
-                    "
+                    ",
+                    'data' => [
+                        'applicantName' => $fullName,
+                        'customerCode' => $customerCode,
+                        'email' => $email,
+                        'password' => $rawPassword,
+                        'loginUrl' => $portalUrl,
+                    ]
                 ]);
+
+                // Record Notification Log
+                try {
+                    $pdo->prepare("INSERT INTO notification_logs (event_type, recipient_type, recipient_id, recipient_name, recipient_email, channel, template_name, subject, content_preview, status, sent_at) VALUES ('customer.registered', 'Applicant', ?, ?, ?, 'Email', 'customer_welcome_email', ?, ?, 'Sent', CURRENT_TIMESTAMP)")
+                        ->execute([$customerId, $fullName, $email, 'Welcome to ' . \App\Config\App::COMPANY_NAME . ' — Customer Portal Access Credentials', "Customer welcome email with auto password {$rawPassword}"]);
+                } catch (\Throwable $eLog) {}
             } catch (\Throwable $e) {}
         }
 
