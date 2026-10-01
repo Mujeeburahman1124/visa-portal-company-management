@@ -23,11 +23,35 @@ class StageTransitionService
         ?string $nextAction = null,
         ?string $nextActionDueDate = null
     ): array {
+        $pdo = Database::getConnection();
+
+        // 1. Fetch current application record
+        $stmt = $pdo->prepare("SELECT id, application_number, customer_id, current_stage, status, assigned_staff_id FROM applications WHERE id = ?");
+        $stmt->execute([$applicationId]);
+        $app = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$app) {
+            return ['success' => false, 'message' => 'Visa application not found.'];
+        }
+
+        $oldStage = (string)($app['current_stage'] ?? 'New Application');
+        $oldStatus = (string)($app['status'] ?? 'Draft');
+
+        $currentUser = auth_user();
+        $isAdmin = $currentUser && in_array($currentUser['role_name'] ?? '', ['Super Admin', 'Admin'], true);
+
+        // Normalize status to canonical if empty or omitted
+        if (empty($newStatus)) {
+            $newStatus = StageValidator::getCanonicalStatus($newStage);
+        }
+
         $validator = new StageValidator();
         if (!$validator->validate([
             'application_id' => $applicationId,
+            'current_stage' => $oldStage,
             'new_stage' => $newStage,
-            'new_status' => $newStatus
+            'new_status' => $newStatus,
+            'is_admin' => $isAdmin
         ])) {
             return [
                 'success' => false,
@@ -36,23 +60,21 @@ class StageTransitionService
             ];
         }
 
-        $pdo = Database::getConnection();
+        // Enforce mandatory document verification before advancing to verified/submitted/approved/issued stages
+        if (in_array($newStage, StageValidator::STAGES_REQUIRING_DOCUMENTS_VERIFIED, true)) {
+            $unverified = DocumentChecklistService::getUnverifiedMandatoryRequirements($applicationId);
+            if (!empty($unverified)) {
+                return [
+                    'success' => false,
+                    'message' => "Stage progression to '{$newStage}' blocked: The following mandatory documents are missing or unverified: " . implode(', ', $unverified) . ". Please verify all mandatory documents first.",
+                    'errors' => ['mandatory_documents' => $unverified]
+                ];
+            }
+        }
+
         $pdo->beginTransaction();
 
         try {
-            // 1. Fetch current application record
-            $stmt = $pdo->prepare("SELECT id, application_number, customer_id, current_stage, status, assigned_staff_id FROM applications WHERE id = ?");
-            $stmt->execute([$applicationId]);
-            $app = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$app) {
-                $pdo->rollBack();
-                return ['success' => false, 'message' => 'Visa application not found.'];
-            }
-
-            $oldStage = $app['current_stage'];
-            $oldStatus = $app['status'];
-
             // 2. Close any open stage history record for this application
             $pdo->prepare("UPDATE application_status_history 
                 SET created_at = COALESCE(created_at, CURRENT_TIMESTAMP) 

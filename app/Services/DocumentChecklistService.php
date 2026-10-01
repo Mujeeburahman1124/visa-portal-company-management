@@ -197,4 +197,30 @@ class DocumentChecklistService
     {
         return self::getChecklist($applicationId);
     }
+
+    /**
+     * Checks if all mandatory requirements are uploaded, non-expired, and verified.
+     * Returns an array of unverified mandatory document names (empty if fully compliant).
+     */
+    public static function getUnverifiedMandatoryRequirements(int $applicationId): array
+    {
+        $checklist = self::getChecklist($applicationId);
+        $unverified = [];
+
+        foreach ($checklist['items'] as $item) {
+            if (!empty($item['is_mandatory'])) {
+                if (empty($item['file_path'])) {
+                    $unverified[] = "{$item['document_name']} (Missing upload)";
+                } elseif ($item['status'] === 'EXPIRED') {
+                    $unverified[] = "{$item['document_name']} (Document Expired)";
+                } elseif ($item['status'] === 'REJECTED') {
+                    $unverified[] = "{$item['document_name']} (Document Rejected)";
+                } elseif ($item['status'] !== 'VERIFIED') {
+                    $unverified[] = "{$item['document_name']} (Awaiting Staff Verification)";
+                }
+            }
+        }
+
+        return $unverified;
+    }
 }

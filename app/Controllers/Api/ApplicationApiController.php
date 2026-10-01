@@ -21,16 +21,13 @@ class ApplicationApiController extends ApiController
      */
     public function index(): void
     {
-        if (!is_authenticated()) {
-            $this->jsonError('Authentication required.', [], 401);
-            return;
-        }
-
+        $user = $this->requireAuth();
         $pdo = Database::getConnection();
         $status = $_GET['status'] ?? '';
         $priority = $_GET['priority'] ?? '';
         $stage = $_GET['stage'] ?? '';
         $search = trim($_GET['search'] ?? '');
+        $branchId = $this->getScopedBranchId((int)($_GET['branch_id'] ?? 0));
 
         $sql = "SELECT a.*, 
                     c.full_name as customer_name, c.customer_code, c.email as customer_email, c.mobile as customer_mobile,
@@ -45,6 +42,11 @@ class ApplicationApiController extends ApiController
                 WHERE a.is_archived = 0";
 
         $params = [];
+        if ($branchId > 0) {
+            $sql .= " AND a.branch_id = ?";
+            $params[] = $branchId;
+        }
+
         if ($search !== '') {
             $sql .= " AND (a.application_number LIKE ? OR c.full_name LIKE ? OR c.customer_code LIKE ? OR a.passport_number LIKE ?)";
             $term = "%{$search}%";
@@ -76,10 +78,7 @@ class ApplicationApiController extends ApiController
      */
     public function show(int $id): void
     {
-        if (!is_authenticated()) {
-            $this->jsonError('Authentication required.', [], 401);
-            return;
-        }
+        $user = $this->requireAuth();
 
         if ($id <= 0) {
             $this->jsonError('Invalid application ID.', [], 400);
@@ -106,6 +105,13 @@ class ApplicationApiController extends ApiController
             return;
         }
 
+        // Branch permission check
+        $branchId = $this->getScopedBranchId();
+        if ($branchId > 0 && (int)$app['branch_id'] !== $branchId) {
+            $this->jsonError('Access Denied. You do not have permission to view applications from this branch.', [], 403);
+            return;
+        }
+
         // Attach Checklist & Stage History
         $app['checklist'] = DocumentChecklistService::getChecklist($id);
         
@@ -125,13 +131,15 @@ class ApplicationApiController extends ApiController
      */
     public function store(): void
     {
+        $user = $this->requireAuth();
         $input = $this->getJsonInput();
-        $user = auth_user();
-        $userId = $user ? (int)$user['id'] : null;
+        $userId = (int)$user['id'];
 
         $customerId = (int)($input['customer_id'] ?? 0);
         $serviceId = (int)($input['visa_service_id'] ?? 0);
         $priority = $input['priority'] ?? 'Normal';
+        $branchId = (int)($input['branch_id'] ?? ($user['branch_id'] ?? 1));
+        if ($branchId <= 0) $branchId = 1;
 
         if ($customerId <= 0 || $serviceId <= 0) {
             $this->jsonError('Missing required customer_id or visa_service_id', [], 422);
@@ -150,15 +158,30 @@ class ApplicationApiController extends ApiController
             $this->jsonError('Invalid customer or visa service', [], 422);
         }
 
-        $year = date('Y');
-        $count = (int)$pdo->query("SELECT COUNT(*) FROM applications")->fetchColumn();
-        $appNumber = sprintf("VISA-%s-%05d", $year, $count + 1);
+        // Apply Visa Rule Engine (Sir Requirement: no direct bypass)
+        $ruleResult = \App\Services\VisaRuleEngineService::resolve(
+            (int)$service['country_id'],
+            $serviceId,
+            $customer['nationality'] ?? 'Unknown',
+            $customer['current_country'] ?? 'United Arab Emirates'
+        );
 
-        $sellingPrice = (float)($service['selling_price'] ?? 0.0);
-        $supplierCost = (float)($service['supplier_cost'] ?? 0.0);
+        if (!$ruleResult['is_eligible']) {
+            $this->jsonError('Applicant is ineligible under visa rules: ' . ($ruleResult['reason'] ?? 'Category restriction.'), [], 422);
+        }
+
+        // Concurrency-safe application number generation
+        $year = date('Y');
+        $stmtMax = $pdo->query("SELECT COALESCE(MAX(id), 0) FROM applications");
+        $nextNum = ((int)$stmtMax->fetchColumn()) + 1;
+        $uniqueSuffix = strtoupper(substr(bin2hex(random_bytes(2)), 0, 4));
+        $appNumber = sprintf("MSV-%s-%05d-%s", $year, $nextNum, $uniqueSuffix);
+
+        $sellingPrice = (float)($ruleResult['selling_price'] ?? $service['selling_price'] ?? 0.0);
+        $supplierCost = (float)($ruleResult['supplier_cost'] ?? $service['supplier_cost'] ?? 0.0);
         $taxAmount = $sellingPrice * (((float)($service['tax_rate'] ?? 0.0)) / 100.0);
         $totalAmount = $sellingPrice + $taxAmount;
-        $procDays = (int)($service['estimated_days'] ?? 15);
+        $procDays = (int)($ruleResult['processing_days'] ?? ($service['estimated_days'] ?? 15));
         $expectedCompletion = date('Y-m-d', strtotime("+{$procDays} days"));
 
         $pdo->beginTransaction();
@@ -171,7 +194,7 @@ class ApplicationApiController extends ApiController
                 selling_price, supplier_cost, tax_amount, total_amount, paid_amount, balance_amount,
                 next_action, next_action_due_date, created_by
             ) VALUES (
-                ?, ?, ?, 1, ?,
+                ?, ?, ?, ?, ?,
                 'Application Registered', 'Registered', ?, 100, 'Application initialized.',
                 ?, ?, ?, ?,
                 CURRENT_DATE, ?,
@@ -181,7 +204,7 @@ class ApplicationApiController extends ApiController
 
             $nextDue = date('Y-m-d', strtotime('+3 days'));
             $stmt->execute([
-                $appNumber, $customerId, $serviceId, $userId,
+                $appNumber, $customerId, $serviceId, $branchId, $userId,
                 $priority,
                 $customer['nationality'] ?? 'Unknown', $customer['current_country'] ?? 'United Arab Emirates', $customer['passport_number'] ?? '', $customer['passport_expiry'] ?? null,
                 $expectedCompletion,
@@ -191,7 +214,7 @@ class ApplicationApiController extends ApiController
 
             $appId = (int)$pdo->lastInsertId();
 
-            $histStmt = $pdo->prepare("INSERT INTO application_status_history (application_id, from_stage, to_stage, from_status, to_status, comments, changed_by) VALUES (?, 'Initiation', 'Application Registered', 'Draft', 'Registered', 'Created via API', ?)");
+            $histStmt = $pdo->prepare("INSERT INTO application_status_history (application_id, from_stage, to_stage, from_status, to_status, comments, changed_by) VALUES (?, 'Initiation', 'Application Registered', 'Draft', 'Registered', 'Created via API with Visa Rule Engine', ?)");
             $histStmt->execute([$appId, $userId]);
 
             DocumentChecklistService::generateForApplication($appId, $serviceId);
@@ -204,7 +227,7 @@ class ApplicationApiController extends ApiController
                 'application_number' => $appNumber,
                 'status' => 'Registered',
                 'current_stage' => 'Application Registered'
-            ], 'Visa application created successfully', 201);
+            ], 'Visa application created successfully with Visa Rule Engine', 201);
         } catch (Exception $e) {
             $pdo->rollBack();
             $this->jsonError('Failed to create application: ' . $e->getMessage(), [], 500);
@@ -216,9 +239,9 @@ class ApplicationApiController extends ApiController
      */
     public function updateStage(int $id): void
     {
+        $user = $this->requireAuth();
         $input = $this->getJsonInput();
-        $user = auth_user();
-        $userId = $user ? (int)$user['id'] : null;
+        $userId = (int)$user['id'];
 
         $newStage = trim($input['new_stage'] ?? '');
         $newStatus = trim($input['new_status'] ?? 'In Process');
@@ -238,9 +261,9 @@ class ApplicationApiController extends ApiController
      */
     public function assignStaff(int $id): void
     {
+        $user = $this->requireAuth();
         $input = $this->getJsonInput();
-        $user = auth_user();
-        $assignedBy = $user ? (int)$user['id'] : null;
+        $assignedBy = (int)$user['id'];
 
         $newStaffId = (int)($input['staff_id'] ?? 0);
         $notes = trim($input['notes'] ?? '');

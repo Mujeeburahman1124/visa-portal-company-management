@@ -858,7 +858,7 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
               <h6 class="mb-0 fw-bold text-success"><i class="fa-solid fa-circle-plus me-2"></i>Record New Payment</h6>
             </div>
             <div class="card-body p-4">
-              <form action="/payments/store" method="POST">
+              <form action="/payments/store" method="POST" enctype="multipart/form-data">
                 <?= csrf_field() ?>
                 <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
                 <!-- Multi-Currency & Payment Details Strip -->
@@ -930,8 +930,13 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
                     <label class="form-label small fw-semibold">Transaction Reference</label>
                     <input type="text" name="transaction_reference" class="form-control" placeholder="Bank ref / cheque number...">
                   </div>
-                  <div class="col-12">
-                    <label class="form-label small fw-semibold">Notes</label>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Payment Slip / Cash Receipt Voucher <span class="text-danger">*</span></label>
+                    <input type="file" name="receipt_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
+                    <small class="text-muted" style="font-size: 0.72rem;"><i class="fa-solid fa-file-circle-check text-success me-1"></i>Mandatory for all payment methods (Bank slip, Deposit slip, Cash voucher, POS slip).</small>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Internal Notes</label>
                     <input type="text" name="notes" class="form-control" placeholder="Optional payment notes...">
                   </div>
                   <div class="col-12">

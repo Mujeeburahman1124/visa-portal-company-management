@@ -1,0 +1,26 @@
+# Security Hardening for Uploads Directory
+# Disables script execution and directory indexing
+
+Options -Indexes -ExecCGI
+
+# Deny execution of server-side scripts under any circumstances
+<FilesMatch "\.(php|php[0-9]|phtml|pl|py|cgi|sh|bash|exe)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Deny direct browser access to sensitive documents and archives
+<FilesMatch "\.(pdf|docx?|xlsx?|pptx?|csv|zip|rar|tar|gz|7z)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>

@@ -14,8 +14,16 @@ class TrackingApiController extends ApiController
      */
     public function showTracking(int $id): void
     {
+        $user = auth_user();
+        $customerUser = customer_user();
+
+        if (!$user && !$customerUser) {
+            $this->jsonError('Authentication required.', [], 401);
+            return;
+        }
+
         $pdo = Database::getConnection();
-        $stmt = $pdo->prepare("SELECT a.id, a.application_number, a.current_stage, a.status, a.priority, 
+        $stmt = $pdo->prepare("SELECT a.id, a.branch_id, a.application_number, a.current_stage, a.status, a.priority, 
                     a.calculated_health, a.expected_completion_date, a.application_date,
                     c.full_name as customer_name, c.customer_code,
                     vs.name as service_name, co.name as country_name, co.flag_emoji,
@@ -31,6 +39,22 @@ class TrackingApiController extends ApiController
 
         if (!$app) {
             $this->jsonError('Application not found', [], 404);
+            return;
+        }
+
+        // Check customer ownership if logged in as customer
+        if ($customerUser && (int)$customerUser['id'] !== (int)$app['customer_id']) {
+            $this->jsonError('Access denied.', [], 403);
+            return;
+        }
+
+        // Check branch scoping if logged in as staff
+        if ($user) {
+            $scopedBranch = $this->getScopedBranchId($user);
+            if ($scopedBranch !== null && (int)$app['branch_id'] !== $scopedBranch) {
+                $this->jsonError('Access denied for your branch.', [], 403);
+                return;
+            }
         }
 
         // Fetch chronological timeline

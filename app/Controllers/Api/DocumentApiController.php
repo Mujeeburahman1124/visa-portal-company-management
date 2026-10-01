@@ -17,16 +17,31 @@ class DocumentApiController extends ApiController
      */
     public function index(int $applicationId = 0): void
     {
+        $user = $this->requireAuth();
+        $scopedBranchId = $this->getScopedBranchId($user);
+
         if ($applicationId <= 0) {
             $applicationId = (int)($_GET['application_id'] ?? 0);
         }
 
+        $pdo = Database::getConnection();
+
         if ($applicationId > 0) {
+            // Verify application access and branch scoping
+            if ($scopedBranchId !== null) {
+                $checkStmt = $pdo->prepare("SELECT id FROM applications WHERE id = ? AND branch_id = ?");
+                $checkStmt->execute([$applicationId, $scopedBranchId]);
+                if (!$checkStmt->fetch()) {
+                    $this->jsonError('Application not found or access denied for your branch.', [], 403);
+                    return;
+                }
+            }
+
             $checklist = DocumentChecklistService::getChecklist($applicationId);
             $this->jsonSuccess($checklist, 'Application document checklist retrieved');
+            return;
         }
 
-        $pdo = Database::getConnection();
         $status = $_GET['status'] ?? '';
         $sql = "SELECT d.*, dt.name as document_type_name, dt.category, c.full_name as customer_name, a.application_number 
             FROM documents d 
@@ -35,6 +50,12 @@ class DocumentApiController extends ApiController
             LEFT JOIN applications a ON d.application_id = a.id
             WHERE 1=1";
         $params = [];
+
+        if ($scopedBranchId !== null) {
+            $sql .= " AND (a.branch_id = ? OR (a.branch_id IS NULL AND c.branch_id = ?))";
+            $params[] = $scopedBranchId;
+            $params[] = $scopedBranchId;
+        }
 
         if ($status !== '') {
             $sql .= " AND d.status = ?";
@@ -113,6 +134,7 @@ class DocumentApiController extends ApiController
      */
     public function expirySummary(): void
     {
+        $this->requireAuth();
         $summary = DocumentExpiryService::getExpirySummary();
         $this->jsonSuccess($summary, 'Document expiry summary');
     }

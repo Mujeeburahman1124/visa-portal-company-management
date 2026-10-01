@@ -36,6 +36,31 @@ class ApiController
     }
 
     /**
+     * Enforce authentication for API requests.
+     * Returns authenticated staff user or throws 401.
+     */
+    protected function requireAuth(): array
+    {
+        $user = auth_user();
+        if (!$user) {
+            $this->jsonError('Authentication required to access this API resource.', [], 401);
+        }
+        return $user;
+    }
+
+    /**
+     * Get branch id scoped to current user permissions
+     */
+    protected function getScopedBranchId(int $requestedBranch = 0): int
+    {
+        $user = auth_user();
+        if (!$user) {
+            return 0;
+        }
+        return get_scoped_branch_id($requestedBranch, $user);
+    }
+
+    /**
      * Parse JSON Request Body
      */
     protected function getJsonInput(): array

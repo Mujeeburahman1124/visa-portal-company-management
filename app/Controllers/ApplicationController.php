@@ -240,17 +240,17 @@ class ApplicationController
         $appDate = date('Y-m-d');
         $expectedCompletionDate = date('Y-m-d', strtotime("+{$procDays} days"));
 
-        // Generate Sequential Application Number (MSV-YYYY-XXXXXX)
+        // Generate Sequential Application Number (MSV-YYYY-XXXXXX) with concurrency lock
         $year = date('Y');
-        $countStmt = $pdo->query("SELECT COUNT(*) FROM applications");
-        $nextNum = ((int)$countStmt->fetchColumn()) + 1;
-        $appNumber = sprintf("MSV-%s-%06d", $year, $nextNum);
+        $maxNum = (int)$pdo->query("SELECT COALESCE(MAX(id), 0) FROM applications")->fetchColumn() + 1;
+        $appNumber = sprintf("MSV-%s-%06d", $year, $maxNum);
 
-        // Ensure uniqueness
         $checkStmt = $pdo->prepare("SELECT id FROM applications WHERE application_number = ?");
         $checkStmt->execute([$appNumber]);
-        if ($checkStmt->fetch()) {
-            $appNumber = sprintf("MSV-%s-%06d", $year, $nextNum + rand(10, 99));
+        while ($checkStmt->fetch()) {
+            $maxNum++;
+            $appNumber = sprintf("MSV-%s-%06d", $year, $maxNum);
+            $checkStmt->execute([$appNumber]);
         }
 
         // Apply Rule Engine for dynamic pricing overrides by nationality/residence
@@ -278,7 +278,8 @@ class ApplicationController
         $totalAmount = (isset($_POST['total_amount']) && is_numeric($_POST['total_amount']) && (float)$_POST['total_amount'] > 0)
             ? (float)$_POST['total_amount']
             : ($netSellingPrice + $taxAmount);
-        $grossProfit = max(0.0, $totalAmount - $supplierCost - $otherExpenses);
+        // Do not clamp profit to 0.0: Accurately record real negative profit/loss
+        $grossProfit = round($totalAmount - $supplierCost - $otherExpenses, 2);
 
         $countryName = trim($_POST['custom_destination_country'] ?? '') ?: ($service['country_name'] ?? '');
         $categoryName = trim($_POST['custom_visa_category'] ?? '') ?: ($service['category_name'] ?? 'General');
@@ -1355,7 +1356,7 @@ class ApplicationController
 
         $totalAmount = $sellingPrice > 0 ? max(0.0, $sellingPrice - $discountAmount + $taxAmount) : max(0.0, $supplierCost + $otherExpenses + $taxAmount - $discountAmount);
         $balanceAmount = max(0.0, $totalAmount - $paidAmount);
-        $grossProfit = max(0.0, $totalAmount - $supplierCost - $otherExpenses);
+        $grossProfit = round($totalAmount - $supplierCost - $otherExpenses, 2);
 
         $stmt = $pdo->prepare("UPDATE applications SET 
             visa_service_id = ?, passport_number = ?, travel_date = ?, return_date = ?, 

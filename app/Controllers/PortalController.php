@@ -182,8 +182,21 @@ class PortalController
             $insertStmt->execute([$appId, $customerId, $docTypeId, $docTitle, $safeFileName, $file['name'], $file['size'], $file['type']]);
         }
 
-        // Fulfill document request if any
-        $pdo->prepare("UPDATE document_requests SET status = 'FULFILLED', fulfilled_at = CURRENT_TIMESTAMP WHERE application_id = ? AND document_type_id = ?")->execute([$appId, $docTypeId]);
+        // Fulfill document request if any (defensive self-healing column check)
+        try {
+            $pdo->prepare("UPDATE document_requests SET status = 'FULFILLED', fulfilled_at = CURRENT_TIMESTAMP WHERE application_id = ? AND document_type_id = ?")->execute([$appId, $docTypeId]);
+        } catch (\PDOException $drErr) {
+            try {
+                $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                $colDef = ($driver === 'mysql') ? 'DATETIME NULL' : 'TEXT NULL';
+                $pdo->exec("ALTER TABLE document_requests ADD COLUMN fulfilled_at {$colDef}");
+                $pdo->prepare("UPDATE document_requests SET status = 'FULFILLED', fulfilled_at = CURRENT_TIMESTAMP WHERE application_id = ? AND document_type_id = ?")->execute([$appId, $docTypeId]);
+            } catch (\Throwable $drErr2) {
+                try {
+                    $pdo->prepare("UPDATE document_requests SET status = 'FULFILLED' WHERE application_id = ? AND document_type_id = ?")->execute([$appId, $docTypeId]);
+                } catch (\Throwable $drErr3) {}
+            }
+        }
 
         // Staff notification
         $pdo->prepare("INSERT INTO notifications (user_id, recipient_type, title, message, link, notification_type, severity) VALUES (?, 'Staff', 'Customer Uploaded Document', ?, ?, 'Document Upload', 'info')")

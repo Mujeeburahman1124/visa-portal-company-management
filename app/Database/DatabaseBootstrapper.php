@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 28;
+    private const SCHEMA_VERSION = 29;
 
     public static function init(bool $force = false): void
     {
@@ -126,6 +126,7 @@ class DatabaseBootstrapper
                 status TEXT DEFAULT 'PENDING',
                 notes TEXT,
                 due_date DATE,
+                fulfilled_at DATETIME,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
@@ -572,6 +573,7 @@ class DatabaseBootstrapper
                 status VARCHAR(50) DEFAULT 'PENDING',
                 notes TEXT NULL,
                 due_date DATE NULL,
+                fulfilled_at DATETIME NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 INDEX idx_doc_req_cust (customer_id),
@@ -3452,6 +3454,26 @@ class DatabaseBootstrapper
         foreach ($patCols as $col => $def) {
             try {
                 $pdo->exec("ALTER TABLE portal_activation_tokens ADD COLUMN {$col} {$def};");
+            } catch (\Throwable $e) {}
+        }
+
+        // 9. document_requests table columns
+        $docReqCols = [
+            'fulfilled_at' => ($driver === 'mysql') ? 'DATETIME NULL' : 'TEXT NULL',
+        ];
+        foreach ($docReqCols as $col => $def) {
+            try {
+                $pdo->exec("ALTER TABLE document_requests ADD COLUMN {$col} {$def};");
+            } catch (\Throwable $e) {}
+        }
+
+        // 10. payments table columns
+        $payCols = [
+            'receipt_file' => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+        ];
+        foreach ($payCols as $col => $def) {
+            try {
+                $pdo->exec("ALTER TABLE payments ADD COLUMN {$col} {$def};");
             } catch (\Throwable $e) {}
         }
     }

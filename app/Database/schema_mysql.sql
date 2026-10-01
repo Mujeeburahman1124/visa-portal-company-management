@@ -848,6 +848,7 @@ CREATE TABLE IF NOT EXISTS `document_requests` (
   `status` varchar(50) DEFAULT 'PENDING',
   `notes` text DEFAULT NULL,
   `due_date` date DEFAULT NULL,
+  `fulfilled_at` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),

@@ -44,7 +44,8 @@ class FinanceService
 
         $netPaid = max(0.00, $totalPaid - $totalRefunded);
         $balance = max(0.00, $totalAmount - $netPaid);
-        $grossProfit = max(0.00, ($totalAmount - $supplierCost - $otherExpenses));
+        // Do not clamp profit to 0.00: Real business accounting requires accurate reporting of negative profit/loss
+        $grossProfit = round($totalAmount - $supplierCost - $otherExpenses, 2);
 
         // 4. Update application table
         $updateStmt = $pdo->prepare("UPDATE applications SET 
@@ -69,15 +70,14 @@ class FinanceService
     {
         $pdo = Database::getConnection();
         $year = date('Y');
-        $stmt = $pdo->query("SELECT COUNT(*) FROM payments");
-        $count = ((int)$stmt->fetchColumn()) + 1;
-        $receipt = sprintf("RCP-%s-%06d", $year, $count);
+        $maxId = (int)$pdo->query("SELECT COALESCE(MAX(id), 0) FROM payments")->fetchColumn() + 1;
+        $receipt = sprintf("RCP-%s-%06d", $year, $maxId);
 
         $check = $pdo->prepare("SELECT id FROM payments WHERE payment_number = ?");
         $check->execute([$receipt]);
         while ($check->fetch()) {
-            $count++;
-            $receipt = sprintf("RCP-%s-%06d", $year, $count);
+            $maxId++;
+            $receipt = sprintf("RCP-%s-%06d", $year, $maxId);
             $check->execute([$receipt]);
         }
 
@@ -94,8 +94,17 @@ class FinanceService
     {
         $pdo = Database::getConnection();
         $year = date('Y');
-        $stmt = $pdo->query("SELECT COUNT(*) FROM refunds");
-        $count = ((int)$stmt->fetchColumn()) + 1;
-        return sprintf("RFD-%s-%06d", $year, $count);
+        $maxId = (int)$pdo->query("SELECT COALESCE(MAX(id), 0) FROM refunds")->fetchColumn() + 1;
+        $refund = sprintf("RFD-%s-%06d", $year, $maxId);
+
+        $check = $pdo->prepare("SELECT id FROM refunds WHERE refund_number = ?");
+        $check->execute([$refund]);
+        while ($check->fetch()) {
+            $maxId++;
+            $refund = sprintf("RFD-%s-%06d", $year, $maxId);
+            $check->execute([$refund]);
+        }
+
+        return $refund;
     }
 }

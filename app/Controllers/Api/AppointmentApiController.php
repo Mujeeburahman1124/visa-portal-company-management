@@ -15,6 +15,9 @@ class AppointmentApiController extends ApiController
      */
     public function index(): void
     {
+        $user = $this->requireAuth();
+        $scopedBranchId = $this->getScopedBranchId($user);
+
         $pdo = Database::getConnection();
         $status = $_GET['status'] ?? '';
         $sql = "SELECT apt.*, a.application_number, c.full_name as customer_name, u.name as staff_name
@@ -25,6 +28,11 @@ class AppointmentApiController extends ApiController
             WHERE 1=1";
 
         $params = [];
+        if ($scopedBranchId !== null) {
+            $sql .= " AND a.branch_id = ?";
+            $params[] = $scopedBranchId;
+        }
+
         if ($status !== '') {
             $sql .= " AND apt.status = ?";
             $params[] = $status;
@@ -43,21 +51,36 @@ class AppointmentApiController extends ApiController
      */
     public function store(): void
     {
+        $user = $this->requireAuth();
+        $scopedBranchId = $this->getScopedBranchId($user);
+        $userId = (int)$user['id'];
+
         $input = $this->getJsonInput();
-        $user = auth_user();
-        $userId = $user ? (int)$user['id'] : null;
 
         $validator = new AppointmentValidator();
         if (!$validator->validate($input)) {
             $this->jsonError($validator->getFirstError() ?? 'Validation failed', $validator->getErrors(), 422);
+            return;
         }
 
+        $appId = (int)$input['application_id'];
         $pdo = Database::getConnection();
+
+        // Verify application and branch scoping
+        if ($scopedBranchId !== null) {
+            $checkStmt = $pdo->prepare("SELECT id FROM applications WHERE id = ? AND branch_id = ?");
+            $checkStmt->execute([$appId, $scopedBranchId]);
+            if (!$checkStmt->fetch()) {
+                $this->jsonError('Application not found or unauthorized for your branch.', [], 403);
+                return;
+            }
+        }
+
         $stmt = $pdo->prepare("INSERT INTO application_appointments 
             (application_id, appointment_type, center_name, location_address, appointment_date, appointment_time, reference_number, status, created_by) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
-            (int)$input['application_id'],
+            $appId,
             $input['appointment_type'],
             trim($input['center_name']),
             trim($input['location_address'] ?? ''),

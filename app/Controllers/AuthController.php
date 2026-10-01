@@ -59,81 +59,14 @@ class AuthController
                 $user = $userStmt ? $userStmt->fetch() : false;
             }
 
-            // 4. Bulletproof self-healing provisioning for Admin
-            $isAdminEmail = in_array($normalizedEmail, ['admin@system.com', 'admin@admin.com', 'admin@visatrack.com'], true);
-            $isAdminPassword = in_array($password, ['admin123', 'password', 'Admin@123', 'admin', 'password123', 'Admin123'], true);
-
-            if (!$user && $isAdminEmail) {
-                if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql') {
-                    try { $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;"); } catch (\Throwable $e) {}
-                }
-
-                // Ensure company, branch, and role exist
-                try {
-                    $pdo->exec("INSERT INTO companies (id, name, code, status) VALUES (1, 'MS Travel Hub', 'MSTH-01', 'active') ON DUPLICATE KEY UPDATE name=VALUES(name)");
-                } catch (\Throwable $e) {}
-                try {
-                    $pdo->exec("INSERT INTO branches (id, company_id, name, code, country, city) VALUES (1, 1, 'Dubai Head Office', 'DXB-01', 'United Arab Emirates', 'Dubai') ON DUPLICATE KEY UPDATE name=VALUES(name)");
-                } catch (\Throwable $e) {}
-                try {
-                    $pdo->exec("INSERT INTO roles (id, name, slug, description) VALUES (1, 'Super Admin', 'super-admin', 'Full system control') ON DUPLICATE KEY UPDATE name=VALUES(name)");
-                } catch (\Throwable $e) {}
-
-                // Create or reset admin user
-                try {
-                    $hash = password_hash('admin123', PASSWORD_DEFAULT);
-                    $pdo->prepare("INSERT INTO users (id, role_id, branch_id, name, email, password_hash, designation, department, is_active) 
-                        VALUES (1, 1, 1, 'Super Admin', ?, ?, 'Administrator', 'Management', 1)
-                        ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), is_active = 1, role_id = 1")->execute([$normalizedEmail, $hash]);
-                } catch (\Throwable $e) {}
-
-                if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql') {
-                    try { $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;"); } catch (\Throwable $e) {}
-                }
-
-                // Run full SeedData in background
-                try {
-                    \App\Database\SeedData::seed($pdo);
-                } catch (\Throwable $e) {}
-
-                try {
-                    $stmt->execute([$normalizedEmail]);
-                    $user = $stmt->fetch();
-                } catch (\Throwable $e) {}
-
-                // If still not found, synthesize session user directly
-                if (!$user && $isAdminPassword) {
-                    $user = [
-                        'id'            => 1,
-                        'role_id'       => 1,
-                        'branch_id'     => 1,
-                        'name'          => 'Super Admin',
-                        'email'         => $normalizedEmail,
-                        'password_hash' => password_hash($password, PASSWORD_DEFAULT),
-                        'role_name'     => 'Super Admin',
-                        'role_slug'     => 'super-admin',
-                        'branch_name'   => 'Dubai Head Office',
-                        'designation'   => 'Administrator',
-                        'department'    => 'Management',
-                        'is_active'     => 1,
-                    ];
-                }
-            }
-
             if ($user) {
-                // Ensure super admin accounts are never locked out
+                // Ensure inactive accounts cannot log in
                 if ((int)($user['is_active'] ?? 1) !== 1) {
-                    if (in_array(strtolower((string)$user['email']), ['admin@system.com', 'admin@visatrack.com', 'admin@admin.com'], true) || ($user['role_slug'] ?? '') === 'super-admin' || (int)($user['role_id'] ?? 0) === 1) {
-                        try {
-                            $pdo->prepare("UPDATE users SET is_active = 1 WHERE id = ?")->execute([$user['id']]);
-                            $user['is_active'] = 1;
-                        } catch (\Throwable $e) {}
-                    } else {
-                        redirect('/auth/login', 'Your account has been deactivated. Please contact your system administrator.', 'danger');
-                    }
+                    redirect('/auth/login', 'Your account has been deactivated. Please contact your system administrator.', 'danger');
                 }
 
-                if (password_verify($password, (string)$user['password_hash']) || in_array($password, ['password', 'admin123', 'admin', 'password123', 'Admin@123', 'Admin123'], true)) {
+                // Strict Cryptographic Password Verification
+                if (!empty($user['password_hash']) && password_verify($password, (string)$user['password_hash'])) {
                     if (session_status() === PHP_SESSION_ACTIVE) {
                         session_regenerate_id(true);
                     }
@@ -164,7 +97,8 @@ class AuthController
                 $agent = $agentStmt->fetch(PDO::FETCH_ASSOC);
 
                 if ($agent) {
-                    if (password_verify($password, $agent['password_hash']) || $password === 'password' || $password === 'agent123') {
+                    // Strict Cryptographic Password Verification for Agents
+                    if (!empty($agent['password_hash']) && password_verify($password, (string)$agent['password_hash'])) {
                         if (session_status() === PHP_SESSION_ACTIVE) {
                             session_regenerate_id(true);
                         }

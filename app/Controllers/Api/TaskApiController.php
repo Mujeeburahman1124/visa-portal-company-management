@@ -16,6 +16,9 @@ class TaskApiController extends ApiController
      */
     public function index(): void
     {
+        $user = $this->requireAuth();
+        $scopedBranchId = $this->getScopedBranchId($user);
+
         $pdo = Database::getConnection();
         $status = $_GET['status'] ?? '';
         $sql = "SELECT t.*, u.name as assigned_to_name, a.application_number, c.full_name as customer_name
@@ -26,6 +29,12 @@ class TaskApiController extends ApiController
             WHERE 1=1";
 
         $params = [];
+        if ($scopedBranchId !== null) {
+            $sql .= " AND (a.branch_id = ? OR (a.branch_id IS NULL AND u.branch_id = ?))";
+            $params[] = $scopedBranchId;
+            $params[] = $scopedBranchId;
+        }
+
         if ($status !== '') {
             $sql .= " AND t.status = ?";
             $params[] = $status;
@@ -44,21 +53,36 @@ class TaskApiController extends ApiController
      */
     public function store(): void
     {
+        $user = $this->requireAuth();
+        $scopedBranchId = $this->getScopedBranchId($user);
+        $userId = (int)$user['id'];
+
         $input = $this->getJsonInput();
-        $user = auth_user();
-        $userId = $user ? (int)$user['id'] : null;
 
         $validator = new TaskValidator();
         if (!$validator->validate($input)) {
             $this->jsonError($validator->getFirstError() ?? 'Validation failed', $validator->getErrors(), 422);
+            return;
         }
 
+        $appId = !empty($input['application_id']) ? (int)$input['application_id'] : null;
         $pdo = Database::getConnection();
+
+        // Verify application access if associated
+        if ($appId !== null && $scopedBranchId !== null) {
+            $checkStmt = $pdo->prepare("SELECT id FROM applications WHERE id = ? AND branch_id = ?");
+            $checkStmt->execute([$appId, $scopedBranchId]);
+            if (!$checkStmt->fetch()) {
+                $this->jsonError('Application not found or unauthorized for your branch.', [], 403);
+                return;
+            }
+        }
+
         $stmt = $pdo->prepare("INSERT INTO application_tasks 
             (application_id, task_title, description, assigned_to, created_by, priority, due_date, status) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
-            !empty($input['application_id']) ? (int)$input['application_id'] : null,
+            $appId,
             trim($input['task_title']),
             trim($input['description'] ?? ''),
             (int)$input['assigned_to'],
@@ -70,8 +94,8 @@ class TaskApiController extends ApiController
 
         $taskId = (int)$pdo->lastInsertId();
 
-        if (!empty($input['application_id'])) {
-            HealthCalculatorService::updateHealthScore((int)$input['application_id']);
+        if ($appId !== null) {
+            HealthCalculatorService::updateHealthScore($appId);
         }
 
         AuditService::log('CREATE_TASK', 'Tasks', $taskId, "Created task '{$input['task_title']}'", $input, $userId);
@@ -84,10 +108,11 @@ class TaskApiController extends ApiController
      */
     public function updateStatus(int $id): void
     {
+        $user = $this->requireAuth();
+        $userId = (int)$user['id'];
+
         $input = $this->getJsonInput();
         $status = trim($input['status'] ?? 'Completed');
-        $user = auth_user();
-        $userId = $user ? (int)$user['id'] : null;
 
         $pdo = Database::getConnection();
         $stmt = $pdo->prepare("UPDATE application_tasks 

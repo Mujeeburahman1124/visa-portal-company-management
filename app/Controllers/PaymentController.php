@@ -248,16 +248,47 @@ class PaymentController
             }
         }
 
+        // Mandatory Receipt / Deposit Slip Attachment Enforcement (Sir Instruction)
+        $receiptFile = null;
+        $hasReceiptUpload = isset($_FILES['receipt_file']) && $_FILES['receipt_file']['error'] === UPLOAD_ERR_OK;
+
+        if (!$hasReceiptUpload && $paymentMethod !== 'Customer Wallet') {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Payment rejected: An official payment slip, deposit voucher, or cash receipt voucher attachment is mandatory for all payment methods.', 'danger');
+        }
+
+        if ($hasReceiptUpload) {
+            $file = $_FILES['receipt_file'];
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $allowed = ['pdf', 'jpg', 'jpeg', 'png', 'docx'];
+            if (!in_array($ext, $allowed, true)) {
+                redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Invalid receipt file format. Allowed formats: PDF, JPG, PNG, DOCX.', 'danger');
+            }
+            if ($file['size'] > 15 * 1024 * 1024) {
+                redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Receipt attachment file exceeds 15MB size limit.', 'danger');
+            }
+
+            $uploadDir = App::basePath('storage' . DIRECTORY_SEPARATOR . 'receipts');
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0755, true);
+            }
+            $safeFileName = 'slip_' . $appId . '_' . time() . '_' . substr(bin2hex(random_bytes(4)), 0, 6) . '.' . $ext;
+            $targetPath = $uploadDir . DIRECTORY_SEPARATOR . $safeFileName;
+            if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+                redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Failed to store receipt attachment file. Please try again.', 'danger');
+            }
+            $receiptFile = 'storage/receipts/' . $safeFileName;
+        }
+
         $payStmt = $pdo->prepare("INSERT INTO payments (
             payment_number, invoice_number, application_id, customer_id, amount, currency,
             from_currency, to_currency, exchange_rate, original_amount, converted_amount,
-            payment_date, payment_method, transaction_reference, payment_type, status, received_by, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Customer Payment', 'Completed', ?, ?)");
+            payment_date, payment_method, transaction_reference, payment_type, status, received_by, receipt_file, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Customer Payment', 'Completed', ?, ?, ?)");
 
         $payStmt->execute([
             $receiptNumber, $invoiceNumber, $appId, $customerId, $amount, $toCurrency,
             $fromCurrency, $toCurrency, $exchangeRate, $originalAmount, $amount,
-            $paymentDate, $paymentMethod, $txnRef, $currentUser['id'], $notes
+            $paymentDate, $paymentMethod, $txnRef, $currentUser['id'], $receiptFile, $notes
         ]);
         $paymentId = (int)$pdo->lastInsertId();
 
@@ -679,17 +710,38 @@ class PaymentController
                 $walletCurrency
             );
 
+            // Mandatory Deposit Voucher / Bank Slip
+            $receiptFile = null;
+            $hasReceiptUpload = isset($_FILES['receipt_file']) && $_FILES['receipt_file']['error'] === UPLOAD_ERR_OK;
+            if ($hasReceiptUpload) {
+                $file = $_FILES['receipt_file'];
+                $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $allowed = ['pdf', 'jpg', 'jpeg', 'png', 'docx'];
+                if (!in_array($ext, $allowed, true)) {
+                    redirect($_SERVER['HTTP_REFERER'] ?? '/payments/wallets', 'Invalid receipt file format. Allowed formats: PDF, JPG, PNG, DOCX.', 'danger');
+                }
+                $uploadDir = App::basePath('storage' . DIRECTORY_SEPARATOR . 'receipts');
+                if (!is_dir($uploadDir)) {
+                    @mkdir($uploadDir, 0755, true);
+                }
+                $safeFileName = 'wallet_slip_' . $customerId . '_' . time() . '_' . substr(bin2hex(random_bytes(4)), 0, 6) . '.' . $ext;
+                $targetPath = $uploadDir . DIRECTORY_SEPARATOR . $safeFileName;
+                if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+                    $receiptFile = 'storage/receipts/' . $safeFileName;
+                }
+            }
+
             // Also record a payment receipt record for accounting
             $receiptNumber = FinanceService::generateReceiptNumber();
             $invNumber = 'INV-WAL-' . $receiptNumber;
             $pdo->prepare("INSERT INTO payments (
                 payment_number, invoice_number, customer_id, amount, currency, payment_date, payment_method,
-                transaction_reference, wallet_transaction_id, payment_type, status, received_by, notes,
+                transaction_reference, wallet_transaction_id, payment_type, status, received_by, receipt_file, notes,
                 from_currency, to_currency, exchange_rate, original_amount
-            ) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, ?, ?, ?, 'Wallet Topup', 'Completed', ?, ?, ?, ?, ?, ?)")
+            ) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, ?, ?, ?, 'Wallet Topup', 'Completed', ?, ?, ?, ?, ?, ?, ?)")
             ->execute([
                 $receiptNumber, $invNumber, $customerId, $finalCreditAmount, $walletCurrency,
-                $paymentMethod, $txnRef, $res['transaction_id'] ?? null, $currentUser['id'] ?? null, $notes,
+                $paymentMethod, $txnRef, $res['transaction_id'] ?? null, $currentUser['id'] ?? null, $receiptFile, $notes,
                 $fromCurrency, $walletCurrency, $exchangeRate, $originalAmount
             ]);
 

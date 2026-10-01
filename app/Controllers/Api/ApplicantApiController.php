@@ -16,8 +16,10 @@ class ApplicantApiController extends ApiController
      */
     public function index(): void
     {
+        $user = $this->requireAuth();
         $pdo = Database::getConnection();
         $search = trim($_GET['search'] ?? '');
+        $branchId = $this->getScopedBranchId((int)($_GET['branch_id'] ?? 0));
         
         $sql = "SELECT c.*, 
                     cp.passport_number, cp.expiry_date as passport_expiry_date,
@@ -27,10 +29,15 @@ class ApplicantApiController extends ApiController
                 WHERE 1=1";
 
         $params = [];
+        if ($branchId > 0) {
+            $sql .= " AND (c.branch_id = ? OR c.branch_id IS NULL OR c.branch_id = 0)";
+            $params[] = $branchId;
+        }
+
         if ($search !== '') {
             $sql .= " AND (c.full_name LIKE ? OR c.customer_code LIKE ? OR c.email LIKE ? OR c.mobile LIKE ? OR cp.passport_number LIKE ?)";
             $term = "%{$search}%";
-            $params = [$term, $term, $term, $term, $term];
+            $params = array_merge($params, [$term, $term, $term, $term, $term]);
         }
 
         $sql .= " ORDER BY c.created_at DESC";
@@ -46,6 +53,7 @@ class ApplicantApiController extends ApiController
      */
     public function checkDuplicate(): void
     {
+        $this->requireAuth();
         $mobile = trim($_GET['mobile'] ?? '');
         $email = trim($_GET['email'] ?? '');
         $passport = trim($_GET['passport'] ?? '');
@@ -60,9 +68,11 @@ class ApplicantApiController extends ApiController
      */
     public function store(): void
     {
+        $user = $this->requireAuth();
         $input = $this->getJsonInput();
-        $user = auth_user();
-        $userId = $user ? (int)$user['id'] : null;
+        $userId = (int)$user['id'];
+        $branchId = (int)($input['branch_id'] ?? ($user['branch_id'] ?? 1));
+        if ($branchId <= 0) $branchId = 1;
 
         $validator = new ApplicantValidator();
         if (!$validator->validate($input)) {
@@ -77,8 +87,8 @@ class ApplicantApiController extends ApiController
             $fullName = trim($input['first_name'] . ' ' . ($input['middle_name'] ?? '') . ' ' . $input['last_name']);
 
             $stmt = $pdo->prepare("INSERT INTO customers 
-                (customer_code, first_name, middle_name, last_name, full_name, gender, dob, nationality, mobile, whatsapp, email, current_country, address, occupation, created_by) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                (customer_code, first_name, middle_name, last_name, full_name, gender, dob, nationality, mobile, whatsapp, email, current_country, address, occupation, branch_id, created_by) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $customerCode,
                 trim($input['first_name']),
@@ -94,6 +104,7 @@ class ApplicantApiController extends ApiController
                 $input['current_country'] ?? 'United Arab Emirates',
                 trim($input['address'] ?? ''),
                 trim($input['occupation'] ?? ''),
+                $branchId,
                 $userId
             ]);
 

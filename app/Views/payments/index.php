@@ -462,8 +462,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               <input type="text" name="transaction_reference" class="form-control" placeholder="Bank ref / cheque # / POS auth...">
             </div>
             <div class="col-md-6">
-              <label class="form-label small fw-semibold">Upload Payment Receipt</label>
-              <input type="file" name="receipt_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+              <label class="form-label small fw-semibold">Payment Slip / Cash Receipt Voucher <span class="text-danger">*</span></label>
+              <input type="file" name="receipt_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
+              <small class="text-muted" style="font-size: 0.72rem;"><i class="fa-solid fa-file-circle-check text-success me-1"></i>Mandatory for all payment methods (Bank slip, Deposit slip, Cash voucher, POS slip).</small>
             </div>
           </div>
 

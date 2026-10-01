@@ -433,7 +433,8 @@ class CustomerController
             $totalAmount = (isset($_POST['total_amount']) && is_numeric($_POST['total_amount']) && (float)$_POST['total_amount'] > 0)
                 ? (float)$_POST['total_amount']
                 : max(0.0, $netSellingPrice + $taxAmount);
-            $grossProfit = max(0.0, $totalAmount - $supplierCost - $otherExpenses);
+            // Do not clamp profit to 0.0: Accurately record real negative profit/loss
+            $grossProfit = round($totalAmount - $supplierCost - $otherExpenses, 2);
 
             // Payment Option (Default Pay Later)
             $isPayNow = !empty($_POST['pay_now']) && (string)$_POST['pay_now'] === '1';
@@ -442,17 +443,18 @@ class CustomerController
             $paidAmount = 0.00;
             $balanceAmount = $totalAmount;
 
-            // Generate Application Number: MSV-YYYY-XXXXXX
+            // Generate Application Number: MSV-YYYY-XXXXXX with concurrency safety
             $year = date('Y');
-            $countStmt = $pdo->query("SELECT COUNT(*) FROM applications");
-            $nextAppNum = ((int)$countStmt->fetchColumn()) + 1;
-            $appNumber = sprintf("MSV-%s-%06d", $year, $nextAppNum);
+            $maxAppNum = (int)$pdo->query("SELECT COALESCE(MAX(id), 0) FROM applications")->fetchColumn() + 1;
+            $appNumber = sprintf("MSV-%s-%06d", $year, $maxAppNum);
 
             // Verify unique application number
             $chkApp = $pdo->prepare("SELECT id FROM applications WHERE application_number = ?");
             $chkApp->execute([$appNumber]);
-            if ($chkApp->fetch()) {
-                $appNumber = sprintf("MSV-%s-%06d", $year, $nextAppNum + rand(10, 99));
+            while ($chkApp->fetch()) {
+                $maxAppNum++;
+                $appNumber = sprintf("MSV-%s-%06d", $year, $maxAppNum);
+                $chkApp->execute([$appNumber]);
             }
 
             $procDays = (int)($serviceData['estimated_days'] ?? 15);
