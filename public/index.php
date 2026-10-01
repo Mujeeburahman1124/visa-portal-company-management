@@ -696,56 +696,18 @@ switch ($uri) {
         (new App\Controllers\SupplierController())->sendActivation();
         break;
 
-    // Administration: Staff Attendance & Working Hours (Protected: Admin / Branch Manager / Accounts / HR)
+    // Retired: Staff Attendance & Payroll (Removed from system requirements)
     case '/attendance':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager', 'hr', 'case-officer']);
-        (new App\Controllers\AttendanceController())->index();
-        break;
-
     case '/attendance/record':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager', 'hr']);
-        (new App\Controllers\AttendanceController())->record();
-        break;
-
     case '/attendance/update':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager', 'hr']);
-        (new App\Controllers\AttendanceController())->update();
-        break;
-
     case '/attendance/export':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager', 'hr']);
-        (new App\Controllers\AttendanceController())->export();
-        break;
-
-    // Administration: Payroll & Staff Compensation (Protected: HR / Admin / Accounts)
     case '/payroll':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
-        (new App\Controllers\PayrollController())->index();
-        break;
-
     case '/payroll/calculate':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
-        (new App\Controllers\PayrollController())->calculate();
-        break;
-
     case '/payroll/generate':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
-        (new App\Controllers\PayrollController())->generate();
-        break;
-
     case '/payroll/payslip':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager', 'case-officer', 'receptionist']);
-        (new App\Controllers\PayrollController())->payslip();
-        break;
-
     case '/payroll/history':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
-        (new App\Controllers\PayrollController())->history();
-        break;
-
     case '/payroll/attendance/record':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
-        (new App\Controllers\PayrollController())->recordAttendance();
+        redirect('/dashboard', 'The Attendance & Payroll modules have been decommissioned.', 'info');
         break;
 
     // Administration: Inventory & Stock Management (Protected: Super-Admin / Admin / Accounts / Branch-Manager)
@@ -825,6 +787,12 @@ switch ($uri) {
         (new App\Controllers\AgentController())->recordPayment();
         break;
 
+    case '/agents/adjust-balance':
+    case '/agents/top-up-debit':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager'], ['agents.manage', 'finance.manage', 'payments.manage']);
+        (new App\Controllers\AgentController())->adjustBalance();
+        break;
+
     case '/agents/reset-password':
         RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
         (new App\Controllers\AgentController())->resetPassword();
@@ -866,46 +834,46 @@ switch ($uri) {
         (new App\Controllers\BranchController())->toggleStatus();
         break;
 
-    // Administration: Staff & Roles (Protected: Admin Only)
+    // Administration: Staff & Roles (Protected: Admin or Granular Permissions)
     case '/staff':
     case '/users':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager'], ['staff.view', 'users.view', 'staff.manage', 'users.manage']);
         (new App\Controllers\StaffController())->index();
         break;
 
     case '/staff/show':
     case '/users/show':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager'], ['staff.view', 'users.view', 'staff.manage', 'users.manage']);
         (new App\Controllers\StaffController())->show();
         break;
 
     case '/staff/store':
     case '/users/store':
-        RoleMiddleware::authorize(['super-admin', 'admin']);
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager'], ['staff.manage', 'users.manage', 'staff.create', 'users.create']);
         (new App\Controllers\StaffController())->store();
         break;
 
     case '/staff/update':
     case '/users/update':
-        RoleMiddleware::authorize(['super-admin', 'admin']);
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager'], ['staff.manage', 'users.manage', 'staff.edit', 'users.edit']);
         (new App\Controllers\StaffController())->update();
         break;
 
     case '/staff/delete':
     case '/users/delete':
-        RoleMiddleware::authorize(['super-admin', 'admin']);
+        RoleMiddleware::authorize(['super-admin', 'admin'], ['staff.delete', 'users.delete', 'staff.manage', 'users.manage']);
         (new App\Controllers\StaffController())->delete();
         break;
 
     case '/staff/toggle-active':
     case '/users/toggle-active':
-        RoleMiddleware::authorize(['super-admin', 'admin']);
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager'], ['staff.manage', 'users.manage']);
         (new App\Controllers\StaffController())->toggleActive();
         break;
 
     case '/staff/reset-password':
     case '/users/reset-password':
-        RoleMiddleware::authorize(['super-admin', 'admin']);
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager'], ['staff.manage', 'users.manage']);
         (new App\Controllers\StaffController())->resetPassword();
         break;
 

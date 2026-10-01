@@ -1,132 +1,159 @@
 <?php
-$pageTitle = 'Agent & Partner Network — VISA TRACK';
+$pageTitle = 'B2B Travel Agents & Partners — VISA TRACK';
 $flash = get_flash();
 require_once dirname(__DIR__) . '/layouts/header.php';
 require_once dirname(__DIR__) . '/layouts/sidebar.php';
 require_once dirname(__DIR__) . '/layouts/topbar.php';
+
+$totalAgents = count($agents);
+$activeAgents = count(array_filter($agents, fn($x) => (int)$x['is_active'] === 1));
+$totalBalance = array_sum(array_column($agents, 'current_balance'));
+$totalApps = array_sum(array_column($agents, 'total_applications'));
 ?>
 
 <div class="content-body">
   <?php if ($flash): ?>
-    <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'info')) ?> alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+    <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'warning')) ?> alert-dismissible fade show mb-4 shadow-sm" role="alert">
       <div class="d-flex align-items-center gap-2">
-        <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation' : ($flash['type'] === 'success' ? 'fa-circle-check' : 'fa-circle-info') ?>"></i>
+        <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation' : ($flash['type'] === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation') ?>"></i>
         <span><?= e($flash['message']) ?></span>
       </div>
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
   <?php endif; ?>
 
   <!-- Page Header -->
-  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-      <h3 class="fw-bold brand-font text-dark mb-1">Agent &amp; B2B Partner Network</h3>
-      <p class="text-muted small mb-0">Manage partner travel agents, credit limits, commission rates, balances, and portal access.</p>
+      <h3 class="fw-bold brand-font mb-0" style="color: #0f172a;">B2B TRAVEL AGENTS &amp; PARTNERS</h3>
+      <p class="text-muted small mb-0">Manage partner accounts, credit limits, balances, profile settings, and portal access credentials.</p>
     </div>
-    <div class="d-flex flex-wrap gap-2">
-      <button class="btn btn-success btn-sm px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#newAgentModal">
-        <i class="fa-solid fa-plus me-1"></i> Register New Agent
+    <div class="d-flex align-items-center gap-2">
+      <button type="button" class="btn btn-outline-success btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#recordAgentPayModal">
+        <i class="fa-solid fa-hand-holding-dollar me-1"></i> Record Settlement
       </button>
-      <button class="btn btn-outline-secondary btn-sm px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#recordAgentPayModal">
-        <i class="fa-solid fa-receipt me-1"></i> Record Agent Payment
+      <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#newAgentModal">
+        <i class="fa-solid fa-plus-circle me-1"></i> Add New Agent
       </button>
     </div>
   </div>
 
-  <!-- Agent Summary Metrics (100% Responsive Grid) -->
+  <!-- Summary Statistics Cards -->
   <div class="row g-3 mb-4">
-    <div class="col-12 col-sm-6 col-md-3">
-      <div class="stat-card p-3 h-100 shadow-sm border rounded-3">
-        <div class="d-flex align-items-center gap-3">
-          <div class="p-3 bg-success bg-opacity-10 text-success rounded-3 fs-4"><i class="fa-solid fa-handshake"></i></div>
-          <div>
-            <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.03em;">Total Registered</div>
-            <h4 class="fw-bold mb-0 text-dark"><?= count($agents) ?></h4>
-          </div>
-        </div>
+    <div class="col-6 col-md-3">
+      <div class="card card-enterprise p-3 h-100 border-start border-4 border-primary">
+        <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem;">Total Agents</div>
+        <div class="fs-4 fw-bold text-dark mt-1"><?= $totalAgents ?></div>
+        <div class="small text-muted mt-1"><i class="fa-solid fa-handshake me-1 text-primary"></i> Registered Partners</div>
       </div>
     </div>
-    <div class="col-12 col-sm-6 col-md-3">
-      <div class="stat-card p-3 h-100 shadow-sm border rounded-3">
-        <div class="d-flex align-items-center gap-3">
-          <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3 fs-4"><i class="fa-solid fa-folder-tree"></i></div>
-          <div>
-            <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.03em;">Agent Applications</div>
-            <h4 class="fw-bold mb-0 text-primary"><?= array_sum(array_column($agents, 'total_applications')) ?></h4>
-          </div>
-        </div>
+    <div class="col-6 col-md-3">
+      <div class="card card-enterprise p-3 h-100 border-start border-4 border-success">
+        <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem;">Active Accounts</div>
+        <div class="fs-4 fw-bold text-success mt-1"><?= $activeAgents ?></div>
+        <div class="small text-muted mt-1"><i class="fa-solid fa-circle-check me-1 text-success"></i> Operational Partners</div>
       </div>
     </div>
-    <div class="col-12 col-sm-6 col-md-3">
-      <div class="stat-card p-3 h-100 shadow-sm border rounded-3">
-        <div class="d-flex align-items-center gap-3">
-          <div class="p-3 bg-danger bg-opacity-10 text-danger rounded-3 fs-4"><i class="fa-solid fa-wallet"></i></div>
-          <div>
-            <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.03em;">Outstanding Balance</div>
-            <h4 class="fw-bold mb-0 text-danger"><?= format_currency(array_sum(array_column($agents, 'current_balance'))) ?></h4>
-          </div>
-        </div>
+    <div class="col-6 col-md-3">
+      <div class="card card-enterprise p-3 h-100 border-start border-4 border-danger">
+        <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem;">Total Outstanding Balance</div>
+        <div class="fs-4 fw-bold text-danger mt-1"><?= format_currency($totalBalance) ?></div>
+        <div class="small text-muted mt-1"><i class="fa-solid fa-file-invoice-dollar me-1 text-danger"></i> Net Agent Receivables</div>
       </div>
     </div>
-    <div class="col-12 col-sm-6 col-md-3">
-      <div class="stat-card p-3 h-100 shadow-sm border rounded-3">
-        <div class="d-flex align-items-center gap-3">
-          <div class="p-3 bg-warning bg-opacity-10 text-warning rounded-3 fs-4"><i class="fa-solid fa-money-bill-transfer"></i></div>
-          <div>
-            <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.03em;">Payments Collected</div>
-            <h4 class="fw-bold mb-0 text-warning"><?= format_currency(array_sum(array_column($agents, 'total_paid'))) ?></h4>
-          </div>
-        </div>
+    <div class="col-6 col-md-3">
+      <div class="card card-enterprise p-3 h-100 border-start border-4 border-info">
+        <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem;">Linked Applications</div>
+        <div class="fs-4 fw-bold text-info mt-1"><?= $totalApps ?></div>
+        <div class="small text-muted mt-1"><i class="fa-solid fa-passport me-1 text-info"></i> Visa Files Processed</div>
       </div>
     </div>
   </div>
 
-  <!-- Agent Table (100% Touch Scroll Responsive Grid) -->
-  <div class="card card-enterprise shadow-sm border">
+  <!-- Filter & Search Toolbar -->
+  <div class="card card-enterprise mb-4">
+    <div class="card-body p-3">
+      <form method="GET" action="/agents" class="row g-2 align-items-center">
+        <div class="col-md-9 col-lg-10">
+          <div class="input-group">
+            <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <input type="text" name="search" class="form-control border-start-0" placeholder="Search by company name, agent code, email, contact person..." value="<?= e($_GET['search'] ?? '') ?>">
+          </div>
+        </div>
+        <div class="col-md-3 col-lg-2 d-flex gap-2">
+          <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="fa-solid fa-filter me-1"></i> Filter</button>
+          <?php if (!empty($_GET['search'])): ?>
+            <a href="/agents" class="btn btn-outline-secondary btn-sm" title="Clear Filters"><i class="fa-solid fa-xmark"></i></a>
+          <?php endif; ?>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Agents Table -->
+  <div class="card card-enterprise">
     <div class="card-body p-0">
-      <div class="table-responsive" style="-webkit-overflow-scrolling: touch;">
-        <table class="table table-hover align-middle mb-0 table-custom" style="font-size: 0.86rem; min-width: 1100px;">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="agentsTable">
           <thead class="table-light">
             <tr>
-              <th style="width: 100px;" class="text-nowrap">Agent Code</th>
-              <th style="width: 200px;">Company Name</th>
-              <th style="width: 140px;">Contact Person</th>
-              <th style="width: 200px;">Contact Details</th>
-              <th style="width: 140px;">Location</th>
-              <th style="width: 120px;" class="text-nowrap">Credit Limit</th>
-              <th style="width: 120px;" class="text-nowrap">Balance</th>
-              <th style="width: 90px;" class="text-nowrap">Commission</th>
-              <th style="width: 90px;" class="text-nowrap">Apps</th>
-              <th style="width: 90px;" class="text-nowrap">Status</th>
-              <th style="width: 90px;" class="text-end text-nowrap">Actions</th>
+              <th style="min-width: 110px;">Agent Code</th>
+              <th style="min-width: 200px;">Agency / Company</th>
+              <th style="min-width: 170px;">Contact Person</th>
+              <th style="min-width: 120px;">Location</th>
+              <th style="min-width: 110px;">Credit Limit</th>
+              <th style="min-width: 110px;">Current Balance</th>
+              <th style="min-width: 90px;">Comm. Rate</th>
+              <th style="min-width: 80px;">Visas</th>
+              <th style="min-width: 90px;">Status</th>
+              <th class="text-end" style="min-width: 140px;">Actions</th>
             </tr>
           </thead>
           <tbody>
             <?php if (empty($agents)): ?>
-              <tr><td colspan="11" class="text-center py-5 text-muted">No agents registered yet.</td></tr>
+              <tr>
+                <td colspan="10" class="text-center py-5 text-muted">
+                  <i class="fa-solid fa-handshake-slash fa-2x mb-2 d-block opacity-25"></i>
+                  No B2B agent records found matching your query.
+                </td>
+              </tr>
             <?php else: ?>
-              <?php foreach ($agents as $a): ?>
-                <?php $active = (int)$a['is_active'] === 1; ?>
+              <?php foreach ($agents as $a): 
+                $active = (int)$a['is_active'] === 1;
+                $balance = (float)$a['current_balance'];
+                $creditLimit = (float)$a['credit_limit'];
+                
+                // Pack agent JSON data safely for modal population
+                $agentJson = htmlspecialchars(json_encode($a), ENT_QUOTES, 'UTF-8');
+              ?>
                 <tr>
-                  <td class="text-nowrap"><span class="badge bg-success-subtle text-success fw-bold border"><?= e($a['agent_code']) ?></span></td>
                   <td>
-                    <div class="fw-bold text-dark text-truncate" style="max-width: 190px;" title="<?= e($a['company_name']) ?>"><?= e($a['company_name']) ?></div>
-                    <div class="text-muted small"><?= e($a['payment_terms']) ?></div>
+                    <span class="badge bg-dark font-monospace px-2.5 py-1.5"><?= e($a['agent_code']) ?></span>
                   </td>
-                  <td><span class="text-truncate d-inline-block" style="max-width: 130px;" title="<?= e($a['contact_person']) ?>"><?= e($a['contact_person']) ?></span></td>
-                  <td class="small">
-                    <div class="text-nowrap"><i class="fa-solid fa-phone me-1 text-muted"></i><?= e($a['mobile']) ?></div>
-                    <div class="text-truncate" style="max-width: 190px;" title="<?= e($a['email']) ?>"><i class="fa-solid fa-envelope me-1 text-muted"></i><?= e($a['email']) ?></div>
+                  <td>
+                    <div class="fw-bold text-dark"><?= e($a['company_name']) ?></div>
+                    <div class="text-muted small" style="font-size: 0.72rem;">
+                      <i class="fa-solid fa-envelope me-1"></i><?= e($a['email'] ?: 'No email') ?>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="fw-semibold text-dark"><?= e($a['contact_person'] ?: '—') ?></div>
+                    <div class="text-muted small" style="font-size: 0.72rem;">
+                      <i class="fa-solid fa-phone me-1"></i><?= e($a['mobile'] ?: '—') ?>
+                      <?php if (!empty($a['whatsapp'])): ?>
+                        &bull; <a href="https://wa.me/<?= preg_replace('/\D/', '', $a['whatsapp']) ?>" target="_blank" class="text-success text-decoration-none"><i class="fa-brands fa-whatsapp"></i></a>
+                      <?php endif; ?>
+                    </div>
                   </td>
                   <td class="small">
-                    <span class="text-truncate d-inline-block" style="max-width: 130px;" title="<?= e($a['city'] ?: '') ?><?= !empty($a['city']) && !empty($a['country']) ? ', ' : '' ?><?= e($a['country'] ?: '—') ?>">
-                      <?= e($a['city'] ?: '') ?><?= !empty($a['city']) && !empty($a['country']) ? ', ' : '' ?><?= e($a['country'] ?: '—') ?>
+                    <span class="text-truncate d-inline-block" style="max-width: 140px;" title="<?= e($a['city'] ?: '') ?><?= (!empty($a['city']) && !empty($a['country'])) ? ', ' : '' ?><?= e($a['country'] ?: '—') ?>">
+                      <?= e($a['city'] ?: '') ?><?= (!empty($a['city']) && !empty($a['country'])) ? ', ' : '' ?><?= e($a['country'] ?: '—') ?>
                     </span>
                   </td>
-                  <td class="text-nowrap"><?= format_currency((float)$a['credit_limit']) ?></td>
+                  <td class="text-nowrap"><?= format_currency($creditLimit) ?></td>
                   <td class="text-nowrap">
-                    <span class="fw-bold <?= (float)$a['current_balance'] > 0 ? 'text-danger' : 'text-success' ?>">
-                      <?= format_currency((float)$a['current_balance']) ?>
+                    <span class="fw-bold <?= $balance > 0 ? 'text-danger' : 'text-success' ?>">
+                      <?= format_currency($balance) ?>
                     </span>
                   </td>
                   <td class="text-nowrap"><span class="badge bg-light text-dark border"><?= (float)$a['commission_rate'] ?>%</span></td>
@@ -137,33 +164,58 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     </span>
                   </td>
                   <td class="text-end text-nowrap">
-                    <div class="dropdown">
-                      <button class="btn btn-light btn-sm dropdown-toggle border shadow-sm" data-bs-toggle="dropdown">Actions</button>
-                      <ul class="dropdown-menu dropdown-menu-end shadow border-0 small">
+                    <div class="dropdown d-inline-block">
+                      <button class="btn btn-outline-secondary btn-sm dropdown-toggle shadow-sm px-2.5 py-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fa-solid fa-gear me-1"></i> Options
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end shadow border-0 small" style="z-index: 1060;">
+                        <!-- 1. Edit Profile -->
                         <li>
-                          <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editAgentModal<?= $a['id'] ?>">
-                            <i class="fa-solid fa-pen-to-square text-primary me-2"></i>Edit Agent
-                          </a>
+                          <button type="button" class="dropdown-item py-2 text-primary" onclick="openEditAgentModal(<?= $agentJson ?>)">
+                            <i class="fa-solid fa-pen-to-square me-2 text-primary"></i> Edit Profile &amp; Terms
+                          </button>
                         </li>
+                        <!-- 2. Top Up / Debit Balance -->
                         <li>
-                          <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#resetAgentPasswordModal<?= $a['id'] ?>">
-                            <i class="fa-solid fa-key text-warning me-2"></i>Reset Password
-                          </a>
+                          <button type="button" class="dropdown-item py-2 text-success fw-semibold" onclick="openAgentAdjustModal(<?= (int)$a['id'] ?>, '<?= e(addslashes($a['company_name'])) ?>', '<?= e(addslashes($a['agent_code'])) ?>', <?= $balance ?>)">
+                            <i class="fa-solid fa-money-bill-transfer me-2 text-success"></i> Top Up / Debit Balance
+                          </button>
                         </li>
-                        <li><hr class="dropdown-divider"></li>
+                        <!-- 3. Reset Password -->
                         <li>
-                          <form action="/agents/toggle-status" method="POST">
+                          <button type="button" class="dropdown-item py-2 text-warning fw-semibold" onclick="openResetPasswordModal(<?= (int)$a['id'] ?>, '<?= e(addslashes($a['company_name'])) ?>', '<?= e(addslashes($a['agent_code'])) ?>', '<?= e(addslashes($a['email'] ?? '')) ?>')">
+                            <i class="fa-solid fa-key me-2 text-warning"></i> Reset Portal Password
+                          </button>
+                        </li>
+                        <!-- 4. Send Activation Email -->
+                        <li>
+                          <form action="/agents/send-activation" method="POST" class="d-inline">
                             <?= csrf_field() ?>
                             <input type="hidden" name="agent_id" value="<?= $a['id'] ?>">
-                            <button type="submit" class="dropdown-item"><?= $active ? '<i class="fa-solid fa-ban text-warning me-2"></i>Suspend' : '<i class="fa-solid fa-check text-success me-2"></i>Activate' ?></button>
+                            <button type="submit" class="dropdown-item py-2 text-info">
+                              <i class="fa-solid fa-paper-plane me-2 text-info"></i> Send Activation Link
+                            </button>
                           </form>
                         </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <!-- 5. Toggle Status -->
                         <li>
-                          <form action="/agents/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete agent <?= e($a['company_name']) ?> (<?= e($a['agent_code']) ?>)?');">
+                          <form action="/agents/toggle-status" method="POST" class="d-inline">
                             <?= csrf_field() ?>
                             <input type="hidden" name="agent_id" value="<?= $a['id'] ?>">
-                            <button type="submit" class="dropdown-item text-danger">
-                              <i class="fa-solid fa-trash-can text-danger me-2"></i>Delete Agent
+                            <button type="submit" class="dropdown-item py-2 text-secondary">
+                              <i class="fa-solid <?= $active ? 'fa-ban text-warning' : 'fa-check text-success' ?> me-2"></i>
+                              <?= $active ? 'Suspend Account' : 'Activate Account' ?>
+                            </button>
+                          </form>
+                        </li>
+                        <!-- 6. Delete Partner -->
+                        <li>
+                          <form action="/agents/delete" method="POST" class="d-inline" onsubmit="return confirm('Permanently delete agent \'<?= e(addslashes($a['company_name'])) ?>\' (<?= e($a['agent_code']) ?>)? This cannot be undone.');">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="agent_id" value="<?= $a['id'] ?>">
+                            <button type="submit" class="dropdown-item py-2 text-danger">
+                              <i class="fa-solid fa-trash-can me-2 text-danger"></i> Delete Agent
                             </button>
                           </form>
                         </li>
@@ -171,119 +223,6 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     </div>
                   </td>
                 </tr>
-
-                <!-- MODAL: EDIT AGENT -->
-                <div class="modal fade" id="editAgentModal<?= $a['id'] ?>" tabindex="-1">
-                  <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content border-0 shadow">
-                      <div class="modal-header bg-primary text-white">
-                        <h6 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i> Edit Agent — <?= e($a['company_name']) ?></h6>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                      </div>
-                      <form action="/agents/update" method="POST">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="agent_id" value="<?= $a['id'] ?>">
-                        <div class="modal-body p-4 text-start">
-                          <div class="row g-3">
-                            <div class="col-md-6">
-                              <label class="form-label small fw-semibold">Company / Agency Name <span class="text-danger">*</span></label>
-                              <input type="text" name="company_name" class="form-control" value="<?= e($a['company_name']) ?>" required>
-                            </div>
-                            <div class="col-md-6">
-                              <label class="form-label small fw-semibold">Contact Person <span class="text-danger">*</span></label>
-                              <input type="text" name="contact_person" class="form-control" value="<?= e($a['contact_person']) ?>" required>
-                            </div>
-                            <div class="col-md-6">
-                              <label class="form-label small fw-semibold">Email <span class="text-danger">*</span></label>
-                              <input type="email" name="email" class="form-control" value="<?= e($a['email']) ?>" required>
-                            </div>
-                            <div class="col-md-6">
-                              <label class="form-label small fw-semibold">Mobile <span class="text-danger">*</span></label>
-                              <input type="text" name="mobile" class="form-control" value="<?= e($a['mobile']) ?>" required>
-                            </div>
-                            <div class="col-md-4">
-                              <label class="form-label small fw-semibold">WhatsApp</label>
-                              <input type="text" name="whatsapp" class="form-control" value="<?= e($a['whatsapp'] ?? '') ?>">
-                            </div>
-                            <div class="col-md-4">
-                              <label class="form-label small fw-semibold">City</label>
-                              <input type="text" name="city" class="form-control" value="<?= e($a['city'] ?? '') ?>">
-                            </div>
-                            <div class="col-md-4">
-                              <label class="form-label small fw-semibold">Country</label>
-                              <input type="text" name="country" class="form-control" value="<?= e($a['country'] ?? '') ?>">
-                            </div>
-                            <div class="col-md-4">
-                              <label class="form-label small fw-semibold">Credit Limit ($)</label>
-                              <input type="number" step="0.01" name="credit_limit" class="form-control" value="<?= (float)$a['credit_limit'] ?>">
-                            </div>
-                            <div class="col-md-4">
-                              <label class="form-label small fw-semibold">Commission Rate (%)</label>
-                              <input type="number" step="0.1" name="commission_rate" class="form-control" value="<?= (float)$a['commission_rate'] ?>">
-                            </div>
-                            <div class="col-md-4">
-                              <label class="form-label small fw-semibold">Payment Terms</label>
-                              <select name="payment_terms" class="form-select">
-                                <option value="Prepaid" <?= ($a['payment_terms'] ?? '') === 'Prepaid' ? 'selected' : '' ?>>Prepaid</option>
-                                <option value="Net 7" <?= ($a['payment_terms'] ?? '') === 'Net 7' ? 'selected' : '' ?>>Net 7 Days</option>
-                                <option value="Net 15" <?= ($a['payment_terms'] ?? '') === 'Net 15' ? 'selected' : '' ?>>Net 15 Days</option>
-                                <option value="Net 30" <?= ($a['payment_terms'] ?? '') === 'Net 30' ? 'selected' : '' ?>>Net 30 Days</option>
-                              </select>
-                            </div>
-                            <div class="col-md-12">
-                              <label class="form-label small fw-semibold">Address</label>
-                              <textarea name="address" class="form-control" rows="2"><?= e($a['address'] ?? '') ?></textarea>
-                            </div>
-                            <div class="col-md-12">
-                              <label class="form-label small fw-semibold">Notes</label>
-                              <textarea name="notes" class="form-control" rows="2"><?= e($a['notes'] ?? '') ?></textarea>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="modal-footer bg-light p-3">
-                          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                          <button type="submit" class="btn btn-primary btn-sm fw-bold">
-                            <i class="fa-solid fa-save me-1"></i> Save Changes
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- MODAL: RESET AGENT PASSWORD -->
-                <div class="modal fade" id="resetAgentPasswordModal<?= $a['id'] ?>" tabindex="-1">
-                  <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content border-0 shadow">
-                      <div class="modal-header bg-warning text-dark">
-                        <h6 class="modal-title fw-bold"><i class="fa-solid fa-key me-2"></i> Reset Agent Portal Password</h6>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                      </div>
-                      <form action="/agents/reset-password" method="POST">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="agent_id" value="<?= $a['id'] ?>">
-                        <div class="modal-body p-4 text-start">
-                          <div class="p-3 bg-light rounded border mb-3">
-                            <div class="small text-muted">Agent Agency:</div>
-                            <div class="fw-bold fs-6 text-dark"><?= e($a['company_name']) ?> (<?= e($a['agent_code']) ?>)</div>
-                            <div class="small text-primary"><i class="fa-solid fa-envelope me-1"></i><?= e($a['email'] ?: 'No email registered') ?></div>
-                          </div>
-                          <div class="mb-3">
-                            <label class="form-label small fw-semibold">Custom Password (leave blank to auto-generate temporary password)</label>
-                            <input type="text" name="new_password" class="form-control font-monospace" placeholder="e.g. Leave blank for auto-generated password">
-                            <div class="form-text small text-muted">If left blank, the system will generate a secure temporary password (e.g. <code>AGENT@...</code>) and email it to the agent partner.</div>
-                          </div>
-                        </div>
-                        <div class="modal-footer bg-light p-3">
-                          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                          <button type="submit" class="btn btn-warning btn-sm fw-bold">
-                            <i class="fa-solid fa-arrows-rotate me-1"></i> Reset Password Now
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                </div>
               <?php endforeach; ?>
             <?php endif; ?>
           </tbody>
@@ -293,60 +232,285 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   </div>
 </div>
 
-<!-- Modal: Register Agent -->
-<div class="modal fade" id="newAgentModal" tabindex="-1">
+<!-- ==========================================================================
+     SHARED MODALS (PLACED OUTSIDE TABLE FOR VALID HTML AND RELIABLE RENDERING)
+     ========================================================================== -->
+
+<!-- 1. Modal: Edit Agent Profile -->
+<div class="modal fade" id="editAgentModal" tabindex="-1" aria-labelledby="editAgentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold fs-6" id="editAgentModalLabel"><i class="fa-solid fa-pen-to-square me-2"></i>Edit Agent Partner Profile</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="/agents/update" method="POST" id="editAgentForm">
+        <?= csrf_field() ?>
+        <input type="hidden" name="agent_id" id="edit_agent_id" value="">
+
+        <div class="modal-body p-4 text-start">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold text-secondary">Agent Code</label>
+              <input type="text" id="edit_agent_code" class="form-control font-monospace bg-light" readonly>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label small fw-semibold text-secondary">Company / Agency Name <span class="text-danger">*</span></label>
+              <input type="text" name="company_name" id="edit_company_name" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Contact Person <span class="text-danger">*</span></label>
+              <input type="text" name="contact_person" id="edit_contact_person" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Email (Login / Alerts) <span class="text-danger">*</span></label>
+              <input type="email" name="email" id="edit_email" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Mobile Number <span class="text-danger">*</span></label>
+              <input type="text" name="mobile" id="edit_mobile" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">WhatsApp Number</label>
+              <input type="text" name="whatsapp" id="edit_whatsapp" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">City</label>
+              <input type="text" name="city" id="edit_city" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Country</label>
+              <input type="text" name="country" id="edit_country" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold text-secondary">Credit Limit ($)</label>
+              <input type="number" step="0.01" name="credit_limit" id="edit_credit_limit" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold text-secondary">Commission Rate (%)</label>
+              <input type="number" step="0.1" name="commission_rate" id="edit_commission_rate" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold text-secondary">Payment Terms</label>
+              <select name="payment_terms" id="edit_payment_terms" class="form-select">
+                <option value="Prepaid">Prepaid</option>
+                <option value="Net 7">Net 7 Days</option>
+                <option value="Net 15">Net 15 Days</option>
+                <option value="Net 30">Net 30 Days</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Update Portal Password <small class="text-muted">(Leave blank to keep current)</small></label>
+              <input type="password" name="password" class="form-control" placeholder="Optional new password">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Account Status</label>
+              <select name="is_active" id="edit_is_active" class="form-select">
+                <option value="1">Active</option>
+                <option value="0">Suspended</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-semibold text-secondary">Bank / Wire Details</label>
+              <input type="text" name="bank_details" id="edit_bank_details" class="form-control" placeholder="Bank Name, Account / IBAN, Swift code...">
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-semibold text-secondary">Office Address</label>
+              <textarea name="address" id="edit_address" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-semibold text-secondary">Internal Operational Notes</label>
+              <textarea name="notes" id="edit_notes" class="form-control" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light border-top">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-save me-1"></i>Save Profile Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Modal: Top Up / Debit Balance -->
+<div class="modal fade" id="adjustBalanceModal" tabindex="-1" aria-labelledby="adjustBalanceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-success text-white" id="adjustBalanceHeader">
+        <h5 class="modal-title fw-bold fs-6" id="adjustBalanceModalLabel"><i class="fa-solid fa-money-bill-transfer me-2"></i>Top Up / Debit Agent Balance</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="/agents/adjust-balance" method="POST" id="adjustBalanceForm">
+        <?= csrf_field() ?>
+        <input type="hidden" name="agent_id" id="adj_agent_id" value="">
+
+        <div class="modal-body p-4">
+          <div class="p-3 bg-light rounded border mb-3">
+            <div class="small text-muted">Selected Agent Partner:</div>
+            <div class="fw-bold fs-6 text-dark" id="adj_agent_name">Skyline Travel</div>
+            <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+              <span class="small text-muted">Current Ledger Balance:</span>
+              <span class="fw-bold font-monospace fs-6" id="adj_agent_balance">$0.00</span>
+            </div>
+          </div>
+
+          <!-- Transaction Type: Top Up vs Debit -->
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary d-block">Select Balance Action <span class="text-danger">*</span></label>
+            <div class="btn-group w-100" role="group">
+              <input type="radio" class="btn-check" name="action_type" id="adj_type_top_up" value="top_up" checked autocomplete="off" onchange="onAdjustTypeChange('top_up')">
+              <label class="btn btn-outline-success fw-bold py-2" for="adj_type_top_up">
+                <i class="fa-solid fa-circle-arrow-up me-1"></i> Top Up / Credit Funds
+              </label>
+
+              <input type="radio" class="btn-check" name="action_type" id="adj_type_debit" value="debit" autocomplete="off" onchange="onAdjustTypeChange('debit')">
+              <label class="btn btn-outline-danger fw-bold py-2" for="adj_type_debit">
+                <i class="fa-solid fa-circle-arrow-down me-1"></i> Debit / Deduct Balance
+              </label>
+            </div>
+            <div class="form-text small mt-1" id="adj_help_text">
+              Top Up records payments received from agent, reducing outstanding balance.
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-7">
+              <label class="form-label small fw-semibold text-secondary">Amount ($) <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="number" step="0.01" min="0.01" name="amount" class="form-control fw-bold" placeholder="0.00" required>
+              </div>
+            </div>
+            <div class="col-5">
+              <label class="form-label small fw-semibold text-secondary">Transaction Date <span class="text-danger">*</span></label>
+              <input type="date" name="payment_date" class="form-control" value="<?= date('Y-m-d') ?>" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary">Payment Method</label>
+            <select name="payment_method" class="form-select">
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Cash">Cash</option>
+              <option value="Online Gateway / Stripe">Online Gateway / Card</option>
+              <option value="Cheque">Cheque</option>
+              <option value="Credit Adjustment">Manual Adjustment</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary">Reference / Receipt Number</label>
+            <input type="text" name="transaction_reference" class="form-control" placeholder="e.g. Wire confirmation, slip #...">
+          </div>
+
+          <div class="mb-0">
+            <label class="form-label small fw-semibold text-secondary">Notes / Reason</label>
+            <textarea name="notes" class="form-control" rows="2" placeholder="Describe the reason for top up or debit..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light border-top">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" id="adj_submit_btn" class="btn btn-success fw-semibold"><i class="fa-solid fa-check me-1"></i>Confirm Top Up</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 3. Modal: Reset Agent Portal Password -->
+<div class="modal fade" id="resetAgentPasswordModal" tabindex="-1" aria-labelledby="resetAgentPasswordModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title fw-bold fs-6" id="resetAgentPasswordModalLabel"><i class="fa-solid fa-key me-2"></i>Reset Agent Portal Password</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="/agents/reset-password" method="POST" id="resetAgentPasswordForm">
+        <?= csrf_field() ?>
+        <input type="hidden" name="agent_id" id="reset_agent_id" value="">
+
+        <div class="modal-body p-4 text-start">
+          <div class="p-3 bg-light rounded border mb-3">
+            <div class="small text-muted">Agent Partner:</div>
+            <div class="fw-bold fs-6 text-dark" id="reset_agent_name">Company Name</div>
+            <div class="small text-primary mt-1"><i class="fa-solid fa-envelope me-1"></i><span id="reset_agent_email">email@domain.com</span></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary">New Password</label>
+            <input type="text" name="new_password" class="form-control font-monospace" placeholder="Leave blank to auto-generate temporary password">
+            <div class="form-text small text-muted">
+              If left blank, the system will generate a secure temporary password (e.g. <code>AGENT@...</code>) and email it to the partner.
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light border-top">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning fw-bold"><i class="fa-solid fa-arrows-rotate me-1"></i>Reset Password Now</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 4. Modal: Register New Agent -->
+<div class="modal fade" id="newAgentModal" tabindex="-1" aria-labelledby="newAgentModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content border-0 shadow">
       <div class="modal-header bg-success text-white">
-        <h5 class="modal-title fw-bold fs-6"><i class="fa-solid fa-plus-circle me-2"></i>Register New B2B Agent</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <h5 class="modal-title fw-bold fs-6" id="newAgentModalLabel"><i class="fa-solid fa-plus-circle me-2"></i>Register New B2B Agent</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form action="/agents/store" method="POST">
         <?= csrf_field() ?>
         <div class="modal-body p-4">
           <div class="row g-3">
             <div class="col-md-4">
-              <label class="form-label small fw-semibold">Agent Code <span class="text-danger">*</span></label>
-              <input type="text" name="agent_code" class="form-control" placeholder="e.g. AGT-001" required>
+              <label class="form-label small fw-semibold text-secondary">Agent Code <span class="text-danger">*</span></label>
+              <input type="text" name="agent_code" class="form-control font-monospace" placeholder="e.g. AGT-001" required>
             </div>
             <div class="col-md-8">
-              <label class="form-label small fw-semibold">Company / Agency Name <span class="text-danger">*</span></label>
+              <label class="form-label small fw-semibold text-secondary">Company / Agency Name <span class="text-danger">*</span></label>
               <input type="text" name="company_name" class="form-control" required placeholder="e.g. Skyline Travel Agency">
             </div>
-            <div class="col-md-4">
-              <label class="form-label small fw-semibold">Contact Person <span class="text-danger">*</span></label>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Contact Person <span class="text-danger">*</span></label>
               <input type="text" name="contact_person" class="form-control" required placeholder="e.g. Sarah Khan">
             </div>
-            <div class="col-md-4">
-              <label class="form-label small fw-semibold">Email (Portal Login) <span class="text-danger">*</span></label>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Email (Portal Login) <span class="text-danger">*</span></label>
               <input type="email" name="email" class="form-control" required placeholder="sarah@skylinetravel.com">
             </div>
-            <div class="col-md-4">
-              <label class="form-label small fw-semibold">Mobile Number <span class="text-danger">*</span></label>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Mobile Number <span class="text-danger">*</span></label>
               <input type="text" name="mobile" class="form-control" required placeholder="+971 50 111 2233">
             </div>
-            <div class="col-md-4">
-              <label class="form-label small fw-semibold">WhatsApp</label>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">WhatsApp</label>
               <input type="text" name="whatsapp" class="form-control" placeholder="+971 50 111 2233">
             </div>
-            <div class="col-md-4">
-              <label class="form-label small fw-semibold">City</label>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">City</label>
               <input type="text" name="city" class="form-control" placeholder="Dubai">
             </div>
-            <div class="col-md-4">
-              <label class="form-label small fw-semibold">Country</label>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Country</label>
               <input type="text" name="country" class="form-control" placeholder="United Arab Emirates">
             </div>
             <div class="col-md-4">
-              <label class="form-label small fw-semibold">Credit Limit ($)</label>
+              <label class="form-label small fw-semibold text-secondary">Credit Limit ($)</label>
               <input type="number" step="0.01" name="credit_limit" class="form-control" value="0.00">
             </div>
             <div class="col-md-4">
-              <label class="form-label small fw-semibold">Commission Rate (%)</label>
+              <label class="form-label small fw-semibold text-secondary">Commission Rate (%)</label>
               <input type="number" step="0.1" name="commission_rate" class="form-control" value="10.0">
             </div>
             <div class="col-md-4">
-              <label class="form-label small fw-semibold">Payment Terms</label>
+              <label class="form-label small fw-semibold text-secondary">Payment Terms</label>
               <select name="payment_terms" class="form-select">
                 <option value="Prepaid">Prepaid</option>
                 <option value="Net 7">Net 7 Days</option>
@@ -355,15 +519,19 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               </select>
             </div>
             <div class="col-md-6">
-              <label class="form-label small fw-semibold">Portal Password (Optional)</label>
-              <input type="password" name="password" class="form-control" placeholder="Initial password for agent login">
+              <label class="form-label small fw-semibold text-secondary">Portal Password <small class="text-muted">(Auto-generated if blank)</small></label>
+              <input type="password" name="password" class="form-control" placeholder="Initial login password">
             </div>
             <div class="col-md-6">
-              <label class="form-label small fw-semibold">Bank / Wire Details</label>
+              <label class="form-label small fw-semibold text-secondary">Bank / Wire Details</label>
               <input type="text" name="bank_details" class="form-control" placeholder="Bank Name, IBAN...">
             </div>
             <div class="col-12">
-              <label class="form-label small fw-semibold">Internal Notes</label>
+              <label class="form-label small fw-semibold text-secondary">Office Address</label>
+              <textarea name="address" class="form-control" rows="2" placeholder="Full agency address..."></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-semibold text-secondary">Internal Operational Notes</label>
               <textarea name="notes" class="form-control" rows="2" placeholder="Agreements, contract terms..."></textarea>
             </div>
           </div>
@@ -377,19 +545,19 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   </div>
 </div>
 
-<!-- Modal: Record Agent Payment -->
-<div class="modal fade" id="recordAgentPayModal" tabindex="-1">
+<!-- 5. Modal: Record Agent Settlement -->
+<div class="modal fade" id="recordAgentPayModal" tabindex="-1" aria-labelledby="recordAgentPayModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow">
       <div class="modal-header bg-light border-bottom">
-        <h5 class="modal-title fw-bold fs-6"><i class="fa-solid fa-receipt text-success me-2"></i>Record Agent Settlement / Payment</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <h5 class="modal-title fw-bold fs-6" id="recordAgentPayModalLabel"><i class="fa-solid fa-receipt text-success me-2"></i>Record General Agent Settlement</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form action="/agents/pay" method="POST">
         <?= csrf_field() ?>
         <div class="modal-body p-4">
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Select Agent <span class="text-danger">*</span></label>
+            <label class="form-label small fw-semibold text-secondary">Select Agent <span class="text-danger">*</span></label>
             <select name="agent_id" class="form-select" required>
               <option value="">-- Choose Agent --</option>
               <?php foreach ($agents as $a): ?>
@@ -399,16 +567,16 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </div>
           <div class="row g-2 mb-3">
             <div class="col-6">
-              <label class="form-label small fw-semibold">Amount ($) <span class="text-danger">*</span></label>
-              <input type="number" step="0.01" min="0.01" name="amount" class="form-control" placeholder="0.00" required>
+              <label class="form-label small fw-semibold text-secondary">Amount ($) <span class="text-danger">*</span></label>
+              <input type="number" step="0.01" min="0.01" name="amount" class="form-control fw-bold" placeholder="0.00" required>
             </div>
             <div class="col-6">
-              <label class="form-label small fw-semibold">Payment Date <span class="text-danger">*</span></label>
+              <label class="form-label small fw-semibold text-secondary">Payment Date <span class="text-danger">*</span></label>
               <input type="date" name="payment_date" class="form-control" value="<?= date('Y-m-d') ?>" required>
             </div>
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Payment Method</label>
+            <label class="form-label small fw-semibold text-secondary">Payment Method</label>
             <select name="payment_method" class="form-select">
               <option value="Bank Transfer">Bank Transfer</option>
               <option value="Cash">Cash</option>
@@ -417,21 +585,84 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             </select>
           </div>
           <div class="mb-3">
-            <label class="form-label small fw-semibold">Transaction Reference</label>
+            <label class="form-label small fw-semibold text-secondary">Transaction Reference</label>
             <input type="text" name="transaction_reference" class="form-control" placeholder="Bank ref / deposit slip #">
           </div>
           <div class="mb-0">
-            <label class="form-label small fw-semibold">Notes</label>
+            <label class="form-label small fw-semibold text-secondary">Notes</label>
             <input type="text" name="notes" class="form-control" placeholder="Settlement remarks...">
           </div>
         </div>
         <div class="modal-footer bg-light border-top">
           <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success fw-semibold"><i class="fa-solid fa-check me-1"></i>Record Payment</button>
+          <button type="submit" class="btn btn-success fw-semibold"><i class="fa-solid fa-check me-1"></i>Record Settlement</button>
         </div>
       </form>
     </div>
   </div>
 </div>
+
+<script>
+function openEditAgentModal(data) {
+  if (!data) return;
+  document.getElementById('edit_agent_id').value = data.id || '';
+  document.getElementById('edit_agent_code').value = data.agent_code || '';
+  document.getElementById('edit_company_name').value = data.company_name || '';
+  document.getElementById('edit_contact_person').value = data.contact_person || '';
+  document.getElementById('edit_email').value = data.email || '';
+  document.getElementById('edit_mobile').value = data.mobile || '';
+  document.getElementById('edit_whatsapp').value = data.whatsapp || '';
+  document.getElementById('edit_city').value = data.city || '';
+  document.getElementById('edit_country').value = data.country || '';
+  document.getElementById('edit_credit_limit').value = data.credit_limit || '0.00';
+  document.getElementById('edit_commission_rate').value = data.commission_rate || '0.0';
+  document.getElementById('edit_payment_terms').value = data.payment_terms || 'Net 30';
+  document.getElementById('edit_is_active').value = (data.is_active !== undefined) ? data.is_active : 1;
+  document.getElementById('edit_bank_details').value = data.bank_details || '';
+  document.getElementById('edit_address').value = data.address || '';
+  document.getElementById('edit_notes').value = data.notes || '';
+
+  window.openModalById('editAgentModal');
+}
+
+function openAgentAdjustModal(id, name, code, balance) {
+  document.getElementById('adj_agent_id').value = id;
+  document.getElementById('adj_agent_name').innerText = name + ' (' + code + ')';
+  const balEl = document.getElementById('adj_agent_balance');
+  balEl.innerText = '$' + Number(balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  balEl.className = 'fw-bold font-monospace fs-6 ' + (balance > 0 ? 'text-danger' : 'text-success');
+
+  // Reset to top up by default
+  document.getElementById('adj_type_top_up').checked = true;
+  onAdjustTypeChange('top_up');
+
+  window.openModalById('adjustBalanceModal');
+}
+
+function onAdjustTypeChange(type) {
+  const header = document.getElementById('adjustBalanceHeader');
+  const btn = document.getElementById('adj_submit_btn');
+  const help = document.getElementById('adj_help_text');
+
+  if (type === 'top_up') {
+    header.className = 'modal-header bg-success text-white';
+    btn.className = 'btn btn-success fw-semibold';
+    btn.innerHTML = '<i class="fa-solid fa-circle-arrow-up me-1"></i> Confirm Top Up';
+    help.innerText = 'Top Up records funds received from agent partner, decreasing their outstanding balance.';
+  } else {
+    header.className = 'modal-header bg-danger text-white';
+    btn.className = 'btn btn-danger fw-semibold';
+    btn.innerHTML = '<i class="fa-solid fa-circle-arrow-down me-1"></i> Confirm Debit';
+    help.innerText = 'Debit applies fees, service charges, or deductions, increasing their outstanding balance.';
+  }
+}
+
+function openResetPasswordModal(id, name, code, email) {
+  document.getElementById('reset_agent_id').value = id;
+  document.getElementById('reset_agent_name').innerText = name + ' (' + code + ')';
+  document.getElementById('reset_agent_email').innerText = email || 'No email registered';
+  window.openModalById('resetAgentPasswordModal');
+}
+</script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

@@ -243,15 +243,37 @@ class SupplierController
             redirect('/suppliers', 'Required supplier fields are missing.', 'danger');
         }
 
-        $stmt = $pdo->prepare("UPDATE suppliers SET 
-            supplier_code = ?, company_name = ?, contact_person = ?, email = ?, mobile = ?, country = ?, address = ?, services_provided = ?, updated_at = CURRENT_TIMESTAMP 
-            WHERE id = ?");
-        $stmt->execute([$code, $name, $contact, $email, $mobile, $country, $address, $services, $id]);
+        // Auto-ensure services_provided column exists in suppliers table
+        try {
+            $stmt = $pdo->prepare("UPDATE suppliers SET 
+                supplier_code = ?, company_name = ?, contact_person = ?, email = ?, mobile = ?, country = ?, address = ?, services_provided = ?, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?");
+            $stmt->execute([$code, $name, $contact, $email, $mobile, $country, $address, $services, $id]);
+        } catch (\PDOException $ex) {
+            // If unknown column error, dynamically add missing columns and retry
+            if (str_contains($ex->getMessage(), 'Unknown column') || str_contains($ex->getMessage(), 'no such column')) {
+                $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                $textType = ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL';
+                try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN services_provided {$textType}"); } catch (\Throwable $e) {}
+                try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN country {$textType}"); } catch (\Throwable $e) {}
+                try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN address {$textType}"); } catch (\Throwable $e) {}
+                try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN contact_person {$textType}"); } catch (\Throwable $e) {}
+                try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN mobile {$textType}"); } catch (\Throwable $e) {}
+                
+                $stmt = $pdo->prepare("UPDATE suppliers SET 
+                    supplier_code = ?, company_name = ?, contact_person = ?, email = ?, mobile = ?, country = ?, address = ?, services_provided = ?, updated_at = CURRENT_TIMESTAMP 
+                    WHERE id = ?");
+                $stmt->execute([$code, $name, $contact, $email, $mobile, $country, $address, $services, $id]);
+            } else {
+                throw $ex;
+            }
+        }
 
         AuditService::log('UPDATE_SUPPLIER', 'Suppliers', $id, "Updated supplier details for {$name}");
 
         redirect('/suppliers', "Supplier '{$name}' updated successfully.", 'success');
     }
+
 
     public function pay(): void
     {

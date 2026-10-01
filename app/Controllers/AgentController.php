@@ -217,6 +217,57 @@ class AgentController
         redirect('/agents', "Agent payment {$ref} recorded.", 'success');
     }
 
+    public function adjustBalance(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager'], ['agents.manage', 'finance.manage', 'payments.manage']);
+        $pdo = Database::getConnection();
+        $user = auth_user();
+
+        $agentId    = (int)($_POST['agent_id'] ?? 0);
+        $amount     = (float)($_POST['amount'] ?? 0);
+        $actionType = strtolower(trim($_POST['action_type'] ?? 'top_up')); // 'top_up' or 'debit'
+        $method     = trim($_POST['payment_method'] ?? 'Bank Transfer');
+        $txnRef     = trim($_POST['transaction_reference'] ?? '');
+        $date       = !empty($_POST['payment_date']) ? $_POST['payment_date'] : date('Y-m-d');
+        $notes      = trim($_POST['notes'] ?? '');
+
+        if ($agentId <= 0 || $amount <= 0) {
+            redirect('/agents', 'Agent and a valid positive amount are required.', 'danger');
+        }
+
+        $stmtAgent = $pdo->prepare("SELECT company_name, agent_code, current_balance FROM agents WHERE id = ?");
+        $stmtAgent->execute([$agentId]);
+        $agent = $stmtAgent->fetch(PDO::FETCH_ASSOC);
+        if (!$agent) {
+            redirect('/agents', 'Agent record not found.', 'danger');
+        }
+
+        $isTopUp = ($actionType === 'top_up' || $actionType === 'credit' || $actionType === 'payment');
+        $paymentType = $isTopUp ? 'Top Up' : 'Debit';
+        $refPrefix = $isTopUp ? 'TOP-' : 'DEB-';
+        $ref = $refPrefix . date('Ymd') . '-' . strtoupper(substr(uniqid(), -5));
+
+        // Create transaction history record
+        try {
+            $stmt = $pdo->prepare("INSERT INTO agent_payments
+                (payment_reference, agent_id, amount, payment_type, payment_method,
+                 transaction_reference, payment_date, notes, created_by)
+                VALUES (?,?,?,?,?,?,?,?,?)");
+            $stmt->execute([$ref, $agentId, $amount, $paymentType, $method, $txnRef, $date, $notes, $user['id']]);
+        } catch (\Throwable $e) {}
+
+        // In balance accounting:
+        // Top Up increases agent funds / decreases outstanding debit
+        // Debit charges the agent / increases outstanding debit
+        $delta = $isTopUp ? -$amount : $amount;
+        $pdo->prepare("UPDATE agents SET current_balance = current_balance + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+            ->execute([$delta, $agentId]);
+
+        AuditService::log('AGENT_BALANCE_ADJUST', 'Agents', $agentId, "{$paymentType} of \${$amount} for agent {$agent['company_name']} ({$ref})");
+        redirect('/agents', "{$paymentType} of \${$amount} recorded successfully for {$agent['company_name']} ({$ref}).", 'success');
+    }
+
     public function resetPassword(): void
     {
         AuthMiddleware::handle();

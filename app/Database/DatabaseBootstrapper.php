@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 27;
+    private const SCHEMA_VERSION = 28;
 
     public static function init(bool $force = false): void
     {
@@ -907,6 +907,16 @@ class DatabaseBootstrapper
 
             try { $pdo->exec("ALTER TABLE applications ADD COLUMN agent_id INT NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE applications ADD COLUMN agent_price DECIMAL(12,2) DEFAULT 0.00"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN services_provided VARCHAR(255) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN whatsapp VARCHAR(50) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN country VARCHAR(100) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN address TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN bank_details TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN contact_person VARCHAR(150) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN mobile VARCHAR(50) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN balance DECIMAL(12,2) DEFAULT 0.00"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN credit_limit DECIMAL(12,2) DEFAULT 0.00"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN is_active TINYINT(1) DEFAULT 1"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN password_hash VARCHAR(255) NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN last_login_at DATETIME NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN portal_enabled TINYINT(1) DEFAULT 0"); } catch (\Throwable $e) {}
@@ -1186,6 +1196,16 @@ class DatabaseBootstrapper
             );");
             try { $pdo->exec("ALTER TABLE applications ADD COLUMN agent_id INTEGER NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE applications ADD COLUMN agent_price REAL DEFAULT 0.00"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN services_provided TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN whatsapp TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN country TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN address TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN bank_details TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN contact_person TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN mobile TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN balance REAL DEFAULT 0.00"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN credit_limit REAL DEFAULT 0.00"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN is_active INTEGER DEFAULT 1"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN password_hash TEXT NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN last_login_at DATETIME NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE suppliers ADD COLUMN portal_enabled INTEGER DEFAULT 0"); } catch (\Throwable $e) {}

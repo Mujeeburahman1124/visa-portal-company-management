@@ -14,7 +14,7 @@ class StaffController
     public function index(): void
     {
         AuthMiddleware::handle();
-        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager'], ['staff.view', 'users.view', 'staff.manage', 'users.manage']);
         $pdo = Database::getConnection();
         $currentUser = auth_user();
 
@@ -80,7 +80,7 @@ class StaffController
     public function show(): void
     {
         AuthMiddleware::handle();
-        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager'], ['staff.view', 'users.view', 'staff.manage', 'users.manage']);
         $pdo = Database::getConnection();
 
         $id = (int)($_GET['id'] ?? 0);
@@ -142,7 +142,7 @@ class StaffController
 
     public function store(): void
     {
-        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager'], ['staff.manage', 'users.manage', 'staff.create', 'users.create']);
         $pdo = Database::getConnection();
         $currentUser = auth_user();
 
@@ -284,7 +284,7 @@ class StaffController
 
     public function delete(): void
     {
-        RoleMiddleware::authorize(['super-admin', 'admin']);
+        RoleMiddleware::authorize(['super-admin', 'admin'], ['staff.delete', 'users.delete', 'staff.manage', 'users.manage']);
         $pdo = Database::getConnection();
         $currentUser = auth_user();
 
@@ -399,7 +399,7 @@ class StaffController
 
     public function update(): void
     {
-        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager'], ['staff.manage', 'users.manage', 'staff.edit', 'users.edit']);
         $pdo = Database::getConnection();
 
         $id = (int)($_POST['id'] ?? 0);
@@ -468,7 +468,7 @@ class StaffController
 
     public function toggleActive(): void
     {
-        RoleMiddleware::authorize(['super-admin', 'admin']);
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager'], ['staff.manage', 'users.manage']);
         $pdo = Database::getConnection();
 
         $id = (int)($_POST['id'] ?? 0);
@@ -503,7 +503,7 @@ class StaffController
 
     public function resetPassword(): void
     {
-        RoleMiddleware::authorize(['super-admin', 'admin']);
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager'], ['staff.manage', 'users.manage']);
         $pdo = Database::getConnection();
 
         $id = (int)($_POST['id'] ?? 0);

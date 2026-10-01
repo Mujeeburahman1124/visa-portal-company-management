@@ -576,6 +576,15 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
                                   </form>
                                 </li>
                               <?php endif; ?>
+                              <?php if ($doc['status'] !== 'UNDER_REVIEW' && $doc['status'] !== 'PENDING'): ?>
+                                <li>
+                                  <form action="/documents/under-review" method="POST" class="d-inline" onsubmit="return confirm('Reset document back to Under Review?');">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="document_id" value="<?= $doc['document_id'] ?>">
+                                    <button type="submit" class="dropdown-item py-2 text-warning"><i class="fa-solid fa-clock-rotate-left me-2"></i> Set Under Review</button>
+                                  </form>
+                                </li>
+                              <?php endif; ?>
                               <?php if ($doc['status'] !== 'REJECTED'): ?>
                                 <li>
                                   <button type="button" class="dropdown-item py-2 text-danger" onclick="openAppDocRejectModal(<?= $doc['document_id'] ?>, '<?= e(addslashes($doc['document_name'])) ?>')">
@@ -586,6 +595,12 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
                               <li>
                                 <button type="button" class="dropdown-item py-2" onclick="openAppDocReplaceModal(<?= $doc['document_id'] ?>, '<?= e(addslashes($doc['document_name'])) ?>')">
                                   <i class="fa-solid fa-cloud-arrow-up text-primary me-2"></i> Upload Replacement
+                                </button>
+                              </li>
+                              <li><hr class="dropdown-divider"></li>
+                              <li>
+                                <button type="button" class="dropdown-item py-2 text-danger" onclick="openAppDocDeleteModal(<?= $doc['document_id'] ?>, '<?= e(addslashes($doc['document_name'])) ?>')">
+                                  <i class="fa-solid fa-trash-can me-2"></i> Delete Document
                                 </button>
                               </li>
                             </ul>
@@ -2087,45 +2102,61 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
   </div>
 </div>
 
+<!-- 11. Application Document Delete Modal -->
+<div class="modal fade" id="appDocDeleteModal" tabindex="-1" aria-labelledby="appDocDeleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-bold fs-6" id="appDocDeleteModalLabel"><i class="fa-solid fa-trash-can me-2"></i> Delete Document Permanently</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="/documents/delete" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="document_id" id="appDocDeleteDocId" value="">
+
+        <div class="modal-body p-4">
+          <div class="alert alert-danger py-2 small mb-3">
+            <i class="fa-solid fa-triangle-exclamation me-1"></i> <strong>Warning:</strong> This action cannot be undone. The uploaded file and all version records will be permanently removed.
+          </div>
+          <p class="mb-2">Are you sure you want to permanently delete:</p>
+          <div class="p-3 bg-light rounded border mb-2">
+            <div class="fw-bold text-dark" id="appDocDeleteDocName">Document</div>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light border-top">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger fw-semibold"><i class="fa-solid fa-trash-can me-1"></i> Delete Document</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
-window.openModalById = function (modalId, evt) {
-  var e = evt || window.event;
-  if (e) {
-    if (typeof e.preventDefault === 'function') e.preventDefault();
-    if (typeof e.stopPropagation === 'function') e.stopPropagation();
-    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
-  }
+window.openModalById = function (modalId) {
   var el = document.getElementById(modalId);
   if (!el) {
     console.error('Modal element not found: ' + modalId);
     return;
   }
-  // Move modal directly to document.body to avoid stacking context / overflow:hidden traps
+  // Move modal to body if not already
   if (el.parentNode !== document.body) {
     document.body.appendChild(el);
   }
-  try {
-    if (window.bootstrap && bootstrap.Modal) {
+  if (window.bootstrap && bootstrap.Modal) {
+    try {
       bootstrap.Modal.getOrCreateInstance(el).show();
       return;
+    } catch (err) {
+      console.warn('Bootstrap modal instance failed:', err);
     }
-  } catch (err) {
-    console.warn('Bootstrap modal instance failed, using fallback:', err);
   }
   el.classList.add('show');
   el.style.display = 'block';
   el.removeAttribute('aria-hidden');
   el.setAttribute('aria-modal', 'true');
-  el.style.zIndex = '1065';
   document.body.classList.add('modal-open');
-  var backdrop = document.getElementById('vt-modal-backdrop');
-  if (!backdrop) {
-    backdrop = document.createElement('div');
-    backdrop.id = 'vt-modal-backdrop';
-    backdrop.className = 'modal-backdrop fade show';
-    backdrop.style.zIndex = '1050';
-    document.body.appendChild(backdrop);
-  }
 };
 
 // Stage transition form submission protection & instant user feedback
@@ -2189,6 +2220,12 @@ function openAppDocReplaceModal(docId, docName) {
   const d = document.getElementById('appDocReplaceDocId'); if (d) d.value = docId;
   const n = document.getElementById('appDocReplaceDocName'); if (n) n.innerText = docName;
   openModalById('appDocReplaceModal');
+}
+
+function openAppDocDeleteModal(docId, docName) {
+  const d = document.getElementById('appDocDeleteDocId'); if (d) d.value = docId;
+  const n = document.getElementById('appDocDeleteDocName'); if (n) n.innerText = docName;
+  openModalById('appDocDeleteModal');
 }
 </script>
 

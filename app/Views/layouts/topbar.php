@@ -115,6 +115,13 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
 
   <!-- Topbar Action Items -->
   <div class="d-flex align-items-center gap-2 ms-auto topbar-actions-group">
+    <!-- UAE / Dubai Local Time Display -->
+    <div class="d-none d-md-flex align-items-center gap-2 px-2.5 py-1 rounded-pill bg-light border text-muted small flex-shrink-0" style="font-size: 0.78rem;" title="Official UAE Standard Time (GST, UTC+4)">
+      <i class="fa-regular fa-clock text-primary"></i>
+      <span class="fw-semibold text-dark" id="uaeLiveClock"><?= date('h:i A') ?></span>
+      <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.65rem;">GST (UAE)</span>
+    </div>
+
     <!-- Quick Actions Button (Responsive: hidden on xs phones, visible on sm+) -->
     <div class="dropdown flex-shrink-0 d-none d-sm-block">
       <button class="btn btn-primary btn-sm px-2.5 px-md-3 rounded-pill d-flex align-items-center gap-1 shadow-sm topbar-quick-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Quick Action">
@@ -337,5 +344,22 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
 
   // Periodic non-blocking background heartbeat every 15s
   setInterval(checkNotifications, 15000);
+
+  // Live UAE Clock ticker
+  function updateUaeClock() {
+    var el = document.getElementById('uaeLiveClock');
+    if (!el) return;
+    try {
+      var d = new Date();
+      var timeStr = d.toLocaleTimeString('en-US', {
+        timeZone: 'Asia/Dubai',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+      el.textContent = timeStr;
+    } catch(e) {}
+  }
+  setInterval(updateUaeClock, 1000);
 })();
 </script>

@@ -204,20 +204,6 @@ $canViewAttendance  = $isAdmin || user_can('payroll.view') || user_can('staff.vi
     </a>
     <?php endif; ?>
 
-    <?php if ($canViewPayroll): ?>
-    <a href="/payroll" class="nav-link-custom <?= str_starts_with($currentUri, '/payroll') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Staff Payroll & Salary Management">
-      <i class="fa-solid fa-money-bill-wave nav-icon text-success"></i>
-      <span class="nav-label">Payroll</span>
-    </a>
-    <?php endif; ?>
-
-    <?php if ($canViewAttendance): ?>
-    <a href="/attendance" class="nav-link-custom <?= str_starts_with($currentUri, '/attendance') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Attendance & Leave Management">
-      <i class="fa-solid fa-clock nav-icon text-info"></i>
-      <span class="nav-label">Attendance</span>
-    </a>
-    <?php endif; ?>
-
     <a href="/notifications" class="nav-link-custom <?= ($currentUri === '/notifications' || $currentUri === '/notifications/preferences') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Internal Alerts & System Notifications">
       <i class="fa-solid fa-bell nav-icon"></i>
       <span class="nav-label">Notifications</span>

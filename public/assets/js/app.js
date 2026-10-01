@@ -6,10 +6,8 @@
 // 0. Define global modal & dropdown helper functions early
 window.openModalById = function (modalId, evt) {
   const e = evt || window.event;
-  if (e) {
-    if (typeof e.preventDefault === 'function') e.preventDefault();
-    if (typeof e.stopPropagation === 'function') e.stopPropagation();
-    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
   }
   const el = document.getElementById(modalId);
   if (!el) {
@@ -141,11 +139,15 @@ document.addEventListener('DOMContentLoaded', function () {
     // Check if clicked element or its parent is a modal toggle button
     const modalBtn = e.target.closest('[data-bs-toggle="modal"], [data-toggle="modal"]');
     if (modalBtn) {
+      // If Bootstrap is loaded and working, native Bootstrap data-api handles this
+      if (window.bootstrap && typeof bootstrap.Modal !== 'undefined') {
+        return;
+      }
       const targetId = modalBtn.getAttribute('data-bs-target') || modalBtn.getAttribute('data-target') || modalBtn.getAttribute('href');
       if (targetId && targetId.startsWith('#')) {
         const cleanId = targetId.substring(1);
         if (cleanId) {
-          window.openModalById(cleanId);
+          window.openModalById(cleanId, e);
         }
       }
     }

@@ -21,9 +21,10 @@ spl_autoload_register(function ($class) {
 // Initialize environment variables (.env file)
 \App\Config\Env::init();
 
-// Set system default timezone (default: Asia/Dubai)
+// Set system default timezone (default: Asia/Dubai / UAE)
+date_default_timezone_set('Asia/Dubai');
 $appTimezone = $_ENV['APP_TIMEZONE'] ?? getenv('APP_TIMEZONE') ?: 'Asia/Dubai';
-if ($appTimezone) {
+if ($appTimezone && $appTimezone !== 'Asia/Dubai') {
     @date_default_timezone_set($appTimezone);
 }
 
@@ -335,8 +336,21 @@ function user_can(string $permissionSlug): bool {
         'finance.view'       => ['payments.view', 'payments.*'],
         'finance.manage'     => ['payments.manage', 'payments.*'],
         'payments.view'      => ['finance.view', 'payments.*'],
-        'wallets.view'       => ['payments.view', 'finance.view', 'wallets.*'],
+        // staff ↔ users (bidirectional)
+        'staff.view'         => ['users.view', 'users.*', 'staff.*'],
+        'staff.manage'       => ['users.manage', 'users.*', 'staff.*', 'staff.edit', 'staff.create'],
+        'staff.create'       => ['users.create', 'staff.manage', 'users.manage', 'staff.*'],
+        'staff.edit'         => ['users.edit', 'staff.manage', 'users.manage', 'staff.*'],
+        'staff.delete'       => ['users.delete', 'staff.manage', 'users.manage', 'staff.*'],
+        'users.view'         => ['staff.view', 'staff.*', 'users.*'],
+        'users.manage'       => ['staff.manage', 'staff.*', 'users.*', 'users.edit', 'users.create'],
+        'users.create'       => ['staff.create', 'users.manage', 'staff.manage', 'users.*'],
+        'users.edit'         => ['staff.edit', 'users.manage', 'staff.manage', 'users.*'],
+        'users.delete'       => ['staff.delete', 'users.manage', 'staff.manage', 'users.*'],
+        // agents & suppliers
         'agents.view'        => ['suppliers.view', 'agents.*'],
+        'agents.manage'      => ['agents.*', 'suppliers.manage'],
+        'suppliers.manage'   => ['suppliers.*'],
     ];
     if (isset($aliases[$permissionSlug])) {
         foreach ($aliases[$permissionSlug] as $alias) {
