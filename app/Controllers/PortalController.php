@@ -41,7 +41,17 @@ class PortalController
             redirect('/portal/dashboard', "Welcome back, {$customer['full_name']}!", 'success');
         }
 
-        redirect('/portal/login', 'Invalid credentials. (Demo hint: password is customer123)', 'danger');
+        // Check if user is registered as a Staff member with this email
+        try {
+            $userStmt = $pdo->prepare("SELECT * FROM users WHERE LOWER(email) = LOWER(?) AND is_active = 1 LIMIT 1");
+            $userStmt->execute([$email]);
+            $staffUser = $userStmt->fetch(PDO::FETCH_ASSOC);
+            if ($staffUser && !empty($staffUser['password_hash']) && password_verify($password, (string)$staffUser['password_hash'])) {
+                redirect('/auth/login', 'This password matches your Staff / Operations account. Please sign in via the Staff Portal.', 'info');
+            }
+        } catch (\Throwable $e) {}
+
+        redirect('/portal/login', 'Invalid email / customer code or password. Please verify your credentials and try again.', 'danger');
     }
 
     public function logout(): void

@@ -261,23 +261,29 @@ class ApplicationController
             $customer['current_country'] ?? 'United Arab Emirates'
         );
 
+        if (!$ruleResult['is_eligible'] && empty($_POST['confirm_ineligible'])) {
+            redirect('/applications/create', 'Eligibility Warning: ' . ($ruleResult['reason'] ?? 'Nationality/residence restriction for this visa service.') . ' To proceed with supervisor authorization, please confirm the waiver.', 'warning');
+        }
+
         $sellingPrice = (float)($ruleResult['selling_price'] ?? $service['selling_price'] ?? 0.0);
         $supplierCost = (float)($ruleResult['supplier_cost'] ?? $service['supplier_cost'] ?? 0.0);
         if (!empty($customVisaType) || (!empty($_POST['custom_selling_price']) && (float)$_POST['custom_selling_price'] > 0)) {
             $sellingPrice = (float)($_POST['custom_selling_price'] ?? $sellingPrice);
             $supplierCost = (float)($_POST['custom_supplier_cost'] ?? $supplierCost);
         }
-        $discount = (float)($_POST['discount'] ?? 0.0);
+        $discount = max(0.0, (float)($_POST['discount'] ?? 0.0));
+        if ($discount > $sellingPrice) {
+            $discount = $sellingPrice;
+        }
         $otherExpenses = (float)($_POST['other_expenses'] ?? 0.0);
         $supplierRef = trim($_POST['supplier_reference'] ?? '');
         $embassyRef = trim($_POST['embassy_reference'] ?? '');
 
+        // Authoritative backend pricing calculation — client cannot tamper with total_amount
         $taxRate = (float)($service['tax_rate'] ?? 0.0);
         $netSellingPrice = max(0.0, $sellingPrice - $discount);
-        $taxAmount = $netSellingPrice * ($taxRate / 100.0);
-        $totalAmount = (isset($_POST['total_amount']) && is_numeric($_POST['total_amount']) && (float)$_POST['total_amount'] > 0)
-            ? (float)$_POST['total_amount']
-            : ($netSellingPrice + $taxAmount);
+        $taxAmount = round($netSellingPrice * ($taxRate / 100.0), 2);
+        $totalAmount = round($netSellingPrice + $taxAmount, 2);
         // Do not clamp profit to 0.0: Accurately record real negative profit/loss
         $grossProfit = round($totalAmount - $supplierCost - $otherExpenses, 2);
 
@@ -287,7 +293,7 @@ class ApplicationController
         $duration = trim($_POST['custom_visa_duration'] ?? '') ?: trim($_POST['visa_duration'] ?? ($service['duration'] ?? '30 Days'));
         $entryType = trim($_POST['custom_entry_type'] ?? '') ?: trim($_POST['entry_type'] ?? ($service['entry_type'] ?? 'Single Entry'));
         $processingType = trim($_POST['custom_processing_type'] ?? '') ?: trim($_POST['processing_type'] ?? ($service['processing_type'] ?? 'Normal'));
-        $isPayNow = !empty($_POST['pay_now']) && (string)$_POST['pay_now'] === '1';
+        $isPayNow = !empty($_POST['pay_now']) && ((string)$_POST['pay_now'] === '1' || (string)$_POST['pay_now'] === 'on');
         $paymentType = $isPayNow ? 'Pay Now' : 'Pay Later';
         $paymentStatus = 'Unpaid';
 
@@ -409,7 +415,7 @@ class ApplicationController
             $invNumber = sprintf("INV-%s-%06d", date('Y'), $invCount);
             $dueDate = date('Y-m-d', strtotime('+7 days'));
 
-            if ($payNow === '1' && $totalAmount > 0) {
+            if ($isPayNow && $totalAmount > 0) {
                 $payMethod = trim($_POST['pay_method'] ?? 'Cash');
                 $payRef = trim($_POST['pay_reference'] ?? '');
 

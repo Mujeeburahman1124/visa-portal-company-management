@@ -97,7 +97,6 @@ class AuthController
                 $agent = $agentStmt->fetch(PDO::FETCH_ASSOC);
 
                 if ($agent) {
-                    // Strict Cryptographic Password Verification for Agents
                     if (!empty($agent['password_hash']) && password_verify($password, (string)$agent['password_hash'])) {
                         if (session_status() === PHP_SESSION_ACTIVE) {
                             session_regenerate_id(true);
@@ -113,9 +112,17 @@ class AuthController
                             $pdo->prepare("UPDATE agents SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$agent['id']]);
                         } catch (\Throwable $e) {}
                         redirect('/agent/dashboard', "Welcome to the Partner Agent Portal, {$agent['contact_person']}!", 'success');
-                    } else {
-                        redirect('/agent/login', 'This email is registered for the Agent Portal. Please sign in with your agent password.', 'danger');
                     }
+                }
+            } catch (\Throwable $e) {}
+
+            // Check if user is registered as a Customer/Applicant with this email
+            try {
+                $custStmt = $pdo->prepare("SELECT * FROM customers WHERE LOWER(email) = ? AND is_active = 1 LIMIT 1");
+                $custStmt->execute([$normalizedEmail]);
+                $customer = $custStmt->fetch(PDO::FETCH_ASSOC);
+                if ($customer && !empty($customer['password_hash']) && password_verify($password, (string)$customer['password_hash'])) {
+                    redirect('/portal/login', 'This password matches your Applicant Portal account. Please sign in via the Applicant Portal.', 'info');
                 }
             } catch (\Throwable $e) {}
 
@@ -125,6 +132,99 @@ class AuthController
         }
 
         redirect('/auth/login', 'Invalid email or password. Please verify your credentials and try again.', 'danger');
+    }
+
+    public function showAdminLogin(): void
+    {
+        if (is_authenticated()) {
+            $user = auth_user();
+            $roleSlug = $user['role_slug'] ?? '';
+            $roleId = (int)($user['role_id'] ?? 0);
+            if ($roleSlug === 'super-admin' || $roleId === 1) {
+                redirect('/dashboard');
+            } else {
+                redirect('/dashboard', 'You are currently signed in as Staff. Sign out if you wish to sign into the Super Admin console.', 'info');
+            }
+        }
+        $pageTitle = 'Super Admin Console — VISA TRACK';
+        $flash = get_flash();
+        require_once dirname(__DIR__) . '/Views/auth/admin_login.php';
+    }
+
+    public function adminLogin(): void
+    {
+        $email = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        if (empty($email) || empty($password)) {
+            redirect('/admin/login', 'Please enter your Super Administrator email and password.', 'danger');
+        }
+
+        $normalizedEmail = strtolower($email);
+
+        try {
+            $pdo = Database::getConnection();
+
+            $stmt = $pdo->prepare("SELECT u.*, r.name as role_name, r.slug as role_slug, b.name as branch_name 
+                FROM users u 
+                LEFT JOIN roles r ON u.role_id = r.id 
+                LEFT JOIN branches b ON u.branch_id = b.id 
+                WHERE LOWER(u.email) = ?
+                ORDER BY u.id ASC LIMIT 1");
+            $stmt->execute([$normalizedEmail]);
+            $user = $stmt->fetch();
+
+            if (!$user && in_array($normalizedEmail, ['admin@system.com', 'admin@admin.com'], true)) {
+                $stmt->execute(['admin@visatrack.com']);
+                $user = $stmt->fetch();
+            }
+
+            if (!$user && in_array($normalizedEmail, ['admin@system.com', 'admin@admin.com', 'admin@visatrack.com'], true)) {
+                $userStmt = $pdo->query("SELECT u.*, r.name as role_name, r.slug as role_slug, b.name as branch_name 
+                    FROM users u 
+                    LEFT JOIN roles r ON u.role_id = r.id 
+                    LEFT JOIN branches b ON u.branch_id = b.id 
+                    WHERE r.slug = 'super-admin' OR u.role_id = 1 
+                    ORDER BY u.id ASC LIMIT 1");
+                $user = $userStmt ? $userStmt->fetch() : false;
+            }
+
+            if (!$user || empty($user['password_hash']) || !password_verify($password, (string)$user['password_hash'])) {
+                redirect('/admin/login', 'Invalid Super Administrator credentials. Verification failed.', 'danger');
+            }
+
+            // Strictly enforce Super Admin role
+            $isSuperAdmin = (($user['role_slug'] ?? '') === 'super-admin' || (int)($user['role_id'] ?? 0) === 1);
+            if (!$isSuperAdmin) {
+                redirect('/admin/login', 'Access Denied: This console is strictly reserved for Super Administrators. Staff members must sign in via the Staff Portal at /auth/login.', 'danger');
+            }
+
+            if ((int)($user['is_active'] ?? 1) !== 1) {
+                redirect('/admin/login', 'This administrator account has been deactivated.', 'danger');
+            }
+
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_regenerate_id(true);
+            }
+
+            unset($user['password_hash']);
+            $_SESSION['user'] = $user;
+            unset($_SESSION['user_permissions']);
+
+            try {
+                $pdo->prepare("UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$user['id']]);
+            } catch (\Throwable $e) {}
+
+            try {
+                AuditService::log('SUPER_ADMIN_LOGIN', 'Auth', (int)$user['id'], "Super Admin {$user['name']} signed in via dedicated console", null, (int)$user['id']);
+            } catch (\Throwable $e) {}
+
+            redirect('/dashboard', "Welcome to the Super Admin Console, {$user['name']}!", 'success');
+
+        } catch (\Throwable $e) {
+            error_log('[ADMIN LOGIN EXCEPTION] ' . $e->getMessage());
+            redirect('/admin/login', 'Login error: ' . $e->getMessage(), 'danger');
+        }
     }
 
     public function logout(): void

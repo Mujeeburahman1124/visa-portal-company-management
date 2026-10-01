@@ -12,6 +12,16 @@ $flash = get_flash();
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/main.css?v=7.0.0">
+  <style>
+    @media (max-width: 576px) {
+      .auth-card-compact { padding: 1.25rem 1rem !important; border-radius: 14px !important; }
+      .container { padding: 0.75rem 0.5rem !important; }
+      .brand-font { font-size: 1.2rem !important; }
+      .form-control, .input-group-text, .btn { height: 38px !important; font-size: 0.88rem !important; }
+      .mb-3 { margin-bottom: 0.65rem !important; }
+      .mb-2.5 { margin-bottom: 0.55rem !important; }
+    }
+  </style>
 </head>
 <body class="auth-page-body">
 

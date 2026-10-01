@@ -1540,6 +1540,11 @@ class DatabaseBootstrapper
             // Ensure both agents have active status and valid password
             $pdo->prepare("UPDATE agents SET password_hash = ?, is_active = 1 WHERE email IN ('agent@example.com', 'agent@skylinetravel.com')")
                 ->execute([$agentPassHash]);
+
+            // Ensure demo suppliers have active portal access and default password
+            $supplierPassHash = password_hash('password', PASSWORD_DEFAULT);
+            $pdo->prepare("UPDATE suppliers SET password_hash = ?, portal_enabled = 1, is_active = 1 WHERE email IN ('processing@emiratesclearing.ae', 'partner@vfs-express.co.uk', 'contact@gulfattestation.com')")
+                ->execute([$supplierPassHash]);
         } catch (\Throwable $e) {}
 
         // Ensure communications table exists for SQLite

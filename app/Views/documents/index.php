@@ -1009,7 +1009,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         <h5 class="modal-title fw-bold fs-6" id="verifyModalLabel"><i class="fa-solid fa-circle-check me-2"></i> Verify Compliance Document</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="/documents/verify" method="POST">
+      <form action="/documents/verify" method="POST" id="verifyDocForm">
         <?= csrf_field() ?>
         <input type="hidden" name="document_id" id="verifyDocId" value="">
 
@@ -1017,13 +1017,13 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <p class="mb-3">Confirm that you have reviewed <strong id="verifyDocTitle">this document</strong> and verified that it meets all official consular and embassy compliance standards?</p>
           <div class="mb-0">
             <label class="form-label small fw-semibold text-secondary">Verification Audit Notes <small class="text-muted">(Optional)</small></label>
-            <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Verified clear passport scan with 6+ months validity."></textarea>
+            <textarea name="notes" id="verifyDocNotes" class="form-control" rows="2" placeholder="e.g. Verified clear passport scan with 6+ months validity."></textarea>
           </div>
         </div>
 
         <div class="modal-footer bg-light border-top">
           <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success fw-semibold"><i class="fa-solid fa-check me-1"></i> Confirm Verification</button>
+          <button type="submit" id="btnConfirmVerify" class="btn btn-success fw-semibold"><i class="fa-solid fa-check me-1"></i> Confirm Verification</button>
         </div>
       </form>
     </div>
@@ -1038,7 +1038,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         <h5 class="modal-title fw-bold fs-6" id="rejectModalLabel"><i class="fa-solid fa-circle-xmark me-2"></i> Reject Document &amp; Request Replacement</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="/documents/reject" method="POST">
+      <form action="/documents/reject" method="POST" id="rejectDocForm">
         <?= csrf_field() ?>
         <input type="hidden" name="document_id" id="rejectDocId" value="">
 
@@ -1050,18 +1050,18 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
           <div class="mb-3">
             <label class="form-label small fw-semibold text-secondary">Rejection Reason <span class="text-danger">*</span></label>
-            <textarea name="rejection_reason" class="form-control" rows="3" required placeholder="Mandatory explanation (e.g. Passport copy is blurred, Expiry date is less than 6 months, Name does not match application)..."></textarea>
+            <textarea name="rejection_reason" id="rejectDocReason" class="form-control" rows="3" required placeholder="Mandatory explanation (e.g. Passport copy is blurred, Expiry date is less than 6 months, Name does not match application)..."></textarea>
           </div>
 
           <div class="mb-0">
             <label class="form-label small fw-semibold text-secondary">Internal Operational Notes</label>
-            <textarea name="notes" class="form-control" rows="2" placeholder="Optional notes for internal case team..."></textarea>
+            <textarea name="notes" id="rejectDocNotes" class="form-control" rows="2" placeholder="Optional notes for internal case team..."></textarea>
           </div>
         </div>
 
         <div class="modal-footer bg-light border-top">
           <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-danger fw-semibold"><i class="fa-solid fa-ban me-1"></i> Confirm Rejection</button>
+          <button type="submit" id="btnConfirmReject" class="btn btn-danger fw-semibold"><i class="fa-solid fa-ban me-1"></i> Confirm Rejection</button>
         </div>
       </form>
     </div>
@@ -1076,7 +1076,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         <h5 class="modal-title fw-bold fs-6" id="underReviewModalLabel"><i class="fa-solid fa-clock me-2"></i> Reset Document to Under Review</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="/documents/under-review" method="POST">
+      <form action="/documents/under-review" method="POST" id="underReviewDocForm">
         <?= csrf_field() ?>
         <input type="hidden" name="document_id" id="underReviewDocId" value="">
 
@@ -1084,13 +1084,13 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <p class="mb-3">Reset <strong id="underReviewDocTitle">this document</strong> status back to <span class="badge bg-warning text-dark">Under Review</span>? Any previous rejection or approval state will be cleared for re-examination.</p>
           <div class="mb-0">
             <label class="form-label small fw-semibold text-secondary">Notes <small class="text-muted">(Optional)</small></label>
-            <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Document returned to review queue for verification."></textarea>
+            <textarea name="notes" id="underReviewDocNotes" class="form-control" rows="2" placeholder="e.g. Document returned to review queue for verification."></textarea>
           </div>
         </div>
 
         <div class="modal-footer bg-light border-top">
           <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-warning text-dark fw-semibold"><i class="fa-solid fa-rotate-left me-1"></i> Confirm Under Review</button>
+          <button type="submit" id="btnConfirmUnderReview" class="btn btn-warning text-dark fw-semibold"><i class="fa-solid fa-rotate-left me-1"></i> Confirm Under Review</button>
         </div>
       </form>
     </div>
@@ -1656,6 +1656,62 @@ document.addEventListener('DOMContentLoaded', function() {
   initFixedDropdowns();
   // Run again slightly later in case scripts loaded in footer initialized afterwards
   setTimeout(initFixedDropdowns, 200);
+
+  // Wire explicit submit handlers for document compliance action modals
+  function setupDocModalSubmit(formId, btnId, loadingText) {
+    const form = document.getElementById(formId);
+    const btn = document.getElementById(btnId);
+    if (!form || !btn) return;
+
+    btn.addEventListener('click', function(e) {
+      // Trigger HTML5 validation check
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      e.preventDefault();
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> ' + loadingText;
+
+      const formData = new FormData(form);
+      fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        }
+      })
+      .then(res => {
+        // If server returns JSON
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          return res.json().then(data => ({ ok: res.ok, data }));
+        }
+        // If server redirected or returned HTML
+        return { ok: res.ok, data: { success: res.ok } };
+      })
+      .then(result => {
+        if (result.ok && (result.data.success !== false)) {
+          window.location.reload();
+        } else {
+          alert((result.data && result.data.message) ? result.data.message : 'Operation failed. Please try again.');
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+        }
+      })
+      .catch(err => {
+        console.warn('Form fetch fallback to native submit:', err);
+        form.submit();
+      });
+    });
+  }
+
+  setupDocModalSubmit('verifyDocForm', 'btnConfirmVerify', 'Verifying...');
+  setupDocModalSubmit('rejectDocForm', 'btnConfirmReject', 'Rejecting...');
+  setupDocModalSubmit('underReviewDocForm', 'btnConfirmUnderReview', 'Updating...');
 });
 </script>
 

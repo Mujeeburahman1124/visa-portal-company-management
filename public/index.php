@@ -179,6 +179,19 @@ switch ($uri) {
         http_response_code(404);
         exit;
 
+    // Dedicated Super Admin Login Routes
+    case '/admin':
+    case '/admin/login':
+    case '/superadmin':
+    case '/superadmin/login':
+        $ctrl = new App\Controllers\AuthController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->adminLogin();
+        } else {
+            $ctrl->showAdminLogin();
+        }
+        break;
+
     // Authentication Routes
     case '/login':
     case '/auth/login':
