@@ -21,6 +21,12 @@ spl_autoload_register(function ($class) {
 // Initialize environment variables (.env file)
 \App\Config\Env::init();
 
+// Set system default timezone (default: Asia/Dubai)
+$appTimezone = $_ENV['APP_TIMEZONE'] ?? getenv('APP_TIMEZONE') ?: 'Asia/Dubai';
+if ($appTimezone) {
+    @date_default_timezone_set($appTimezone);
+}
+
 // Configure session security parameters before session start
 if (session_status() === PHP_SESSION_NONE && php_sapi_name() !== 'cli' && !headers_sent()) {
     ini_set('session.cookie_httponly', '1');

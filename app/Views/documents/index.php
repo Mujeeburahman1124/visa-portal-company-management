@@ -310,6 +310,23 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
   <!-- 4. Document Directory Table / Responsive Cards -->
   <div class="card card-enterprise bg-white">
+    <div class="card-header bg-white border-bottom p-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div class="fw-bold text-dark fs-6 d-flex align-items-center gap-2">
+        <i class="fa-solid fa-folder-closed text-primary"></i> Document Registry
+        <span class="badge bg-light text-muted border"><?= count($documents) ?> displayed</span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <!-- View Mode Switcher -->
+        <div class="btn-group btn-group-sm" role="group" aria-label="Display View">
+          <button type="button" class="btn btn-primary active text-white" id="docViewListBtn" onclick="setDocumentView('list')" title="List / Table View">
+            <i class="fa-solid fa-list me-1"></i> List
+          </button>
+          <button type="button" class="btn btn-outline-secondary" id="docViewGridBtn" onclick="setDocumentView('grid')" title="Grid / Card View">
+            <i class="fa-solid fa-grip me-1"></i> Grid
+          </button>
+        </div>
+      </div>
+    </div>
     <?php if (empty($documents)): ?>
       <div class="empty-state-box p-5 text-center">
         <div class="empty-state-icon mb-3" style="font-size: 2.5rem; color: #94a3b8;">
@@ -324,7 +341,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       </div>
     <?php else: ?>
       <!-- Desktop & Tablet Table -->
-      <div class="table-responsive d-none d-md-block">
+      <div class="table-responsive d-none d-md-block" id="documentTableView">
         <table class="table-custom">
           <thead>
             <tr>
@@ -383,21 +400,20 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                   <?php endif; ?>
                 </td>
                 <td>
-                  <!-- Interactive Status Button Dropdown -->
+                  <!-- Interactive Status Dropdown -->
                   <div class="dropdown d-inline-block">
                     <button class="btn btn-sm dropdown-toggle p-0 border-0 bg-transparent text-decoration-none shadow-none" 
                             type="button" 
                             data-bs-toggle="dropdown" 
-                            data-bs-popper-config='{"strategy":"fixed"}'
-                            data-bs-display="static"
+                            data-bs-boundary="viewport"
                             aria-expanded="false" 
-                            title="Click to change document compliance status">
-                      <span class="<?= $statusBadgeClass ?> px-2.5 py-1 d-inline-flex align-items-center gap-1 shadow-xs" style="cursor: pointer;">
-                        <?= e($doc['status']) ?> <i class="fa-solid fa-chevron-down" style="font-size: 0.6rem; opacity: 0.8;"></i>
+                            title="Click to update document status">
+                      <span class="<?= $statusBadgeClass ?> px-2.5 py-1 d-inline-flex align-items-center gap-1 shadow-xs" style="cursor: pointer; font-size: 0.78rem;">
+                        <?= e($doc['status']) ?> <i class="fa-solid fa-chevron-down ms-1" style="font-size: 0.6rem; opacity: 0.85;"></i>
                       </span>
                     </button>
                     <ul class="dropdown-menu shadow border-0" style="font-size: 0.85rem; z-index: 1065;">
-                      <li class="dropdown-header text-uppercase small py-1" style="font-size: 0.68rem; letter-spacing: 0.5px;">Update Status</li>
+                      <li class="dropdown-header text-uppercase small py-1" style="font-size: 0.68rem; letter-spacing: 0.5px;">Change Status</li>
                       <li>
                         <button type="button" 
                                 class="dropdown-item py-2 <?= $doc['status'] === 'VERIFIED' ? 'active fw-bold' : 'text-success' ?>" 
@@ -425,6 +441,23 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                           <i class="fa-solid fa-circle-xmark me-2 text-danger"></i> Mark as Rejected
                         </button>
                       </li>
+                      <li><hr class="dropdown-divider my-1"></li>
+                      <li>
+                        <button type="button" 
+                                class="dropdown-item py-2 text-primary" 
+                                data-doc-id="<?= (int)$doc['id'] ?>"
+                                data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                                data-doc-applicant="<?= htmlspecialchars($doc['customer_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                                data-doc-filename="<?= htmlspecialchars($doc['file_name'], ENT_QUOTES, 'UTF-8') ?>"
+                                data-doc-status="<?= htmlspecialchars($doc['status'], ENT_QUOTES, 'UTF-8') ?>"
+                                data-doc-reason="<?= htmlspecialchars($doc['rejection_reason'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                                data-doc-expiry="<?= htmlspecialchars($doc['expiry_date'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                                data-doc-type-id="<?= (int)$doc['document_type_id'] ?>"
+                                data-doc-notes="<?= htmlspecialchars($doc['notes'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                                onclick="openEditDocModal(this)">
+                          <i class="fa-solid fa-pen-to-square me-2"></i> Edit Details &amp; File
+                        </button>
+                      </li>
                     </ul>
                   </div>
                   <?php if (!empty($doc['rejection_reason'])): ?>
@@ -448,8 +481,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     <span class="text-muted small">&mdash;</span>
                   <?php endif; ?>
                 </td>
-                <td class="text-end">
-                  <div class="btn-group btn-group-sm">
+                <td class="text-end text-nowrap">
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Document Actions">
+                    <!-- 1. View / Preview -->
                     <button type="button" 
                             class="btn btn-outline-primary" 
                             data-doc-id="<?= (int)$doc['id'] ?>"
@@ -459,23 +493,57 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                             data-doc-status="<?= htmlspecialchars($doc['status'], ENT_QUOTES, 'UTF-8') ?>"
                             data-doc-reason="<?= htmlspecialchars($doc['rejection_reason'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
                             data-doc-expiry="<?= htmlspecialchars($doc['expiry_date'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                            data-doc-type-id="<?= (int)$doc['document_type_id'] ?>"
+                            data-doc-notes="<?= htmlspecialchars($doc['notes'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
                             onclick="openDocPreview(this)" 
                             title="Preview Document">
                       <i class="fa-solid fa-eye"></i>
                     </button>
+
+                    <!-- 2. Download -->
                     <a href="/documents/download?id=<?= $doc['id'] ?>" class="btn btn-outline-secondary" title="Download File">
                       <i class="fa-solid fa-download"></i>
                     </a>
+
+                    <!-- 3. Edit Details & Upload Replacement -->
+                    <button type="button" 
+                            class="btn btn-outline-info text-dark" 
+                            data-doc-id="<?= (int)$doc['id'] ?>"
+                            data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                            data-doc-applicant="<?= htmlspecialchars($doc['customer_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                            data-doc-filename="<?= htmlspecialchars($doc['file_name'], ENT_QUOTES, 'UTF-8') ?>"
+                            data-doc-status="<?= htmlspecialchars($doc['status'], ENT_QUOTES, 'UTF-8') ?>"
+                            data-doc-reason="<?= htmlspecialchars($doc['rejection_reason'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                            data-doc-expiry="<?= htmlspecialchars($doc['expiry_date'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                            data-doc-type-id="<?= (int)$doc['document_type_id'] ?>"
+                            data-doc-notes="<?= htmlspecialchars($doc['notes'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                            onclick="openEditDocModal(this)" 
+                            title="Edit Details / Upload Replacement">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+
+                    <!-- 4. Delete Document -->
+                    <button type="button" 
+                            class="btn btn-outline-danger" 
+                            data-doc-id="<?= (int)$doc['id'] ?>"
+                            data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                            data-doc-applicant="<?= htmlspecialchars($doc['customer_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                            onclick="openDeleteDocModal(this)" 
+                            title="Delete Document Permanently">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </button>
+
+                    <!-- 5. More Actions Split Dropdown -->
                     <button type="button" 
                             class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" 
                             data-bs-toggle="dropdown" 
-                            data-bs-popper-config='{"strategy":"fixed"}'
-                            data-bs-display="static"
-                            aria-expanded="false">
+                            data-bs-boundary="viewport"
+                            aria-expanded="false"
+                            title="More Options">
                       <span class="visually-hidden">Actions</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; z-index: 1065;">
-                      <li class="dropdown-header text-uppercase small py-1" style="font-size: 0.68rem; letter-spacing: 0.5px;">Status &amp; Verification</li>
+                      <li class="dropdown-header text-uppercase small py-1" style="font-size: 0.68rem; letter-spacing: 0.5px;">Status Actions</li>
                       <li>
                         <button type="button" 
                                 class="dropdown-item py-2 <?= $doc['status'] === 'VERIFIED' ? 'disabled text-muted' : 'text-success' ?>" 
@@ -504,14 +572,14 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                         </button>
                       </li>
                       <li><hr class="dropdown-divider my-1"></li>
-                      <li class="dropdown-header text-uppercase small py-1" style="font-size: 0.68rem; letter-spacing: 0.5px;">File Management</li>
+                      <li class="dropdown-header text-uppercase small py-1" style="font-size: 0.68rem; letter-spacing: 0.5px;">File Operations</li>
                       <li>
                         <button type="button" 
                                 class="dropdown-item py-2" 
                                 data-doc-id="<?= (int)$doc['id'] ?>"
                                 data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
                                 onclick="openReplaceModal(this)">
-                          <i class="fa-solid fa-cloud-arrow-up text-primary me-2"></i> Upload Replacement
+                          <i class="fa-solid fa-cloud-arrow-up text-primary me-2"></i> Upload Replacement Only
                         </button>
                       </li>
                       <li>
@@ -543,13 +611,139 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         </table>
       </div>
 
+      <!-- Grid / Card View Mode -->
+      <div id="documentGridView" class="p-3 d-none">
+        <div class="row g-3">
+          <?php foreach ($documents as $doc): ?>
+            <?php
+              $statusBadgeClass = 'badge bg-secondary';
+              if ($doc['status'] === 'VERIFIED') $statusBadgeClass = 'badge bg-success';
+              elseif ($doc['status'] === 'REJECTED') $statusBadgeClass = 'badge bg-danger';
+              elseif ($doc['status'] === 'UNDER_REVIEW') $statusBadgeClass = 'badge bg-warning text-dark';
+              
+              $ext = strtolower(pathinfo($doc['file_name'] ?? '', PATHINFO_EXTENSION));
+              $fileIcon = 'fa-file';
+              $iconBg = 'bg-secondary-subtle text-secondary';
+              if ($ext === 'pdf') { $fileIcon = 'fa-file-pdf'; $iconBg = 'bg-danger-subtle text-danger'; }
+              elseif (in_array($ext, ['jpg', 'jpeg', 'png'], true)) { $fileIcon = 'fa-file-image'; $iconBg = 'bg-primary-subtle text-primary'; }
+              elseif (in_array($ext, ['doc', 'docx'], true)) { $fileIcon = 'fa-file-word'; $iconBg = 'bg-info-subtle text-info'; }
+            ?>
+            <div class="col-12 col-md-6 col-xl-4 col-xxl-3">
+              <div class="card h-100 border rounded-3 shadow-xs hover-shadow-sm transition bg-white position-relative">
+                <div class="card-body p-3 d-flex flex-column justify-content-between">
+                  <div>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                      <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-3 p-2 <?= $iconBg ?> d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                          <i class="fa-solid <?= $fileIcon ?> fs-5"></i>
+                        </div>
+                        <div style="min-width: 0;">
+                          <span class="badge bg-light text-dark border small" style="font-size: 0.68rem;"><?= e($doc['doc_type_name'] ?? 'General') ?></span>
+                          <div class="small text-muted" style="font-size: 0.72rem;">v<?= (int)$doc['version'] ?> &bull; <?= number_format(((float)$doc['file_size']) / 1024, 1) ?> KB</div>
+                        </div>
+                      </div>
+                      <span class="<?= $statusBadgeClass ?> px-2 py-1 small" style="font-size: 0.72rem;"><?= e($doc['status']) ?></span>
+                    </div>
+
+                    <h6 class="fw-bold text-dark mb-1 text-truncate" title="<?= e($doc['document_title'] ?: $doc['doc_type_name']) ?>">
+                      <?= e($doc['document_title'] ?: $doc['doc_type_name']) ?>
+                    </h6>
+                    <div class="text-muted small text-truncate mb-2" style="font-size: 0.74rem;" title="<?= e($doc['file_name']) ?>">
+                      <i class="fa-solid fa-paperclip me-1 opacity-75"></i><?= e($doc['file_name']) ?>
+                    </div>
+
+                    <div class="bg-light p-2 rounded small mb-2" style="font-size: 0.76rem;">
+                      <div class="d-flex justify-content-between text-truncate mb-1">
+                        <span class="text-muted">Applicant:</span>
+                        <strong class="text-dark text-truncate" style="max-width: 140px;"><?= e($doc['customer_name'] ?: '—') ?></strong>
+                      </div>
+                      <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Passport:</span>
+                        <span><?= e($doc['passport_number'] ?: '—') ?></span>
+                      </div>
+                      <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Application:</span>
+                        <?php if (!empty($doc['application_number'])): ?>
+                          <a href="/applications/show?id=<?= $doc['app_id'] ?>" class="fw-bold text-primary text-decoration-none">
+                            <?= e($doc['application_number']) ?>
+                          </a>
+                        <?php else: ?>
+                          <span class="text-muted">General</span>
+                        <?php endif; ?>
+                      </div>
+                      <div class="d-flex justify-content-between">
+                        <span class="text-muted">Expiry:</span>
+                        <span class="badge <?= $doc['expiry_info']['badge_class'] ?> py-0.5" style="font-size: 0.68rem;"><?= e($doc['expiry_info']['label']) ?></span>
+                      </div>
+                    </div>
+
+                    <?php if (!empty($doc['rejection_reason'])): ?>
+                      <div class="alert alert-danger py-1 px-2 small mb-2" style="font-size: 0.72rem;">
+                        <strong>Rejection:</strong> <?= e($doc['rejection_reason']) ?>
+                      </div>
+                    <?php endif; ?>
+                  </div>
+
+                  <div class="pt-2 border-top d-flex align-items-center justify-content-between gap-1">
+                    <div class="btn-group btn-group-sm w-100">
+                      <button type="button" 
+                              class="btn btn-outline-primary btn-sm py-1" 
+                              data-doc-id="<?= (int)$doc['id'] ?>"
+                              data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                              data-doc-applicant="<?= htmlspecialchars($doc['customer_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                              data-doc-filename="<?= htmlspecialchars($doc['file_name'], ENT_QUOTES, 'UTF-8') ?>"
+                              data-doc-status="<?= htmlspecialchars($doc['status'], ENT_QUOTES, 'UTF-8') ?>"
+                              data-doc-reason="<?= htmlspecialchars($doc['rejection_reason'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                              data-doc-expiry="<?= htmlspecialchars($doc['expiry_date'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                              data-doc-type-id="<?= (int)$doc['document_type_id'] ?>"
+                              data-doc-notes="<?= htmlspecialchars($doc['notes'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                              onclick="openDocPreview(this)" 
+                              title="Preview Document">
+                        <i class="fa-solid fa-eye"></i>
+                      </button>
+                      <a href="/documents/download?id=<?= $doc['id'] ?>" class="btn btn-outline-secondary btn-sm py-1" title="Download File">
+                        <i class="fa-solid fa-download"></i>
+                      </a>
+                      <button type="button" 
+                              class="btn btn-outline-info text-dark btn-sm py-1" 
+                              data-doc-id="<?= (int)$doc['id'] ?>"
+                              data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                              data-doc-applicant="<?= htmlspecialchars($doc['customer_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                              data-doc-filename="<?= htmlspecialchars($doc['file_name'], ENT_QUOTES, 'UTF-8') ?>"
+                              data-doc-status="<?= htmlspecialchars($doc['status'], ENT_QUOTES, 'UTF-8') ?>"
+                              data-doc-reason="<?= htmlspecialchars($doc['rejection_reason'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                              data-doc-expiry="<?= htmlspecialchars($doc['expiry_date'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                              data-doc-type-id="<?= (int)$doc['document_type_id'] ?>"
+                              data-doc-notes="<?= htmlspecialchars($doc['notes'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                              onclick="openEditDocModal(this)" 
+                              title="Edit Details / Upload Replacement">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                      </button>
+                      <button type="button" 
+                              class="btn btn-outline-danger btn-sm py-1" 
+                              data-doc-id="<?= (int)$doc['id'] ?>"
+                              data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                              data-doc-applicant="<?= htmlspecialchars($doc['customer_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                              onclick="openDeleteDocModal(this)" 
+                              title="Delete Document">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      </div>
+
       <!-- Mobile Document Cards (< 768px) -->
-      <div class="d-md-none p-3">
+      <div class="d-md-none p-3" id="documentMobileCards">
         <?php foreach ($documents as $doc): ?>
           <div class="card border rounded-3 p-3 mb-3 shadow-sm bg-white">
             <div class="d-flex justify-content-between align-items-start mb-2">
               <div>
-                <div class="fw-bold text-dark"><?= e($doc['document_title']) ?></div>
+                <div class="fw-bold text-dark"><?= e($doc['document_title'] ?: $doc['doc_type_name']) ?></div>
                 <div class="small text-muted"><?= e($doc['customer_name']) ?> &bull; App: <?= e($doc['application_number'] ?: 'N/A') ?></div>
               </div>
               <span class="badge <?= $doc['status'] === 'VERIFIED' ? 'bg-success' : ($doc['status'] === 'REJECTED' ? 'bg-danger' : 'bg-warning text-dark') ?>">
@@ -568,19 +762,42 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               </div>
             <?php endif; ?>
 
-            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-              <button type="button" 
-                      class="btn btn-outline-primary btn-sm py-1 px-2.5" 
-                      data-doc-id="<?= (int)$doc['id'] ?>"
-                      data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
-                      data-doc-applicant="<?= htmlspecialchars($doc['customer_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
-                      data-doc-filename="<?= htmlspecialchars($doc['file_name'], ENT_QUOTES, 'UTF-8') ?>"
-                      data-doc-status="<?= htmlspecialchars($doc['status'], ENT_QUOTES, 'UTF-8') ?>"
-                      data-doc-reason="<?= htmlspecialchars($doc['rejection_reason'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
-                      data-doc-expiry="<?= htmlspecialchars($doc['expiry_date'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
-                      onclick="openDocPreview(this)">
-                <i class="fa-solid fa-eye me-1"></i> Preview
-              </button>
+            <div class="d-flex flex-wrap justify-content-between align-items-center pt-2 border-top gap-2">
+              <div class="btn-group btn-group-sm">
+                <button type="button" 
+                        class="btn btn-outline-primary" 
+                        data-doc-id="<?= (int)$doc['id'] ?>"
+                        data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-applicant="<?= htmlspecialchars($doc['customer_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-filename="<?= htmlspecialchars($doc['file_name'], ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-status="<?= htmlspecialchars($doc['status'], ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-reason="<?= htmlspecialchars($doc['rejection_reason'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-expiry="<?= htmlspecialchars($doc['expiry_date'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-type-id="<?= (int)$doc['document_type_id'] ?>"
+                        data-doc-notes="<?= htmlspecialchars($doc['notes'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        onclick="openDocPreview(this)" 
+                        title="Preview">
+                  <i class="fa-solid fa-eye me-1"></i> Preview
+                </button>
+                <a href="/documents/download?id=<?= $doc['id'] ?>" class="btn btn-outline-secondary" title="Download">
+                  <i class="fa-solid fa-download"></i>
+                </a>
+                <button type="button" 
+                        class="btn btn-outline-info text-dark" 
+                        data-doc-id="<?= (int)$doc['id'] ?>"
+                        data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-applicant="<?= htmlspecialchars($doc['customer_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-filename="<?= htmlspecialchars($doc['file_name'], ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-status="<?= htmlspecialchars($doc['status'], ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-reason="<?= htmlspecialchars($doc['rejection_reason'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-expiry="<?= htmlspecialchars($doc['expiry_date'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-type-id="<?= (int)$doc['document_type_id'] ?>"
+                        data-doc-notes="<?= htmlspecialchars($doc['notes'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        onclick="openEditDocModal(this)" 
+                        title="Edit">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+              </div>
               <div class="d-flex gap-1">
                 <?php if ($doc['status'] !== 'VERIFIED'): ?>
                   <button type="button" 
@@ -612,14 +829,6 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     <i class="fa-solid fa-xmark"></i>
                   </button>
                 <?php endif; ?>
-                <button type="button" 
-                        class="btn btn-outline-secondary btn-sm py-1 px-2" 
-                        data-doc-id="<?= (int)$doc['id'] ?>"
-                        data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
-                        onclick="openReplaceModal(this)" 
-                        title="Upload Replacement">
-                  <i class="fa-solid fa-cloud-arrow-up"></i>
-                </button>
                 <button type="button" 
                         class="btn btn-outline-danger btn-sm py-1 px-2" 
                         data-doc-id="<?= (int)$doc['id'] ?>"
@@ -705,6 +914,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <button type="button" id="previewRejectBtn" class="btn btn-outline-danger btn-sm px-2.5">
             <i class="fa-solid fa-circle-xmark me-1"></i> Reject
           </button>
+          <button type="button" id="previewEditBtn" class="btn btn-outline-info text-dark btn-sm px-2.5">
+            <i class="fa-solid fa-pen-to-square me-1"></i> Edit Details
+          </button>
           <a href="#" id="previewDownloadBtn" class="btn btn-outline-secondary btn-sm" target="_blank">
             <i class="fa-solid fa-download me-1"></i> Download
           </a>
@@ -714,6 +926,77 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- 1b. Edit Document Modal -->
+<div class="modal fade" id="editDocModal" tabindex="-1" aria-labelledby="editDocModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold fs-6" id="editDocModalLabel"><i class="fa-solid fa-pen-to-square me-2"></i> Edit Document &amp; Compliance Details</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="/documents/update" method="POST" enctype="multipart/form-data" id="editDocForm">
+        <?= csrf_field() ?>
+        <input type="hidden" name="document_id" id="editDocId" value="">
+
+        <div class="modal-body p-4">
+          <div class="row g-3">
+            <div class="col-md-7">
+              <label class="form-label small fw-semibold text-secondary">Document Title <span class="text-danger">*</span></label>
+              <input type="text" name="document_title" id="editDocTitleInput" class="form-control" required placeholder="e.g. Passport Copy, Bank Statement">
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small fw-semibold text-secondary">Document Type</label>
+              <select name="document_type_id" id="editDocTypeId" class="form-select">
+                <?php foreach ($docTypes as $dt): ?>
+                  <option value="<?= $dt['id'] ?>"><?= e($dt['name']) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Compliance Status <span class="text-danger">*</span></label>
+              <select name="status" id="editDocStatus" class="form-select fw-semibold" onchange="toggleEditRejectionReason(this.value)">
+                <option value="UNDER_REVIEW">Under Review</option>
+                <option value="VERIFIED">Verified</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Expiry Date <small class="text-muted">(Optional)</small></label>
+              <input type="date" name="expiry_date" id="editDocExpiry" class="form-control">
+            </div>
+
+            <div class="col-12" id="editRejectionReasonContainer" style="display: none;">
+              <label class="form-label small fw-semibold text-danger">Rejection Reason <span class="text-danger">*</span></label>
+              <textarea name="rejection_reason" id="editDocRejectionReason" class="form-control border-danger" rows="2" placeholder="Mandatory reason for rejection (e.g. Blurry photo, expired validity)..."></textarea>
+            </div>
+
+            <div class="col-12">
+              <div class="p-3 bg-light rounded border">
+                <label class="form-label small fw-semibold text-secondary mb-1">
+                  <i class="fa-solid fa-cloud-arrow-up me-1 text-primary"></i> Replace File <small class="text-muted">(Leave empty to keep existing file: <span id="editDocCurrentFile" class="fw-bold text-dark"></span>)</small>
+                </label>
+                <input type="file" name="document_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.docx">
+                <div class="form-text small" style="font-size: 0.74rem;">Allowed formats: PDF, JPG, PNG, DOCX (Max 10MB). Uploading a file archives the current version.</div>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small fw-semibold text-secondary">Internal Operational Notes</label>
+              <textarea name="notes" id="editDocNotes" class="form-control" rows="2" placeholder="Optional notes for internal case team..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light border-top">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-floppy-disk me-1"></i> Save Changes</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -977,7 +1260,9 @@ function getDocData(target, defaultTitle, defaultApplicant) {
       filename: target.dataset.docFilename || '',
       status: target.dataset.docStatus || '',
       reason: target.dataset.docReason || '',
-      expiry: target.dataset.docExpiry || ''
+      expiry: target.dataset.docExpiry || '',
+      typeId: target.dataset.docTypeId || '',
+      notes: target.dataset.docNotes || ''
     };
   }
   return {
@@ -987,7 +1272,9 @@ function getDocData(target, defaultTitle, defaultApplicant) {
     filename: '',
     status: '',
     reason: '',
-    expiry: ''
+    expiry: '',
+    typeId: '',
+    notes: ''
   };
 }
 
@@ -1068,8 +1355,8 @@ function switchModal(fromModalId, toModalId, callback) {
   }
 }
 
-function openDocPreview(idOrEl, maybeTitle, maybeApplicant, maybeFilename, maybeStatus, maybeReason, maybeExpiry) {
-  let id, title, applicant, filename, status, reason, expiry;
+function openDocPreview(idOrEl, maybeTitle, maybeApplicant, maybeFilename, maybeStatus, maybeReason, maybeExpiry, maybeTypeId, maybeNotes) {
+  let id, title, applicant, filename, status, reason, expiry, typeId, notes;
 
   if (idOrEl && typeof idOrEl === 'object' && idOrEl.dataset) {
     const d = getDocData(idOrEl);
@@ -1080,6 +1367,8 @@ function openDocPreview(idOrEl, maybeTitle, maybeApplicant, maybeFilename, maybe
     status = d.status;
     reason = d.reason;
     expiry = d.expiry;
+    typeId = d.typeId;
+    notes = d.notes;
   } else {
     id = idOrEl;
     title = maybeTitle || 'Document';
@@ -1088,6 +1377,8 @@ function openDocPreview(idOrEl, maybeTitle, maybeApplicant, maybeFilename, maybe
     status = maybeStatus || '';
     reason = maybeReason || '';
     expiry = maybeExpiry || '';
+    typeId = maybeTypeId || '';
+    notes = maybeNotes || '';
   }
 
   const titleEl = document.getElementById('previewModalDocTitle');
@@ -1114,6 +1405,7 @@ function openDocPreview(idOrEl, maybeTitle, maybeApplicant, maybeFilename, maybe
   const vBtn = document.getElementById('previewVerifyBtn');
   const uBtn = document.getElementById('previewUnderReviewBtn');
   const rBtn = document.getElementById('previewRejectBtn');
+  const eBtn = document.getElementById('previewEditBtn');
   const dBtn = document.getElementById('previewDeleteBtn');
 
   if (vBtn) {
@@ -1143,6 +1435,26 @@ function openDocPreview(idOrEl, maybeTitle, maybeApplicant, maybeFilename, maybe
     };
   }
 
+  if (eBtn) {
+    eBtn.onclick = function() {
+      switchModal('previewModal', 'editDocModal', function() {
+        openEditDocModal({
+          dataset: {
+            docId: id,
+            docTitle: title,
+            docApplicant: applicant,
+            docFilename: filename,
+            docStatus: status,
+            docReason: reason,
+            docExpiry: expiry,
+            docTypeId: typeId,
+            docNotes: notes
+          }
+        });
+      });
+    };
+  }
+
   if (dBtn) {
     dBtn.onclick = function() {
       switchModal('previewModal', 'deleteDocModal', function() {
@@ -1165,6 +1477,52 @@ function openDocPreview(idOrEl, maybeTitle, maybeApplicant, maybeFilename, maybe
   }
 
   showModalSafely('previewModal');
+}
+
+function openEditDocModal(idOrEl, maybeTitle) {
+  const data = getDocData(idOrEl, maybeTitle);
+  const idInput = document.getElementById('editDocId');
+  if (idInput) idInput.value = data.id;
+
+  const titleInput = document.getElementById('editDocTitleInput');
+  if (titleInput) titleInput.value = data.title;
+
+  const typeSelect = document.getElementById('editDocTypeId');
+  if (typeSelect && data.typeId) typeSelect.value = data.typeId;
+
+  const statusSelect = document.getElementById('editDocStatus');
+  if (statusSelect && data.status) {
+    statusSelect.value = data.status;
+    toggleEditRejectionReason(data.status);
+  }
+
+  const expiryInput = document.getElementById('editDocExpiry');
+  if (expiryInput) expiryInput.value = data.expiry || '';
+
+  const notesInput = document.getElementById('editDocNotes');
+  if (notesInput) notesInput.value = data.notes || '';
+
+  const reasonInput = document.getElementById('editDocRejectionReason');
+  if (reasonInput) reasonInput.value = data.reason || '';
+
+  const fileLabel = document.getElementById('editDocCurrentFile');
+  if (fileLabel) fileLabel.innerText = data.filename || 'Current File';
+
+  showModalSafely('editDocModal');
+}
+
+function toggleEditRejectionReason(status) {
+  const container = document.getElementById('editRejectionReasonContainer');
+  const input = document.getElementById('editDocRejectionReason');
+  if (container) {
+    if (status === 'REJECTED') {
+      container.style.display = 'block';
+      if (input) input.setAttribute('required', 'required');
+    } else {
+      container.style.display = 'none';
+      if (input) input.removeAttribute('required');
+    }
+  }
 }
 
 function openVerifyModal(idOrEl, maybeTitle) {
@@ -1239,8 +1597,51 @@ function openVersionHistoryModal(id, title) {
   showModalSafely('versionHistoryModal');
 }
 
-// Automatically configure Popper fixed positioning for all table dropdowns
+function setDocumentView(mode) {
+  const tableView = document.getElementById('documentTableView');
+  const gridView = document.getElementById('documentGridView');
+  const mobileCards = document.getElementById('documentMobileCards');
+  const listBtn = document.getElementById('docViewListBtn');
+  const gridBtn = document.getElementById('docViewGridBtn');
+
+  if (mode === 'grid') {
+    if (tableView) tableView.classList.add('d-none');
+    if (mobileCards) mobileCards.classList.add('d-none');
+    if (gridView) gridView.classList.remove('d-none');
+    if (gridBtn) {
+      gridBtn.classList.add('active', 'btn-primary', 'text-white');
+      gridBtn.classList.remove('btn-outline-secondary');
+    }
+    if (listBtn) {
+      listBtn.classList.remove('active', 'btn-primary', 'text-white');
+      listBtn.classList.add('btn-outline-secondary');
+    }
+    try { localStorage.setItem('vt_doc_view', 'grid'); } catch(e) {}
+  } else {
+    if (tableView) tableView.classList.remove('d-none');
+    if (mobileCards) mobileCards.classList.remove('d-none');
+    if (gridView) gridView.classList.add('d-none');
+    if (listBtn) {
+      listBtn.classList.add('active', 'btn-primary', 'text-white');
+      listBtn.classList.remove('btn-outline-secondary');
+    }
+    if (gridBtn) {
+      gridBtn.classList.remove('active', 'btn-primary', 'text-white');
+      gridBtn.classList.add('btn-outline-secondary');
+    }
+    try { localStorage.setItem('vt_doc_view', 'list'); } catch(e) {}
+  }
+}
+
+// Automatically configure Popper fixed positioning for all table dropdowns & restore view
 document.addEventListener('DOMContentLoaded', function() {
+  const savedView = (function() {
+    try { return localStorage.getItem('vt_doc_view') || 'list'; } catch(e) { return 'list'; }
+  })();
+  if (savedView === 'grid') {
+    setDocumentView('grid');
+  }
+
   function initFixedDropdowns() {
     if (window.bootstrap && bootstrap.Dropdown) {
       document.querySelectorAll('.table-responsive [data-bs-toggle="dropdown"]').forEach(function(el) {

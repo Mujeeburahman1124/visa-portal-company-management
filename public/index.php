@@ -405,6 +405,11 @@ switch ($uri) {
         (new App\Controllers\DocumentController())->replace();
         break;
 
+    case '/documents/update':
+    case '/documents/edit':
+        (new App\Controllers\DocumentController())->update();
+        break;
+
     case '/documents/preview':
         (new App\Controllers\DocumentController())->preview();
         break;

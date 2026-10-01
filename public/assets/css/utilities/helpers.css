@@ -52,3 +52,38 @@
   font-size: 1.4rem;
   flex-shrink: 0;
 }
+
+/* ==========================================================================
+   UNIVERSAL MODAL SCROLLABLE & FORM SCROLL FIX
+   ========================================================================== */
+.modal-dialog-scrollable .modal-content {
+  max-height: calc(100vh - 3.5rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-dialog-scrollable .modal-content form,
+.modal-dialog-scrollable form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.modal-dialog-scrollable .modal-content form .modal-body,
+.modal-dialog-scrollable form .modal-body,
+.modal-dialog-scrollable .modal-body,
+.modal-body.scrollable-body {
+  overflow-y: auto !important;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(100vh - 200px);
+}
+
+.modal-dialog-scrollable .modal-header,
+.modal-dialog-scrollable .modal-footer {
+  flex-shrink: 0;
+}
+

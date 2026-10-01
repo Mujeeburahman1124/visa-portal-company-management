@@ -119,8 +119,6 @@
     <?php endif; ?>
   </style>
 
-  <!-- Core Bootstrap 5 Bundle JS (Loaded early so modal/dropdown APIs exist everywhere) -->
-  <script src="/assets/js/bootstrap.bundle.min.js"></script>
   <script>
     window.openModalById = function (modalId, evt) {
       var e = evt || window.event;

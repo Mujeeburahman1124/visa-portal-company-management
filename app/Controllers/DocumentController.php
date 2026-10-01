@@ -328,6 +328,11 @@ class DocumentController
         }
 
         $res = DocumentVerificationService::verify($docId, (int)$currentUser['id'], $notes);
+        if ($this->isJsonRequest()) {
+            header('Content-Type: application/json');
+            echo json_encode($res);
+            exit;
+        }
         redirect($_SERVER['HTTP_REFERER'] ?? '/documents', $res['message'], $res['success'] ? 'success' : 'danger');
     }
 
@@ -341,10 +346,21 @@ class DocumentController
         $notes = trim($_POST['notes'] ?? '');
 
         if ($docId <= 0 || empty($reason)) {
-            redirect($_SERVER['HTTP_REFERER'] ?? '/documents', 'A rejection reason is strictly mandatory when rejecting a document.', 'danger');
+            $msg = 'A rejection reason is strictly mandatory when rejecting a document.';
+            if ($this->isJsonRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $msg]);
+                exit;
+            }
+            redirect($_SERVER['HTTP_REFERER'] ?? '/documents', $msg, 'danger');
         }
 
         $res = DocumentVerificationService::reject($docId, (int)$currentUser['id'], $reason, $notes);
+        if ($this->isJsonRequest()) {
+            header('Content-Type: application/json');
+            echo json_encode($res);
+            exit;
+        }
         redirect($_SERVER['HTTP_REFERER'] ?? '/documents', $res['message'], $res['success'] ? 'warning' : 'danger');
     }
 
@@ -358,7 +374,13 @@ class DocumentController
         $notes = trim($_POST['notes'] ?? '');
 
         if ($docId <= 0 || empty($_FILES['document_file']['name'])) {
-            redirect($_SERVER['HTTP_REFERER'] ?? '/documents', 'Please provide a valid replacement file.', 'danger');
+            $msg = 'Please provide a valid replacement file.';
+            if ($this->isJsonRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $msg]);
+                exit;
+            }
+            redirect($_SERVER['HTTP_REFERER'] ?? '/documents', $msg, 'danger');
         }
 
         $res = DocumentVerificationService::uploadReplacement(
@@ -370,7 +392,145 @@ class DocumentController
             $notes
         );
 
+        if ($this->isJsonRequest()) {
+            header('Content-Type: application/json');
+            echo json_encode($res);
+            exit;
+        }
         redirect($_SERVER['HTTP_REFERER'] ?? '/documents', $res['message'], $res['success'] ? 'success' : 'danger');
+    }
+
+    /**
+     * Update document metadata or replace file (Unified Edit)
+     */
+    public function update(): void
+    {
+        AuthMiddleware::handle();
+        $currentUser = auth_user();
+        $pdo = Database::getConnection();
+
+        $docId = (int)($_POST['document_id'] ?? 0);
+        $docTitle = trim($_POST['document_title'] ?? '');
+        $docTypeId = (int)($_POST['document_type_id'] ?? 0);
+        $expiryDate = !empty($_POST['expiry_date']) ? $_POST['expiry_date'] : null;
+        $status = trim($_POST['status'] ?? '');
+        $notes = trim($_POST['notes'] ?? '');
+        $rejectionReason = trim($_POST['rejection_reason'] ?? '');
+
+        if ($docId <= 0) {
+            $msg = 'Invalid document record.';
+            if ($this->isJsonRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $msg]);
+                exit;
+            }
+            redirect($_SERVER['HTTP_REFERER'] ?? '/documents', $msg, 'danger');
+        }
+
+        $stmt = $pdo->prepare("SELECT d.*, dt.name as doc_type_name, a.id as app_id FROM documents d LEFT JOIN document_types dt ON d.document_type_id = dt.id LEFT JOIN applications a ON d.application_id = a.id WHERE d.id = ?");
+        $stmt->execute([$docId]);
+        $doc = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$doc) {
+            $msg = 'Document not found.';
+            if ($this->isJsonRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $msg]);
+                exit;
+            }
+            redirect($_SERVER['HTTP_REFERER'] ?? '/documents', $msg, 'danger');
+        }
+
+        // If a new replacement file was provided, upload it as a new version
+        if (!empty($_FILES['document_file']['name'])) {
+            $repRes = DocumentVerificationService::uploadReplacement(
+                $docId,
+                $_FILES['document_file'],
+                (int)$currentUser['id'],
+                'Staff',
+                $expiryDate,
+                $notes
+            );
+            if (!$repRes['success']) {
+                if ($this->isJsonRequest()) {
+                    header('Content-Type: application/json');
+                    echo json_encode($repRes);
+                    exit;
+                }
+                redirect($_SERVER['HTTP_REFERER'] ?? '/documents', $repRes['message'], 'danger');
+            }
+        }
+
+        // Update metadata
+        $fields = [];
+        $params = [];
+
+        if ($docTitle !== '') {
+            $fields[] = "document_title = ?";
+            $params[] = $docTitle;
+        }
+
+        if ($docTypeId > 0) {
+            $fields[] = "document_type_id = ?";
+            $params[] = $docTypeId;
+        }
+
+        $fields[] = "expiry_date = ?";
+        $params[] = $expiryDate;
+
+        if ($notes !== '') {
+            $fields[] = "notes = ?";
+            $params[] = $notes;
+        }
+
+        if (in_array($status, ['VERIFIED', 'UNDER_REVIEW', 'REJECTED'], true)) {
+            $fields[] = "status = ?";
+            $params[] = $status;
+            if ($status === 'VERIFIED') {
+                $fields[] = "verified_by = ?";
+                $params[] = (int)$currentUser['id'];
+                $fields[] = "verified_at = CURRENT_TIMESTAMP";
+                $fields[] = "rejection_reason = NULL";
+                $fields[] = "replacement_requested = 0";
+            } elseif ($status === 'REJECTED') {
+                $fields[] = "verified_by = ?";
+                $params[] = (int)$currentUser['id'];
+                $fields[] = "verified_at = CURRENT_TIMESTAMP";
+                $fields[] = "rejection_reason = ?";
+                $params[] = $rejectionReason ?: 'Document rejected during review';
+                $fields[] = "replacement_requested = 1";
+            } elseif ($status === 'UNDER_REVIEW') {
+                $fields[] = "verified_at = NULL";
+                $fields[] = "rejection_reason = NULL";
+                $fields[] = "replacement_requested = 0";
+            }
+        }
+
+        $fields[] = "updated_at = CURRENT_TIMESTAMP";
+        $params[] = $docId;
+
+        $sql = "UPDATE documents SET " . implode(', ', $fields) . " WHERE id = ?";
+        $upd = $pdo->prepare($sql);
+        $upd->execute($params);
+
+        if (!empty($doc['app_id'])) {
+            HealthCalculatorService::calculate((int)$doc['app_id']);
+        }
+
+        AuditService::log('UPDATE_DOC', 'Documents', $docId, "Updated document metadata for '{$doc['file_name']}' (ID #{$docId})", [
+            'doc_id' => $docId,
+            'title' => $docTitle ?: $doc['document_title'],
+            'status' => $status ?: $doc['status']
+        ], (int)$currentUser['id']);
+
+        $msg = "Document details updated successfully.";
+        if ($this->isJsonRequest()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => $msg, 'data' => ['document_id' => $docId, 'status' => $status ?: $doc['status']]]);
+            exit;
+        }
+
+        redirect($_SERVER['HTTP_REFERER'] ?? '/documents', $msg, 'success');
     }
 
     /**
@@ -385,10 +545,21 @@ class DocumentController
         $notes = trim($_POST['notes'] ?? '');
 
         if ($docId <= 0) {
-            redirect($_SERVER['HTTP_REFERER'] ?? '/documents', 'Invalid document record.', 'danger');
+            $msg = 'Invalid document record.';
+            if ($this->isJsonRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $msg]);
+                exit;
+            }
+            redirect($_SERVER['HTTP_REFERER'] ?? '/documents', $msg, 'danger');
         }
 
         $res = DocumentVerificationService::setUnderReview($docId, (int)$currentUser['id'], $notes);
+        if ($this->isJsonRequest()) {
+            header('Content-Type: application/json');
+            echo json_encode($res);
+            exit;
+        }
         redirect($_SERVER['HTTP_REFERER'] ?? '/documents', $res['message'], $res['success'] ? 'info' : 'danger');
     }
 
@@ -402,16 +573,39 @@ class DocumentController
 
         $docId = (int)($_POST['document_id'] ?? 0);
         if ($docId <= 0) {
-            redirect($_SERVER['HTTP_REFERER'] ?? '/documents', 'Invalid document selected for deletion.', 'danger');
+            $msg = 'Invalid document selected for deletion.';
+            if ($this->isJsonRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $msg]);
+                exit;
+            }
+            redirect($_SERVER['HTTP_REFERER'] ?? '/documents', $msg, 'danger');
         }
 
         // Permission check
         if (!user_has_role(['super-admin', 'admin']) && !user_can('documents.manage') && !user_can('documents.delete')) {
-            redirect($_SERVER['HTTP_REFERER'] ?? '/documents', 'You do not have permission to delete document records.', 'danger');
+            $msg = 'You do not have permission to delete document records.';
+            if ($this->isJsonRequest()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $msg]);
+                exit;
+            }
+            redirect($_SERVER['HTTP_REFERER'] ?? '/documents', $msg, 'danger');
         }
 
         $res = DocumentVerificationService::delete($docId, (int)$currentUser['id']);
+        if ($this->isJsonRequest()) {
+            header('Content-Type: application/json');
+            echo json_encode($res);
+            exit;
+        }
         redirect($_SERVER['HTTP_REFERER'] ?? '/documents', $res['message'], $res['success'] ? 'success' : 'danger');
+    }
+
+    private function isJsonRequest(): bool
+    {
+        return (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+            || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false);
     }
 
     /**

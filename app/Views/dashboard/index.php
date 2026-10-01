@@ -33,11 +33,10 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <?php else: ?>
             VISA PROCESSING DESK &bull; ACTIVE SHIFT
           <?php endif; ?>
-        </span>
-        <span class="text-white-50 small d-none d-sm-inline">&bull; <?= date('l, F j, Y') ?></span>
+        <span class="text-white-50 small" id="dashboardLiveDate">&bull; <?= date('l, F j, Y') ?></span>
       </div>
       <h2 class="fw-bold brand-font text-white mb-1" style="font-size: 1.75rem; letter-spacing: -0.02em;">
-        Good <?= (date('H') < 12) ? 'morning' : ((date('H') < 17) ? 'afternoon' : 'evening') ?>, <?= e(explode(' ', $currentUser['name'] ?? 'Staff')[0]) ?> 👋
+        <span id="userLiveGreeting">Good <?= (date('H') < 12) ? 'morning' : ((date('H') < 17) ? 'afternoon' : 'evening') ?></span>, <?= e(explode(' ', $currentUser['name'] ?? 'Staff')[0]) ?> 👋
       </h2>
       <p class="text-white-50 small mb-0">
         <?php if ($dashboardType === 'admin'): ?>
@@ -1155,6 +1154,14 @@ function openCompleteTaskModal(taskId, taskTitle) {
   var modal = new bootstrap.Modal(document.getElementById('completeTaskModal'));
   modal.show();
 }
+
+(function initLiveGreeting() {
+  const h = new Date().getHours();
+  const gEl = document.getElementById('userLiveGreeting');
+  if (gEl) {
+    gEl.textContent = (h < 12) ? 'Good morning' : ((h < 17) ? 'Good afternoon' : 'Good evening');
+  }
+})();
 </script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>
