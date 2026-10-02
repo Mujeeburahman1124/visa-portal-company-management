@@ -198,80 +198,88 @@ foreach ($suppliers as $s) {
 
               <!-- MODAL: PAY SUPPLIER -->
               <div class="modal fade" id="paySupplierModal<?= $sup['id'] ?>" tabindex="-1">
-                <div class="modal-dialog modal-dialog-centered">
-                  <div class="modal-content border-0 shadow">
+                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                  <form action="/suppliers/pay" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="supplier_id" value="<?= $sup['id'] ?>">
                     <div class="modal-header bg-success text-white">
                       <h6 class="modal-title fw-bold"><i class="fa-solid fa-money-bill-transfer me-2"></i> Record Supplier Disbursement</h6>
                       <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
-                    <form action="/suppliers/pay" method="POST">
-                      <?= csrf_field() ?>
-                      <input type="hidden" name="supplier_id" value="<?= $sup['id'] ?>">
-                      <div class="modal-body p-4 text-start">
-                        <div class="p-3 bg-light rounded border mb-3">
-                          <div class="small text-muted">Supplier / Payee:</div>
-                          <div class="fw-bold fs-6 text-dark"><?= e($sup['company_name']) ?> (<?= e($sup['supplier_code']) ?>)</div>
-                          <div class="small text-muted">Current Outstanding: <span class="fw-bold text-danger"><?= format_currency($due) ?></span></div>
-                        </div>
+                    <div class="modal-body p-4 text-start">
+                      <div class="p-3 bg-light rounded border mb-3">
+                        <div class="small text-muted">Supplier / Payee:</div>
+                        <div class="fw-bold fs-6 text-dark"><?= e($sup['company_name']) ?> (<?= e($sup['supplier_code']) ?>)</div>
+                        <div class="small text-muted">Current Outstanding: <span class="fw-bold text-danger"><?= format_currency($due) ?></span></div>
+                      </div>
 
-                        <div class="row g-2 mb-3">
-                          <div class="col-6">
-                            <label class="form-label small fw-semibold">Disbursement Amount ($) <span class="text-danger">*</span></label>
-                            <input type="number" step="0.01" name="amount" class="form-control" placeholder="150.00" required>
-                          </div>
-                          <div class="col-6">
-                            <label class="form-label small fw-semibold">Payment Date</label>
-                            <input type="date" name="payment_date" class="form-control" value="<?= date('Y-m-d') ?>" required>
-                          </div>
+                      <div class="row g-2 mb-3">
+                        <div class="col-6">
+                          <label class="form-label small fw-semibold">Disbursement Amount ($) <span class="text-danger">*</span></label>
+                          <input type="number" step="0.01" name="amount" class="form-control" placeholder="150.00" required>
                         </div>
-
-                        <div class="row g-2 mb-3">
-                          <div class="col-6">
-                            <label class="form-label small fw-semibold">Payment Method</label>
-                            <select name="payment_method" class="form-select">
-                              <option value="Bank Transfer">Bank Transfer</option>
-                              <option value="Corporate Card">Corporate Card</option>
-                              <option value="Cheque">Cheque</option>
-                              <option value="Cash">Cash</option>
-                            </select>
-                          </div>
-                          <div class="col-6">
-                            <label class="form-label small fw-semibold">Linked Application (Optional)</label>
-                            <select name="application_id" class="form-select">
-                              <option value="0">General Account Settlement</option>
-                              <?php if (!empty($applications)): ?>
-                                <?php foreach ($applications as $app): ?>
-                                  <option value="<?= $app['id'] ?>">
-                                    <?= e($app['application_number']) ?> - <?= e($app['applicant_name'] ?? '') ?>
-                                  </option>
-                                <?php endforeach; ?>
-                              <?php endif; ?>
-                            </select>
-                          </div>
-                        </div>
-
-                        <div class="row g-2 mb-3">
-                          <div class="col-6">
-                            <label class="form-label small fw-semibold">Supplier Invoice / Bill Ref</label>
-                            <input type="text" name="supplier_invoice_ref" class="form-control" placeholder="INV-2026-9081">
-                          </div>
-                          <div class="col-6">
-                            <label class="form-label small fw-semibold">Transaction / Wire Ref</label>
-                            <input type="text" name="transaction_reference" class="form-control" placeholder="TXN-WIRE-99210">
-                          </div>
-                        </div>
-
-                        <div class="mb-0">
-                          <label class="form-label small fw-semibold">Internal Notes</label>
-                          <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Cleared 5 Schengen biometrics voucher fees..."></textarea>
+                        <div class="col-6">
+                          <label class="form-label small fw-semibold">Payment Date <span class="text-danger">*</span></label>
+                          <input type="date" name="payment_date" class="form-control" value="<?= date('Y-m-d') ?>" required>
                         </div>
                       </div>
-                      <div class="modal-footer bg-light">
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success btn-sm px-3 fw-semibold">Record Payment</button>
+
+                      <div class="row g-2 mb-3">
+                        <div class="col-6">
+                          <label class="form-label small fw-semibold">Payment Method <span class="text-danger">*</span></label>
+                          <select name="payment_method" class="form-select" required>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Supplier Wallet">Supplier Wallet (Deduct Balance)</option>
+                            <option value="Corporate Card">Corporate Card</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Online / Card">Online / Card</option>
+                          </select>
+                        </div>
+                        <div class="col-6">
+                          <label class="form-label small fw-semibold">Linked Application (Optional)</label>
+                          <select name="application_id" class="form-select">
+                            <option value="0">General Account Settlement</option>
+                            <?php if (!empty($applications)): ?>
+                              <?php foreach ($applications as $app): ?>
+                                <option value="<?= $app['id'] ?>">
+                                  <?= e($app['application_number']) ?> - <?= e($app['applicant_name'] ?? '') ?>
+                                </option>
+                              <?php endforeach; ?>
+                            <?php endif; ?>
+                          </select>
+                        </div>
                       </div>
-                    </form>
-                  </div>
+
+                      <div class="row g-2 mb-3">
+                        <div class="col-6">
+                          <label class="form-label small fw-semibold">Supplier Invoice / Bill Ref</label>
+                          <input type="text" name="supplier_invoice_ref" class="form-control" placeholder="INV-2026-9081">
+                        </div>
+                        <div class="col-6">
+                          <label class="form-label small fw-semibold">Transaction / Wire Ref</label>
+                          <input type="text" name="transaction_reference" class="form-control" placeholder="TXN-WIRE-99210">
+                        </div>
+                      </div>
+
+                      <div class="mb-3">
+                        <label class="form-label small fw-semibold">Payment Slip / Wire Voucher <span class="text-danger">*</span></label>
+                        <input type="file" name="receipt_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
+                        <div class="form-text small text-muted"><i class="fa-solid fa-file-circle-check text-success me-1"></i>Mandatory payment proof slip / bank transfer voucher (PDF, JPG, PNG, DOCX up to 15MB).</div>
+                      </div>
+
+                      <div class="mb-0">
+                        <label class="form-label small fw-semibold">Internal Notes</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Cleared 5 Schengen biometrics voucher fees..."></textarea>
+                      </div>
+                    </div>
+                    <div class="modal-footer bg-light sticky-bottom">
+                      <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                      <button type="submit" class="btn btn-success btn-sm px-3 fw-semibold">
+                        <i class="fa-solid fa-check me-1"></i> Record Payment
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
 

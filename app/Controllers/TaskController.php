@@ -523,8 +523,9 @@ class TaskController
         $pdo = Database::getConnection();
         $currentUser = auth_user();
 
-        $isSuperAdmin = ($currentUser['role_slug'] ?? '') === 'super-admin' || (int)($currentUser['role_id'] ?? 0) === 1;
-        $canEdit = $isSuperAdmin || user_can('tasks.edit') || user_can('tasks.manage');
+        $userRoleSlug = $currentUser['role_slug'] ?? '';
+        $isPrivileged = in_array($userRoleSlug, ['super-admin', 'admin', 'branch-manager', 'operations', 'visa-officer', 'manager'], true) || (int)($currentUser['role_id'] ?? 0) <= 3;
+        $canEdit = $isPrivileged || user_can('tasks.edit') || user_can('tasks.manage');
 
         if (!$canEdit) {
             redirect($this->getRedirectUrl(), 'Unauthorized: You do not have permission to edit operational tasks. Only Super Admin or authorized officers may modify tasks.', 'danger');
@@ -584,8 +585,9 @@ class TaskController
         $pdo = Database::getConnection();
         $currentUser = auth_user();
 
-        $isSuperAdmin = ($currentUser['role_slug'] ?? '') === 'super-admin' || (int)($currentUser['role_id'] ?? 0) === 1;
-        $canDelete = $isSuperAdmin || user_can('tasks.delete') || user_can('tasks.manage');
+        $userRoleSlug = $currentUser['role_slug'] ?? '';
+        $isPrivileged = in_array($userRoleSlug, ['super-admin', 'admin', 'branch-manager', 'operations', 'manager'], true) || (int)($currentUser['role_id'] ?? 0) <= 3;
+        $canDelete = $isPrivileged || user_can('tasks.delete') || user_can('tasks.manage');
 
         if (!$canDelete) {
             redirect($this->getRedirectUrl(), 'Unauthorized: You do not have permission to delete operational tasks. Only Super Admin or authorized officers may delete tasks.', 'danger');

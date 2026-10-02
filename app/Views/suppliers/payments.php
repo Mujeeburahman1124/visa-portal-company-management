@@ -112,13 +112,14 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                         <th>Amount Paid</th>
                         <th>Method</th>
                         <th>Status</th>
+                        <th>Slip / Proof</th>
                         <th>Recorded By</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($payments)): ?>
                         <tr>
-                            <td colspan="8" class="text-center py-5 text-muted">
+                            <td colspan="9" class="text-center py-5 text-muted">
                                 <i class="bi bi-inbox fs-1 d-block mb-2"></i>
                                 No supplier payment records found matching the filter criteria.
                             </td>
@@ -166,6 +167,15 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                                     <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
                                         <?= htmlspecialchars($p['payment_status'] ?? 'Completed') ?>
                                     </span>
+                                </td>
+                                <td>
+                                    <?php if (!empty($p['receipt_file'])): ?>
+                                        <a href="/<?= htmlspecialchars(ltrim($p['receipt_file'], '/')) ?>" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold" title="View / Download Payment Slip">
+                                            <i class="bi bi-file-earmark-arrow-down me-1"></i>Slip
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="text-muted small fst-italic">None</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="small">
                                     <div><i class="bi bi-person me-1 text-muted"></i><?= htmlspecialchars($p['created_by_name'] ?? 'System') ?></div>

@@ -550,6 +550,32 @@ class PaymentController
             redirect('/payments/wallets?tab=suppliers', 'Please specify valid supplier and amount.', 'danger');
         }
 
+        // Mandatory Slip / Deposit Voucher Enforcement
+        $hasReceiptUpload = isset($_FILES['receipt_file']) && $_FILES['receipt_file']['error'] === UPLOAD_ERR_OK;
+        if (!$hasReceiptUpload) {
+            redirect('/payments/wallets?tab=suppliers', 'Top-up rejected: Bank slip or deposit voucher attachment is mandatory for supplier credit.', 'danger');
+        }
+        $file = $_FILES['receipt_file'];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowed = ['pdf', 'jpg', 'jpeg', 'png', 'docx'];
+        if (!in_array($ext, $allowed, true)) {
+            redirect('/payments/wallets?tab=suppliers', 'Invalid receipt file format. Allowed formats: PDF, JPG, PNG, DOCX.', 'danger');
+        }
+        if ($file['size'] > 15 * 1024 * 1024) {
+            redirect('/payments/wallets?tab=suppliers', 'Receipt attachment file exceeds 15MB size limit.', 'danger');
+        }
+        $uploadDir = App::basePath('storage' . DIRECTORY_SEPARATOR . 'receipts');
+        if (!is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0755, true);
+        }
+        $safeFileName = 'sup_wallet_' . $supplierId . '_' . time() . '_' . substr(bin2hex(random_bytes(4)), 0, 6) . '.' . $ext;
+        $targetPath = $uploadDir . DIRECTORY_SEPARATOR . $safeFileName;
+        if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+            redirect('/payments/wallets?tab=suppliers', 'Failed to store receipt attachment file. Please try again.', 'danger');
+        }
+        $receiptFilePath = 'storage/receipts/' . $safeFileName;
+        $reference = trim($reference . ' [Slip: ' . $receiptFilePath . ']');
+
         $finalAmount = $exchangeRate > 0 && $convertedAmount > 0 ? $convertedAmount : $amount;
 
         try {
@@ -592,6 +618,32 @@ class PaymentController
         if ($agentId <= 0 || $amount <= 0) {
             redirect('/payments/wallets?tab=agents', 'Please specify valid agent and amount.', 'danger');
         }
+
+        // Mandatory Slip / Credit Voucher Enforcement
+        $hasReceiptUpload = isset($_FILES['receipt_file']) && $_FILES['receipt_file']['error'] === UPLOAD_ERR_OK;
+        if (!$hasReceiptUpload) {
+            redirect('/payments/wallets?tab=agents', 'Top-up rejected: Bank slip or credit voucher attachment is mandatory for agent credit.', 'danger');
+        }
+        $file = $_FILES['receipt_file'];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowed = ['pdf', 'jpg', 'jpeg', 'png', 'docx'];
+        if (!in_array($ext, $allowed, true)) {
+            redirect('/payments/wallets?tab=agents', 'Invalid receipt file format. Allowed formats: PDF, JPG, PNG, DOCX.', 'danger');
+        }
+        if ($file['size'] > 15 * 1024 * 1024) {
+            redirect('/payments/wallets?tab=agents', 'Receipt attachment file exceeds 15MB size limit.', 'danger');
+        }
+        $uploadDir = App::basePath('storage' . DIRECTORY_SEPARATOR . 'receipts');
+        if (!is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0755, true);
+        }
+        $safeFileName = 'agent_wallet_' . $agentId . '_' . time() . '_' . substr(bin2hex(random_bytes(4)), 0, 6) . '.' . $ext;
+        $targetPath = $uploadDir . DIRECTORY_SEPARATOR . $safeFileName;
+        if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+            redirect('/payments/wallets?tab=agents', 'Failed to store receipt attachment file. Please try again.', 'danger');
+        }
+        $receiptFilePath = 'storage/receipts/' . $safeFileName;
+        $reference = trim($reference . ' [Slip: ' . $receiptFilePath . ']');
 
         $finalAmount = $exchangeRate > 0 && $convertedAmount > 0 ? $convertedAmount : $amount;
 
@@ -713,6 +765,9 @@ class PaymentController
             // Mandatory Deposit Voucher / Bank Slip
             $receiptFile = null;
             $hasReceiptUpload = isset($_FILES['receipt_file']) && $_FILES['receipt_file']['error'] === UPLOAD_ERR_OK;
+            if (!$hasReceiptUpload) {
+                redirect($_SERVER['HTTP_REFERER'] ?? '/payments/wallets', 'Deposit rejected: Payment slip or deposit voucher attachment is mandatory.', 'danger');
+            }
             if ($hasReceiptUpload) {
                 $file = $_FILES['receipt_file'];
                 $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));

@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Config\Database;
 use App\Middleware\AuthMiddleware;
 use App\Middleware\RoleMiddleware;
+use App\Core\App;
 use App\Services\AuditService;
 use App\Services\WalletService;
 use PDO;
@@ -302,7 +303,62 @@ class SupplierController
             $payableAmount = $paidAmount;
         }
 
+        // Ensure receipt_file column exists in supplier_payments
+        try {
+            $pdo->exec("ALTER TABLE supplier_payments ADD COLUMN receipt_file VARCHAR(255) NULL");
+        } catch (\Throwable $e) {}
+
+        // Mandatory Slip / Disbursement Receipt Attachment (Policy requirement)
+        $receiptFile = null;
+        $hasReceiptUpload = isset($_FILES['receipt_file']) && $_FILES['receipt_file']['error'] === UPLOAD_ERR_OK;
+
+        if (!$hasReceiptUpload) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/suppliers', 'Payment rejected: An official disbursement receipt slip, bank transfer voucher, or cheque voucher attachment is mandatory for all supplier payments.', 'danger');
+        }
+
+        $file = $_FILES['receipt_file'];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowed = ['pdf', 'jpg', 'jpeg', 'png', 'docx'];
+        if (!in_array($ext, $allowed, true)) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/suppliers', 'Invalid receipt file format. Allowed formats: PDF, JPG, PNG, DOCX.', 'danger');
+        }
+        if ($file['size'] > 15 * 1024 * 1024) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/suppliers', 'Receipt attachment file exceeds 15MB size limit.', 'danger');
+        }
+
+        $uploadDir = App::basePath('storage' . DIRECTORY_SEPARATOR . 'receipts');
+        if (!is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0755, true);
+        }
+        $safeFileName = 'sup_slip_' . $supplierId . '_' . time() . '_' . substr(bin2hex(random_bytes(4)), 0, 6) . '.' . $ext;
+        $targetPath = $uploadDir . DIRECTORY_SEPARATOR . $safeFileName;
+        if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/suppliers', 'Failed to store receipt attachment file. Please try again.', 'danger');
+        }
+        $receiptFile = 'storage/receipts/' . $safeFileName;
+
         $payRef = 'SPAY-' . date('Ymd') . '-' . rand(1000, 9999);
+
+        // If paid via Supplier Wallet, deduct wallet balance
+        if ($method === 'Supplier Wallet') {
+            try {
+                WalletService::debitSupplier(
+                    $supplierId,
+                    $paidAmount,
+                    "Disbursement payment (Ref: {$payRef}, Invoice: {$invoiceRef})" . ($notes ? " - {$notes}" : ''),
+                    $userId,
+                    $currency,
+                    $paidAmount,
+                    1.0,
+                    'Supplier Wallet',
+                    $ref,
+                    $paidAmount,
+                    $applicationId
+                );
+            } catch (\Throwable $e) {
+                redirect($_SERVER['HTTP_REFERER'] ?? '/suppliers', 'Supplier Wallet deduction failed: ' . $e->getMessage(), 'danger');
+            }
+        }
 
         if ($applicationId <= 0) {
             $applicationId = null;
@@ -335,7 +391,8 @@ class SupplierController
                 transaction_reference = ?, 
                 supplier_invoice_ref = ?,
                 payment_date = ?, 
-                notes = ? 
+                notes = ?,
+                receipt_file = COALESCE(?, receipt_file)
                 WHERE id = ?");
             $upStmt->execute([
                 $newPaid, 
@@ -345,14 +402,15 @@ class SupplierController
                 $invoiceRef, 
                 $date, 
                 $combinedNotes, 
+                $receiptFile,
                 $existingPayable['id']
             ]);
             $payRef = $existingPayable['payment_reference'];
         } else {
             $stmt = $pdo->prepare("INSERT INTO supplier_payments (
-                payment_reference, supplier_id, application_id, payable_amount, paid_amount, currency, supplier_invoice_ref, payment_date, payment_method, transaction_reference, payment_status, notes, created_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$payRef, $supplierId, $applicationId, $payableAmount, $paidAmount, $currency, $invoiceRef, $date, $method, $ref, $status, $notes, $userId]);
+                payment_reference, supplier_id, application_id, payable_amount, paid_amount, currency, supplier_invoice_ref, payment_date, payment_method, transaction_reference, payment_status, notes, created_by, receipt_file
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$payRef, $supplierId, $applicationId, $payableAmount, $paidAmount, $currency, $invoiceRef, $date, $method, $ref, $status, $notes, $userId, $receiptFile]);
         }
 
         AuditService::log('SUPPLIER_PAYMENT', 'Suppliers', $supplierId, "Recorded payment of {$currency} " . number_format($paidAmount, 2) . " (Ref: {$payRef}, Invoice: {$invoiceRef})");

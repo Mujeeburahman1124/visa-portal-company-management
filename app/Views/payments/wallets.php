@@ -475,7 +475,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         <h5 class="modal-title fw-bold"><i class="fa-solid fa-building me-2"></i> Top-up Supplier Wallet</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <form action="/payments/supplier-wallet-deposit" method="POST">
+      <form action="/payments/supplier-wallet-deposit" method="POST" enctype="multipart/form-data">
         <?= csrf_field() ?>
         <div class="modal-body p-4">
           <div class="mb-3">
@@ -531,6 +531,12 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <input type="text" name="reference" class="form-control form-control-sm" placeholder="e.g. SW-<?= date('Ymd') ?>-01">
           </div>
 
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Disbursement Voucher / Bank Slip <span class="text-danger">*</span></label>
+            <input type="file" name="receipt_file" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
+            <small class="text-muted" style="font-size: 0.72rem;"><i class="fa-solid fa-file-circle-check text-success me-1"></i>Mandatory deposit proof voucher.</small>
+          </div>
+
           <div class="mb-0">
             <label class="form-label small fw-semibold">Notes / Purpose</label>
             <input type="text" name="notes" class="form-control form-control-sm" placeholder="e.g. Advance deposit for Q4 bulk visa allocations">
@@ -553,7 +559,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-tie me-2"></i> Top-up Agent Wallet</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <form action="/payments/agent-wallet-deposit" method="POST">
+      <form action="/payments/agent-wallet-deposit" method="POST" enctype="multipart/form-data">
         <?= csrf_field() ?>
         <div class="modal-body p-4">
           <div class="mb-3">
@@ -607,6 +613,12 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <div class="mb-3">
             <label class="form-label small fw-semibold">Reference</label>
             <input type="text" name="reference" class="form-control form-control-sm" placeholder="e.g. AG-<?= date('Ymd') ?>-01">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Credit Voucher / Bank Slip <span class="text-danger">*</span></label>
+            <input type="file" name="receipt_file" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
+            <small class="text-muted" style="font-size: 0.72rem;"><i class="fa-solid fa-file-circle-check text-success me-1"></i>Mandatory credit voucher / deposit proof.</small>
           </div>
 
           <div class="mb-0">

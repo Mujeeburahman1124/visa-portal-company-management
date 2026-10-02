@@ -435,6 +435,7 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE supplier_payments ADD COLUMN to_currency TEXT NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE supplier_payments ADD COLUMN exchange_rate REAL DEFAULT 1.0"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE supplier_payments ADD COLUMN original_amount REAL NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE supplier_payments ADD COLUMN receipt_file VARCHAR(255) NULL"); } catch (\Throwable $e) {}
 
             // wallet_transactions — extra reference columns
             try { $pdo->exec("ALTER TABLE wallet_transactions ADD COLUMN invoice_id INTEGER NULL"); } catch (\Throwable $e) {}

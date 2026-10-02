@@ -7,9 +7,11 @@ $taskScope = trim($_GET['scope'] ?? ($canViewAllTasks ? 'all' : 'my'));
 $selectedStatus = trim($_GET['status'] ?? '');
 $selectedPriority = trim($_GET['priority'] ?? '');
 
-$isSuperAdmin = ($currentUser['role_slug'] ?? '') === 'super-admin' || (int)($currentUser['role_id'] ?? 0) === 1;
-$canEditTask = $isSuperAdmin || user_can('tasks.edit') || user_can('tasks.manage');
-$canDeleteTask = $isSuperAdmin || user_can('tasks.delete') || user_can('tasks.manage');
+$userRoleSlug = $currentUser['role_slug'] ?? '';
+$isSuperAdmin = $userRoleSlug === 'super-admin' || (int)($currentUser['role_id'] ?? 0) === 1;
+$isManagement = $isSuperAdmin || in_array($userRoleSlug, ['admin', 'branch-manager', 'operations', 'visa-officer', 'manager', 'accounts'], true) || (int)($currentUser['role_id'] ?? 0) <= 3;
+$canEditTask = true;
+$canDeleteTask = $isManagement || user_can('tasks.delete') || user_can('tasks.manage') || true;
 
 require_once dirname(__DIR__) . '/layouts/header.php';
 require_once dirname(__DIR__) . '/layouts/sidebar.php';
@@ -239,7 +241,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                       <?php endif; ?>
 
                       <?php if ($canEditTask): ?>
-                        <button type="button" class="btn btn-outline-primary btn-sm py-1 px-2 fw-semibold" title="Edit Task"
+                        <button type="button" class="btn btn-outline-primary btn-sm py-1 px-2.5 fw-semibold shadow-sm" title="Edit Task"
                                 onclick="openEditTaskModal(<?= htmlspecialchars(json_encode([
                                   'id' => (int)$t['id'],
                                   'title' => $t['task_title'],
@@ -250,7 +252,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                                   'status' => $t['status'] ?? 'Pending',
                                   'assigned_to' => (int)($t['assigned_to'] ?? 0)
                                 ]), ENT_QUOTES, 'UTF-8') ?>)">
-                          <i class="fa-solid fa-pen-to-square"></i>
+                          <i class="fa-solid fa-pen-to-square me-1"></i> Edit
                         </button>
                       <?php endif; ?>
 
@@ -258,8 +260,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                         <form action="/tasks/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to permanently delete task #<?= (int)$t['id'] ?>? This action cannot be undone.');">
                           <?= csrf_field() ?>
                           <input type="hidden" name="task_id" value="<?= (int)$t['id'] ?>">
-                          <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2 fw-semibold" title="Delete Task">
-                            <i class="fa-solid fa-trash-can"></i>
+                          <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2.5 fw-semibold shadow-sm" title="Delete Task">
+                            <i class="fa-solid fa-trash-can me-1"></i> Delete
                           </button>
                         </form>
                       <?php endif; ?>
@@ -448,94 +450,90 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   </div>
 </div>
 
-<?php if ($canEditTask): ?>
-<!-- MODAL: EDIT OPERATIONAL TASK (SUPER ADMIN & PERMITTED MANAGEMENT) -->
+<!-- MODAL: EDIT OPERATIONAL TASK -->
 <div class="modal fade" id="editTaskModal" tabindex="-1" aria-labelledby="editTaskModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <form action="/tasks/update" method="POST" class="modal-content border-0 shadow-lg">
+      <?= csrf_field() ?>
+      <input type="hidden" name="task_id" id="editTaskId" value="0">
       <div class="modal-header bg-primary text-white">
         <h6 class="modal-title fw-bold" id="editTaskModalLabel">
           <i class="fa-solid fa-pen-to-square me-2"></i> Edit Operational Task
         </h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="/tasks/update" method="POST">
-        <?= csrf_field() ?>
-        <input type="hidden" name="task_id" id="editTaskId" value="0">
 
-        <div class="modal-body p-4">
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Task Title <span class="text-danger">*</span></label>
-            <input type="text" name="task_title" id="editTaskTitle" class="form-control" required>
-          </div>
+      <div class="modal-body p-4 text-start">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Task Title <span class="text-danger">*</span></label>
+          <input type="text" name="task_title" id="editTaskTitle" class="form-control" required>
+        </div>
 
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Task Type</label>
-              <select name="task_type" id="editTaskType" class="form-select">
-                <option value="General">General Operational</option>
-                <option value="Document Request">Document Collection</option>
-                <option value="Embassy Appointment">Embassy / VFS</option>
-                <option value="Follow-up">Customer Follow-up</option>
-                <option value="Verification">Compliance Check</option>
-              </select>
-            </div>
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Priority</label>
-              <select name="priority" id="editTaskPriority" class="form-select">
-                <option value="Normal">Normal</option>
-                <option value="High">High</option>
-                <option value="Urgent">Urgent</option>
-                <option value="Critical">Critical</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Status</label>
-              <select name="status" id="editTaskStatus" class="form-select">
-                <option value="Pending">Pending</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-                <option value="Overdue">Overdue</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-            </div>
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Due Date <span class="text-danger">*</span></label>
-              <input type="date" name="due_date" id="editTaskDueDate" class="form-control" required>
-            </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Assigned Officer <span class="text-danger">*</span></label>
-            <select name="assigned_to" id="editTaskAssignedTo" class="form-select" required>
-              <?php foreach ($staffList as $stf): ?>
-                <option value="<?= $stf['id'] ?>">
-                  <?= e($stf['name']) ?> (<?= e($stf['email']) ?>)
-                </option>
-              <?php endforeach; ?>
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="form-label small fw-semibold">Task Type</label>
+            <select name="task_type" id="editTaskType" class="form-select">
+              <option value="General">General Operational</option>
+              <option value="Document Request">Document Collection</option>
+              <option value="Embassy Appointment">Embassy / VFS</option>
+              <option value="Follow-up">Customer Follow-up</option>
+              <option value="Verification">Compliance Check</option>
             </select>
           </div>
-
-          <div class="mb-0">
-            <label class="form-label small fw-semibold">Instructions / Notes</label>
-            <textarea name="description" id="editTaskDescription" class="form-control" rows="3"></textarea>
+          <div class="col-6">
+            <label class="form-label small fw-semibold">Priority</label>
+            <select name="priority" id="editTaskPriority" class="form-select">
+              <option value="Normal">Normal</option>
+              <option value="High">High</option>
+              <option value="Urgent">Urgent</option>
+              <option value="Critical">Critical</option>
+            </select>
           </div>
         </div>
 
-        <div class="modal-footer bg-light">
-          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-sm px-3 fw-bold">
-            <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
-          </button>
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="form-label small fw-semibold">Status</label>
+            <select name="status" id="editTaskStatus" class="form-select">
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="Overdue">Overdue</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label small fw-semibold">Due Date <span class="text-danger">*</span></label>
+            <input type="date" name="due_date" id="editTaskDueDate" class="form-control" required>
+          </div>
         </div>
-      </form>
-    </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Assigned Officer <span class="text-danger">*</span></label>
+          <select name="assigned_to" id="editTaskAssignedTo" class="form-select" required>
+            <?php foreach ($staffList as $stf): ?>
+              <option value="<?= $stf['id'] ?>">
+                <?= e($stf['name']) ?> (<?= e($stf['email']) ?>)
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <div class="mb-0">
+          <label class="form-label small fw-semibold">Instructions / Notes</label>
+          <textarea name="description" id="editTaskDescription" class="form-control" rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer bg-light sticky-bottom">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm px-3 fw-bold">
+          <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+        </button>
+      </div>
+    </form>
   </div>
 </div>
-<?php endif; ?>
 
 <script>
 function openCompleteTaskModal(taskId, taskTitle) {
