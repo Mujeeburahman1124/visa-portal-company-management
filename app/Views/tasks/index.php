@@ -7,6 +7,10 @@ $taskScope = trim($_GET['scope'] ?? ($canViewAllTasks ? 'all' : 'my'));
 $selectedStatus = trim($_GET['status'] ?? '');
 $selectedPriority = trim($_GET['priority'] ?? '');
 
+$isSuperAdmin = ($currentUser['role_slug'] ?? '') === 'super-admin' || (int)($currentUser['role_id'] ?? 0) === 1;
+$canEditTask = $isSuperAdmin || user_can('tasks.edit') || user_can('tasks.manage');
+$canDeleteTask = $isSuperAdmin || user_can('tasks.delete') || user_can('tasks.manage');
+
 require_once dirname(__DIR__) . '/layouts/header.php';
 require_once dirname(__DIR__) . '/layouts/sidebar.php';
 require_once dirname(__DIR__) . '/layouts/topbar.php';
@@ -214,24 +218,52 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     <?php endif; ?>
                   </td>
                   <td class="text-end pe-3 text-nowrap">
-                    <?php if (!$isCompleted): ?>
-                      <button type="button" class="btn btn-success btn-sm py-1 px-3 shadow-sm fw-bold" 
-                              onclick="openCompleteTaskModal(<?= (int)$t['id'] ?>, '<?= e(addslashes($t['task_title'])) ?>')">
-                        <i class="fa-solid fa-check me-1"></i> Complete Task
-                      </button>
-                    <?php else: ?>
-                      <button type="button" class="btn btn-outline-success btn-sm py-1 px-2 fw-semibold" 
-                              onclick="viewProofModal(<?= htmlspecialchars(json_encode([
-                                'id' => (int)$t['id'],
-                                'title' => $t['task_title'],
-                                'completed_by' => $t['completed_by_name'] ?? 'Staff',
-                                'completed_at' => format_datetime($t['completed_at']),
-                                'notes' => $t['completion_notes'] ?: ($t['proof_of_work'] ?: 'No notes recorded.'),
-                                'attachment' => !empty($t['proof_attachment']) ? '/' . ltrim($t['proof_attachment'], '/') : null
-                              ]), ENT_QUOTES, 'UTF-8') ?>)">
-                        <i class="fa-solid fa-file-shield me-1"></i> View Proof
-                      </button>
-                    <?php endif; ?>
+                    <div class="d-inline-flex align-items-center gap-1">
+                      <?php if (!$isCompleted): ?>
+                        <button type="button" class="btn btn-success btn-sm py-1 px-2.5 shadow-sm fw-bold" 
+                                onclick="openCompleteTaskModal(<?= (int)$t['id'] ?>, '<?= e(addslashes($t['task_title'])) ?>')">
+                          <i class="fa-solid fa-check me-1"></i> Complete
+                        </button>
+                      <?php else: ?>
+                        <button type="button" class="btn btn-outline-success btn-sm py-1 px-2 fw-semibold" 
+                                onclick="viewProofModal(<?= htmlspecialchars(json_encode([
+                                  'id' => (int)$t['id'],
+                                  'title' => $t['task_title'],
+                                  'completed_by' => $t['completed_by_name'] ?? 'Staff',
+                                  'completed_at' => format_datetime($t['completed_at']),
+                                  'notes' => $t['completion_notes'] ?: ($t['proof_of_work'] ?: 'No notes recorded.'),
+                                  'attachment' => !empty($t['proof_attachment']) ? '/' . ltrim($t['proof_attachment'], '/') : null
+                                ]), ENT_QUOTES, 'UTF-8') ?>)">
+                          <i class="fa-solid fa-file-shield me-1"></i> Proof
+                        </button>
+                      <?php endif; ?>
+
+                      <?php if ($canEditTask): ?>
+                        <button type="button" class="btn btn-outline-primary btn-sm py-1 px-2 fw-semibold" title="Edit Task"
+                                onclick="openEditTaskModal(<?= htmlspecialchars(json_encode([
+                                  'id' => (int)$t['id'],
+                                  'title' => $t['task_title'],
+                                  'description' => $t['description'] ?? '',
+                                  'task_type' => $t['task_type'] ?? 'General',
+                                  'priority' => $t['priority'] ?? 'Normal',
+                                  'due_date' => $t['due_date'] ?? '',
+                                  'status' => $t['status'] ?? 'Pending',
+                                  'assigned_to' => (int)($t['assigned_to'] ?? 0)
+                                ]), ENT_QUOTES, 'UTF-8') ?>)">
+                          <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                      <?php endif; ?>
+
+                      <?php if ($canDeleteTask): ?>
+                        <form action="/tasks/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to permanently delete task #<?= (int)$t['id'] ?>? This action cannot be undone.');">
+                          <?= csrf_field() ?>
+                          <input type="hidden" name="task_id" value="<?= (int)$t['id'] ?>">
+                          <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2 fw-semibold" title="Delete Task">
+                            <i class="fa-solid fa-trash-can"></i>
+                          </button>
+                        </form>
+                      <?php endif; ?>
+                    </div>
                   </td>
                 </tr>
               <?php endforeach; ?>
@@ -416,12 +448,116 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   </div>
 </div>
 
+<?php if ($canEditTask): ?>
+<!-- MODAL: EDIT OPERATIONAL TASK (SUPER ADMIN & PERMITTED MANAGEMENT) -->
+<div class="modal fade" id="editTaskModal" tabindex="-1" aria-labelledby="editTaskModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-primary text-white">
+        <h6 class="modal-title fw-bold" id="editTaskModalLabel">
+          <i class="fa-solid fa-pen-to-square me-2"></i> Edit Operational Task
+        </h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="/tasks/update" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="task_id" id="editTaskId" value="0">
+
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Task Title <span class="text-danger">*</span></label>
+            <input type="text" name="task_title" id="editTaskTitle" class="form-control" required>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Task Type</label>
+              <select name="task_type" id="editTaskType" class="form-select">
+                <option value="General">General Operational</option>
+                <option value="Document Request">Document Collection</option>
+                <option value="Embassy Appointment">Embassy / VFS</option>
+                <option value="Follow-up">Customer Follow-up</option>
+                <option value="Verification">Compliance Check</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Priority</label>
+              <select name="priority" id="editTaskPriority" class="form-select">
+                <option value="Normal">Normal</option>
+                <option value="High">High</option>
+                <option value="Urgent">Urgent</option>
+                <option value="Critical">Critical</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Status</label>
+              <select name="status" id="editTaskStatus" class="form-select">
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+                <option value="Overdue">Overdue</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Due Date <span class="text-danger">*</span></label>
+              <input type="date" name="due_date" id="editTaskDueDate" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Assigned Officer <span class="text-danger">*</span></label>
+            <select name="assigned_to" id="editTaskAssignedTo" class="form-select" required>
+              <?php foreach ($staffList as $stf): ?>
+                <option value="<?= $stf['id'] ?>">
+                  <?= e($stf['name']) ?> (<?= e($stf['email']) ?>)
+                </option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
+          <div class="mb-0">
+            <label class="form-label small fw-semibold">Instructions / Notes</label>
+            <textarea name="description" id="editTaskDescription" class="form-control" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm px-3 fw-bold">
+            <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
 <script>
 function openCompleteTaskModal(taskId, taskTitle) {
   document.getElementById('completeTaskId').value = taskId;
   document.getElementById('completeTaskTitle').textContent = taskTitle;
   document.getElementById('completeNotes').value = '';
   var modal = new bootstrap.Modal(document.getElementById('completeTaskModal'));
+  modal.show();
+}
+
+function openEditTaskModal(data) {
+  document.getElementById('editTaskId').value = data.id;
+  document.getElementById('editTaskTitle').value = data.title;
+  document.getElementById('editTaskDescription').value = data.description || '';
+  document.getElementById('editTaskType').value = data.task_type || 'General';
+  document.getElementById('editTaskPriority').value = data.priority || 'Normal';
+  document.getElementById('editTaskStatus').value = data.status || 'Pending';
+  document.getElementById('editTaskDueDate').value = data.due_date || '';
+  if (data.assigned_to) {
+    document.getElementById('editTaskAssignedTo').value = data.assigned_to;
+  }
+  var modal = new bootstrap.Modal(document.getElementById('editTaskModal'));
   modal.show();
 }
 

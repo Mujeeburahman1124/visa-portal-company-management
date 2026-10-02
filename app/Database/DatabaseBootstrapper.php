@@ -1841,18 +1841,20 @@ class DatabaseBootstrapper
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             );");
 
+            $autoInc = ($driver === 'mysql') ? 'INT AUTO_INCREMENT PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
+            $insIgnore = ($driver === 'mysql') ? 'INSERT IGNORE INTO' : 'INSERT OR IGNORE INTO';
             $pdo->exec("CREATE TABLE IF NOT EXISTS visa_stages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL UNIQUE,
-                code TEXT NOT NULL UNIQUE,
-                sequence_order INTEGER NOT NULL,
-                default_sla_days INTEGER DEFAULT 2,
+                id {$autoInc},
+                name " . ($driver === 'mysql' ? 'VARCHAR(150) NOT NULL UNIQUE' : 'TEXT NOT NULL UNIQUE') . ",
+                code " . ($driver === 'mysql' ? 'VARCHAR(50) NOT NULL UNIQUE' : 'TEXT NOT NULL UNIQUE') . ",
+                sequence_order INT NOT NULL,
+                default_sla_days INT DEFAULT 2,
                 description TEXT,
-                is_active INTEGER DEFAULT 1,
+                is_active TINYINT(1) DEFAULT 1,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );");
+            )");
 
-            $stageStmt = $pdo->prepare("INSERT OR IGNORE INTO visa_stages (name, code, sequence_order, default_sla_days, description) VALUES (?, ?, ?, ?, ?)");
+            $stageStmt = $pdo->prepare("{$insIgnore} visa_stages (name, code, sequence_order, default_sla_days, description) VALUES (?, ?, ?, ?, ?)");
             $defaultStages = [
                 ['Draft & Registration', 'REGISTRATION', 1, 1, 'Initial registration and customer file setup'],
                 ['Document Collection & Review', 'DOC_COLLECTION', 2, 2, 'All mandatory checklist documents uploaded & verified'],

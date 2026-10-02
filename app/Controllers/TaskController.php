@@ -494,6 +494,108 @@ class TaskController
         exit;
     }
 
+    public function update(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $currentUser = auth_user();
+
+        $isSuperAdmin = ($currentUser['role_slug'] ?? '') === 'super-admin' || (int)($currentUser['role_id'] ?? 0) === 1;
+        $canEdit = $isSuperAdmin || user_can('tasks.edit') || user_can('tasks.manage');
+
+        if (!$canEdit) {
+            redirect($this->getRedirectUrl(), 'Unauthorized: You do not have permission to edit operational tasks. Only Super Admin or authorized officers may modify tasks.', 'danger');
+            return;
+        }
+
+        $taskId = (int)($_POST['task_id'] ?? 0);
+        $title = trim($_POST['task_title'] ?? '');
+        $desc = trim($_POST['description'] ?? '');
+        $taskType = trim($_POST['task_type'] ?? 'General');
+        $priority = trim($_POST['priority'] ?? 'Normal');
+        $assignedTo = !empty($_POST['assigned_to']) ? (int)$_POST['assigned_to'] : (int)$currentUser['id'];
+        $dueDate = !empty($_POST['due_date']) ? $_POST['due_date'] : date('Y-m-d', strtotime('+2 days'));
+        $status = trim($_POST['status'] ?? 'Pending');
+
+        if ($taskId <= 0 || empty($title)) {
+            redirect($this->getRedirectUrl(), 'Invalid task details or missing task title.', 'danger');
+            return;
+        }
+
+        $prevStmt = $pdo->prepare("SELECT * FROM tasks WHERE id = ?");
+        $prevStmt->execute([$taskId]);
+        $prevTask = $prevStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$prevTask) {
+            redirect($this->getRedirectUrl(), 'Task not found.', 'danger');
+            return;
+        }
+
+        $stmt = $pdo->prepare("UPDATE tasks SET 
+            task_title = ?, 
+            description = ?, 
+            task_type = ?, 
+            priority = ?, 
+            assigned_to = ?, 
+            due_date = ?, 
+            status = ?, 
+            updated_at = CURRENT_TIMESTAMP 
+            WHERE id = ?");
+        $stmt->execute([$title, $desc, $taskType, $priority, $assignedTo, $dueDate, $status, $taskId]);
+
+        // Log history
+        try {
+            $stmtHist = $pdo->prepare("INSERT INTO task_history (task_id, action, to_status, assigned_to, notes, performed_by, created_at) VALUES (?, 'EDIT', ?, ?, ?, ?, CURRENT_TIMESTAMP)");
+            $stmtHist->execute([$taskId, $status, $assignedTo, "Task #{$taskId} updated by {$currentUser['name']}", $currentUser['id']]);
+        } catch (\Throwable $eHist) {
+            error_log('[TaskController] task_history edit log error: ' . $eHist->getMessage());
+        }
+
+        AuditService::log('EDIT_TASK', 'Tasks', $taskId, "Updated task #{$taskId}: {$title}");
+        redirect($this->getRedirectUrl(), "Task #{$taskId} '{$title}' updated successfully.", 'success');
+    }
+
+    public function delete(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $currentUser = auth_user();
+
+        $isSuperAdmin = ($currentUser['role_slug'] ?? '') === 'super-admin' || (int)($currentUser['role_id'] ?? 0) === 1;
+        $canDelete = $isSuperAdmin || user_can('tasks.delete') || user_can('tasks.manage');
+
+        if (!$canDelete) {
+            redirect($this->getRedirectUrl(), 'Unauthorized: You do not have permission to delete operational tasks. Only Super Admin or authorized officers may delete tasks.', 'danger');
+            return;
+        }
+
+        $taskId = (int)($_POST['task_id'] ?? 0);
+        if ($taskId <= 0) {
+            redirect($this->getRedirectUrl(), 'Invalid task ID for deletion.', 'danger');
+            return;
+        }
+
+        $prevStmt = $pdo->prepare("SELECT id, task_title FROM tasks WHERE id = ?");
+        $prevStmt->execute([$taskId]);
+        $task = $prevStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$task) {
+            redirect($this->getRedirectUrl(), 'Task not found or already deleted.', 'danger');
+            return;
+        }
+
+        // Delete associated records safely
+        try {
+            $pdo->prepare("DELETE FROM task_comments WHERE task_id = ?")->execute([$taskId]);
+            $pdo->prepare("DELETE FROM task_history WHERE task_id = ?")->execute([$taskId]);
+        } catch (\Throwable $e) {}
+
+        $pdo->prepare("DELETE FROM tasks WHERE id = ?")->execute([$taskId]);
+
+        AuditService::log('DELETE_TASK', 'Tasks', $taskId, "Deleted task #{$taskId}: {$task['task_title']}");
+        redirect($this->getRedirectUrl(), "Task #{$taskId} '{$task['task_title']}' has been permanently deleted.", 'success');
+    }
+
     public static function ensureTaskColumns(?PDO $pdo = null): void
     {
         static $done = false;

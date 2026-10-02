@@ -326,7 +326,9 @@ function user_can(string $permissionSlug): bool {
         'documents.manage'  => ['documents.create', 'documents.edit', 'documents.*'],
         // tasks
         'tasks.view'        => ['tasks.*'],
-        'tasks.manage'      => ['tasks.create', 'tasks.edit', 'tasks.*'],
+        'tasks.manage'      => ['tasks.create', 'tasks.edit', 'tasks.delete', 'tasks.*'],
+        'tasks.edit'        => ['tasks.manage', 'tasks.*'],
+        'tasks.delete'      => ['tasks.manage', 'tasks.*'],
         // appointments
         'appointments.view'   => ['appointments.*'],
         'appointments.manage' => ['appointments.create', 'appointments.edit', 'appointments.*'],
@@ -357,14 +359,9 @@ function user_can(string $permissionSlug): bool {
             if (in_array($alias, $perms, true)) {
                 return true;
             }
-            // support wildcard aliases like 'applicants.*'
-            if (str_ends_with($alias, '.*')) {
-                $base = substr($alias, 0, -2);
-                foreach ($perms as $perm) {
-                    if ($perm === $alias || str_starts_with($perm, $base . '.')) {
-                        return true;
-                    }
-                }
+            $parts = explode('.', $alias);
+            if (count($parts) === 2 && in_array($parts[0] . '.*', $perms, true)) {
+                return true;
             }
         }
     }

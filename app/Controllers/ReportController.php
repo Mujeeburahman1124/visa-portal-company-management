@@ -16,10 +16,136 @@ class ReportController
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'visa-manager', 'accounts']);
         $pdo = Database::getConnection();
 
+        $preset = trim($_GET['preset'] ?? '');
+        $dateFrom = trim($_GET['date_from'] ?? '');
+        $dateTo = trim($_GET['date_to'] ?? '');
+
+        if ($preset === 'today') {
+            $dateFrom = date('Y-m-d');
+            $dateTo = date('Y-m-d');
+        } elseif ($preset === 'this_month') {
+            $dateFrom = date('Y-m-01');
+            $dateTo = date('Y-m-t');
+        } elseif ($preset === 'last_month') {
+            $dateFrom = date('Y-m-01', strtotime('first day of last month'));
+            $dateTo = date('Y-m-t', strtotime('last day of last month'));
+        } elseif ($preset === 'this_year') {
+            $dateFrom = date('Y-01-01');
+            $dateTo = date('Y-12-31');
+        } elseif ($preset === 'last_year') {
+            $lastY = (int)date('Y') - 1;
+            $dateFrom = "{$lastY}-01-01";
+            $dateTo = "{$lastY}-12-31";
+        } elseif ($preset === 'all_time') {
+            $dateFrom = '2020-01-01';
+            $dateTo = date('Y-m-d');
+        } else {
+            if ($dateFrom === '') $dateFrom = date('Y-01-01');
+            if ($dateTo === '') $dateTo = date('Y-m-d');
+            $preset = 'custom';
+        }
+
         $reportType = trim($_GET['type'] ?? 'status');
-        $dateFrom = trim($_GET['date_from'] ?? date('Y-01-01'));
-        $dateTo = trim($_GET['date_to'] ?? date('Y-m-d'));
+        $chartView = trim($_GET['chart_view'] ?? 'all');
         $export = trim($_GET['export'] ?? '');
+
+        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+
+        // ── Visual Analytics & Chart Datasets ────────────────────────────
+        // 1. KPI Summary for Period
+        $kpiSummary = [
+            'total_apps' => 0, 'total_revenue' => 0.0, 'total_cost' => 0.0,
+            'total_profit' => 0.0, 'total_paid' => 0.0, 'total_outstanding' => 0.0,
+            'approved_count' => 0, 'rejected_count' => 0, 'approval_rate' => 0.0
+        ];
+        try {
+            $summaryStmt = $pdo->prepare("SELECT 
+                COUNT(*) as total_apps, 
+                COALESCE(SUM(total_amount), 0) as total_revenue, 
+                COALESCE(SUM(supplier_cost), 0) as total_cost, 
+                COALESCE(SUM(gross_profit), 0) as total_profit,
+                COALESCE(SUM(paid_amount), 0) as total_paid,
+                COALESCE(SUM(balance_amount), 0) as total_outstanding,
+                SUM(CASE WHEN status IN ('Approved', 'Completed') THEN 1 ELSE 0 END) as approved_count,
+                SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) as rejected_count
+                FROM applications WHERE application_date BETWEEN ? AND ?");
+            $summaryStmt->execute([$dateFrom, $dateTo]);
+            $rawSummary = $summaryStmt->fetch(PDO::FETCH_ASSOC);
+            if ($rawSummary) {
+                $totalApps = (int)($rawSummary['total_apps'] ?? 0);
+                $approved = (int)($rawSummary['approved_count'] ?? 0);
+                $kpiSummary = [
+                    'total_apps' => $totalApps,
+                    'total_revenue' => (float)($rawSummary['total_revenue'] ?? 0),
+                    'total_cost' => (float)($rawSummary['total_cost'] ?? 0),
+                    'total_profit' => (float)($rawSummary['total_profit'] ?? 0),
+                    'total_paid' => (float)($rawSummary['total_paid'] ?? 0),
+                    'total_outstanding' => (float)($rawSummary['total_outstanding'] ?? 0),
+                    'approved_count' => $approved,
+                    'rejected_count' => (int)($rawSummary['rejected_count'] ?? 0),
+                    'approval_rate' => $totalApps > 0 ? round(($approved / $totalApps) * 100, 1) : 0.0,
+                ];
+            }
+        } catch (\Throwable $e) {}
+
+        // 2. Monthly Trend (Volume, Revenue, Profit by Month)
+        $monthExpr = ($driver === 'mysql') ? "DATE_FORMAT(application_date, '%Y-%m')" : "strftime('%Y-%m', application_date)";
+        $monthlyTrend = [];
+        try {
+            $monthStmt = $pdo->prepare("SELECT {$monthExpr} as period, COUNT(*) as app_count, 
+                COALESCE(SUM(total_amount), 0) as revenue, 
+                COALESCE(SUM(gross_profit), 0) as profit,
+                SUM(CASE WHEN status IN ('Approved', 'Completed') THEN 1 ELSE 0 END) as approved_count
+                FROM applications WHERE application_date BETWEEN ? AND ? 
+                GROUP BY period ORDER BY period ASC");
+            $monthStmt->execute([$dateFrom, $dateTo]);
+            $monthlyTrend = $monthStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {}
+
+        // 3. Yearly Trend (Multi-Year Comparison)
+        $yearExpr = ($driver === 'mysql') ? "YEAR(application_date)" : "strftime('%Y', application_date)";
+        $yearlyTrend = [];
+        try {
+            $yearStmt = $pdo->query("SELECT {$yearExpr} as period, COUNT(*) as app_count, 
+                COALESCE(SUM(total_amount), 0) as revenue, 
+                COALESCE(SUM(gross_profit), 0) as profit 
+                FROM applications WHERE application_date IS NOT NULL 
+                GROUP BY period ORDER BY period ASC");
+            $yearlyTrend = $yearStmt ? ($yearStmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+        } catch (\Throwable $e) {}
+
+        // 4. Status Distribution (Pie / Doughnut)
+        $statusDist = [];
+        try {
+            $stDistStmt = $pdo->prepare("SELECT status, COUNT(*) as count, COALESCE(SUM(total_amount), 0) as revenue 
+                FROM applications WHERE application_date BETWEEN ? AND ? 
+                GROUP BY status ORDER BY count DESC");
+            $stDistStmt->execute([$dateFrom, $dateTo]);
+            $statusDist = $stDistStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {}
+
+        // 5. Stage Distribution (Pie / Doughnut)
+        $stageDist = [];
+        try {
+            $stgDistStmt = $pdo->prepare("SELECT current_stage as stage, COUNT(*) as count 
+                FROM applications WHERE application_date BETWEEN ? AND ? 
+                GROUP BY stage ORDER BY count DESC");
+            $stgDistStmt->execute([$dateFrom, $dateTo]);
+            $stageDist = $stgDistStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {}
+
+        // 6. Country & Visa Service Distribution (Horizontal Bar / Polar)
+        $countryDist = [];
+        try {
+            $ctDistStmt = $pdo->prepare("SELECT ct.name as country_name, COUNT(a.id) as count, COALESCE(SUM(a.total_amount), 0) as revenue 
+                FROM applications a 
+                JOIN visa_services vs ON a.visa_service_id = vs.id 
+                JOIN countries ct ON vs.country_id = ct.id 
+                WHERE a.application_date BETWEEN ? AND ? 
+                GROUP BY ct.id ORDER BY count DESC LIMIT 8");
+            $ctDistStmt->execute([$dateFrom, $dateTo]);
+            $countryDist = $ctDistStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {}
 
         $data = [];
         $columns = [];

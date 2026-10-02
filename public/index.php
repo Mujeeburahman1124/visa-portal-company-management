@@ -627,6 +627,16 @@ switch ($uri) {
         (new App\Controllers\TaskController())->store();
         break;
 
+    case '/tasks/update':
+        require_permission('tasks.edit');
+        (new App\Controllers\TaskController())->update();
+        break;
+
+    case '/tasks/delete':
+        require_permission('tasks.delete');
+        (new App\Controllers\TaskController())->delete();
+        break;
+
     case '/tasks/status':
         require_permission('tasks.view');
         (new App\Controllers\TaskController())->updateStatus();
