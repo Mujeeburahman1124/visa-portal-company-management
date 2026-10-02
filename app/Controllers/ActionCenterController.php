@@ -14,6 +14,7 @@ class ActionCenterController
     {
         AuthMiddleware::handle();
         $pdo = Database::getConnection();
+        self::ensureStaffRequestColumns($pdo);
         $user = auth_user();
         $userId = (int)$user['id'];
         $userRole = strtolower($user['role_slug'] ?? $user['role_name'] ?? 'staff');
@@ -271,6 +272,7 @@ class ActionCenterController
     {
         AuthMiddleware::handle();
         $pdo = Database::getConnection();
+        self::ensureStaffRequestColumns($pdo);
         $user = auth_user();
 
         $reqType = trim($_POST['request_type'] ?? 'Assistance');
@@ -282,10 +284,30 @@ class ActionCenterController
             redirect('/action-center?tab=requests', 'Please provide a request title.', 'danger');
         }
 
-        $stmt = $pdo->prepare("INSERT INTO staff_requests (
-            user_id, request_type, title, description, priority, status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, 'Pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
-        $stmt->execute([$user['id'], $reqType, $title, $desc, $priority]);
+        try {
+            $stmt = $pdo->prepare("INSERT INTO staff_requests (
+                user_id, request_type, title, description, priority, status, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, 'Pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
+            $stmt->execute([$user['id'], $reqType, $title, $desc, $priority]);
+        } catch (\PDOException $pe) {
+            if (str_contains($pe->getMessage(), 'title') || str_contains($pe->getMessage(), 'description')) {
+                try {
+                    $pdo->exec("ALTER TABLE staff_requests ADD COLUMN title VARCHAR(255) NULL");
+                    $pdo->exec("ALTER TABLE staff_requests ADD COLUMN description TEXT NULL");
+                    $stmt = $pdo->prepare("INSERT INTO staff_requests (
+                        user_id, request_type, title, description, priority, status, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, 'Pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
+                    $stmt->execute([$user['id'], $reqType, $title, $desc, $priority]);
+                } catch (\Throwable $eRetry) {
+                    $stmt = $pdo->prepare("INSERT INTO staff_requests (
+                        user_id, request_type, comments, priority, status, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, 'Pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
+                    $stmt->execute([$user['id'], $reqType, "{$title}: {$desc}", $priority]);
+                }
+            } else {
+                throw $pe;
+            }
+        }
         $reqId = (int)$pdo->lastInsertId();
 
         AuditService::log('CREATE_REQUEST', 'StaffRequest', $reqId, "Staff {$user['name']} submitted request: {$title}");
@@ -297,6 +319,7 @@ class ActionCenterController
     {
         AuthMiddleware::handle();
         $pdo = Database::getConnection();
+        self::ensureStaffRequestColumns($pdo);
         $user = auth_user();
 
         $id = (int)($_POST['id'] ?? 0);
@@ -311,15 +334,44 @@ class ActionCenterController
         }
 
         if ($id > 0) {
-            $stmt = $pdo->prepare("UPDATE staff_requests SET 
-                status = ?, resolution_notes = ?, resolved_by = ?, resolved_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP 
-                WHERE id = ?");
-            $stmt->execute([$status, $notes, $user['id'], $id]);
+            try {
+                $stmt = $pdo->prepare("UPDATE staff_requests SET 
+                    status = ?, resolution_notes = ?, resolved_by = ?, resolved_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP 
+                    WHERE id = ?");
+                $stmt->execute([$status, $notes, $user['id'], $id]);
+            } catch (\PDOException $pe) {
+                // Fallback for legacy comments column
+                $stmt = $pdo->prepare("UPDATE staff_requests SET 
+                    status = ?, comments = ?, updated_at = CURRENT_TIMESTAMP 
+                    WHERE id = ?");
+                $stmt->execute([$status, $notes, $id]);
+            }
 
             AuditService::log('UPDATE_REQUEST', 'StaffRequest', $id, "Staff request #{$id} updated to {$status}");
             redirect('/action-center?tab=requests', "Request updated to {$status}.", 'success');
         }
 
         redirect('/action-center?tab=requests', 'Invalid request ID.', 'danger');
+    }
+
+    public static function ensureStaffRequestColumns(?PDO $pdo = null): void
+    {
+        static $done = false;
+        if ($done) return;
+        $done = true;
+
+        $pdo = $pdo ?: Database::getConnection();
+        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $cols = [
+            'title'            => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+            'description'      => 'TEXT NULL',
+            'resolution_notes' => 'TEXT NULL',
+            'resolved_by'      => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'resolved_at'      => ($driver === 'mysql') ? 'DATETIME NULL' : 'TEXT NULL',
+            'comments'         => 'TEXT NULL',
+        ];
+        foreach ($cols as $col => $def) {
+            try { $pdo->exec("ALTER TABLE staff_requests ADD COLUMN {$col} {$def}"); } catch (\Throwable $e) {}
+        }
     }
 }

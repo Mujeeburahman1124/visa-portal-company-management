@@ -1456,316 +1456,310 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
 <!-- 1. Stage Transition Modal -->
 <div class="modal fade" id="stageTransitionModal" tabindex="-1" aria-labelledby="stageTransitionModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-primary text-white">
+    <form action="/applications/update-stage" method="POST" id="stageTransitionForm" class="modal-content border-0 shadow" style="max-height: 90vh;">
+      <?= csrf_field() ?>
+      <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
+
+      <div class="modal-header bg-primary text-white flex-shrink-0">
         <h5 class="modal-title fw-bold fs-6" id="stageTransitionModalLabel"><i class="fa-solid fa-forward-step me-2"></i> Advance Visa Lifecycle Stage</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="/applications/update-stage" method="POST" id="stageTransitionForm">
-        <?= csrf_field() ?>
-        <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
 
-        <div class="modal-body p-4">
-          <div class="alert alert-info py-2 small mb-3">
-            Current Stage: <strong><?= e($app['current_stage']) ?></strong> (<?= e($app['status']) ?>)
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-secondary">Select Target Stage <span class="text-danger">*</span></label>
-            <select name="new_stage" id="newStageSelect" class="form-select" required>
-              <?php foreach ($lifecycleStages as $ls): ?>
-                <option value="<?= e($ls) ?>" <?= $ls === $app['current_stage'] ? 'selected' : '' ?>>
-                  <?= e($ls) ?>
-                </option>
-              <?php endforeach; ?>
-              <option value="Returned / Modification Required">Returned / Modification Required</option>
-              <option value="Medical / Biometrics Processing">Medical / Biometrics Processing</option>
-              <option value="Visa Issued & Completed">Visa Issued & Completed</option>
-            </select>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-secondary">Application Status</label>
-            <select name="new_status" id="newStatusSelect" class="form-select">
-              <option value="In Process" <?= $app['status'] === 'In Process' ? 'selected' : '' ?>>In Process</option>
-              <option value="Documents Under Verification" <?= $app['status'] === 'Documents Under Verification' ? 'selected' : '' ?>>Documents Under Verification</option>
-              <option value="Submitted" <?= $app['status'] === 'Submitted' ? 'selected' : '' ?>>Submitted</option>
-              <option value="Action Required" <?= $app['status'] === 'Action Required' ? 'selected' : '' ?>>Action Required</option>
-              <option value="Approved" <?= $app['status'] === 'Approved' ? 'selected' : '' ?>>Approved</option>
-            </select>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-secondary">Next Action to Schedule</label>
-            <input type="text" name="next_action" class="form-control form-control-sm" placeholder="e.g. Schedule biometrics appointment at VFS">
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-secondary">Next Action Due Date</label>
-            <input type="date" name="next_action_due_date" class="form-control form-control-sm" value="<?= date('Y-m-d', strtotime('+3 days')) ?>">
-          </div>
-
-          <div class="mb-0">
-            <label class="form-label small fw-semibold text-secondary">Stage Transition Notes</label>
-            <textarea name="comments" class="form-control" rows="2" placeholder="Optional notes for stage history log..."></textarea>
-          </div>
+      <div class="modal-body p-4" style="overflow-y: auto;">
+        <div class="alert alert-info py-2 small mb-3">
+          Current Stage: <strong><?= e($app['current_stage']) ?></strong> (<?= e($app['status']) ?>)
         </div>
 
-        <div class="modal-footer bg-light border-top">
-          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" id="confirmStageUpdateBtn" class="btn btn-primary fw-semibold"><i class="fa-solid fa-check me-1"></i> Confirm Stage Update</button>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-secondary">Select Target Stage <span class="text-danger">*</span></label>
+          <select name="new_stage" id="newStageSelect" class="form-select" required>
+            <?php foreach ($lifecycleStages as $ls): ?>
+              <option value="<?= e($ls) ?>" <?= $ls === $app['current_stage'] ? 'selected' : '' ?>>
+                <?= e($ls) ?>
+              </option>
+            <?php endforeach; ?>
+            <option value="Returned / Modification Required">Returned / Modification Required</option>
+            <option value="Medical / Biometrics Processing">Medical / Biometrics Processing</option>
+            <option value="Visa Issued & Completed">Visa Issued & Completed</option>
+          </select>
         </div>
-      </form>
-    </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-secondary">Application Status</label>
+          <select name="new_status" id="newStatusSelect" class="form-select">
+            <option value="In Process" <?= $app['status'] === 'In Process' ? 'selected' : '' ?>>In Process</option>
+            <option value="Documents Under Verification" <?= $app['status'] === 'Documents Under Verification' ? 'selected' : '' ?>>Documents Under Verification</option>
+            <option value="Submitted" <?= $app['status'] === 'Submitted' ? 'selected' : '' ?>>Submitted</option>
+            <option value="Action Required" <?= $app['status'] === 'Action Required' ? 'selected' : '' ?>>Action Required</option>
+            <option value="Approved" <?= $app['status'] === 'Approved' ? 'selected' : '' ?>>Approved</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-secondary">Next Action to Schedule</label>
+          <input type="text" name="next_action" class="form-control form-control-sm" placeholder="e.g. Schedule biometrics appointment at VFS">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-secondary">Next Action Due Date</label>
+          <input type="date" name="next_action_due_date" class="form-control form-control-sm" value="<?= date('Y-m-d', strtotime('+3 days')) ?>">
+        </div>
+
+        <div class="mb-0">
+          <label class="form-label small fw-semibold text-secondary">Stage Transition Notes</label>
+          <textarea name="comments" class="form-control" rows="2" placeholder="Optional notes for stage history log..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer bg-light border-top flex-shrink-0">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" id="confirmStageUpdateBtn" class="btn btn-primary fw-semibold"><i class="fa-solid fa-check me-1"></i> Confirm Stage Update</button>
+      </div>
+    </form>
   </div>
 </div>
 
 <!-- 2. Approve Visa Modal -->
 <div class="modal fade" id="approveVisaModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-success text-white">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <form action="/applications/decision/approve" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow" style="max-height: 90vh;">
+      <?= csrf_field() ?>
+      <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
+
+      <div class="modal-header bg-success text-white flex-shrink-0">
         <h5 class="modal-title fw-bold fs-6"><i class="fa-solid fa-circle-check me-2"></i>Official Visa Grant &amp; Approval</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <form action="/applications/decision/approve" method="POST" enctype="multipart/form-data">
-        <?= csrf_field() ?>
-        <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
 
-        <div class="modal-body p-4">
-          <div class="alert alert-success py-2 small mb-3">
-            <i class="fa-solid fa-info-circle me-1"></i> Granting this visa will update status to <strong>Approved</strong> and enable visa download on the customer portal.
+      <div class="modal-body p-4" style="overflow-y: auto;">
+        <div class="alert alert-success py-2 small mb-3">
+          <i class="fa-solid fa-info-circle me-1"></i> Granting this visa will update status to <strong>Approved</strong> and enable visa download on the customer portal.
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold">Visa / Sticker / eVisa Number <span class="text-danger">*</span></label>
+            <input type="text" name="visa_number" class="form-control fw-bold text-success" placeholder="e.g. 2026/V/098762" required>
           </div>
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label small fw-semibold">Visa / Sticker / eVisa Number <span class="text-danger">*</span></label>
-              <input type="text" name="visa_number" class="form-control fw-bold text-success" placeholder="e.g. 2026/V/098762" required>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label small fw-semibold">Issue Date <span class="text-danger">*</span></label>
-              <input type="date" name="issue_date" class="form-control" value="<?= date('Y-m-d') ?>" required>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label small fw-semibold">Expiry Date <span class="text-danger">*</span></label>
-              <input type="date" name="expiry_date" class="form-control" value="<?= date('Y-m-d', strtotime('+60 days')) ?>" required>
-            </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Issue Date <span class="text-danger">*</span></label>
+            <input type="date" name="issue_date" class="form-control" value="<?= date('Y-m-d') ?>" required>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Expiry Date <span class="text-danger">*</span></label>
+            <input type="date" name="expiry_date" class="form-control" value="<?= date('Y-m-d', strtotime('+60 days')) ?>" required>
+          </div>
 
-            <div class="col-md-4">
-              <label class="form-label small fw-semibold">Entry Before Date (Optional)</label>
-              <input type="date" name="entry_before_date" class="form-control">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label small fw-semibold">Maximum Stay</label>
-              <input type="text" name="maximum_stay" class="form-control" value="30 Days" placeholder="e.g. 30 Days">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label small fw-semibold">Visa Validity</label>
-              <input type="text" name="validity" class="form-control" value="60 Days" placeholder="e.g. 60 Days from issue">
-            </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Entry Before Date (Optional)</label>
+            <input type="date" name="entry_before_date" class="form-control">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Maximum Stay</label>
+            <input type="text" name="maximum_stay" class="form-control" value="30 Days" placeholder="e.g. 30 Days">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Visa Validity</label>
+            <input type="text" name="validity" class="form-control" value="60 Days" placeholder="e.g. 60 Days from issue">
+          </div>
 
-            <div class="col-12">
-              <label class="form-label small fw-semibold">Upload Approved Visa Document (PDF, JPG, PNG)</label>
-              <input type="file" name="visa_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
-            </div>
+          <div class="col-12">
+            <label class="form-label small fw-semibold">Upload Approved Visa Document (PDF, JPG, PNG)</label>
+            <input type="file" name="visa_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+          </div>
 
-            <div class="col-12">
-              <label class="form-label small fw-semibold">Approval Notes &amp; Traveler Guidelines</label>
-              <textarea name="approval_notes" class="form-control" rows="2" placeholder="e.g. Valid for single entry tourism. Must carry return ticket."></textarea>
-            </div>
+          <div class="col-12">
+            <label class="form-label small fw-semibold">Approval Notes &amp; Traveler Guidelines</label>
+            <textarea name="approval_notes" class="form-control" rows="2" placeholder="e.g. Valid for single entry tourism. Must carry return ticket."></textarea>
           </div>
         </div>
+      </div>
 
-        <div class="modal-footer bg-light border-top">
-          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success fw-semibold"><i class="fa-solid fa-circle-check me-1"></i>Issue Official Approval</button>
-        </div>
-      </form>
-    </div>
+      <div class="modal-footer bg-light border-top flex-shrink-0">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-success fw-semibold"><i class="fa-solid fa-circle-check me-1"></i>Issue Official Approval</button>
+      </div>
+    </form>
   </div>
 </div>
 
 <!-- 2B. Reject Application Modal -->
 <div class="modal fade" id="rejectVisaModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-danger text-white">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <form action="/applications/decision/reject" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow" style="max-height: 90vh;">
+      <?= csrf_field() ?>
+      <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
+
+      <div class="modal-header bg-danger text-white flex-shrink-0">
         <h5 class="modal-title fw-bold fs-6"><i class="fa-solid fa-circle-xmark me-2"></i>Record Visa Rejection</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <form action="/applications/decision/reject" method="POST" enctype="multipart/form-data">
-        <?= csrf_field() ?>
-        <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
 
-        <div class="modal-body p-4">
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Rejection Date <span class="text-danger">*</span></label>
-            <input type="date" name="rejection_date" class="form-control" value="<?= date('Y-m-d') ?>" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Customer-Facing Reason <span class="text-danger">*</span></label>
-            <textarea name="customer_reason" class="form-control" rows="3" required placeholder="Visible to client: Official refusal reason provided by consular authority..."></textarea>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Confidential Internal Notes</label>
-            <textarea name="internal_reason" class="form-control" rows="2" placeholder="Private internal notes (NEVER visible to client)..."></textarea>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Reapplication Eligibility</label>
-            <select name="reapplication_eligibility" class="form-select">
-              <option value="Eligible to Reapply Immediately">Eligible to Reapply Immediately</option>
-              <option value="Eligible after 30 Days">Eligible after 30 Days</option>
-              <option value="Eligible after 6 Months">Eligible after 6 Months</option>
-              <option value="Not Eligible / Permanent Inadmissibility">Not Eligible / Permanent Inadmissibility</option>
-            </select>
-          </div>
-          <div class="mb-0">
-            <label class="form-label small fw-semibold">Attach Consular Rejection Letter (Optional)</label>
-            <input type="file" name="rejection_file" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png">
-          </div>
+      <div class="modal-body p-4" style="overflow-y: auto;">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Rejection Date <span class="text-danger">*</span></label>
+          <input type="date" name="rejection_date" class="form-control" value="<?= date('Y-m-d') ?>" required>
         </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Customer-Facing Reason <span class="text-danger">*</span></label>
+          <textarea name="customer_reason" class="form-control" rows="3" required placeholder="Visible to client: Official refusal reason provided by consular authority..."></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Confidential Internal Notes</label>
+          <textarea name="internal_reason" class="form-control" rows="2" placeholder="Private internal notes (NEVER visible to client)..."></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Reapplication Eligibility</label>
+          <select name="reapplication_eligibility" class="form-select">
+            <option value="Eligible to Reapply Immediately">Eligible to Reapply Immediately</option>
+            <option value="Eligible after 30 Days">Eligible after 30 Days</option>
+            <option value="Eligible after 6 Months">Eligible after 6 Months</option>
+            <option value="Not Eligible / Permanent Inadmissibility">Not Eligible / Permanent Inadmissibility</option>
+          </select>
+        </div>
+        <div class="mb-0">
+          <label class="form-label small fw-semibold">Attach Consular Rejection Letter (Optional)</label>
+          <input type="file" name="rejection_file" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png">
+        </div>
+      </div>
 
-        <div class="modal-footer bg-light border-top">
-          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-danger fw-semibold"><i class="fa-solid fa-ban me-1"></i>Confirm Rejection</button>
-        </div>
-      </form>
-    </div>
+      <div class="modal-footer bg-light border-top flex-shrink-0">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-danger fw-semibold"><i class="fa-solid fa-ban me-1"></i>Confirm Rejection</button>
+      </div>
+    </form>
   </div>
 </div>
 
 <!-- 2C. Return for Modification Modal -->
 <div class="modal fade" id="returnVisaModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-warning bg-opacity-10 border-bottom">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <form action="/applications/decision/return" method="POST" class="modal-content border-0 shadow" style="max-height: 90vh;">
+      <?= csrf_field() ?>
+      <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
+
+      <div class="modal-header bg-warning bg-opacity-10 border-bottom flex-shrink-0">
         <h5 class="modal-title fw-bold fs-6 text-dark"><i class="fa-solid fa-rotate-left text-warning me-2"></i>Return for Applicant Modification</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <form action="/applications/decision/return" method="POST">
-        <?= csrf_field() ?>
-        <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
 
-        <div class="modal-body p-4">
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Reason for Return <span class="text-danger">*</span></label>
-            <input type="text" name="return_reason" class="form-control" placeholder="e.g. Passport scan blurry or missing employment NOC" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Detailed Required Corrections</label>
-            <textarea name="required_changes" class="form-control" rows="3" placeholder="Instruct the client on exactly what needs to be changed or resubmitted..."></textarea>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Resubmission Deadline</label>
-            <input type="date" name="deadline" class="form-control" value="<?= date('Y-m-d', strtotime('+7 days')) ?>" required>
-          </div>
-          <div class="mb-0">
-            <label class="form-label small fw-semibold">Staff Comment</label>
-            <textarea name="staff_comment" class="form-control" rows="2" placeholder="Internal workflow comment..."></textarea>
-          </div>
+      <div class="modal-body p-4" style="overflow-y: auto;">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Reason for Return <span class="text-danger">*</span></label>
+          <input type="text" name="return_reason" class="form-control" placeholder="e.g. Passport scan blurry or missing employment NOC" required>
         </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Detailed Required Corrections</label>
+          <textarea name="required_changes" class="form-control" rows="3" placeholder="Instruct the client on exactly what needs to be changed or resubmitted..."></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Resubmission Deadline</label>
+          <input type="date" name="deadline" class="form-control" value="<?= date('Y-m-d', strtotime('+7 days')) ?>" required>
+        </div>
+        <div class="mb-0">
+          <label class="form-label small fw-semibold">Staff Comment</label>
+          <textarea name="staff_comment" class="form-control" rows="2" placeholder="Internal workflow comment..."></textarea>
+        </div>
+      </div>
 
-        <div class="modal-footer bg-light border-top">
-          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-warning fw-semibold"><i class="fa-solid fa-rotate-left me-1"></i>Issue Return Notice</button>
-        </div>
-      </form>
-    </div>
+      <div class="modal-footer bg-light border-top flex-shrink-0">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-warning fw-semibold"><i class="fa-solid fa-rotate-left me-1"></i>Issue Return Notice</button>
+      </div>
+    </form>
   </div>
 </div>
 
 <!-- 2D. Request Additional Document Modal -->
 <div class="modal fade" id="requestDocModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-primary text-white">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <form action="/applications/document-request" method="POST" class="modal-content border-0 shadow" style="max-height: 90vh;">
+      <?= csrf_field() ?>
+      <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
+
+      <div class="modal-header bg-primary text-white flex-shrink-0">
         <h5 class="modal-title fw-bold fs-6"><i class="fa-solid fa-file-circle-question me-2"></i>Request Document from Applicant</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <form action="/applications/document-request" method="POST">
-        <?= csrf_field() ?>
-        <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
 
-        <div class="modal-body p-4">
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Select Document Requirement <span class="text-danger">*</span></label>
-            <select name="document_type_id" class="form-select" required>
-              <?php foreach ($documentChecklist as $dc): ?>
-                <option value="<?= $dc['document_type_id'] ?? ($dc['id'] ?? 0) ?>"><?= e($dc['document_name'] ?? ($dc['type_name'] ?? ($dc['name'] ?? 'Document Requirement'))) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Due Date <span class="text-danger">*</span></label>
-            <input type="date" name="due_date" class="form-control" value="<?= date('Y-m-d', strtotime('+5 days')) ?>" required>
-          </div>
-          <div class="mb-0">
-            <label class="form-label small fw-semibold">Special Instructions for Client</label>
-            <textarea name="notes" class="form-control" rows="3" placeholder="Specify format, resolution or notary requirements..."></textarea>
-          </div>
+      <div class="modal-body p-4" style="overflow-y: auto;">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Select Document Requirement <span class="text-danger">*</span></label>
+          <select name="document_type_id" class="form-select" required>
+            <?php foreach ($documentChecklist as $dc): ?>
+              <option value="<?= $dc['document_type_id'] ?? ($dc['id'] ?? 0) ?>"><?= e($dc['document_name'] ?? ($dc['type_name'] ?? ($dc['name'] ?? 'Document Requirement'))) ?></option>
+            <?php endforeach; ?>
+          </select>
         </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Due Date <span class="text-danger">*</span></label>
+          <input type="date" name="due_date" class="form-control" value="<?= date('Y-m-d', strtotime('+5 days')) ?>" required>
+        </div>
+        <div class="mb-0">
+          <label class="form-label small fw-semibold">Special Instructions for Client</label>
+          <textarea name="notes" class="form-control" rows="3" placeholder="Specify format, resolution or notary requirements..."></textarea>
+        </div>
+      </div>
 
-        <div class="modal-footer bg-light border-top">
-          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-paper-plane me-1"></i>Dispatch Request</button>
-        </div>
-      </form>
-    </div>
+      <div class="modal-footer bg-light border-top flex-shrink-0">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-paper-plane me-1"></i>Dispatch Request</button>
+      </div>
+    </form>
   </div>
 </div>
 
 <!-- 2E. Log Client Communication Modal -->
 <div class="modal fade" id="addCommModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-info text-dark">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <form action="/applications/communication" method="POST" class="modal-content border-0 shadow" style="max-height: 90vh;">
+      <?= csrf_field() ?>
+      <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
+
+      <div class="modal-header bg-info text-dark flex-shrink-0">
         <h5 class="modal-title fw-bold fs-6"><i class="fa-solid fa-phone me-2"></i>Log Communication with Client</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <form action="/applications/communication" method="POST">
-        <?= csrf_field() ?>
-        <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
 
-        <div class="modal-body p-4">
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Channel</label>
-              <select name="channel" class="form-select">
-                <option value="Phone Call">Phone Call</option>
-                <option value="WhatsApp">WhatsApp</option>
-                <option value="Email">Email</option>
-                <option value="SMS">SMS</option>
-                <option value="Office Visit">Office Visit</option>
-                <option value="Consular Follow-up">Consular Follow-up</option>
-              </select>
-            </div>
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Direction</label>
-              <select name="direction" class="form-select">
-                <option value="Outbound">Outbound (We called/messaged)</option>
-                <option value="Inbound">Inbound (Client contacted us)</option>
-              </select>
-            </div>
+      <div class="modal-body p-4" style="overflow-y: auto;">
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="form-label small fw-semibold">Channel</label>
+            <select name="channel" class="form-select">
+              <option value="Phone Call">Phone Call</option>
+              <option value="WhatsApp">WhatsApp</option>
+              <option value="Email">Email</option>
+              <option value="SMS">SMS</option>
+              <option value="Office Visit">Office Visit</option>
+              <option value="Consular Follow-up">Consular Follow-up</option>
+            </select>
           </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Subject / Topic</label>
-            <input type="text" name="subject" class="form-control" placeholder="e.g. Document clarification / Payment reminder">
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Contact Person</label>
-            <input type="text" name="contact_person" class="form-control" value="<?= e($app['customer_name']) ?>" placeholder="Name of person spoken to">
-          </div>
-          <div class="mb-0">
-            <label class="form-label small fw-semibold">Summary of Discussion <span class="text-danger">*</span></label>
-            <textarea name="message" class="form-control" rows="3" required placeholder="Details of conversation and agreed next steps..."></textarea>
+          <div class="col-6">
+            <label class="form-label small fw-semibold">Direction</label>
+            <select name="direction" class="form-select">
+              <option value="Outbound">Outbound (We called/messaged)</option>
+              <option value="Inbound">Inbound (Client contacted us)</option>
+            </select>
           </div>
         </div>
-
-        <div class="modal-footer bg-light border-top">
-          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-info fw-semibold"><i class="fa-solid fa-save me-1"></i>Save Communication</button>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Subject / Topic</label>
+          <input type="text" name="subject" class="form-control" placeholder="e.g. Document clarification / Payment reminder">
         </div>
-      </form>
-    </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Contact Person</label>
+          <input type="text" name="contact_person" class="form-control" value="<?= e($app['customer_name']) ?>" placeholder="Name of person spoken to">
+        </div>
+        <div class="mb-0">
+          <label class="form-label small fw-semibold">Summary of Discussion <span class="text-danger">*</span></label>
+          <textarea name="message" class="form-control" rows="3" required placeholder="Details of conversation and agreed next steps..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer bg-light border-top flex-shrink-0">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-info fw-semibold"><i class="fa-solid fa-save me-1"></i>Save Communication</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -1998,143 +1992,139 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
 
 <!-- 8. Application Document Upload Modal -->
 <div class="modal fade" id="appDocUploadModal" tabindex="-1" aria-labelledby="appDocUploadModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-primary text-white">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <form action="/documents/upload" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow" style="max-height: 90vh;">
+      <?= csrf_field() ?>
+      <input type="hidden" name="application_id" id="appDocAppId" value="<?= $app['id'] ?>">
+      <input type="hidden" name="document_type_id" id="appDocTypeId" value="">
+
+      <div class="modal-header bg-primary text-white flex-shrink-0">
         <h5 class="modal-title fw-bold fs-6" id="appDocUploadModalLabel"><i class="fa-solid fa-cloud-arrow-up me-2"></i> Upload Document</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="/documents/upload" method="POST" enctype="multipart/form-data">
-        <?= csrf_field() ?>
-        <input type="hidden" name="application_id" id="appDocAppId" value="<?= $app['id'] ?>">
-        <input type="hidden" name="document_type_id" id="appDocTypeId" value="">
 
-        <div class="modal-body p-4">
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-secondary">Document Requirement</label>
-            <input type="text" id="appDocTypeNameDisplay" class="form-control bg-light" readonly>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-secondary">Select File (PDF, JPG, PNG, DOCX) <span class="text-danger">*</span></label>
-            <input type="file" name="document_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-secondary">Document Expiry Date <small class="text-muted">(Optional)</small></label>
-            <input type="date" name="expiry_date" class="form-control form-control-sm">
-          </div>
-
-          <div class="mb-0">
-            <label class="form-label small fw-semibold text-secondary">Operational Remarks</label>
-            <textarea name="notes" class="form-control" rows="2" placeholder="Optional notes..."></textarea>
-          </div>
+      <div class="modal-body p-4" style="overflow-y: auto;">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-secondary">Document Requirement</label>
+          <input type="text" id="appDocTypeNameDisplay" class="form-control bg-light" readonly>
         </div>
 
-        <div class="modal-footer bg-light border-top">
-          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-cloud-arrow-up me-1"></i> Upload File</button>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-secondary">Select File (PDF, JPG, PNG, DOCX) <span class="text-danger">*</span></label>
+          <input type="file" name="document_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
         </div>
-      </form>
-    </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-secondary">Document Expiry Date <small class="text-muted">(Optional)</small></label>
+          <input type="date" name="expiry_date" class="form-control form-control-sm">
+        </div>
+
+        <div class="mb-0">
+          <label class="form-label small fw-semibold text-secondary">Operational Remarks</label>
+          <textarea name="notes" class="form-control" rows="2" placeholder="Optional notes..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer bg-light border-top flex-shrink-0">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-cloud-arrow-up me-1"></i> Upload File</button>
+      </div>
+    </form>
   </div>
 </div>
 
 <!-- 9. Application Document Reject Modal -->
 <div class="modal fade" id="appDocRejectModal" tabindex="-1" aria-labelledby="appDocRejectModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-danger text-white">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <form action="/documents/reject" method="POST" class="modal-content border-0 shadow" style="max-height: 90vh;">
+      <?= csrf_field() ?>
+      <input type="hidden" name="document_id" id="appDocRejectDocId" value="">
+
+      <div class="modal-header bg-danger text-white flex-shrink-0">
         <h5 class="modal-title fw-bold fs-6" id="appDocRejectModalLabel"><i class="fa-solid fa-circle-xmark me-2"></i> Reject Document &amp; Request Replacement</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="/documents/reject" method="POST">
-        <?= csrf_field() ?>
-        <input type="hidden" name="document_id" id="appDocRejectDocId" value="">
 
-        <div class="modal-body p-4">
-          <div class="alert alert-warning py-2 small mb-3">
-            Rejecting <strong id="appDocRejectDocName">this document</strong> will set this application to <strong>Action Required</strong>.
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-secondary">Rejection Reason <span class="text-danger">*</span></label>
-            <textarea name="rejection_reason" class="form-control" rows="3" required placeholder="Mandatory rejection reason (e.g. Scanned image is truncated or blurry)..."></textarea>
-          </div>
+      <div class="modal-body p-4" style="overflow-y: auto;">
+        <div class="alert alert-warning py-2 small mb-3">
+          Rejecting <strong id="appDocRejectDocName">this document</strong> will set this application to <strong>Action Required</strong>.
         </div>
 
-        <div class="modal-footer bg-light border-top">
-          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-danger fw-semibold"><i class="fa-solid fa-ban me-1"></i> Confirm Rejection</button>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-secondary">Rejection Reason <span class="text-danger">*</span></label>
+          <textarea name="rejection_reason" class="form-control" rows="3" required placeholder="Mandatory rejection reason (e.g. Scanned image is truncated or blurry)..."></textarea>
         </div>
-      </form>
-    </div>
+      </div>
+
+      <div class="modal-footer bg-light border-top flex-shrink-0">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-danger fw-semibold"><i class="fa-solid fa-ban me-1"></i> Confirm Rejection</button>
+      </div>
+    </form>
   </div>
 </div>
 
 <!-- 10. Application Document Replace Modal -->
 <div class="modal fade" id="appDocReplaceModal" tabindex="-1" aria-labelledby="appDocReplaceModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-primary text-white">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <form action="/documents/replace" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow" style="max-height: 90vh;">
+      <?= csrf_field() ?>
+      <input type="hidden" name="document_id" id="appDocReplaceDocId" value="">
+
+      <div class="modal-header bg-primary text-white flex-shrink-0">
         <h5 class="modal-title fw-bold fs-6" id="appDocReplaceModalLabel"><i class="fa-solid fa-cloud-arrow-up me-2"></i> Upload Replacement</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="/documents/replace" method="POST" enctype="multipart/form-data">
-        <?= csrf_field() ?>
-        <input type="hidden" name="document_id" id="appDocReplaceDocId" value="">
 
-        <div class="modal-body p-4">
-          <p class="small text-muted mb-3">Uploading a new version for <strong id="appDocReplaceDocName">this document</strong> will preserve the rejected file in version history.</p>
+      <div class="modal-body p-4" style="overflow-y: auto;">
+        <p class="small text-muted mb-3">Uploading a new version for <strong id="appDocReplaceDocName">this document</strong> will preserve the rejected file in version history.</p>
 
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-secondary">Select New File (PDF, JPG, PNG) <span class="text-danger">*</span></label>
-            <input type="file" name="document_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label small fw-semibold text-secondary">Expiry Date <small class="text-muted">(If applicable)</small></label>
-            <input type="date" name="expiry_date" class="form-control form-control-sm">
-          </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-secondary">Select New File (PDF, JPG, PNG) <span class="text-danger">*</span></label>
+          <input type="file" name="document_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
         </div>
 
-        <div class="modal-footer bg-light border-top">
-          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-cloud-arrow-up me-1"></i> Upload Replacement</button>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold text-secondary">Expiry Date <small class="text-muted">(If applicable)</small></label>
+          <input type="date" name="expiry_date" class="form-control form-control-sm">
         </div>
-      </form>
-    </div>
+      </div>
+
+      <div class="modal-footer bg-light border-top flex-shrink-0">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary fw-semibold"><i class="fa-solid fa-cloud-arrow-up me-1"></i> Upload Replacement</button>
+      </div>
+    </form>
   </div>
 </div>
 
 <!-- 11. Application Document Delete Modal -->
 <div class="modal fade" id="appDocDeleteModal" tabindex="-1" aria-labelledby="appDocDeleteModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-danger text-white">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <form action="/documents/delete" method="POST" class="modal-content border-0 shadow" style="max-height: 90vh;">
+      <?= csrf_field() ?>
+      <input type="hidden" name="document_id" id="appDocDeleteDocId" value="">
+
+      <div class="modal-header bg-danger text-white flex-shrink-0">
         <h5 class="modal-title fw-bold fs-6" id="appDocDeleteModalLabel"><i class="fa-solid fa-trash-can me-2"></i> Delete Document Permanently</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="/documents/delete" method="POST">
-        <?= csrf_field() ?>
-        <input type="hidden" name="document_id" id="appDocDeleteDocId" value="">
 
-        <div class="modal-body p-4">
-          <div class="alert alert-danger py-2 small mb-3">
-            <i class="fa-solid fa-triangle-exclamation me-1"></i> <strong>Warning:</strong> This action cannot be undone. The uploaded file and all version records will be permanently removed.
-          </div>
-          <p class="mb-2">Are you sure you want to permanently delete:</p>
-          <div class="p-3 bg-light rounded border mb-2">
-            <div class="fw-bold text-dark" id="appDocDeleteDocName">Document</div>
-          </div>
+      <div class="modal-body p-4" style="overflow-y: auto;">
+        <div class="alert alert-danger py-2 small mb-3">
+          <i class="fa-solid fa-triangle-exclamation me-1"></i> <strong>Warning:</strong> This action cannot be undone. The uploaded file and all version records will be permanently removed.
         </div>
+        <p class="mb-2">Are you sure you want to permanently delete:</p>
+        <div class="p-3 bg-light rounded border mb-2">
+          <div class="fw-bold text-dark" id="appDocDeleteDocName">Document</div>
+        </div>
+      </div>
 
-        <div class="modal-footer bg-light border-top">
-          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-danger fw-semibold"><i class="fa-solid fa-trash-can me-1"></i> Delete Document</button>
-        </div>
-      </form>
-    </div>
+      <div class="modal-footer bg-light border-top flex-shrink-0">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-danger fw-semibold"><i class="fa-solid fa-trash-can me-1"></i> Delete Document</button>
+      </div>
+    </form>
   </div>
 </div>
 

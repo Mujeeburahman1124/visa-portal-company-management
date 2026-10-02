@@ -16,6 +16,7 @@ class TaskController
     {
         AuthMiddleware::handle();
         $pdo = Database::getConnection();
+        self::ensureTaskColumns($pdo);
         $user = auth_user();
         $userId = (int)($user['id'] ?? 0);
 
@@ -100,6 +101,8 @@ class TaskController
             redirect($_SERVER['HTTP_REFERER'] ?? '/tasks', 'Please enter a task title.', 'danger');
         }
 
+        self::ensureTaskColumns($pdo);
+
         $customerId = null;
         $appInfo = null;
         if ($appId) {
@@ -111,12 +114,32 @@ class TaskController
             }
         }
 
-        $stmt = $pdo->prepare("INSERT INTO tasks (
-            application_id, customer_id, task_title, description, task_type, priority,
-            assigned_to, created_by, start_date, due_date, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, 'Pending')");
-
-        $stmt->execute([$appId, $customerId, $title, $desc, $taskType, $priority, $assignedTo, $currentUser['id'], $dueDate]);
+        try {
+            $stmt = $pdo->prepare("INSERT INTO tasks (
+                application_id, customer_id, task_title, description, task_type, priority,
+                assigned_to, created_by, start_date, due_date, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, 'Pending')");
+            $stmt->execute([$appId, $customerId, $title, $desc, $taskType, $priority, $assignedTo, $currentUser['id'], $dueDate]);
+        } catch (\PDOException $pe) {
+            if (str_contains($pe->getMessage(), 'task_type')) {
+                try {
+                    $pdo->exec("ALTER TABLE tasks ADD COLUMN task_type VARCHAR(100) DEFAULT 'General'");
+                    $stmt = $pdo->prepare("INSERT INTO tasks (
+                        application_id, customer_id, task_title, description, task_type, priority,
+                        assigned_to, created_by, start_date, due_date, status
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, 'Pending')");
+                    $stmt->execute([$appId, $customerId, $title, $desc, $taskType, $priority, $assignedTo, $currentUser['id'], $dueDate]);
+                } catch (\Throwable $eRetry) {
+                    $stmt = $pdo->prepare("INSERT INTO tasks (
+                        application_id, customer_id, task_title, description, priority,
+                        assigned_to, created_by, start_date, due_date, status
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, 'Pending')");
+                    $stmt->execute([$appId, $customerId, $title, $desc, $priority, $assignedTo, $currentUser['id'], $dueDate]);
+                }
+            } else {
+                throw $pe;
+            }
+        }
         $taskId = (int)$pdo->lastInsertId();
 
         // Log task history
@@ -605,6 +628,7 @@ class TaskController
         $pdo = $pdo ?: Database::getConnection();
         $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
         $taskCols = [
+            'task_type'        => ($driver === 'mysql') ? "VARCHAR(100) DEFAULT 'General'" : "TEXT DEFAULT 'General'",
             'completion_notes' => 'TEXT NULL',
             'proof_attachment' => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
             'proof_of_work'    => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',

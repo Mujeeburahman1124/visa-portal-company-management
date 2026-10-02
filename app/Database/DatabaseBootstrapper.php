@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 29;
+    private const SCHEMA_VERSION = 30;
 
     public static function init(bool $force = false): void
     {
@@ -3378,6 +3378,7 @@ class DatabaseBootstrapper
 
         // 4. tasks table columns
         $taskCols = [
+            'task_type'        => ($driver === 'mysql') ? "VARCHAR(100) DEFAULT 'General'" : "TEXT DEFAULT 'General'",
             'completion_notes' => 'TEXT NULL',
             'proof_attachment' => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
             'proof_of_work'    => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
@@ -3448,6 +3449,21 @@ class DatabaseBootstrapper
         foreach ($agentWalletCols as $col => $def) {
             try {
                 $pdo->exec("ALTER TABLE agent_wallet_transactions ADD COLUMN {$col} {$def};");
+            } catch (\Throwable $e) {}
+        }
+
+        // 8. staff_requests table columns
+        $staffReqCols = [
+            'title'            => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+            'description'      => 'TEXT NULL',
+            'resolution_notes' => 'TEXT NULL',
+            'resolved_by'      => ($driver === 'mysql') ? 'INT NULL' : 'INTEGER NULL',
+            'resolved_at'      => ($driver === 'mysql') ? 'DATETIME NULL' : 'TEXT NULL',
+            'comments'         => 'TEXT NULL',
+        ];
+        foreach ($staffReqCols as $col => $def) {
+            try {
+                $pdo->exec("ALTER TABLE staff_requests ADD COLUMN {$col} {$def};");
             } catch (\Throwable $e) {}
         }
 
