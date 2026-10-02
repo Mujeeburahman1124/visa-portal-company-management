@@ -1064,10 +1064,19 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
                         <td class="text-muted small"><?= e($pay['transaction_reference'] ?: '—') ?></td>
                         <td><?= e($pay['received_by_name'] ?? '—') ?></td>
                         <td><span class="badge bg-success-subtle text-success border border-success"><?= e($pay['status']) ?></span></td>
-                        <td class="text-end">
+                        <td class="text-end text-nowrap">
                           <a href="/payments/receipt?id=<?= $pay['id'] ?>" target="_blank" class="btn btn-outline-primary btn-sm" title="View Receipt">
                             <i class="fa-solid fa-receipt me-1"></i>Receipt
                           </a>
+                          <?php if (($currentUser['role_slug'] ?? '') === 'super-admin' || (int)($currentUser['role_id'] ?? 0) === 1 || user_can('payments.delete') || user_can('payments.manage') || user_can('finance.manage')): ?>
+                            <form action="/payments/delete" method="POST" class="d-inline ms-1" onsubmit="return confirm('Are you sure you want to permanently delete payment <?= e($pay['payment_number']) ?> of <?= format_currency($pay['amount']) ?>? This action cannot be undone and will restore the balance on this application.');">
+                              <?= csrf_field() ?>
+                              <input type="hidden" name="payment_id" value="<?= (int)$pay['id'] ?>">
+                              <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete Payment Record">
+                                <i class="fa-solid fa-trash-can me-1"></i>Delete
+                              </button>
+                            </form>
+                          <?php endif; ?>
                         </td>
                       </tr>
                     <?php endforeach; ?>

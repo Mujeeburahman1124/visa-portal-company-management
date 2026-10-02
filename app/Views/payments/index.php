@@ -1,6 +1,9 @@
 <?php
 $pageTitle = 'Payments, Invoices & Online Links — VISA TRACK';
 $flash = get_flash();
+$currentUser = auth_user();
+$isSuperAdmin = ($currentUser['role_slug'] ?? '') === 'super-admin' || (int)($currentUser['role_id'] ?? 0) === 1;
+$canDeletePayment = $isSuperAdmin || user_can('payments.delete') || user_can('payments.manage') || user_can('finance.manage');
 require_once dirname(__DIR__) . '/layouts/header.php';
 require_once dirname(__DIR__) . '/layouts/sidebar.php';
 require_once dirname(__DIR__) . '/layouts/topbar.php';
@@ -262,13 +265,24 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                   </span>
                 </td>
                 <td class="text-end text-nowrap">
-                  <div class="btn-group btn-group-sm shadow-sm" role="group">
-                    <a href="/payments/receipt?id=<?= $p['id'] ?>" target="_blank" class="btn btn-outline-secondary" title="Print Official Receipt">
-                      <i class="fa-solid fa-print"></i>
-                    </a>
-                    <a href="/payments/invoice?app_id=<?= $p['application_id'] ?>" target="_blank" class="btn btn-outline-primary" title="View Full Tax Invoice">
-                      <i class="fa-solid fa-file-invoice"></i>
-                    </a>
+                  <div class="d-inline-flex align-items-center gap-1">
+                    <div class="btn-group btn-group-sm shadow-sm" role="group">
+                      <a href="/payments/receipt?id=<?= $p['id'] ?>" target="_blank" class="btn btn-outline-secondary" title="Print Official Receipt">
+                        <i class="fa-solid fa-print"></i>
+                      </a>
+                      <a href="/payments/invoice?app_id=<?= $p['application_id'] ?>" target="_blank" class="btn btn-outline-primary" title="View Full Tax Invoice">
+                        <i class="fa-solid fa-file-invoice"></i>
+                      </a>
+                    </div>
+                    <?php if ($canDeletePayment): ?>
+                      <form action="/payments/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to permanently delete Payment <?= e($p['payment_number']) ?> (Invoice: <?= e($p['invoice_number'] ?: 'INV-N/A') ?>) for <?= format_currency((float)$p['amount']) ?>? This will reverse the payment and adjust the balance due on application #<?= (int)$p['application_id'] ?>.');">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="payment_id" value="<?= (int)$p['id'] ?>">
+                        <button type="submit" class="btn btn-outline-danger btn-sm shadow-sm py-1 px-2" title="Delete Payment / Invoice Record">
+                          <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                      </form>
+                    <?php endif; ?>
                   </div>
                 </td>
               </tr>

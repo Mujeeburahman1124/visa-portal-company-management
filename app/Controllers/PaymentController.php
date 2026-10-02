@@ -1335,4 +1335,78 @@ class PaymentController
             exit;
         }
     }
+
+    public function delete(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $currentUser = auth_user();
+
+        $isSuperAdmin = ($currentUser['role_slug'] ?? '') === 'super-admin' || (int)($currentUser['role_id'] ?? 0) === 1;
+        $canDelete = $isSuperAdmin || user_can('payments.delete') || user_can('payments.manage') || user_can('finance.manage');
+
+        $redirectUrl = $_SERVER['HTTP_REFERER'] ?? '/payments';
+
+        if (!$canDelete) {
+            redirect($redirectUrl, 'Unauthorized: You do not have permission to delete payments or invoices. Only Super Admin or authorized finance officers may delete them.', 'danger');
+            return;
+        }
+
+        $paymentId = (int)($_POST['payment_id'] ?? $_POST['id'] ?? 0);
+        if ($paymentId <= 0) {
+            redirect($redirectUrl, 'Invalid payment ID.', 'danger');
+            return;
+        }
+
+        $stmt = $pdo->prepare("SELECT * FROM payments WHERE id = ?");
+        $stmt->execute([$paymentId]);
+        $payment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$payment) {
+            redirect($redirectUrl, 'Payment record not found or already deleted.', 'danger');
+            return;
+        }
+
+        $appId = (int)($payment['application_id'] ?? 0);
+        $paymentNum = $payment['payment_number'] ?? "PAY-{$paymentId}";
+        $invNum = $payment['invoice_number'] ?? '';
+        $amountFormatted = format_currency((float)($payment['amount'] ?? 0));
+
+        // Clean up attached receipt slip if exists
+        if (!empty($payment['receipt_file'])) {
+            $slipPath = App::basePath($payment['receipt_file']);
+            if (file_exists($slipPath) && is_file($slipPath)) {
+                @unlink($slipPath);
+            }
+        }
+
+        // Delete payment record
+        $delStmt = $pdo->prepare("DELETE FROM payments WHERE id = ?");
+        $delStmt->execute([$paymentId]);
+
+        // Clean up matching invoices record if orphaned
+        if (!empty($invNum)) {
+            try {
+                $remStmt = $pdo->prepare("SELECT COUNT(*) FROM payments WHERE invoice_number = ?");
+                $remStmt->execute([$invNum]);
+                if ((int)$remStmt->fetchColumn() === 0) {
+                    $pdo->prepare("DELETE FROM invoices WHERE invoice_number = ?")->execute([$invNum]);
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        // Recalculate application financials
+        if ($appId > 0) {
+            FinanceService::recalculateApplication($appId);
+        }
+
+        AuditService::log(
+            'DELETE_PAYMENT',
+            'Payments',
+            $paymentId,
+            "Deleted payment #{$paymentNum} (Invoice: {$invNum}, Amount: {$amountFormatted}) by {$currentUser['name']}"
+        );
+
+        redirect($redirectUrl, "Payment #{$paymentNum}" . ($invNum ? " (Invoice: {$invNum})" : "") . " of {$amountFormatted} has been permanently deleted and application balances updated.", 'success');
+    }
 }

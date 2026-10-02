@@ -520,6 +520,12 @@ switch ($uri) {
         (new App\Controllers\PaymentController())->invoice();
         break;
 
+    case '/payments/delete':
+    case '/invoices/delete':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts'], ['payments.delete', 'payments.manage', 'finance.manage']);
+        (new App\Controllers\PaymentController())->delete();
+        break;
+
     case '/invoices':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts', 'visa-manager', 'visa-consultant']);
         (new App\Controllers\PaymentController())->index();
