@@ -208,7 +208,7 @@ class AgentPortalController
             // Auto-generate customer code
             $lastCode = $pdo->query("SELECT customer_code FROM customers ORDER BY id DESC LIMIT 1")->fetchColumn();
             $nextNum  = $lastCode ? (int)substr($lastCode, 4) + 1 : 1;
-            $custCode = 'MSC-' . str_pad($nextNum, 6, '0', STR_PAD_LEFT);
+            $custCode = 'MSC-' . str_pad((string)$nextNum, 6, '0', STR_PAD_LEFT);
 
             $cStmt = $pdo->prepare("INSERT INTO customers (customer_code, first_name, last_name, full_name, mobile, email, nationality, dob, gender, current_country) VALUES (?,?,?,?,?,?,?,?,?,?)");
             $cStmt->execute([$custCode, $firstName, $lastName, $fullName, $mobile, $email, $nationality, $dob ?: null, $gender, $nationality]);
@@ -228,7 +228,7 @@ class AgentPortalController
         } else {
             $nextAppNum = 1;
         }
-        $appNumber = 'MSV-' . $year . '-' . str_pad($nextAppNum, 6, '0', STR_PAD_LEFT);
+        $appNumber = 'MSV-' . $year . '-' . str_pad((string)$nextAppNum, 6, '0', STR_PAD_LEFT);
 
         // Insert application
         $aStmt = $pdo->prepare("INSERT INTO applications

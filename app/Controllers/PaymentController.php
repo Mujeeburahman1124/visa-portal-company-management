@@ -336,7 +336,7 @@ class PaymentController
             // Guaranteed direct email receipt dispatch if customer has email
             if (!empty($custInfo['email'])) {
                 try {
-                    $receiptSubject = "Payment Receipt Confirmed — {$receiptNumber} (" . \App\Config\App::COMPANY_NAME . ")";
+                    $receiptSubject = "Payment Receipt Confirmed — {$receiptNumber} (" . App::COMPANY_NAME . ")";
                     $receiptBody = "
                         <p>Dear <strong>" . htmlspecialchars($custInfo['full_name'] ?? 'Valued Customer') . "</strong>,</p>
                         <p>We have successfully received and processed your payment for visa application <strong>{$app['application_number']}</strong>.</p>

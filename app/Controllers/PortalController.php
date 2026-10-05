@@ -478,7 +478,7 @@ class PortalController
             $pdo->prepare("DELETE FROM password_resets WHERE email = ? AND reset_type = 'customer'")->execute([$customer['email']]);
             $pdo->prepare("INSERT INTO password_resets (email, token, expires_at, reset_type) VALUES (?, ?, ?, 'customer')")->execute([$customer['email'], $tokenHash, $expiresAt]);
 
-            $resetUrl = \App\Config\App::url("portal/reset-password?token=" . urlencode($token));
+            $resetUrl = App::url("portal/reset-password?token=" . urlencode($token));
 
             try {
                 \App\Services\EmailService::send([
