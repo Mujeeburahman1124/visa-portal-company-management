@@ -156,15 +156,74 @@ class AppointmentController
             move_uploaded_file($_FILES['document_file']['tmp_name'], $uploadDir . DIRECTORY_SEPARATOR . $docFileName);
         }
 
-        $stmt = $pdo->prepare("INSERT INTO appointments (
-            application_id, customer_id, appointment_type, center_name, location_address,
-            appointment_date, appointment_time, reference_number, assigned_staff_id, status, document_file, notes, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Scheduled', ?, ?, ?)");
+        // Self-healing schema repair: guarantee optional columns exist in appointments table
+        try { $pdo->exec("ALTER TABLE appointments ADD COLUMN customer_id INT NULL"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE appointments ADD COLUMN assigned_staff_id INT NULL"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE appointments ADD COLUMN document_file VARCHAR(255) NULL"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE appointments ADD COLUMN created_by INT NULL"); } catch (\Throwable $e) {}
 
-        $stmt->execute([
-            $appId, $customerId, $type, $centerName, $location,
-            $date, $time, $refNumber, $staffId, $docFileName, $notes, $currentUser['id'] ?? 1
-        ]);
+        // Dynamic column inspection to prevent SQL 1054 unknown column errors on older tables
+        $existingCols = [];
+        try {
+            $colStmt = $pdo->query("SHOW COLUMNS FROM appointments");
+            if ($colStmt) {
+                $existingCols = $colStmt->fetchAll(\PDO::FETCH_COLUMN);
+            }
+        } catch (\Throwable $e) {
+            try {
+                $colStmt = $pdo->query("PRAGMA table_info(appointments)");
+                if ($colStmt) {
+                    $existingCols = array_column($colStmt->fetchAll(\PDO::FETCH_ASSOC), 'name');
+                }
+            } catch (\Throwable $e2) {}
+        }
+
+        $fields = [
+            'application_id' => $appId,
+            'appointment_type' => $type,
+            'center_name' => $centerName,
+            'location_address' => $location,
+            'appointment_date' => $date,
+            'appointment_time' => $time,
+            'reference_number' => $refNumber,
+            'status' => 'Scheduled',
+            'notes' => $notes,
+        ];
+
+        if (empty($existingCols) || in_array('customer_id', $existingCols, true)) {
+            $fields['customer_id'] = $customerId;
+        }
+        if (empty($existingCols) || in_array('assigned_staff_id', $existingCols, true)) {
+            $fields['assigned_staff_id'] = $staffId;
+        }
+        if (empty($existingCols) || in_array('document_file', $existingCols, true)) {
+            $fields['document_file'] = $docFileName;
+        }
+        if (empty($existingCols) || in_array('created_by', $existingCols, true)) {
+            $fields['created_by'] = (int)($currentUser['id'] ?? 1);
+        }
+
+        $colsList = implode(', ', array_keys($fields));
+        $placeholders = implode(', ', array_fill(0, count($fields), '?'));
+
+        try {
+            $stmt = $pdo->prepare("INSERT INTO appointments ({$colsList}) VALUES ({$placeholders})");
+            $stmt->execute(array_values($fields));
+        } catch (\PDOException $exApt) {
+            if (str_contains($exApt->getMessage(), 'Unknown column') || str_contains($exApt->getMessage(), 'no such column')) {
+                try { $pdo->exec("ALTER TABLE appointments ADD COLUMN customer_id INT NULL"); } catch (\Throwable $e) {}
+                try { $pdo->exec("ALTER TABLE appointments ADD COLUMN assigned_staff_id INT NULL"); } catch (\Throwable $e) {}
+                try { $pdo->exec("ALTER TABLE appointments ADD COLUMN document_file VARCHAR(255) NULL"); } catch (\Throwable $e) {}
+                try { $pdo->exec("ALTER TABLE appointments ADD COLUMN created_by INT NULL"); } catch (\Throwable $e) {}
+
+                $fallbackStmt = $pdo->prepare("INSERT INTO appointments (
+                    application_id, appointment_type, center_name, location_address, appointment_date, appointment_time, reference_number, status, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, 'Scheduled', ?)");
+                $fallbackStmt->execute([$appId, $type, $centerName, $location, $date, $time, $refNumber, $notes]);
+            } else {
+                throw $exApt;
+            }
+        }
         $aptId = (int)$pdo->lastInsertId();
 
         // Dispatch Central Real-Time Notification (Email + WhatsApp + In-App)

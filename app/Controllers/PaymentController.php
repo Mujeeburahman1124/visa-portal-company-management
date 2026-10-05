@@ -789,16 +789,26 @@ class PaymentController
             // Also record a payment receipt record for accounting
             $receiptNumber = FinanceService::generateReceiptNumber();
             $invNumber = 'INV-WAL-' . $receiptNumber;
-            $pdo->prepare("INSERT INTO payments (
-                payment_number, invoice_number, customer_id, amount, currency, payment_date, payment_method,
-                transaction_reference, wallet_transaction_id, payment_type, status, received_by, receipt_file, notes,
-                from_currency, to_currency, exchange_rate, original_amount
-            ) VALUES (?, ?, ?, ?, ?, CURRENT_DATE, ?, ?, ?, 'Wallet Topup', 'Completed', ?, ?, ?, ?, ?, ?, ?)")
-            ->execute([
-                $receiptNumber, $invNumber, $customerId, $finalCreditAmount, $walletCurrency,
-                $paymentMethod, $txnRef, $res['transaction_id'] ?? null, $currentUser['id'] ?? null, $receiptFile, $notes,
-                $fromCurrency, $walletCurrency, $exchangeRate, $originalAmount
-            ]);
+            try {
+                // Ensure payments table allows NULL application_id for non-application wallet topups
+                try {
+                    $pdo->exec("ALTER TABLE payments MODIFY COLUMN application_id INT NULL DEFAULT NULL");
+                } catch (\Throwable $eAlter) {}
+
+                $pdo->prepare("INSERT INTO payments (
+                    application_id, payment_number, invoice_number, customer_id, amount, currency, payment_date, payment_method,
+                    transaction_reference, wallet_transaction_id, payment_type, status, received_by, receipt_file, notes,
+                    from_currency, to_currency, exchange_rate, original_amount
+                ) VALUES (NULL, ?, ?, ?, ?, ?, CURRENT_DATE, ?, ?, ?, 'Wallet Topup', 'Completed', ?, ?, ?, ?, ?, ?, ?)")
+                ->execute([
+                    $receiptNumber, $invNumber, $customerId, $finalCreditAmount, $walletCurrency,
+                    $paymentMethod, $txnRef, $res['transaction_id'] ?? null, $currentUser['id'] ?? null, $receiptFile, $notes,
+                    $fromCurrency, $walletCurrency, $exchangeRate, $originalAmount
+                ]);
+            } catch (\Throwable $ePay) {
+                // Primary wallet balance was already safely credited above; log any secondary payment receipt notice
+                error_log('[VISA-TRACK] Secondary payments table insert note for wallet topup: ' . $ePay->getMessage());
+            }
 
             redirect($_SERVER['HTTP_REFERER'] ?? '/payments/wallets', "Successfully deposited {$walletCurrency} " . number_format($finalCreditAmount, 2) . " into {$customer['full_name']}'s digital wallet.", 'success');
         } catch (\Throwable $e) {

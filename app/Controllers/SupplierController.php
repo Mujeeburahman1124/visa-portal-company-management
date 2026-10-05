@@ -371,6 +371,11 @@ class SupplierController
             }
         }
 
+        // Ensure supplier_payments allows NULL application_id for general disbursements
+        try {
+            $pdo->exec("ALTER TABLE supplier_payments MODIFY COLUMN application_id INT NULL DEFAULT NULL");
+        } catch (\Throwable $e) {}
+
         // Check if there is an existing pending payable for this application
         $existingPayable = null;
         if ($applicationId) {
@@ -407,10 +412,22 @@ class SupplierController
             ]);
             $payRef = $existingPayable['payment_reference'];
         } else {
-            $stmt = $pdo->prepare("INSERT INTO supplier_payments (
-                payment_reference, supplier_id, application_id, payable_amount, paid_amount, currency, supplier_invoice_ref, payment_date, payment_method, transaction_reference, payment_status, notes, created_by, receipt_file
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$payRef, $supplierId, $applicationId, $payableAmount, $paidAmount, $currency, $invoiceRef, $date, $method, $ref, $status, $notes, $userId, $receiptFile]);
+            try {
+                $stmt = $pdo->prepare("INSERT INTO supplier_payments (
+                    payment_reference, supplier_id, application_id, payable_amount, paid_amount, currency, supplier_invoice_ref, payment_date, payment_method, transaction_reference, payment_status, notes, created_by, receipt_file
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$payRef, $supplierId, $applicationId, $payableAmount, $paidAmount, $currency, $invoiceRef, $date, $method, $ref, $status, $notes, $userId, $receiptFile]);
+            } catch (\PDOException $exPay) {
+                if (str_contains($exPay->getMessage(), 'application_id') || str_contains($exPay->getMessage(), 'cannot be null')) {
+                    try { $pdo->exec("ALTER TABLE supplier_payments MODIFY COLUMN application_id INT NULL DEFAULT NULL"); } catch (\Throwable $e) {}
+                    $stmt = $pdo->prepare("INSERT INTO supplier_payments (
+                        payment_reference, supplier_id, application_id, payable_amount, paid_amount, currency, supplier_invoice_ref, payment_date, payment_method, transaction_reference, payment_status, notes, created_by, receipt_file
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$payRef, $supplierId, $applicationId, $payableAmount, $paidAmount, $currency, $invoiceRef, $date, $method, $ref, $status, $notes, $userId, $receiptFile]);
+                } else {
+                    throw $exPay;
+                }
+            }
         }
 
         AuditService::log('SUPPLIER_PAYMENT', 'Suppliers', $supplierId, "Recorded payment of {$currency} " . number_format($paidAmount, 2) . " (Ref: {$payRef}, Invoice: {$invoiceRef})");

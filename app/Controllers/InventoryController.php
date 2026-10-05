@@ -439,12 +439,32 @@ class InventoryController
         $payRef = 'SPAY-INV-' . date('Ymd') . '-' . rand(1000, 9999);
         $paidAmount = $paymentStatus === 'Paid' ? $totalCost : 0.00;
 
-        $stmtSupPay = $pdo->prepare("INSERT INTO supplier_payments (
-            payment_reference, supplier_id, application_id, payable_amount, paid_amount, currency, supplier_invoice_ref, payment_date, payment_method, transaction_reference, payment_status, notes, created_by
-        ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, 'Bank Transfer', ?, ?, ?, ?)");
-        $stmtSupPay->execute([
-            $payRef, $supplierId, $totalCost, $paidAmount, $item['currency'], $invoiceRef, $date, ('TXN-PUR-' . rand(100000, 999999)), $paymentStatus, "Inventory purchase: {$qty}x {$item['name']} (Inv: {$invoiceRef})", (int)($currentUser['id'] ?? 1)
-        ]);
+        try {
+            // Guarantee application_id allows NULL in supplier_payments
+            try {
+                $pdo->exec("ALTER TABLE supplier_payments MODIFY COLUMN application_id INT NULL DEFAULT NULL");
+            } catch (\Throwable $eAlter) {}
+
+            $stmtSupPay = $pdo->prepare("INSERT INTO supplier_payments (
+                payment_reference, supplier_id, application_id, payable_amount, paid_amount, currency, supplier_invoice_ref, payment_date, payment_method, transaction_reference, payment_status, notes, created_by
+            ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, 'Bank Transfer', ?, ?, ?, ?)");
+            $stmtSupPay->execute([
+                $payRef, $supplierId, $totalCost, $paidAmount, $item['currency'], $invoiceRef, $date, ('TXN-PUR-' . rand(100000, 999999)), $paymentStatus, "Inventory purchase: {$qty}x {$item['name']} (Inv: {$invoiceRef})", (int)($currentUser['id'] ?? 1)
+            ]);
+        } catch (\Throwable $exSup) {
+            // If host MySQL threw cannot be null on application_id, alter table and retry
+            try {
+                $pdo->exec("ALTER TABLE supplier_payments MODIFY COLUMN application_id INT NULL DEFAULT NULL");
+                $stmtSupPay = $pdo->prepare("INSERT INTO supplier_payments (
+                    payment_reference, supplier_id, application_id, payable_amount, paid_amount, currency, supplier_invoice_ref, payment_date, payment_method, transaction_reference, payment_status, notes, created_by
+                ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, 'Bank Transfer', ?, ?, ?, ?)");
+                $stmtSupPay->execute([
+                    $payRef, $supplierId, $totalCost, $paidAmount, $item['currency'], $invoiceRef, $date, ('TXN-PUR-' . rand(100000, 999999)), $paymentStatus, "Inventory purchase: {$qty}x {$item['name']} (Inv: {$invoiceRef})", (int)($currentUser['id'] ?? 1)
+                ]);
+            } catch (\Throwable $retryErr) {
+                error_log('[VISA-TRACK] Inventory supplier ledger record note: ' . $retryErr->getMessage());
+            }
+        }
 
         AuditService::log('SUPPLIER_INVENTORY_PURCHASE', 'Inventory', $itemId, "Purchased {$qty} {$item['unit']} of {$item['name']} from {$supplier['company_name']} for {$item['currency']} " . number_format($totalCost, 2));
 

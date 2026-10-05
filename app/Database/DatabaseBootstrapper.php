@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 30;
+    private const SCHEMA_VERSION = 31;
 
     public static function init(bool $force = false): void
     {
@@ -3508,6 +3508,19 @@ class DatabaseBootstrapper
             try {
                 $pdo->exec("ALTER TABLE payments ADD COLUMN {$col} {$def};");
             } catch (\Throwable $e) {}
+        }
+
+        // 11. Relax foreign key nullable constraints & add appointment columns
+        if ($driver === 'mysql') {
+            try { $pdo->exec("ALTER TABLE payments MODIFY COLUMN application_id INT NULL DEFAULT NULL;"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE supplier_payments MODIFY COLUMN application_id INT NULL DEFAULT NULL;"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE appointments ADD COLUMN customer_id INT NULL;"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE appointments ADD COLUMN assigned_staff_id INT NULL;"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE appointments ADD COLUMN document_file VARCHAR(255) NULL;"); } catch (\Throwable $e) {}
+        } else {
+            try { $pdo->exec("ALTER TABLE appointments ADD COLUMN customer_id INTEGER NULL;"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE appointments ADD COLUMN assigned_staff_id INTEGER NULL;"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE appointments ADD COLUMN document_file TEXT NULL;"); } catch (\Throwable $e) {}
         }
     }
 
