@@ -463,10 +463,19 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE visa_package_inventory_transactions ADD COLUMN tax_amount REAL DEFAULT 0.00"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE visa_package_inventory_transactions ADD COLUMN discount REAL DEFAULT 0.00"); } catch (\Throwable $e) {}
 
-            // tasks — completion_notes, reassigned_to
+            // tasks — ensure all columns exist
+            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN task_type VARCHAR(100) DEFAULT 'General'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN start_date DATE NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN due_date DATE NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN priority VARCHAR(30) DEFAULT 'Normal'"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN status VARCHAR(50) DEFAULT 'Pending'"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE tasks ADD COLUMN completion_notes TEXT NULL"); } catch (\Throwable $e) {}
-            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN reassigned_to INTEGER NULL"); } catch (\Throwable $e) {}
-            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN department TEXT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN proof_attachment VARCHAR(255) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN proof_of_work VARCHAR(255) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN completed_at DATETIME NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN completed_by INT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN reassigned_to INT NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE tasks ADD COLUMN department VARCHAR(100) NULL"); } catch (\Throwable $e) {}
 
             // Task History table — immutable log of every task action
             $pdo->exec("CREATE TABLE IF NOT EXISTS task_history (

@@ -114,27 +114,83 @@ class TaskController
             }
         }
 
+        // Introspect table columns to adapt insert dynamically to any existing schema version
+        $existingCols = [];
         try {
-            $stmt = $pdo->prepare("INSERT INTO tasks (
-                application_id, customer_id, task_title, description, task_type, priority,
-                assigned_to, created_by, start_date, due_date, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, 'Pending')");
-            $stmt->execute([$appId, $customerId, $title, $desc, $taskType, $priority, $assignedTo, $currentUser['id'], $dueDate]);
+            $existingCols = $pdo->query("SHOW COLUMNS FROM tasks")->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        } catch (\Throwable $e) {}
+
+        // Ensure key columns if missing from table
+        if (!empty($existingCols)) {
+            if (!in_array('start_date', $existingCols, true)) {
+                try { $pdo->exec("ALTER TABLE tasks ADD COLUMN start_date DATE NULL"); $existingCols[] = 'start_date'; } catch (\Throwable $e) {}
+            }
+            if (!in_array('task_type', $existingCols, true)) {
+                try { $pdo->exec("ALTER TABLE tasks ADD COLUMN task_type VARCHAR(100) DEFAULT 'General'"); $existingCols[] = 'task_type'; } catch (\Throwable $e) {}
+            }
+            if (!in_array('due_date', $existingCols, true)) {
+                try { $pdo->exec("ALTER TABLE tasks ADD COLUMN due_date DATE NULL"); $existingCols[] = 'due_date'; } catch (\Throwable $e) {}
+            }
+            if (!in_array('priority', $existingCols, true)) {
+                try { $pdo->exec("ALTER TABLE tasks ADD COLUMN priority VARCHAR(30) DEFAULT 'Normal'"); $existingCols[] = 'priority'; } catch (\Throwable $e) {}
+            }
+            if (!in_array('status', $existingCols, true)) {
+                try { $pdo->exec("ALTER TABLE tasks ADD COLUMN status VARCHAR(50) DEFAULT 'Pending'"); $existingCols[] = 'status'; } catch (\Throwable $e) {}
+            }
+        }
+
+        $candidateData = [
+            'application_id' => $appId,
+            'customer_id'    => $customerId,
+            'task_title'     => $title,
+            'description'    => $desc,
+            'task_type'      => $taskType,
+            'priority'       => $priority,
+            'assigned_to'    => $assignedTo,
+            'created_by'     => $currentUser['id'],
+            'start_date'     => date('Y-m-d'),
+            'due_date'       => $dueDate,
+            'status'         => 'Pending',
+        ];
+
+        // Filter by existing columns if known, or fallback gracefully
+        $insertData = [];
+        if (!empty($existingCols)) {
+            foreach ($candidateData as $k => $v) {
+                if (in_array($k, $existingCols, true)) {
+                    $insertData[$k] = $v;
+                }
+            }
+            if (!isset($insertData['task_title'])) {
+                $insertData['task_title'] = $title;
+            }
+        } else {
+            $insertData = $candidateData;
+        }
+
+        $colNames = array_keys($insertData);
+        $placeholders = array_fill(0, count($colNames), '?');
+        $insertSql = "INSERT INTO tasks (" . implode(', ', $colNames) . ") VALUES (" . implode(', ', $placeholders) . ")";
+
+        try {
+            $stmt = $pdo->prepare($insertSql);
+            $stmt->execute(array_values($insertData));
         } catch (\PDOException $pe) {
-            if (str_contains($pe->getMessage(), 'task_type')) {
+            // Self-healing: if any column is reported unknown, auto-add it or drop it and retry
+            if (preg_match("/Unknown column '([^']+)'/i", $pe->getMessage(), $m)) {
+                $missingCol = $m[1];
                 try {
-                    $pdo->exec("ALTER TABLE tasks ADD COLUMN task_type VARCHAR(100) DEFAULT 'General'");
-                    $stmt = $pdo->prepare("INSERT INTO tasks (
-                        application_id, customer_id, task_title, description, task_type, priority,
-                        assigned_to, created_by, start_date, due_date, status
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, 'Pending')");
-                    $stmt->execute([$appId, $customerId, $title, $desc, $taskType, $priority, $assignedTo, $currentUser['id'], $dueDate]);
+                    $def = in_array($missingCol, ['start_date', 'due_date'], true) ? 'DATE NULL' : 'VARCHAR(255) NULL';
+                    $pdo->exec("ALTER TABLE tasks ADD COLUMN {$missingCol} {$def}");
+                    $stmt = $pdo->prepare($insertSql);
+                    $stmt->execute(array_values($insertData));
                 } catch (\Throwable $eRetry) {
-                    $stmt = $pdo->prepare("INSERT INTO tasks (
-                        application_id, customer_id, task_title, description, priority,
-                        assigned_to, created_by, start_date, due_date, status
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, 'Pending')");
-                    $stmt->execute([$appId, $customerId, $title, $desc, $priority, $assignedTo, $currentUser['id'], $dueDate]);
+                    unset($insertData[$missingCol]);
+                    $colNames = array_keys($insertData);
+                    $placeholders = array_fill(0, count($colNames), '?');
+                    $retrySql = "INSERT INTO tasks (" . implode(', ', $colNames) . ") VALUES (" . implode(', ', $placeholders) . ")";
+                    $stmt = $pdo->prepare($retrySql);
+                    $stmt->execute(array_values($insertData));
                 }
             } else {
                 throw $pe;
@@ -631,6 +687,10 @@ class TaskController
         $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
         $taskCols = [
             'task_type'        => ($driver === 'mysql') ? "VARCHAR(100) DEFAULT 'General'" : "TEXT DEFAULT 'General'",
+            'start_date'       => ($driver === 'mysql') ? "DATE NULL" : "TEXT NULL",
+            'due_date'         => ($driver === 'mysql') ? "DATE NULL" : "TEXT NULL",
+            'priority'         => ($driver === 'mysql') ? "VARCHAR(30) DEFAULT 'Normal'" : "TEXT DEFAULT 'Normal'",
+            'status'           => ($driver === 'mysql') ? "VARCHAR(50) DEFAULT 'Pending'" : "TEXT DEFAULT 'Pending'",
             'completion_notes' => 'TEXT NULL',
             'proof_attachment' => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
             'proof_of_work'    => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
