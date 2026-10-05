@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 31;
+    private const SCHEMA_VERSION = 32;
 
     public static function init(bool $force = false): void
     {
@@ -3240,18 +3240,13 @@ class DatabaseBootstrapper
             }
         }
 
-        // ── MIGRATION 23: Complete Data Recovery from Production Backup ──
+        // ── MIGRATION 24: Synchronize Real Company Details and Global Settings ──
         if (!isset($currentVer)) {
             $currentVer = 0;
             try {
                 $currentVer = (int)$pdo->query("SELECT COALESCE(MAX(version),0) FROM schema_migrations")->fetchColumn();
             } catch (\Throwable $e) {}
         }
-        if ($currentVer < 23) {
-            self::restoreFromProductionBackup($pdo, $driver);
-        }
-
-        // ── MIGRATION 24: Synchronize Real Company Details and Global Settings ──
         if ($currentVer < 24) {
             self::synchronizeRealCompanySettings($pdo, $driver);
         }
@@ -3271,13 +3266,10 @@ class DatabaseBootstrapper
             self::synchronizeRealCompanySettings($pdo, $driver);
         } catch (\Throwable $e) {}
 
-        // Unconditional data recovery check: if customers count < 10, restore all backup records
-        try {
-            $custCount = (int)$pdo->query("SELECT COUNT(*) FROM customers")->fetchColumn();
-            if ($custCount < 10) {
-                self::restoreFromProductionBackup($pdo, $driver);
-            }
-        } catch (\Throwable $e) {}
+        // ── MIGRATION 32: Purge Dummy Operational Data & Keep Staff Accounts Only ──
+        if ($currentVer < 32) {
+            self::purgeDummyOperationalData($pdo, $driver);
+        }
 
         // ── RECORD SCHEMA VERSION ─────────────────────────────────────────────
         // Must be the LAST operation so that a failed migration does NOT mark
@@ -3582,70 +3574,95 @@ class DatabaseBootstrapper
     }
 
     /**
-     * Recovers complete customer, application, document, and transactional records from backup SQL files.
+     * Purges all dummy operational data (customers, applications, invoices, payments,
+     * tasks, appointments, documents, wallets, notifications, communications, and audit logs)
+     * while strictly PRESERVING all staff accounts in `users`, roles, permissions, branches,
+     * companies, countries, visa categories, visa services, document types, suppliers, agents,
+     * and system settings.
      */
-    public static function restoreFromProductionBackup(PDO $pdo, string $driver): void
+    public static function purgeDummyOperationalData(PDO $pdo, string $driver): void
     {
-        $backupDirs = [
-            dirname(__DIR__, 2) . '/storage/backups',
-            __DIR__ . '/../../storage/backups',
+        $tablesToWipe = [
+            'application_assignments',
+            'application_status_history',
+            'documents',
+            'document_versions',
+            'document_requests',
+            'tasks',
+            'task_comments',
+            'task_history',
+            'appointments',
+            'appointment_attendees',
+            'refunds',
+            'payments',
+            'invoice_items',
+            'invoices',
+            'payment_links',
+            'payment_transactions',
+            'agent_applications',
+            'agent_payments',
+            'agent_wallet_transactions',
+            'agent_wallets',
+            'supplier_payments',
+            'supplier_wallet_transactions',
+            'supplier_wallets',
+            'wallet_transactions',
+            'customer_wallets',
+            'portal_activation_tokens',
+            'communications',
+            'notifications',
+            'notification_logs',
+            'activity_logs',
+            'customer_passports',
+            'customer_national_ids',
+            'customer_notes',
+            'applications',
+            'customers',
         ];
-
-        $backupFiles = [
-            'db_backup_20260827_120310.sql',
-            'db_backup_20260826_182316.sql',
-        ];
-
-        $targetFile = null;
-        foreach ($backupDirs as $dir) {
-            foreach ($backupFiles as $f) {
-                $p = $dir . '/' . $f;
-                if (file_exists($p) && filesize($p) > 100000) {
-                    $targetFile = $p;
-                    break 2;
-                }
-            }
-        }
-
-        if (!$targetFile) {
-            return;
-        }
 
         try {
             if ($driver === 'mysql') {
                 try { $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;"); } catch (\Throwable $e) {}
+            } else {
+                try { $pdo->exec("PRAGMA foreign_keys = OFF;"); } catch (\Throwable $e) {}
             }
 
-            $handle = fopen($targetFile, 'r');
-            if ($handle) {
-                $buffer = '';
-                while (($line = fgets($handle)) !== false) {
-                    $trimmed = trim($line);
-                    if ($trimmed === '' || str_starts_with($trimmed, '--') || str_starts_with($trimmed, '/*')) {
-                        continue;
+            foreach ($tablesToWipe as $table) {
+                try {
+                    $pdo->exec("DELETE FROM `{$table}`");
+                    if ($driver === 'mysql') {
+                        try { $pdo->exec("ALTER TABLE `{$table}` AUTO_INCREMENT = 1"); } catch (\Throwable $e) {}
                     }
-                    $buffer .= $line;
-                    if (str_ends_with($trimmed, ';')) {
-                        $sqlStmt = trim($buffer);
-                        $buffer = '';
-                        if (str_starts_with($sqlStmt, 'INSERT INTO')) {
-                            $insPrefix = ($driver === 'mysql') ? 'INSERT IGNORE INTO ' : 'INSERT OR IGNORE INTO ';
-                            $sqlStmt = preg_replace('/^INSERT INTO /i', $insPrefix, $sqlStmt);
-                            try {
-                                $pdo->exec($sqlStmt);
-                            } catch (\Throwable $e) {}
-                        }
-                    }
+                } catch (\Throwable $e) {
+                    // Ignore if table does not exist
                 }
-                fclose($handle);
             }
+
+            // Ensure customer accounts with role 'customer' are removed from users if any exist, preserving only staff
+            try {
+                $pdo->exec("DELETE FROM users WHERE role_id IN (SELECT id FROM roles WHERE slug = 'customer')");
+            } catch (\Throwable $e) {}
+
+            // Ensure core configuration & staff accounts are fully initialized
+            SeedData::seed($pdo);
 
             if ($driver === 'mysql') {
                 try { $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;"); } catch (\Throwable $e) {}
+            } else {
+                try { $pdo->exec("PRAGMA foreign_keys = ON;"); } catch (\Throwable $e) {}
             }
         } catch (\Throwable $e) {
-            error_log('[VISA-TRACK] restoreFromProductionBackup error: ' . $e->getMessage());
+            error_log('[VISA-TRACK] purgeDummyOperationalData error: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Permanently disabled to prevent auto-recreating deleted operational records.
+     */
+    public static function restoreFromProductionBackup(PDO $pdo, string $driver): void
+    {
+        // Auto-restore permanently disabled per user instructions
+        return;
     }
 
     /**
