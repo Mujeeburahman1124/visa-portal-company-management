@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 32;
+    private const SCHEMA_VERSION = 33;
 
     public static function init(bool $force = false): void
     {
@@ -3269,6 +3269,30 @@ class DatabaseBootstrapper
         // ── MIGRATION 32: Purge Dummy Operational Data & Keep Staff Accounts Only ──
         if ($currentVer < 32) {
             self::purgeDummyOperationalData($pdo, $driver);
+        }
+
+        // ── MIGRATION 33: Remove Demo Staff Accounts & Ensure Universal Activation Tokens ──
+        if ($currentVer < 33) {
+            try {
+                // Permanently remove demo staff accounts with @visatrack.com
+                $pdo->exec("DELETE FROM users WHERE email LIKE '%@visatrack.com'");
+            } catch (\Throwable $e) {}
+
+            try {
+                $colsToAdd = [
+                    'portal_type'  => ($driver === 'mysql') ? "VARCHAR(50) DEFAULT 'customer'" : "TEXT DEFAULT 'customer'",
+                    'entity_id'    => ($driver === 'mysql') ? "INT NULL" : "INTEGER NULL",
+                    'entity_email' => ($driver === 'mysql') ? "VARCHAR(191) NULL" : "TEXT NULL",
+                    'token_hash'   => ($driver === 'mysql') ? "VARCHAR(64) NULL" : "TEXT NULL",
+                    'is_used'      => ($driver === 'mysql') ? "TINYINT(1) DEFAULT 0" : "INTEGER DEFAULT 0",
+                    'used_at'      => ($driver === 'mysql') ? "DATETIME NULL" : "TEXT NULL",
+                ];
+                foreach ($colsToAdd as $col => $def) {
+                    try {
+                        $pdo->exec("ALTER TABLE portal_activation_tokens ADD COLUMN {$col} {$def}");
+                    } catch (\Throwable $eCol) {}
+                }
+            } catch (\Throwable $e) {}
         }
 
         // ── RECORD SCHEMA VERSION ─────────────────────────────────────────────

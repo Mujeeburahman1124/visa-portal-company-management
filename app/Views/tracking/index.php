@@ -35,9 +35,6 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
           <i class="fa-solid fa-timeline me-1"></i> Visual Timeline
         </a>
       </div>
-      <a href="/applications/create" class="btn btn-success btn-sm">
-        <i class="fa-solid fa-plus me-1"></i> New Application
-      </a>
     </div>
   </div>
 

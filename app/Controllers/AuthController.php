@@ -42,14 +42,8 @@ class AuthController
             $stmt->execute([$normalizedEmail]);
             $user = $stmt->fetch();
 
-            // 2. If not found and logging in as admin alias, check alternate email
+            // 2. If not found and logging in as admin alias, fallback to any Super Admin user
             if (!$user && in_array($normalizedEmail, ['admin@system.com', 'admin@admin.com'], true)) {
-                $stmt->execute(['admin@visatrack.com']);
-                $user = $stmt->fetch();
-            }
-
-            // 3. If still not found and logging in as admin, check for any Super Admin user
-            if (!$user && in_array($normalizedEmail, ['admin@system.com', 'admin@admin.com', 'admin@visatrack.com'], true)) {
                 $userStmt = $pdo->query("SELECT u.*, r.name as role_name, r.slug as role_slug, b.name as branch_name 
                     FROM users u 
                     LEFT JOIN roles r ON u.role_id = r.id 
@@ -175,11 +169,6 @@ class AuthController
             $user = $stmt->fetch();
 
             if (!$user && in_array($normalizedEmail, ['admin@system.com', 'admin@admin.com'], true)) {
-                $stmt->execute(['admin@visatrack.com']);
-                $user = $stmt->fetch();
-            }
-
-            if (!$user && in_array($normalizedEmail, ['admin@system.com', 'admin@admin.com', 'admin@visatrack.com'], true)) {
                 $userStmt = $pdo->query("SELECT u.*, r.name as role_name, r.slug as role_slug, b.name as branch_name 
                     FROM users u 
                     LEFT JOIN roles r ON u.role_id = r.id 

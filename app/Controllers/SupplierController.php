@@ -167,8 +167,8 @@ class SupplierController
             redirect('/suppliers', "Supplier code '{$code}' already exists.", 'danger');
         }
 
-        $rawPassword = !empty($_POST['password']) ? trim($_POST['password']) : \App\Services\PasswordGeneratorService::generate(10, 'SUP@');
-        $passwordHash = password_hash($rawPassword, PASSWORD_DEFAULT);
+        $placeholderPassword = bin2hex(random_bytes(32));
+        $passwordHash = password_hash($placeholderPassword, PASSWORD_DEFAULT);
 
         $stmt = $pdo->prepare("INSERT INTO suppliers (
             supplier_code, company_name, contact_person, email, mobile, whatsapp, country, address, services_provided, bank_details, password_hash, portal_enabled
@@ -176,25 +176,42 @@ class SupplierController
         $stmt->execute([$code, $name, $contact, $email, $mobile, $whatsapp, $country, $address, $services, $bankDetails, $passwordHash]);
         $supplierId = (int)$pdo->lastInsertId();
 
-        // Dispatch Welcome Onboarding Email to Supplier with Auto-Generated Password
+        // Generate Activation Token for Supplier to Set Password Securely via Link
+        $rawToken = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $rawToken);
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+72 hours'));
+
+        try {
+            $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, customer_id, token, token_hash, expires_at, is_used, created_at) VALUES ('supplier', ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)")
+                ->execute([$supplierId, $email, $supplierId, $rawToken, $tokenHash, $expiresAt]);
+        } catch (\Throwable $eTok) {
+            try {
+                $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, token, expires_at, created_at) VALUES ('supplier', ?, ?, ?, ?, CURRENT_TIMESTAMP)")
+                    ->execute([$supplierId, $email, $rawToken, $expiresAt]);
+            } catch (\Throwable $eTok2) {}
+        }
+
+        $activationLink = \App\Config\App::url("supplier/activate?token={$rawToken}");
+
+        // Dispatch Welcome Onboarding Email to Supplier with Password Setup Link
         if (!empty($email)) {
             try {
-                $portalUrl = \App\Config\App::url('supplier/login');
-                $subject = "Welcome to " . \App\Config\App::COMPANY_NAME . " — Supplier Vendor Portal Credentials";
+                $subject = "Welcome to " . \App\Config\App::COMPANY_NAME . " — Set Your Supplier Portal Password";
                 $bodyHtml = "
                     <p>Dear <strong>" . htmlspecialchars($contact ?: $name) . "</strong>,</p>
                     <p>Welcome to <strong>" . \App\Config\App::COMPANY_NAME . "</strong>. Your supplier vendor account has been registered in our portal.</p>
                     <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin: 20px 0;'>
-                        <h4 style='margin-top: 0; color: #1e3a8a;'>Your Supplier Portal Login Credentials</h4>
+                        <h4 style='margin-top: 0; color: #1e3a8a;'>Set Your Password &amp; Activate Supplier Portal</h4>
                         <p style='margin: 6px 0;'><strong>Supplier Code:</strong> <span style='font-family: monospace; font-weight: bold;'>{$code}</span></p>
                         <p style='margin: 6px 0;'><strong>Company / Vendor:</strong> " . htmlspecialchars($name) . "</p>
                         <p style='margin: 6px 0;'><strong>Login Email:</strong> {$email}</p>
-                        <p style='margin: 6px 0;'><strong>Auto-Generated Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #0f172a;'>{$rawPassword}</code></p>
+                        <p style='margin-top: 15px;'>Please click the button below to set your password and activate your vendor portal access:</p>
+                        <p style='text-align: center; margin: 20px 0;'>
+                            <a href='{$activationLink}' style='background: #0284c7; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>Set Password &amp; Activate &rarr;</a>
+                        </p>
+                        <p style='color: #64748b; font-size: 13px;'>Or copy and paste this link:<br><a href='{$activationLink}'>{$activationLink}</a></p>
                     </div>
-                    <p style='color: #0369a1; font-weight: 500;'>You can log in to view your payment ledgers, account statements, and assigned visa cases. <strong>You can change your password anytime after logging in via Profile Settings.</strong></p>
-                    <p style='text-align: center; margin: 25px 0;'>
-                        <a href='{$portalUrl}' style='background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>Access Supplier Portal &rarr;</a>
-                    </p>
+                    <p style='color: #64748b; font-size: 0.85em;'>This activation link is single-use and will expire in 72 hours.</p>
                 ";
 
                 \App\Services\EmailService::send([
@@ -206,22 +223,21 @@ class SupplierController
                         'supplier_name' => $name,
                         'supplier_code' => $code,
                         'email' => $email,
-                        'password' => $rawPassword,
-                        'portal_url' => $portalUrl,
+                        'activation_link' => $activationLink,
                     ]
                 ]);
 
                 // Record Notification Log
                 try {
-                    $pdo->prepare("INSERT INTO notification_logs (event_type, recipient_type, recipient_id, recipient_name, recipient_email, channel, template_name, subject, content_preview, status, sent_at) VALUES ('supplier.registered', 'Supplier', ?, ?, ?, 'Email', 'supplier_welcome_email', ?, ?, 'Sent', CURRENT_TIMESTAMP)")
-                        ->execute([$supplierId, $name, $email, $subject, "Supplier welcome email with password {$rawPassword}"]);
+                    $pdo->prepare("INSERT INTO notification_logs (event_type, recipient_type, recipient_id, recipient_name, recipient_email, channel, template_name, subject, content_preview, status, sent_at) VALUES ('supplier.registered', 'Supplier', ?, ?, ?, 'Email', 'supplier_activation_email', ?, ?, 'Sent', CURRENT_TIMESTAMP)")
+                        ->execute([$supplierId, $name, $email, $subject, "Supplier welcome activation link {$activationLink}"]);
                 } catch (\Throwable $eLog) {}
             } catch (\Throwable $e) {}
         }
 
-        AuditService::log('CREATE_SUPPLIER', 'Suppliers', $supplierId, "Created supplier {$name} ({$code}) with auto password");
+        AuditService::log('CREATE_SUPPLIER', 'Suppliers', $supplierId, "Created supplier {$name} ({$code}) with activation link");
 
-        redirect('/suppliers', "Supplier '{$name}' created with auto password: {$rawPassword}", 'success');
+        redirect('/suppliers', "Supplier '{$name}' created! An activation link has been sent to {$email}. <a href='{$activationLink}' target='_blank' class='fw-bold text-decoration-underline'>Click here to activate now</a>", 'success');
     }
 
     public function update(): void

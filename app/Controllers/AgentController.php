@@ -72,8 +72,8 @@ class AgentController
             redirect('/agents', "Agent code '{$code}' or email already exists.", 'danger');
         }
 
-        $rawPassword = !empty($_POST['password']) ? trim($_POST['password']) : \App\Services\PasswordGeneratorService::generate(10, 'AGENT@');
-        $hash        = password_hash($rawPassword, PASSWORD_DEFAULT);
+        $placeholderPassword = bin2hex(random_bytes(32));
+        $hash                = password_hash($placeholderPassword, PASSWORD_DEFAULT);
 
         $stmt = $pdo->prepare("INSERT INTO agents
             (agent_code, company_name, contact_person, mobile, whatsapp, email, password_hash,
@@ -83,48 +83,63 @@ class AgentController
                         $country, $city, $address, $creditLimit, $commission, $terms, $bank, $notes]);
         $agentId = (int)$pdo->lastInsertId();
 
-        // Dispatch Welcome Onboarding Email to Agent with Auto-Generated Password
+        // Generate Activation Token for Agent to Set Password Securely via Link
+        $rawToken = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $rawToken);
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+72 hours'));
+
+        try {
+            $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, customer_id, token, token_hash, expires_at, is_used, created_at) VALUES ('agent', ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)")
+                ->execute([$agentId, $email, $agentId, $rawToken, $tokenHash, $expiresAt]);
+        } catch (\Throwable $eTok) {
+            try {
+                $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, token, expires_at, created_at) VALUES ('agent', ?, ?, ?, ?, CURRENT_TIMESTAMP)")
+                    ->execute([$agentId, $email, $rawToken, $expiresAt]);
+            } catch (\Throwable $eTok2) {}
+        }
+
+        $activationLink = \App\Config\App::url("agent/activate?token={$rawToken}");
+
+        // Dispatch Welcome Onboarding Email to Agent with Password Setup Link
         if (!empty($email)) {
             try {
-                $appUrl = \App\Config\App::url();
-                $portalUrl = \App\Config\App::url('agent/login');
                 \App\Services\EmailService::send([
                     'to' => $email,
                     'name' => $contact ?: $company,
-                    'subject' => 'Welcome to ' . \App\Config\App::COMPANY_NAME . ' — B2B Agent Portal Access Credentials',
+                    'subject' => 'Welcome to ' . \App\Config\App::COMPANY_NAME . ' — Set Your B2B Agent Portal Password',
                     'bodyHtml' => "
                         <p>Dear <strong>" . htmlspecialchars($contact ?: $company) . "</strong>,</p>
                         <p>Welcome to <strong>" . \App\Config\App::COMPANY_NAME . "</strong>. Your B2B travel agent partner account has been created.</p>
                         <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin: 20px 0;'>
-                            <h4 style='margin-top: 0; color: #1e3a8a;'>Your Agent Portal Login Credentials</h4>
+                            <h4 style='margin-top: 0; color: #1e3a8a;'>Set Your Password &amp; Activate Agent Portal</h4>
                             <p style='margin: 6px 0;'><strong>Agent Code:</strong> <span style='font-family: monospace; font-weight: bold;'>{$code}</span></p>
                             <p style='margin: 6px 0;'><strong>Login Email:</strong> {$email}</p>
-                            <p style='margin: 6px 0;'><strong>Auto-Generated Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #0f172a;'>{$rawPassword}</code></p>
+                            <p style='margin-top: 15px;'>Please click the button below to set your password and activate your agent account:</p>
+                            <p style='text-align: center; margin: 20px 0;'>
+                                <a href='{$activationLink}' style='background: #0284c7; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>Set Password &amp; Activate &rarr;</a>
+                            </p>
+                            <p style='color: #64748b; font-size: 13px;'>Or copy and paste this link:<br><a href='{$activationLink}'>{$activationLink}</a></p>
                         </div>
-                        <p style='color: #0369a1; font-weight: 500;'>You can log in to submit visa applications, view commissions, and monitor client files. <strong>You can change your password anytime after logging in via Agent Profile Settings.</strong></p>
-                        <p style='text-align: center; margin: 25px 0;'>
-                            <a href='{$portalUrl}' style='background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>Access Agent Portal &rarr;</a>
-                        </p>
+                        <p style='color: #64748b; font-size: 0.85em;'>This activation link is single-use and will expire in 72 hours.</p>
                     ",
                     'data' => [
                         'agent_name' => $company,
                         'agent_code' => $code,
                         'email' => $email,
-                        'password' => $rawPassword,
-                        'portal_url' => $portalUrl,
+                        'activation_link' => $activationLink,
                     ]
                 ]);
 
                 // Record Notification Log
                 try {
-                    $pdo->prepare("INSERT INTO notification_logs (event_type, recipient_type, recipient_id, recipient_name, recipient_email, channel, template_name, subject, content_preview, status, sent_at) VALUES ('agent.registered', 'Agent', ?, ?, ?, 'Email', 'agent_welcome_email', ?, ?, 'Sent', CURRENT_TIMESTAMP)")
-                        ->execute([$agentId, $company, $email, 'Welcome to ' . \App\Config\App::COMPANY_NAME . ' — B2B Agent Portal Access Credentials', "Agent welcome email with password {$rawPassword}"]);
+                    $pdo->prepare("INSERT INTO notification_logs (event_type, recipient_type, recipient_id, recipient_name, recipient_email, channel, template_name, subject, content_preview, status, sent_at) VALUES ('agent.registered', 'Agent', ?, ?, ?, 'Email', 'agent_activation_email', ?, ?, 'Sent', CURRENT_TIMESTAMP)")
+                        ->execute([$agentId, $company, $email, 'Welcome to ' . \App\Config\App::COMPANY_NAME . ' — Set Your B2B Agent Portal Password', "Agent welcome activation link {$activationLink}"]);
                 } catch (\Throwable $eLog) {}
             } catch (\Throwable $e) {}
         }
 
-        AuditService::log('CREATE_AGENT', 'Agents', $agentId, "New agent created: {$company} ({$code}) with auto password");
-        redirect('/agents', "Agent {$code} — {$company} created with auto password: {$rawPassword}", 'success');
+        AuditService::log('CREATE_AGENT', 'Agents', $agentId, "New agent created: {$company} ({$code}) with activation link");
+        redirect('/agents', "Agent {$code} — {$company} created! An activation link has been sent to {$email}. <a href='{$activationLink}' target='_blank' class='fw-bold text-decoration-underline'>Click here to activate now</a>", 'success');
     }
 
     public function update(): void

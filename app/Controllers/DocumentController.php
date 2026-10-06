@@ -831,21 +831,38 @@ class DocumentController
     }
 
     /**
-     * Fetch Document Version History (JSON)
+     * Fetch Document Version History (JSON - Protected by RBAC)
      */
     public function history(): void
     {
-        AuthMiddleware::handle();
+        if (!is_authenticated() && !is_customer_authenticated() && !is_agent_authenticated() && !is_supplier_authenticated()) {
+            header('Content-Type: application/json');
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Access Denied: Please log in.']);
+            exit;
+        }
+
         $docId = (int)($_GET['id'] ?? 0);
         $pdo = Database::getConnection();
 
-        $stmt = $pdo->prepare("SELECT dv.*, u.name as uploader_name 
+        $stmt = $pdo->prepare("SELECT d.* FROM documents d WHERE d.id = ?");
+        $stmt->execute([$docId]);
+        $doc = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$doc || !self::authorizeDocumentAccess($doc)) {
+            header('Content-Type: application/json');
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Access Denied: You do not have permission to view this document history.']);
+            exit;
+        }
+
+        $vStmt = $pdo->prepare("SELECT dv.*, u.name as uploader_name 
             FROM document_versions dv 
             LEFT JOIN users u ON (dv.uploaded_by_type = 'Staff' AND dv.uploaded_by_id = u.id)
             WHERE dv.document_id = ? 
             ORDER BY dv.version_number DESC");
-        $stmt->execute([$docId]);
-        $versions = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $vStmt->execute([$docId]);
+        $versions = $vStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'data' => $versions]);

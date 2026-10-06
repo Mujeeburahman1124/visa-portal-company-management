@@ -279,7 +279,7 @@ $flash = get_flash();
         <label for="loginEmail" class="form-label small fw-semibold text-secondary mb-1" style="font-size: 0.82rem;">Work Email</label>
         <div class="input-group">
           <span class="input-group-text bg-light border-end-0 text-muted" style="font-size: 0.85rem;"><i class="fa-solid fa-envelope"></i></span>
-          <input type="email" name="email" id="loginEmail" class="form-control border-start-0 ps-0" placeholder="staff@visatrack.com" required value="" autocomplete="username" style="font-size: 0.88rem; height: 38px;">
+          <input type="email" name="email" id="loginEmail" class="form-control border-start-0 ps-0" placeholder="name@company.com" required value="" autocomplete="username" style="font-size: 0.88rem; height: 38px;">
         </div>
       </div>
 
@@ -297,7 +297,7 @@ $flash = get_flash();
         </div>
       </div>
 
-      <div class="d-flex align-items-center justify-content-between mb-2">
+      <div class="d-flex align-items-center justify-content-between mb-3">
         <div class="form-check">
           <input class="form-check-input" type="checkbox" name="remember" id="rememberMe">
           <label class="form-check-label small text-muted user-select-none" for="rememberMe" style="font-size: 0.78rem;">
@@ -305,24 +305,6 @@ $flash = get_flash();
           </label>
         </div>
       </div>
-
-      <!-- Quick Demo Login Credentials (Collapsible to keep mobile screen short) -->
-      <details class="p-2 mb-2.5 bg-light rounded-3 border" style="font-size: 0.76rem;">
-        <summary class="fw-bold text-secondary user-select-none" style="cursor: pointer; font-size: 0.74rem;">
-          <i class="fa-solid fa-key me-1 text-primary"></i> 1-Click Demo Accounts (Tap to view)
-        </summary>
-        <div class="mt-2 pt-1 border-top d-flex flex-wrap gap-1">
-          <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2 fw-semibold" style="font-size: 0.72rem;" onclick="fillCreds('manager@visatrack.com', 'password')">
-            <i class="fa-solid fa-user-tie me-1"></i> Manager
-          </button>
-          <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2 fw-semibold" style="font-size: 0.72rem;" onclick="fillCreds('staff@visatrack.com', 'password')">
-            <i class="fa-solid fa-user me-1"></i> Staff
-          </button>
-          <button type="button" class="btn btn-outline-info btn-sm py-0.5 px-2 fw-semibold" style="font-size: 0.72rem;" onclick="fillCreds('agent@skylinetravel.com', 'password')">
-            <i class="fa-solid fa-handshake me-1"></i> Agent
-          </button>
-        </div>
-      </details>
 
       <button type="submit" class="btn btn-primary w-100 fw-semibold shadow-sm rounded-2 btn-login-submit" id="submitBtn" style="height: 40px; font-size: 0.9rem;">
         <span class="spinner-border spinner-border-sm me-2 d-none" id="submitSpinner" role="status" aria-hidden="true"></span>
@@ -348,10 +330,6 @@ $flash = get_flash();
 </div>
 
 <script>
-function fillCreds(email, pass) {
-  document.getElementById('loginEmail').value = email;
-  document.getElementById('loginPassword').value = pass;
-}
 
 document.getElementById('togglePasswordBtn')?.addEventListener('click', function() {
   const pwdInput = document.getElementById('loginPassword');

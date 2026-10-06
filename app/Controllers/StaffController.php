@@ -176,7 +176,8 @@ class StaffController
             }
         } catch (\Throwable $e) {}
 
-        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+        $placeholderPassword = bin2hex(random_bytes(32));
+        $passwordHash = password_hash($placeholderPassword, PASSWORD_DEFAULT);
         $createdBy = (int)($currentUser['id'] ?? 1);
 
         // Dynamically inspect users table columns to guarantee zero column mismatch errors
@@ -233,27 +234,43 @@ class StaffController
         // Fetch Role & Branch Name for Welcome Email
         $roleName = $pdo->query("SELECT name FROM roles WHERE id = {$roleId}")->fetchColumn() ?: 'Staff Member';
         $branchName = $pdo->query("SELECT name FROM branches WHERE id = {$branchId}")->fetchColumn() ?: 'Main Office';
-        $appUrl = \App\Config\App::url();
-        $loginUrl = \App\Config\App::url('login');
 
-        // Dispatch Welcome Onboarding Email with Auto-Generated Password
+        // Generate Secure Activation Token for Setting Password via Link
+        $rawToken = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $rawToken);
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+72 hours'));
+
         try {
-            $emailSubject = "Welcome to " . \App\Config\App::COMPANY_NAME . " — Staff Portal Access Credentials";
+            $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, customer_id, token, token_hash, expires_at, is_used, created_at) VALUES ('staff', ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)")
+                ->execute([$newId, $email, $newId, $rawToken, $tokenHash, $expiresAt]);
+        } catch (\Throwable $eTok) {
+            try {
+                $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, token, expires_at, created_at) VALUES ('staff', ?, ?, ?, ?, CURRENT_TIMESTAMP)")
+                    ->execute([$newId, $email, $rawToken, $expiresAt]);
+            } catch (\Throwable $eTok2) {}
+        }
+
+        $activationLink = \App\Config\App::url("staff/activate?token={$rawToken}");
+
+        // Dispatch Welcome Onboarding Email with Secure Password Setup Link
+        try {
+            $emailSubject = "Welcome to " . \App\Config\App::COMPANY_NAME . " — Set Your Password & Activate Staff Account";
             $emailBody = "
                 <p>Dear <strong>{$name}</strong>,</p>
                 <p>Welcome to <strong>" . \App\Config\App::COMPANY_NAME . "</strong>. Your staff management account has been created by the administrator.</p>
                 <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin: 20px 0;'>
-                    <h4 style='margin-top: 0; color: #1e3a8a; font-size: 1.1em;'>Your Portal Login Credentials</h4>
+                    <h4 style='margin-top: 0; color: #1e3a8a; font-size: 1.1em;'>Set Your Password &amp; Activate Account</h4>
                     <p style='margin: 6px 0;'><strong>Official Login Email:</strong> <span style='color: #2563eb;'>{$email}</span></p>
-                    <p style='margin: 6px 0;'><strong>Auto-Generated Password:</strong> <code style='background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: #0f172a; font-size: 1.1em;'>{$password}</code></p>
                     <p style='margin: 6px 0;'><strong>Assigned Role:</strong> {$roleName}</p>
                     <p style='margin: 6px 0;'><strong>Designation:</strong> {$designation}</p>
                     <p style='margin: 6px 0;'><strong>Branch:</strong> {$branchName}</p>
+                    <p style='margin-top: 15px;'>Please click the button below to choose your secure password and activate your account:</p>
+                    <p style='text-align: center; margin: 20px 0;'>
+                        <a href='{$activationLink}' style='background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>Set Password &amp; Activate &rarr;</a>
+                    </p>
+                    <p style='color: #64748b; font-size: 13px;'>Or copy and paste this link in your browser:<br><a href='{$activationLink}'>{$activationLink}</a></p>
                 </div>
-                <p style='color: #dc2626; font-size: 0.9em;'><strong>Security Requirement:</strong> Please log in and change your auto-generated temporary password upon your first sign-in.</p>
-                <p style='text-align: center; margin-top: 25px;'>
-                    <a href='{$loginUrl}' style='background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;'>Access Staff Portal &rarr;</a>
-                </p>
+                <p style='color: #64748b; font-size: 0.85em;'>This link is valid for 72 hours. After setting your password, you will be able to log in to the system directly.</p>
             ";
 
             \App\Services\EmailService::send([
@@ -264,22 +281,21 @@ class StaffController
                 'data' => [
                     'name' => $name,
                     'email' => $email,
-                    'temporaryPassword' => $password,
+                    'activationLink' => $activationLink,
                     'roleName' => $roleName,
                     'designation' => $designation,
                     'branchName' => $branchName,
-                    'loginUrl' => $loginUrl,
                 ]
             ]);
 
             // Log notification
-            $pdo->prepare("INSERT INTO notification_logs (event_type, recipient_type, recipient_id, recipient_name, recipient_email, channel, template_name, subject, content_preview, status, sent_at) VALUES ('staff.registered', 'Staff', ?, ?, ?, 'Email', 'staff_welcome_email', ?, ?, 'Sent', CURRENT_TIMESTAMP)")
-                ->execute([$newId, $name, $email, $emailSubject, "Welcome email with temporary password {$password}"]);
+            $pdo->prepare("INSERT INTO notification_logs (event_type, recipient_type, recipient_id, recipient_name, recipient_email, channel, template_name, subject, content_preview, status, sent_at) VALUES ('staff.registered', 'Staff', ?, ?, ?, 'Email', 'staff_activation_email', ?, ?, 'Sent', CURRENT_TIMESTAMP)")
+                ->execute([$newId, $name, $email, $emailSubject, "Welcome activation link {$activationLink}"]);
         } catch (\Throwable $ex) {}
 
-        AuditService::log('CREATE_STAFF', 'Staff', $newId, "Created staff member {$name} ({$email}) with initial temporary password");
+        AuditService::log('CREATE_STAFF', 'Staff', $newId, "Created staff member {$name} ({$email}) with password setup link");
 
-        redirect('/staff', "Staff officer '{$name}' created successfully. Auto password: {$password}", 'success');
+        redirect('/staff', "Staff officer '{$name}' created! An activation link has been sent to {$email}. <a href='{$activationLink}' target='_blank' class='fw-bold text-decoration-underline'>Click here to set password now</a>", 'success');
     }
 
     public function delete(): void
@@ -690,4 +706,144 @@ class StaffController
 
         redirect('/profile', 'Profile photo updated successfully.', 'success');
     }
+
+    public function activate(): void
+    {
+        $token = trim($_GET['token'] ?? '');
+        if (empty($token)) {
+            redirect('/login', 'Missing or invalid activation token.', 'danger');
+        }
+
+        $pdo = Database::getConnection();
+        $tokenHash = hash('sha256', $token);
+
+        $stmt = $pdo->prepare("SELECT pat.*, u.name as full_name, u.email 
+            FROM portal_activation_tokens pat 
+            JOIN users u ON pat.entity_id = u.id 
+            WHERE (pat.token = ? OR pat.token_hash = ?) 
+              AND pat.portal_type = 'staff' 
+              AND (pat.is_used = 0 OR pat.is_used IS NULL) 
+              AND pat.used_at IS NULL 
+              AND pat.expires_at > CURRENT_TIMESTAMP");
+        $stmt->execute([$token, $tokenHash]);
+        $activation = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$activation) {
+            require_once dirname(__DIR__) . '/Views/portal/activate_expired.php';
+            return;
+        }
+
+        $portalTitle = 'Staff Operations Portal';
+        $actionUrl = '/staff/activate';
+        $loginUrl = '/login';
+        require_once dirname(__DIR__) . '/Views/portal/activate.php';
+    }
+
+    public function processActivate(): void
+    {
+        $token = trim($_POST['token'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        if (empty($token)) {
+            redirect('/login', 'Invalid activation request.', 'danger');
+        }
+
+        if (strlen($password) < 6) {
+            redirect("/staff/activate?token=" . urlencode($token), 'Password must be at least 6 characters.', 'danger');
+        }
+
+        if ($password !== $confirmPassword) {
+            redirect("/staff/activate?token=" . urlencode($token), 'Passwords do not match.', 'danger');
+        }
+
+        $pdo = Database::getConnection();
+        $tokenHash = hash('sha256', $token);
+        $stmt = $pdo->prepare("SELECT * FROM portal_activation_tokens 
+            WHERE (token = ? OR token_hash = ?) 
+              AND portal_type = 'staff' 
+              AND (is_used = 0 OR is_used IS NULL) 
+              AND used_at IS NULL 
+              AND expires_at > CURRENT_TIMESTAMP");
+        $stmt->execute([$token, $tokenHash]);
+        $activation = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$activation) {
+            redirect('/login', 'This activation link is invalid or has expired.', 'danger');
+        }
+
+        $userId = (int)$activation['entity_id'];
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+
+        $pdo->prepare("UPDATE users SET password_hash = ?, is_active = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+            ->execute([$hash, $userId]);
+
+        $pdo->prepare("UPDATE portal_activation_tokens SET is_used = 1, used_at = CURRENT_TIMESTAMP WHERE id = ?")
+            ->execute([$activation['id']]);
+
+        AuditService::log('STAFF_PORTAL_ACTIVATED', 'Staff', $userId, "Staff operations account password set and activated successfully");
+
+        redirect('/login', 'Your password has been set successfully! You can now sign in to operations.', 'success');
+    }
+
+    public function sendActivationToken(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager'], ['staff.manage', 'users.manage']);
+        $pdo = Database::getConnection();
+
+        $staffId = (int)($_POST['staff_id'] ?? 0);
+        if ($staffId <= 0) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/staff', 'Invalid staff identifier.', 'danger');
+        }
+
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->execute([$staffId]);
+        $staffMember = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$staffMember || empty($staffMember['email'])) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/staff', 'Staff member has no registered email address.', 'danger');
+        }
+
+        // Invalidate prior active tokens
+        try {
+            $pdo->prepare("UPDATE portal_activation_tokens SET is_used = 1, used_at = CURRENT_TIMESTAMP WHERE portal_type = 'staff' AND entity_id = ?")->execute([$staffId]);
+        } catch (\Throwable $e) {}
+
+        // Generate token
+        $rawToken = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $rawToken);
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+72 hours'));
+
+        try {
+            $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, customer_id, token, token_hash, expires_at, is_used, created_at) VALUES ('staff', ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)")
+                ->execute([$staffId, $staffMember['email'], $staffId, $rawToken, $tokenHash, $expiresAt]);
+        } catch (\Throwable $e) {
+            $pdo->prepare("INSERT INTO portal_activation_tokens (portal_type, entity_id, entity_email, token, expires_at, created_at) VALUES ('staff', ?, ?, ?, ?, CURRENT_TIMESTAMP)")
+                ->execute([$staffId, $staffMember['email'], $rawToken, $expiresAt]);
+        }
+
+        $activationLink = \App\Config\App::url("staff/activate?token={$rawToken}");
+
+        try {
+            \App\Services\EmailService::send([
+                'to' => $staffMember['email'],
+                'name' => $staffMember['name'],
+                'subject' => "Set Your Password — " . \App\Config\App::COMPANY_NAME . " Staff Portal",
+                'bodyHtml' => "
+                    <h2 style='color:#0f172a;'>Welcome to " . \App\Config\App::COMPANY_NAME . " Operations, {$staffMember['name']}!</h2>
+                    <p>Your staff operations account has been authorized. Please set your secure password to access the portal:</p>
+                    <p style='text-align:center; margin:30px 0;'>
+                        <a href='{$activationLink}' style='background-color:#2563eb; color:#ffffff; padding:12px 28px; text-decoration:none; border-radius:6px; font-weight:bold; display:inline-block;'>Set Password &amp; Activate &rarr;</a>
+                    </p>
+                    <p style='color:#64748b; font-size:13px;'>Or copy and paste this link:<br><a href='{$activationLink}'>{$activationLink}</a></p>
+                    <p style='color:#64748b; font-size:12px;'>This activation link is single-use and valid for 72 hours.</p>
+                "
+            ]);
+        } catch (\Throwable $e) {}
+
+        AuditService::log('SEND_STAFF_ACTIVATION', 'Staff', $staffId, "Dispatched staff activation link to {$staffMember['email']}");
+        redirect($_SERVER['HTTP_REFERER'] ?? '/staff', "Activation link dispatched to {$staffMember['email']}. <a href='{$activationLink}' target='_blank' class='fw-bold text-decoration-underline'>Click to view/copy link</a>", 'success');
+    }
 }
+

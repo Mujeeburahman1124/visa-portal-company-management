@@ -228,6 +228,19 @@ switch ($uri) {
         }
         break;
 
+    case '/staff/activate':
+        $ctrl = new App\Controllers\StaffController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $ctrl->processActivate();
+        } else {
+            $ctrl->activate();
+        }
+        break;
+
+    case '/staff/send-activation':
+        (new App\Controllers\StaffController())->sendActivationToken();
+        break;
+
     case '/auth/change-password':
         (new App\Controllers\AuthController())->changePassword();
         break;

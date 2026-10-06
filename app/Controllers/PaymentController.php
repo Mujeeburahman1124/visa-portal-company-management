@@ -907,15 +907,20 @@ class PaymentController
     }
 
     /**
-     * Printable Official Payment Receipt
+     * Printable Official Payment Receipt (Protected with RBAC & Customer Ownership)
      */
     public function receipt(): void
     {
         $pdo = Database::getConnection();
         $paymentId = (int)($_GET['id'] ?? 0);
 
+        if ($paymentId <= 0) {
+            http_response_code(404);
+            die('Payment receipt not found.');
+        }
+
         $stmt = $pdo->prepare("SELECT p.*, 
-                a.application_number, a.selling_price, a.total_amount, a.paid_amount, a.balance_amount,
+                a.application_number, a.selling_price, a.total_amount, a.paid_amount, a.balance_amount, a.branch_id, a.assigned_staff_id, a.agent_id,
                 vs.name as service_name, ct.name as country_name,
                 c.customer_code, c.full_name as customer_name, c.mobile as customer_mobile, c.email as customer_email, c.address as customer_address,
                 u.name as received_by_name
@@ -930,19 +935,57 @@ class PaymentController
         $payment = $stmt->fetch();
 
         if (!$payment) {
+            http_response_code(404);
             die('Payment receipt not found.');
+        }
+
+        // Enforce RBAC & Access Authorization
+        $staffUser = auth_user();
+        $portalCustomer = $_SESSION['customer'] ?? null;
+        $portalAgent = $_SESSION['agent'] ?? null;
+        $token = trim($_GET['token'] ?? '');
+        $isAuthorized = false;
+
+        if ($staffUser) {
+            $roleSlug = $staffUser['role_slug'] ?? '';
+            $staffId = (int)($staffUser['id'] ?? 0);
+            if (in_array($roleSlug, ['super-admin', 'admin', 'accounts', 'branch-manager', 'visa-manager'], true)
+                || user_can('payments.view') || user_can('finance.view') || user_can('applications.view')
+                || (int)$payment['assigned_staff_id'] === $staffId) {
+                $isAuthorized = true;
+            }
+        } elseif ($portalCustomer && (int)$portalCustomer['id'] === (int)$payment['customer_id']) {
+            $isAuthorized = true;
+        } elseif ($portalAgent && !empty($payment['agent_id']) && (int)$portalAgent['id'] === (int)$payment['agent_id']) {
+            $isAuthorized = true;
+        } elseif (!empty($token)) {
+            $tokStmt = $pdo->prepare("SELECT id FROM payment_links WHERE (payment_id = ? OR application_id = ?) AND token = ? LIMIT 1");
+            $tokStmt->execute([$paymentId, (int)$payment['application_id'], $token]);
+            if ($tokStmt->fetch()) {
+                $isAuthorized = true;
+            }
+        }
+
+        if (!$isAuthorized) {
+            http_response_code(403);
+            die('Access Denied: You do not have permission to view this official receipt.');
         }
 
         require_once dirname(__DIR__) . '/Views/payments/receipt.php';
     }
 
     /**
-     * Printable Official Tax Invoice
+     * Printable Official Tax Invoice (Protected with RBAC & Customer Ownership)
      */
     public function invoice(): void
     {
         $pdo = Database::getConnection();
         $appId = (int)($_GET['app_id'] ?? 0);
+
+        if ($appId <= 0) {
+            http_response_code(404);
+            die('Invoice not found.');
+        }
 
         $stmt = $pdo->prepare("SELECT a.*, 
                 vs.name as service_name, vs.entry_type, vs.processing_type,
@@ -959,10 +1002,45 @@ class PaymentController
         $application = $stmt->fetch();
 
         if (!$application) {
+            http_response_code(404);
             die('Invoice not found.');
         }
 
-        $payments = $pdo->query("SELECT * FROM payments WHERE application_id = {$appId} AND status = 'Completed' ORDER BY payment_date ASC")->fetchAll();
+        // Enforce RBAC & Access Authorization
+        $staffUser = auth_user();
+        $portalCustomer = $_SESSION['customer'] ?? null;
+        $portalAgent = $_SESSION['agent'] ?? null;
+        $token = trim($_GET['token'] ?? '');
+        $isAuthorized = false;
+
+        if ($staffUser) {
+            $roleSlug = $staffUser['role_slug'] ?? '';
+            $staffId = (int)($staffUser['id'] ?? 0);
+            if (in_array($roleSlug, ['super-admin', 'admin', 'accounts', 'branch-manager', 'visa-manager'], true)
+                || user_can('payments.view') || user_can('finance.view') || user_can('applications.view')
+                || (int)$application['assigned_staff_id'] === $staffId) {
+                $isAuthorized = true;
+            }
+        } elseif ($portalCustomer && (int)$portalCustomer['id'] === (int)$application['customer_id']) {
+            $isAuthorized = true;
+        } elseif ($portalAgent && !empty($application['agent_id']) && (int)$portalAgent['id'] === (int)$application['agent_id']) {
+            $isAuthorized = true;
+        } elseif (!empty($token)) {
+            $tokStmt = $pdo->prepare("SELECT id FROM payment_links WHERE application_id = ? AND token = ? LIMIT 1");
+            $tokStmt->execute([$appId, $token]);
+            if ($tokStmt->fetch()) {
+                $isAuthorized = true;
+            }
+        }
+
+        if (!$isAuthorized) {
+            http_response_code(403);
+            die('Access Denied: You do not have permission to view this official invoice.');
+        }
+
+        $pStmt = $pdo->prepare("SELECT * FROM payments WHERE application_id = ? AND status = 'Completed' ORDER BY payment_date ASC");
+        $pStmt->execute([$appId]);
+        $payments = $pStmt->fetchAll();
 
         require_once dirname(__DIR__) . '/Views/payments/invoice.php';
     }

@@ -40,6 +40,12 @@
       feel: 'Premium International Business',
       swatches: ['#991b1b', '#881337', '#92400e'],
     },
+    {
+      id: 'dark-mode',
+      name: 'Obsidian Dark (Dark Mode)',
+      feel: 'Sleek Dark Mode & Neon Accents',
+      swatches: ['#090d16', '#3b82f6', '#38bdf8'],
+    },
   ];
 
   /* ── Read saved theme (runs before DOM ready to avoid flash) ── */

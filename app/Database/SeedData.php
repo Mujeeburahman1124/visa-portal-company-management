@@ -56,21 +56,11 @@ class SeedData
             $stmt->execute($branch);
         }
 
-        // 3. Users (Staff)
-        $defaultPasswordHash = password_hash('password', PASSWORD_DEFAULT);
-        $adminPasswordHash = password_hash('password', PASSWORD_DEFAULT);
-
+        // 3. Users (Super Admin)
         $admin123Hash = password_hash('admin123', PASSWORD_DEFAULT);
 
         $users = [
-            [1, 1, 'Tariq Al-Mansoor', 'admin@visatrack.com', $adminPasswordHash, '+971 50 111 2233', 'Director of Visa Operations', 'Management'],
             [1, 1, 'Super Admin', 'admin@system.com', $admin123Hash, '+971 50 111 2234', 'System Administrator', 'Management'],
-            [2, 1, 'Sarah Jenkins', 'manager@visatrack.com', $defaultPasswordHash, '+971 50 222 3344', 'Senior Visa Operations Manager', 'Visa Department'],
-            [3, 1, 'Alexander Chen', 'branch.manager@visatrack.com', $defaultPasswordHash, '+44 7700 900123', 'London Branch Manager', 'Branch Management'],
-            [4, 1, 'Fatima Al-Zaabi', 'officer@visatrack.com', $defaultPasswordHash, '+971 50 333 4455', 'Senior Visa Officer', 'Visa Department'],
-            [5, 1, 'Marcus Vance', 'staff@visatrack.com', $defaultPasswordHash, '+971 50 444 5566', 'Processing Specialist', 'Operations'],
-            [6, 1, 'Priya Sharma', 'accounts@visatrack.com', $defaultPasswordHash, '+971 50 555 6677', 'Senior Accounts Officer', 'Finance'],
-            [7, 1, 'Elena Rostova', 'support@visatrack.com', $defaultPasswordHash, '+971 50 666 7788', 'Customer Success Executive', 'Customer Support'],
         ];
 
         $stmt = $pdo->prepare("{$ins} users (role_id, branch_id, name, email, password_hash, phone, designation, department) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");

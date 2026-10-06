@@ -75,12 +75,13 @@ class DashboardController
         $baseWhere = "WHERE is_archived = 0";
         $baseParams = [];
 
-        if ($scopedBranch > 0) {
-            $baseWhere .= " AND branch_id = ?";
-            $baseParams[] = $scopedBranch;
-        } elseif ($dashboardType === 'processing') {
+        if ($dashboardType === 'processing') {
+            // Personal Processing Dashboard: strictly scope to staff's own assigned applications
             $baseWhere .= " AND assigned_staff_id = ?";
             $baseParams[] = $userId;
+        } elseif ($scopedBranch > 0) {
+            $baseWhere .= " AND branch_id = ?";
+            $baseParams[] = $scopedBranch;
         }
 
         // Helper closure to build scoped counts safely
