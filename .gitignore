@@ -14,17 +14,23 @@ storage/backups/*
 !storage/backups/.gitkeep
 data/*.sqlite
 data/*.db
+*.sqlite
 *.sql
+!app/Database/schema_mysql.sql
+!app/Database/schema_sqlite.sql
 
 # Uploaded Customer Documents & Files
 public/uploads/customers/*
 public/uploads/documents/*
 public/uploads/receipts/*
 public/uploads/avatars/*
+*.pdf
 !public/uploads/customers/.gitkeep
 !public/uploads/documents/.gitkeep
 !public/uploads/receipts/.gitkeep
 !public/uploads/avatars/.gitkeep
+!public/uploads/**/.htaccess
+!storage/.htaccess
 
 # IDE & Editor Files
 .vscode/

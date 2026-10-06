@@ -90,9 +90,19 @@ class PaymentLinkController
                 redirect("/pay?token={$token}", 'Wallet transaction error: ' . $e->getMessage(), 'danger');
             }
         } elseif ($paymentMethod === 'Stripe') {
-            // Process simulated/live Stripe Gateway transaction
-            $txnRef = 'STRIPE-' . strtoupper(substr(md5(uniqid()), 0, 12));
-            $res = PaymentLinkService::completePayment($token, 'Stripe', $txnRef, null, "Online Credit Card Payment via Stripe Gateway");
+            $paymentIntentId = trim($_POST['payment_intent_id'] ?? $_POST['stripe_payment_intent_id'] ?? $_POST['card_token'] ?? '');
+            $verifyRes = \App\Services\StripePaymentService::verifyPaymentIntent(
+                $paymentIntentId,
+                $amount,
+                $link['currency'] ?? 'USD'
+            );
+
+            if (!$verifyRes['success']) {
+                redirect("/pay?token={$token}", "Stripe transaction verification failed: " . $verifyRes['message'], 'danger');
+            }
+
+            $txnRef = $verifyRes['transaction_id'];
+            $res = PaymentLinkService::completePayment($token, 'Stripe', $txnRef, $amount, "Online Credit Card Payment via Stripe Gateway ({$txnRef})");
 
             if ($res['success']) {
                 redirect("/payments/receipt?id={$res['payment_id']}", "Stripe online payment authorized! Receipt generated.", 'success');
@@ -100,15 +110,8 @@ class PaymentLinkController
                 redirect("/pay?token={$token}", $res['message'], 'danger');
             }
         } else {
-            // Direct Bank Transfer / Card Demo
-            $txnRef = 'TXN-' . strtoupper(substr(md5(uniqid()), 0, 10));
-            $res = PaymentLinkService::completePayment($token, $paymentMethod, $txnRef, null, "Online Checkout payment");
-
-            if ($res['success']) {
-                redirect("/payments/receipt?id={$res['payment_id']}", "Payment confirmed! Receipt generated.", 'success');
-            } else {
-                redirect("/pay?token={$token}", $res['message'], 'danger');
-            }
+            // Direct Bank Transfer: Do NOT automatically mark as Paid. Requires accounts team audit.
+            redirect("/pay?token={$token}", "Bank transfer instructions received. Please forward the bank deposit slip to our finance team. Your payment will be confirmed upon bank clearance.", 'info');
         }
     }
 
@@ -119,14 +122,19 @@ class PaymentLinkController
     {
         \App\Middleware\AuthMiddleware::handle();
         $user = auth_user();
+        $roleSlug = $user['role_slug'] ?? '';
+        if (!in_array($roleSlug, ['super-admin', 'admin', 'accounts', 'branch-manager'], true)
+            && !user_can('payments.create') && !user_can('finance.manage')) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Unauthorized: You do not have permission to generate payment links.', 'danger');
+        }
 
         $appId = (int)($_POST['application_id'] ?? 0);
         $amount = (float)($_POST['amount'] ?? 0.0);
         $title = trim($_POST['title'] ?? '');
         $description = trim($_POST['description'] ?? '');
 
-        if ($appId <= 0) {
-            redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Please select an application.', 'danger');
+        if ($appId <= 0 || $amount < 1.00) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Please select a valid application and an amount of at least $1.00.', 'danger');
         }
 
         $res = PaymentLinkService::createLink($appId, $amount, $title ?: null, $description ?: null, $user['id'] ?? null);

@@ -17,7 +17,7 @@ class TaskApiController extends ApiController
     public function index(): void
     {
         $user = $this->requireAuth();
-        $scopedBranchId = $this->getScopedBranchId($user);
+        $scopedBranchId = $this->getScopedBranchId((int)($_GET['branch_id'] ?? 0));
 
         $pdo = Database::getConnection();
         $status = $_GET['status'] ?? '';
@@ -29,7 +29,7 @@ class TaskApiController extends ApiController
             WHERE 1=1";
 
         $params = [];
-        if ($scopedBranchId !== null) {
+        if ($scopedBranchId > 0) {
             $sql .= " AND (a.branch_id = ? OR (a.branch_id IS NULL AND u.branch_id = ?))";
             $params[] = $scopedBranchId;
             $params[] = $scopedBranchId;
@@ -54,7 +54,7 @@ class TaskApiController extends ApiController
     public function store(): void
     {
         $user = $this->requireAuth();
-        $scopedBranchId = $this->getScopedBranchId($user);
+        $scopedBranchId = $this->getScopedBranchId();
         $userId = (int)$user['id'];
 
         $input = $this->getJsonInput();
@@ -69,7 +69,7 @@ class TaskApiController extends ApiController
         $pdo = Database::getConnection();
 
         // Verify application access if associated
-        if ($appId !== null && $scopedBranchId !== null) {
+        if ($appId !== null && $scopedBranchId > 0) {
             $checkStmt = $pdo->prepare("SELECT id FROM applications WHERE id = ? AND branch_id = ?");
             $checkStmt->execute([$appId, $scopedBranchId]);
             if (!$checkStmt->fetch()) {
@@ -110,11 +110,35 @@ class TaskApiController extends ApiController
     {
         $user = $this->requireAuth();
         $userId = (int)$user['id'];
+        $roleSlug = $user['role_slug'] ?? '';
+        $userBranch = (int)($user['branch_id'] ?? 0);
+
+        $pdo = Database::getConnection();
+        $tStmt = $pdo->prepare("SELECT t.*, a.branch_id as app_branch_id FROM application_tasks t LEFT JOIN applications a ON t.application_id = a.id WHERE t.id = ?");
+        $tStmt->execute([$id]);
+        $task = $tStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$task) {
+            $this->jsonError('Task not found.', [], 404);
+            return;
+        }
+
+        if (!in_array($roleSlug, ['super-admin', 'admin'], true)) {
+            $isAssigned = ((int)$task['assigned_to'] === $userId);
+            $appBranch = (int)($task['app_branch_id'] ?? 0);
+            if (!$isAssigned && $roleSlug !== 'branch-manager') {
+                $this->jsonError('Unauthorized: You can only update tasks assigned to you.', [], 403);
+                return;
+            }
+            if ($roleSlug === 'branch-manager' && $userBranch > 0 && $appBranch > 0 && $userBranch !== $appBranch) {
+                $this->jsonError('Unauthorized: Task belongs to an application from another branch.', [], 403);
+                return;
+            }
+        }
 
         $input = $this->getJsonInput();
         $status = trim($input['status'] ?? 'Completed');
 
-        $pdo = Database::getConnection();
         $stmt = $pdo->prepare("UPDATE application_tasks 
             SET status = ?, 
                 completed_at = CASE WHEN ? = 'Completed' THEN CURRENT_TIMESTAMP ELSE NULL END, 

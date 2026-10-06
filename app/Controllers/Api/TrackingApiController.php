@@ -48,10 +48,14 @@ class TrackingApiController extends ApiController
             return;
         }
 
-        // Check branch scoping if logged in as staff
+        // Check branch scoping and permissions if logged in as staff
         if ($user) {
-            $scopedBranch = $this->getScopedBranchId($user);
-            if ($scopedBranch !== null && (int)$app['branch_id'] !== $scopedBranch) {
+            if (!has_permission('applications.view') && (int)($app['assigned_staff_id'] ?? 0) !== (int)$user['id']) {
+                $this->jsonError('Access denied: insufficient permissions to view this application tracking.', [], 403);
+                return;
+            }
+            $scopedBranch = $this->getScopedBranchId();
+            if ($scopedBranch > 0 && (int)$app['branch_id'] !== $scopedBranch) {
                 $this->jsonError('Access denied for your branch.', [], 403);
                 return;
             }

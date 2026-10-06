@@ -49,6 +49,28 @@ class PaymentLinkService
             $amount = (float)($app['balance_amount'] > 0 ? $app['balance_amount'] : $app['total_amount']);
         }
 
+        if ($amount < 1.00) {
+            return ['success' => false, 'message' => 'Payment amount must be at least $1.00 USD.'];
+        }
+
+        if ((float)($app['balance_amount'] ?? 0) > 0 && $amount > (float)$app['balance_amount'] + 0.01) {
+            return ['success' => false, 'message' => 'Payment link amount ($' . number_format($amount, 2) . ') cannot exceed outstanding case balance ($' . number_format((float)$app['balance_amount'], 2) . ').'];
+        }
+
+        // Branch authorization check
+        if ($userId) {
+            $uStmt = $pdo->prepare("SELECT role_slug, branch_id FROM users WHERE id = ?");
+            $uStmt->execute([$userId]);
+            $creator = $uStmt->fetch(PDO::FETCH_ASSOC);
+            if ($creator && !in_array($creator['role_slug'] ?? '', ['super-admin', 'admin', 'accounts'], true)) {
+                $userBranch = (int)($creator['branch_id'] ?? 0);
+                $appBranch = (int)($app['branch_id'] ?? 0);
+                if ($userBranch > 0 && $appBranch > 0 && $userBranch !== $appBranch) {
+                    return ['success' => false, 'message' => 'Unauthorized: Cannot create payment link for an application in another branch.'];
+                }
+            }
+        }
+
         // Generate cryptographically secure unguessable 32-hex random token
         $token = bin2hex(random_bytes(16));
         $invoiceNumber = FinanceService::generateInvoiceNumber($applicationId);
@@ -191,7 +213,15 @@ class PaymentLinkService
         $appId = (int)$link['application_id'];
         $customerId = (int)$link['customer_id'];
         $expectedAmount = (float)$link['amount'];
-        $amount = $paidAmount !== null ? max(0.01, $paidAmount) : $expectedAmount;
+
+        // Strict verification: Prevent client from supplying an arbitrary or manipulated amount
+        if ($paidAmount !== null && (float)$paidAmount < ($expectedAmount - 0.009)) {
+            return [
+                'success' => false,
+                'message' => 'Payment amount rejected: Expected $' . number_format($expectedAmount, 2) . ' USD, but received $' . number_format((float)$paidAmount, 2) . ' USD.'
+            ];
+        }
+        $amount = $expectedAmount;
         $receiptNumber = FinanceService::generateReceiptNumber();
 
         $pdo->beginTransaction();

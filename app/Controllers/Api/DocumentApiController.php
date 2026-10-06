@@ -18,7 +18,7 @@ class DocumentApiController extends ApiController
     public function index(int $applicationId = 0): void
     {
         $user = $this->requireAuth();
-        $scopedBranchId = $this->getScopedBranchId($user);
+        $scopedBranchId = $this->getScopedBranchId((int)($_GET['branch_id'] ?? 0));
 
         if ($applicationId <= 0) {
             $applicationId = (int)($_GET['application_id'] ?? 0);
@@ -28,7 +28,7 @@ class DocumentApiController extends ApiController
 
         if ($applicationId > 0) {
             // Verify application access and branch scoping
-            if ($scopedBranchId !== null) {
+            if ($scopedBranchId > 0) {
                 $checkStmt = $pdo->prepare("SELECT id FROM applications WHERE id = ? AND branch_id = ?");
                 $checkStmt->execute([$applicationId, $scopedBranchId]);
                 if (!$checkStmt->fetch()) {
@@ -51,7 +51,7 @@ class DocumentApiController extends ApiController
             WHERE 1=1";
         $params = [];
 
-        if ($scopedBranchId !== null) {
+        if ($scopedBranchId > 0) {
             $sql .= " AND (a.branch_id = ? OR (a.branch_id IS NULL AND c.branch_id = ?))";
             $params[] = $scopedBranchId;
             $params[] = $scopedBranchId;
@@ -75,15 +75,25 @@ class DocumentApiController extends ApiController
      */
     public function verify(int $id = 0): void
     {
-        $user = auth_user();
-        if (!$user) {
-            $this->jsonError('Authentication required.', [], 401);
+        $user = $this->requireAuth();
+        $roleSlug = $user['role_slug'] ?? '';
+        if (!in_array($roleSlug, ['super-admin', 'admin', 'branch-manager', 'visa-manager'], true) && !user_can('documents.verify') && !user_can('documents.manage')) {
+            $this->jsonError('Unauthorized: You do not have permission to verify documents.', [], 403);
             return;
         }
 
         $input = $this->getJsonInput();
         if ($id <= 0) {
             $id = (int)($input['document_id'] ?? $_POST['document_id'] ?? $_GET['id'] ?? 0);
+        }
+
+        $pdo = Database::getConnection();
+        $dStmt = $pdo->prepare("SELECT d.* FROM documents d WHERE d.id = ?");
+        $dStmt->execute([$id]);
+        $doc = $dStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$doc || !\App\Controllers\DocumentController::authorizeDocumentAccess($doc)) {
+            $this->jsonError('Document not found or unauthorized for your branch.', [], 403);
+            return;
         }
 
         $userId = (int)$user['id'];
@@ -102,9 +112,10 @@ class DocumentApiController extends ApiController
      */
     public function reject(int $id = 0): void
     {
-        $user = auth_user();
-        if (!$user) {
-            $this->jsonError('Authentication required.', [], 401);
+        $user = $this->requireAuth();
+        $roleSlug = $user['role_slug'] ?? '';
+        if (!in_array($roleSlug, ['super-admin', 'admin', 'branch-manager', 'visa-manager'], true) && !user_can('documents.verify') && !user_can('documents.manage')) {
+            $this->jsonError('Unauthorized: You do not have permission to reject documents.', [], 403);
             return;
         }
 
@@ -116,6 +127,15 @@ class DocumentApiController extends ApiController
         $reason = trim($input['reason'] ?? $input['rejection_reason'] ?? '');
         if ($reason === '') {
             $this->jsonError('Rejection reason is required.', ['reason' => 'Required'], 422);
+        }
+
+        $pdo = Database::getConnection();
+        $dStmt = $pdo->prepare("SELECT d.* FROM documents d WHERE d.id = ?");
+        $dStmt->execute([$id]);
+        $doc = $dStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$doc || !\App\Controllers\DocumentController::authorizeDocumentAccess($doc)) {
+            $this->jsonError('Document not found or unauthorized for your branch.', [], 403);
+            return;
         }
 
         $userId = (int)$user['id'];

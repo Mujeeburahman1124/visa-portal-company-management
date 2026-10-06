@@ -16,7 +16,7 @@ class AppointmentApiController extends ApiController
     public function index(): void
     {
         $user = $this->requireAuth();
-        $scopedBranchId = $this->getScopedBranchId($user);
+        $scopedBranchId = $this->getScopedBranchId((int)($_GET['branch_id'] ?? 0));
 
         $pdo = Database::getConnection();
         $status = $_GET['status'] ?? '';
@@ -28,7 +28,7 @@ class AppointmentApiController extends ApiController
             WHERE 1=1";
 
         $params = [];
-        if ($scopedBranchId !== null) {
+        if ($scopedBranchId > 0) {
             $sql .= " AND a.branch_id = ?";
             $params[] = $scopedBranchId;
         }
@@ -52,7 +52,7 @@ class AppointmentApiController extends ApiController
     public function store(): void
     {
         $user = $this->requireAuth();
-        $scopedBranchId = $this->getScopedBranchId($user);
+        $scopedBranchId = $this->getScopedBranchId();
         $userId = (int)$user['id'];
 
         $input = $this->getJsonInput();
@@ -67,7 +67,7 @@ class AppointmentApiController extends ApiController
         $pdo = Database::getConnection();
 
         // Verify application and branch scoping
-        if ($scopedBranchId !== null) {
+        if ($scopedBranchId > 0) {
             $checkStmt = $pdo->prepare("SELECT id FROM applications WHERE id = ? AND branch_id = ?");
             $checkStmt->execute([$appId, $scopedBranchId]);
             if (!$checkStmt->fetch()) {

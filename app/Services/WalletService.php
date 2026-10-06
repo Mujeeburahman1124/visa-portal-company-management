@@ -60,17 +60,25 @@ class WalletService
         }
 
         $pdo = Database::getConnection();
-        self::ensureWalletTransactionColumns($pdo);
         $pdo->beginTransaction();
 
         try {
             $wallet = self::getOrCreateWallet($customerId, $currency);
             $walletId = (int)$wallet['id'];
 
-            $newBalance = (float)$wallet['current_balance'] + $amount;
-            $newTotalCredited = (float)$wallet['total_credited'] + $amount;
+            // Row-level lock on wallet record
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            $lockSql = ($driver === 'mysql')
+                ? "SELECT id, current_balance, total_credited, total_debited FROM customer_wallets WHERE id = ? FOR UPDATE"
+                : "SELECT id, current_balance, total_credited, total_debited FROM customer_wallets WHERE id = ?";
+            $lockStmt = $pdo->prepare($lockSql);
+            $lockStmt->execute([$walletId]);
+            $lockedWallet = $lockStmt->fetch(PDO::FETCH_ASSOC) ?: $wallet;
 
-            // Update wallet balance
+            $newBalance = (float)$lockedWallet['current_balance'] + $amount;
+            $newTotalCredited = (float)$lockedWallet['total_credited'] + $amount;
+
+            // Update wallet balance atomically
             $update = $pdo->prepare("UPDATE customer_wallets SET current_balance = ?, total_credited = ? WHERE id = ?");
             $update->execute([$newBalance, $newTotalCredited, $walletId]);
 
@@ -125,24 +133,35 @@ class WalletService
         }
 
         $pdo = Database::getConnection();
-        self::ensureWalletTransactionColumns($pdo);
         $pdo->beginTransaction();
 
         try {
             $wallet = self::getOrCreateWallet($customerId, $currency);
             $walletId = (int)$wallet['id'];
-            $currentBalance = (float)$wallet['current_balance'];
 
+            // Row-level lock on wallet record
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            $lockSql = ($driver === 'mysql')
+                ? "SELECT id, current_balance, total_debited FROM customer_wallets WHERE id = ? FOR UPDATE"
+                : "SELECT id, current_balance, total_debited FROM customer_wallets WHERE id = ?";
+            $lockStmt = $pdo->prepare($lockSql);
+            $lockStmt->execute([$walletId]);
+            $lockedWallet = $lockStmt->fetch(PDO::FETCH_ASSOC) ?: $wallet;
+
+            $currentBalance = (float)$lockedWallet['current_balance'];
             if ($currentBalance < $amount) {
                 throw new Exception("Insufficient wallet balance. Available: {$currency} " . number_format($currentBalance, 2) . ", Required: {$currency} " . number_format($amount, 2));
             }
 
-            $newBalance = $currentBalance - $amount;
-            $newTotalDebited = (float)$wallet['total_debited'] + $amount;
+            // Atomic conditional deduction to eliminate race conditions
+            $update = $pdo->prepare("UPDATE customer_wallets SET current_balance = current_balance - ?, total_debited = total_debited + ? WHERE id = ? AND current_balance >= ?");
+            $update->execute([$amount, $amount, $walletId, $amount]);
 
-            // Update wallet balance
-            $update = $pdo->prepare("UPDATE customer_wallets SET current_balance = ?, total_debited = ? WHERE id = ?");
-            $update->execute([$newBalance, $newTotalDebited, $walletId]);
+            if ($update->rowCount() === 0) {
+                throw new Exception("Wallet concurrency conflict: Balance was modified by another operation. Please retry.");
+            }
+
+            $newBalance = $currentBalance - $amount;
 
             // Generate unique transaction ID
             $txnId = 'WTX-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
@@ -238,15 +257,23 @@ class WalletService
         }
 
         $pdo = Database::getConnection();
-        self::ensureSupplierWalletColumns($pdo);
         $pdo->beginTransaction();
 
         try {
             $wallet = self::getOrCreateSupplierWallet($supplierId, $currency);
             $walletId = (int)$wallet['id'];
 
-            $newBalance = (float)$wallet['current_balance'] + $amount;
-            $newTotalCredited = (float)$wallet['total_credited'] + $amount;
+            // Row-level lock on supplier wallet record
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            $lockSql = ($driver === 'mysql')
+                ? "SELECT id, current_balance, total_credited, total_debited FROM supplier_wallets WHERE id = ? FOR UPDATE"
+                : "SELECT id, current_balance, total_credited, total_debited FROM supplier_wallets WHERE id = ?";
+            $lockStmt = $pdo->prepare($lockSql);
+            $lockStmt->execute([$walletId]);
+            $lockedWallet = $lockStmt->fetch(PDO::FETCH_ASSOC) ?: $wallet;
+
+            $newBalance = (float)$lockedWallet['current_balance'] + $amount;
+            $newTotalCredited = (float)$lockedWallet['total_credited'] + $amount;
 
             $pdo->prepare("UPDATE supplier_wallets SET current_balance = ?, total_credited = ? WHERE id = ?")
                 ->execute([$newBalance, $newTotalCredited, $walletId]);
@@ -291,23 +318,35 @@ class WalletService
         }
 
         $pdo = Database::getConnection();
-        self::ensureSupplierWalletColumns($pdo);
         $pdo->beginTransaction();
 
         try {
             $wallet = self::getOrCreateSupplierWallet($supplierId, $currency);
             $walletId = (int)$wallet['id'];
-            $currentBalance = (float)$wallet['current_balance'];
 
+            // Row-level lock on supplier wallet record
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            $lockSql = ($driver === 'mysql')
+                ? "SELECT id, current_balance, total_debited FROM supplier_wallets WHERE id = ? FOR UPDATE"
+                : "SELECT id, current_balance, total_debited FROM supplier_wallets WHERE id = ?";
+            $lockStmt = $pdo->prepare($lockSql);
+            $lockStmt->execute([$walletId]);
+            $lockedWallet = $lockStmt->fetch(PDO::FETCH_ASSOC) ?: $wallet;
+
+            $currentBalance = (float)$lockedWallet['current_balance'];
             if ($currentBalance < $amount) {
                 throw new Exception("Insufficient supplier wallet balance. Available: {$currency} " . number_format($currentBalance, 2) . ", Required: {$currency} " . number_format($amount, 2));
             }
 
-            $newBalance = $currentBalance - $amount;
-            $newTotalDebited = (float)$wallet['total_debited'] + $amount;
+            // Atomic conditional update
+            $update = $pdo->prepare("UPDATE supplier_wallets SET current_balance = current_balance - ?, total_debited = total_debited + ? WHERE id = ? AND current_balance >= ?");
+            $update->execute([$amount, $amount, $walletId, $amount]);
 
-            $pdo->prepare("UPDATE supplier_wallets SET current_balance = ?, total_debited = ? WHERE id = ?")
-                ->execute([$newBalance, $newTotalDebited, $walletId]);
+            if ($update->rowCount() === 0) {
+                throw new Exception("Supplier wallet concurrency conflict: Balance was modified concurrently. Please retry.");
+            }
+
+            $newBalance = $currentBalance - $amount;
 
             $txnId = 'SWTX-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
 
@@ -392,15 +431,23 @@ class WalletService
         }
 
         $pdo = Database::getConnection();
-        self::ensureAgentWalletColumns($pdo);
         $pdo->beginTransaction();
 
         try {
             $wallet = self::getOrCreateAgentWallet($agentId, $currency);
             $walletId = (int)$wallet['id'];
 
-            $newBalance = (float)$wallet['current_balance'] + $amount;
-            $newTotalCredited = (float)$wallet['total_credited'] + $amount;
+            // Row-level lock on agent wallet record
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            $lockSql = ($driver === 'mysql')
+                ? "SELECT id, current_balance, total_credited, total_debited FROM agent_wallets WHERE id = ? FOR UPDATE"
+                : "SELECT id, current_balance, total_credited, total_debited FROM agent_wallets WHERE id = ?";
+            $lockStmt = $pdo->prepare($lockSql);
+            $lockStmt->execute([$walletId]);
+            $lockedWallet = $lockStmt->fetch(PDO::FETCH_ASSOC) ?: $wallet;
+
+            $newBalance = (float)$lockedWallet['current_balance'] + $amount;
+            $newTotalCredited = (float)$lockedWallet['total_credited'] + $amount;
 
             $pdo->prepare("UPDATE agent_wallets SET current_balance = ?, total_credited = ? WHERE id = ?")
                 ->execute([$newBalance, $newTotalCredited, $walletId]);
@@ -445,23 +492,35 @@ class WalletService
         }
 
         $pdo = Database::getConnection();
-        self::ensureAgentWalletColumns($pdo);
         $pdo->beginTransaction();
 
         try {
             $wallet = self::getOrCreateAgentWallet($agentId, $currency);
             $walletId = (int)$wallet['id'];
-            $currentBalance = (float)$wallet['current_balance'];
 
+            // Row-level lock on agent wallet record
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            $lockSql = ($driver === 'mysql')
+                ? "SELECT id, current_balance, total_debited FROM agent_wallets WHERE id = ? FOR UPDATE"
+                : "SELECT id, current_balance, total_debited FROM agent_wallets WHERE id = ?";
+            $lockStmt = $pdo->prepare($lockSql);
+            $lockStmt->execute([$walletId]);
+            $lockedWallet = $lockStmt->fetch(PDO::FETCH_ASSOC) ?: $wallet;
+
+            $currentBalance = (float)$lockedWallet['current_balance'];
             if ($currentBalance < $amount) {
                 throw new Exception("Insufficient agent wallet balance. Available: {$currency} " . number_format($currentBalance, 2) . ", Required: {$currency} " . number_format($amount, 2));
             }
 
-            $newBalance = $currentBalance - $amount;
-            $newTotalDebited = (float)$wallet['total_debited'] + $amount;
+            // Atomic conditional update
+            $update = $pdo->prepare("UPDATE agent_wallets SET current_balance = current_balance - ?, total_debited = total_debited + ? WHERE id = ? AND current_balance >= ?");
+            $update->execute([$amount, $amount, $walletId, $amount]);
 
-            $pdo->prepare("UPDATE agent_wallets SET current_balance = ?, total_debited = ? WHERE id = ?")
-                ->execute([$newBalance, $newTotalDebited, $walletId]);
+            if ($update->rowCount() === 0) {
+                throw new Exception("Agent wallet concurrency conflict: Balance was modified concurrently. Please retry.");
+            }
+
+            $newBalance = $currentBalance - $amount;
 
             $txnId = 'AWTX-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
 
@@ -501,6 +560,7 @@ class WalletService
 
     public static function ensureWalletTransactionColumns(?PDO $pdo = null): void
     {
+        if (php_sapi_name() !== 'cli') return;
         static $done = false;
         if ($done) return;
         $done = true;
@@ -528,6 +588,7 @@ class WalletService
 
     public static function ensureSupplierWalletColumns(?PDO $pdo = null): void
     {
+        if (php_sapi_name() !== 'cli') return;
         static $done = false;
         if ($done) return;
         $done = true;
@@ -553,6 +614,7 @@ class WalletService
 
     public static function ensureAgentWalletColumns(?PDO $pdo = null): void
     {
+        if (php_sapi_name() !== 'cli') return;
         static $done = false;
         if ($done) return;
         $done = true;

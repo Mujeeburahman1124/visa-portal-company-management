@@ -949,9 +949,17 @@ class PaymentController
         if ($staffUser) {
             $roleSlug = $staffUser['role_slug'] ?? '';
             $staffId = (int)($staffUser['id'] ?? 0);
-            if (in_array($roleSlug, ['super-admin', 'admin', 'accounts', 'branch-manager', 'visa-manager'], true)
-                || user_can('payments.view') || user_can('finance.view') || user_can('applications.view')
-                || (int)$payment['assigned_staff_id'] === $staffId) {
+            $staffBranch = (int)($staffUser['branch_id'] ?? 0);
+            $paymentBranch = (int)($payment['branch_id'] ?? 0);
+            $assignedStaffId = (int)($payment['assigned_staff_id'] ?? 0);
+
+            if (in_array($roleSlug, ['super-admin', 'admin', 'accounts'], true)) {
+                $isAuthorized = true;
+            } elseif ($roleSlug === 'branch-manager') {
+                $isAuthorized = ($staffBranch > 0 && $paymentBranch === $staffBranch);
+            } elseif (user_can('payments.view') || user_can('finance.view')) {
+                $isAuthorized = ($staffBranch > 0 && $paymentBranch === $staffBranch) || ($assignedStaffId === $staffId);
+            } elseif ($assignedStaffId === $staffId) {
                 $isAuthorized = true;
             }
         } elseif ($portalCustomer && (int)$portalCustomer['id'] === (int)$payment['customer_id']) {
@@ -959,7 +967,7 @@ class PaymentController
         } elseif ($portalAgent && !empty($payment['agent_id']) && (int)$portalAgent['id'] === (int)$payment['agent_id']) {
             $isAuthorized = true;
         } elseif (!empty($token)) {
-            $tokStmt = $pdo->prepare("SELECT id FROM payment_links WHERE (payment_id = ? OR application_id = ?) AND token = ? LIMIT 1");
+            $tokStmt = $pdo->prepare("SELECT id FROM payment_links WHERE (payment_id = ? OR application_id = ?) AND link_token = ? AND expires_at > CURRENT_TIMESTAMP AND status != 'Cancelled' LIMIT 1");
             $tokStmt->execute([$paymentId, (int)$payment['application_id'], $token]);
             if ($tokStmt->fetch()) {
                 $isAuthorized = true;
@@ -1016,9 +1024,17 @@ class PaymentController
         if ($staffUser) {
             $roleSlug = $staffUser['role_slug'] ?? '';
             $staffId = (int)($staffUser['id'] ?? 0);
-            if (in_array($roleSlug, ['super-admin', 'admin', 'accounts', 'branch-manager', 'visa-manager'], true)
-                || user_can('payments.view') || user_can('finance.view') || user_can('applications.view')
-                || (int)$application['assigned_staff_id'] === $staffId) {
+            $staffBranch = (int)($staffUser['branch_id'] ?? 0);
+            $appBranch = (int)($application['branch_id'] ?? 0);
+            $assignedStaffId = (int)($application['assigned_staff_id'] ?? 0);
+
+            if (in_array($roleSlug, ['super-admin', 'admin', 'accounts'], true)) {
+                $isAuthorized = true;
+            } elseif ($roleSlug === 'branch-manager') {
+                $isAuthorized = ($staffBranch > 0 && $appBranch === $staffBranch);
+            } elseif (user_can('payments.view') || user_can('finance.view') || user_can('invoices.view')) {
+                $isAuthorized = ($staffBranch > 0 && $appBranch === $staffBranch) || ($assignedStaffId === $staffId);
+            } elseif ($assignedStaffId === $staffId) {
                 $isAuthorized = true;
             }
         } elseif ($portalCustomer && (int)$portalCustomer['id'] === (int)$application['customer_id']) {
@@ -1026,7 +1042,7 @@ class PaymentController
         } elseif ($portalAgent && !empty($application['agent_id']) && (int)$portalAgent['id'] === (int)$application['agent_id']) {
             $isAuthorized = true;
         } elseif (!empty($token)) {
-            $tokStmt = $pdo->prepare("SELECT id FROM payment_links WHERE application_id = ? AND token = ? LIMIT 1");
+            $tokStmt = $pdo->prepare("SELECT id FROM payment_links WHERE application_id = ? AND link_token = ? AND expires_at > CURRENT_TIMESTAMP AND status != 'Cancelled' LIMIT 1");
             $tokStmt->execute([$appId, $token]);
             if ($tokStmt->fetch()) {
                 $isAuthorized = true;
@@ -1081,20 +1097,27 @@ class PaymentController
             redirect("/pay?token={$token}", 'Payment link not found or invalid.', 'danger');
         }
 
-        if ($link['status'] === 'Paid') {
-            redirect("/pay?token={$token}", 'This payment link has already been settled.', 'success');
+        // Verify Stripe transaction directly with Stripe Gateway API
+        $stripePaymentIntentId = trim($_POST['payment_intent_id'] ?? $_POST['stripe_payment_intent_id'] ?? '');
+        $verifyResult = \App\Services\StripePaymentService::verifyPaymentIntent(
+            $stripePaymentIntentId,
+            (float)$link['amount'],
+            $link['currency'] ?? 'USD'
+        );
+
+        if (!$verifyResult['success']) {
+            redirect("/pay?token={$token}", "Stripe transaction verification failed: " . $verifyResult['message'], 'danger');
         }
 
-        // Generate unique gateway reference ID
-        $stripeTxnId = 'ch_stripe_' . bin2hex(random_bytes(10));
+        $stripeTxnId = $verifyResult['transaction_id'];
 
-        // Process payment server-side with complete validation and idempotency
+        // Process payment server-side with verified gateway reference and strict amount
         $result = \App\Services\PaymentLinkService::completePayment(
             $token,
             'Stripe Online Payment',
             $stripeTxnId,
-            null,
-            "Online card checkout via Stripe Gateway"
+            (float)$link['amount'],
+            "Online card checkout verified via Stripe Gateway ({$stripeTxnId})"
         );
 
         if ($result['success']) {
@@ -1158,6 +1181,11 @@ class PaymentController
     {
         AuthMiddleware::handle();
         $currentUser = auth_user();
+        $roleSlug = $currentUser['role_slug'] ?? '';
+        if (!in_array($roleSlug, ['super-admin', 'admin', 'accounts', 'branch-manager'], true)
+            && !user_can('payments.create') && !user_can('finance.manage')) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Unauthorized: You do not have permission to generate payment links.', 'danger');
+        }
 
         $appId = (int)($_POST['application_id'] ?? 0);
         $amount = (float)($_POST['amount'] ?? 0.00);
@@ -1171,8 +1199,8 @@ class PaymentController
             $sendWhatsapp = false;
         }
 
-        if ($appId <= 0 || $amount <= 0) {
-            redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Please specify a valid application and amount.', 'danger');
+        if ($appId <= 0 || $amount < 1.00) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/payments', 'Please specify a valid application and an amount of at least $1.00.', 'danger');
         }
 
         $result = \App\Services\PaymentLinkService::createLink(

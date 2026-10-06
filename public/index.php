@@ -117,16 +117,24 @@ try {
     // Do NOT expose DB error details to the user — fall through; queries will fail safely
 }
 
-// Validate CSRF on all POST requests except API / public tracking webhooks
+$uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$rawUri = $uri ?? '/';
+
+// Apply Rate Limiting to API endpoints (60 req/min) and Payment Checkouts (15 req/min)
+if (str_starts_with($rawUri, '/api/')) {
+    \App\Middleware\RateLimitMiddleware::handle('api', 60, 60);
+} elseif (str_starts_with($rawUri, '/pay/checkout') || str_starts_with($rawUri, '/pay/process')) {
+    \App\Middleware\RateLimitMiddleware::handle('checkout', 15, 60);
+}
+
+// Validate CSRF on all web POST requests (API endpoints validate CSRF in ApiController::requireAuth)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-    if (!str_starts_with($uri, '/api/')) {
+    if (!str_starts_with($rawUri, '/api/')) {
         CsrfMiddleware::validate();
     }
 }
 
-$uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-$uri = rtrim($uri, '/');
+$uri = rtrim($rawUri, '/');
 if (empty($uri)) {
     $uri = '/';
 }

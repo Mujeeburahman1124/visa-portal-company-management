@@ -48,6 +48,14 @@ class DocumentController
                 WHERE 1=1";
 
         $params = [];
+        $user = auth_user();
+        $userBranch = (int)($user['branch_id'] ?? 0);
+        $roleSlug = $user['role_slug'] ?? '';
+        if ($userBranch > 0 && !in_array($roleSlug, ['super-admin', 'admin'], true)) {
+            $sql .= " AND (c.branch_id = ? OR a.branch_id = ?)";
+            $params[] = $userBranch;
+            $params[] = $userBranch;
+        }
 
         if ($search !== '') {
             $sql .= " AND (d.document_title LIKE ? OR c.full_name LIKE ? OR c.customer_code LIKE ? OR a.application_number LIKE ? OR d.file_name LIKE ? OR cp.passport_number LIKE ? OR dt.name LIKE ?)";
@@ -609,44 +617,96 @@ class DocumentController
     }
 
     /**
-     * Verify ownership / role access for a document
+     * Verify ownership / role access for a document with strict RBAC & branch isolation
      */
     public static function authorizeDocumentAccess(array $doc): bool
     {
         if (is_authenticated()) {
             $user = auth_user();
-            if (($user['role_slug'] ?? '') === 'super-admin' || ($user['role_name'] ?? '') === 'Super Admin' || (int)($user['role_id'] ?? 0) === 1) {
+            if (!$user) {
+                return false;
+            }
+            $roleSlug = $user['role_slug'] ?? '';
+            $staffId = (int)($user['id'] ?? 0);
+            $userBranch = (int)($user['branch_id'] ?? 0);
+
+            // 1. Super Admin & Admin have full global document authority
+            if (in_array($roleSlug, ['super-admin', 'admin'], true) || (int)($user['role_id'] ?? 0) === 1) {
                 return true;
             }
-            $userBranch = (int)($user['branch_id'] ?? 0);
-            if ($userBranch > 0 && !empty($doc['customer_id'])) {
+
+            // 2. Staff must possess document or application view permission
+            if (!user_can('documents.view') && !user_can('applications.view') && !user_can('documents.manage')) {
+                return false;
+            }
+
+            // 3. Inspect application and customer context
+            $pdo = Database::getConnection();
+            $docCustBranch = null;
+            $docAppBranch = null;
+            $assignedStaffId = null;
+
+            if (!empty($doc['customer_id'])) {
                 try {
-                    $pdo = Database::getConnection();
-                    $stmt = $pdo->prepare("SELECT branch_id FROM customers WHERE id = ?");
-                    $stmt->execute([(int)$doc['customer_id']]);
-                    $custBranch = (int)$stmt->fetchColumn();
-                    if ($custBranch > 0 && $custBranch !== $userBranch && ($user['role_slug'] ?? '') !== 'admin') {
-                        return false;
+                    $cStmt = $pdo->prepare("SELECT branch_id FROM customers WHERE id = ?");
+                    $cStmt->execute([(int)$doc['customer_id']]);
+                    $docCustBranch = (int)$cStmt->fetchColumn();
+                } catch (\Throwable $e) {}
+            }
+
+            if (!empty($doc['application_id'])) {
+                try {
+                    $aStmt = $pdo->prepare("SELECT branch_id, assigned_staff_id FROM applications WHERE id = ?");
+                    $aStmt->execute([(int)$doc['application_id']]);
+                    $appRow = $aStmt->fetch(PDO::FETCH_ASSOC);
+                    if ($appRow) {
+                        $docAppBranch = (int)($appRow['branch_id'] ?? 0);
+                        $assignedStaffId = (int)($appRow['assigned_staff_id'] ?? 0);
                     }
                 } catch (\Throwable $e) {}
             }
-            return true;
+
+            // Directly assigned officer can view document
+            if ($assignedStaffId > 0 && $assignedStaffId === $staffId) {
+                return true;
+            }
+
+            // Branch Manager: can view any document belonging to their branch
+            if ($roleSlug === 'branch-manager') {
+                if ($userBranch > 0) {
+                    return ($docCustBranch === $userBranch || $docAppBranch === $userBranch);
+                }
+                return false;
+            }
+
+            // General Staff / Consultant: must belong to the same branch
+            if ($userBranch > 0) {
+                if ($docAppBranch > 0 && $docAppBranch !== $userBranch) {
+                    return false;
+                }
+                if ($docCustBranch > 0 && $docCustBranch !== $userBranch) {
+                    return false;
+                }
+                return true;
+            }
+
+            return false;
         }
 
         if (is_customer_authenticated()) {
             $customer = auth_customer();
-            return (int)($doc['customer_id'] ?? 0) === (int)($customer['id'] ?? 0);
+            return !empty($customer['id']) && (int)($doc['customer_id'] ?? 0) === (int)$customer['id'];
         }
 
         if (is_agent_authenticated()) {
             $agent = auth_agent();
-            if (!empty($doc['application_id'])) {
+            if (!empty($doc['application_id']) && !empty($agent['id'])) {
                 try {
                     $pdo = Database::getConnection();
                     $stmt = $pdo->prepare("SELECT agent_id FROM applications WHERE id = ?");
                     $stmt->execute([(int)$doc['application_id']]);
                     $appAgent = (int)$stmt->fetchColumn();
-                    return $appAgent === (int)($agent['id'] ?? 0);
+                    return $appAgent === (int)$agent['id'];
                 } catch (\Throwable $e) {}
             }
             return false;
@@ -654,13 +714,13 @@ class DocumentController
 
         if (is_supplier_authenticated()) {
             $supplier = auth_supplier();
-            if (!empty($doc['application_id'])) {
+            if (!empty($doc['application_id']) && !empty($supplier['id'])) {
                 try {
                     $pdo = Database::getConnection();
                     $stmt = $pdo->prepare("SELECT supplier_id FROM applications WHERE id = ?");
                     $stmt->execute([(int)$doc['application_id']]);
                     $appSupplier = (int)$stmt->fetchColumn();
-                    return $appSupplier === (int)($supplier['id'] ?? 0);
+                    return $appSupplier === (int)$supplier['id'];
                 } catch (\Throwable $e) {}
             }
             return false;
@@ -855,6 +915,16 @@ class DocumentController
             echo json_encode(['success' => false, 'message' => 'Access Denied: You do not have permission to view this document history.']);
             exit;
         }
+        $isStaff = is_authenticated();
+        if ($isStaff) {
+            $user = auth_user();
+            if (!user_can('documents.view') && !user_can('documents.manage') && !in_array($user['role_slug'] ?? '', ['super-admin', 'admin', 'branch-manager'], true)) {
+                header('Content-Type: application/json');
+                http_response_code(403);
+                echo json_encode(['success' => false, 'message' => 'Access Denied: Insufficient staff permissions to view document history.']);
+                exit;
+            }
+        }
 
         $vStmt = $pdo->prepare("SELECT dv.*, u.name as uploader_name 
             FROM document_versions dv 
@@ -863,6 +933,19 @@ class DocumentController
             ORDER BY dv.version_number DESC");
         $vStmt->execute([$docId]);
         $versions = $vStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        if (!$isStaff) {
+            // Strip internal staff user IDs and internal file system paths for external clients
+            $versions = array_map(function ($v) {
+                return [
+                    'version_number' => $v['version_number'] ?? 1,
+                    'file_name'      => basename((string)($v['file_name'] ?? '')),
+                    'created_at'     => $v['created_at'] ?? '',
+                    'status'         => $v['status'] ?? 'Active',
+                    'file_size'      => $v['file_size'] ?? 0,
+                ];
+            }, $versions);
+        }
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'data' => $versions]);

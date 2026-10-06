@@ -1,0 +1,6 @@
+# Security: deny PHP execution
+Options -ExecCGI -Indexes
+<FilesMatch "(?i)\.(php|php5|phtml|pl|py|cgi)$">
+  Order Deny,Allow
+  Deny from all
+</FilesMatch>

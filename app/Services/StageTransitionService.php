@@ -26,7 +26,7 @@ class StageTransitionService
         $pdo = Database::getConnection();
 
         // 1. Fetch current application record
-        $stmt = $pdo->prepare("SELECT id, application_number, customer_id, current_stage, status, assigned_staff_id FROM applications WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT id, application_number, customer_id, current_stage, status, assigned_staff_id, branch_id FROM applications WHERE id = ?");
         $stmt->execute([$applicationId]);
         $app = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -39,6 +39,27 @@ class StageTransitionService
 
         $currentUser = auth_user();
         $isAdmin = $currentUser && in_array($currentUser['role_name'] ?? '', ['Super Admin', 'Admin'], true);
+
+        // Branch ownership and RBAC enforcement
+        if ($currentUser && !$isAdmin) {
+            $roleSlug = $currentUser['role_slug'] ?? '';
+            $userBranch = (int)($currentUser['branch_id'] ?? 0);
+            $appBranch = (int)($app['branch_id'] ?? 0);
+            $assignedStaffId = (int)($app['assigned_staff_id'] ?? 0);
+            $staffId = (int)($currentUser['id'] ?? 0);
+
+            // Staff must have permission or be assigned officer
+            if (!user_can('applications.stage') && !user_can('applications.edit') && !user_can('applications.manage') && $roleSlug !== 'branch-manager') {
+                if ($assignedStaffId !== $staffId) {
+                    return ['success' => false, 'message' => 'Unauthorized: You do not have permission to transition stages for this application.'];
+                }
+            }
+
+            // Enforce branch isolation
+            if ($userBranch > 0 && $appBranch > 0 && $userBranch !== $appBranch) {
+                return ['success' => false, 'message' => 'Unauthorized: You cannot transition applications belonging to another branch.'];
+            }
+        }
 
         // Normalize status to canonical if empty or omitted
         if (empty($newStatus)) {

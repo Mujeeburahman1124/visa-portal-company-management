@@ -23,7 +23,7 @@ class StaffAssignmentService
 
         try {
             // Verify Application exists
-            $stmtApp = $pdo->prepare("SELECT id, application_number, assigned_staff_id FROM applications WHERE id = ?");
+            $stmtApp = $pdo->prepare("SELECT id, application_number, assigned_staff_id, branch_id FROM applications WHERE id = ?");
             $stmtApp->execute([$applicationId]);
             $app = $stmtApp->fetch(PDO::FETCH_ASSOC);
 
@@ -33,13 +33,36 @@ class StaffAssignmentService
             }
 
             // Verify Staff exists
-            $stmtStaff = $pdo->prepare("SELECT id, name, email FROM users WHERE id = ? AND is_active = 1");
+            $stmtStaff = $pdo->prepare("SELECT id, name, email, branch_id FROM users WHERE id = ? AND is_active = 1");
             $stmtStaff->execute([$newStaffId]);
             $staff = $stmtStaff->fetch(PDO::FETCH_ASSOC);
 
             if (!$staff) {
                 $pdo->rollBack();
                 return ['success' => false, 'message' => 'Target staff member does not exist or is inactive.'];
+            }
+
+            // Enforce RBAC & Branch Ownership
+            $currentUser = auth_user();
+            if ($currentUser && !in_array($currentUser['role_slug'] ?? '', ['super-admin', 'admin'], true)) {
+                $userBranch = (int)($currentUser['branch_id'] ?? 0);
+                $appBranch = (int)($app['branch_id'] ?? 0);
+                $targetStaffBranch = (int)($staff['branch_id'] ?? 0);
+
+                if (!user_can('applications.assign') && !user_can('applications.manage') && ($currentUser['role_slug'] ?? '') !== 'branch-manager') {
+                    $pdo->rollBack();
+                    return ['success' => false, 'message' => 'Unauthorized: You do not have permission to assign staff to applications.'];
+                }
+
+                if ($userBranch > 0 && $appBranch > 0 && $userBranch !== $appBranch) {
+                    $pdo->rollBack();
+                    return ['success' => false, 'message' => 'Unauthorized: You cannot assign staff to applications outside your branch.'];
+                }
+
+                if ($appBranch > 0 && $targetStaffBranch > 0 && $targetStaffBranch !== $appBranch) {
+                    $pdo->rollBack();
+                    return ['success' => false, 'message' => 'Invalid assignment: Selected officer does not belong to the application branch.'];
+                }
             }
 
             $oldStaffId = $app['assigned_staff_id'] ? (int)$app['assigned_staff_id'] : null;

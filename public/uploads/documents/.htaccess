@@ -1,0 +1,10 @@
+# Completely deny direct web access to uploaded customer documents
+# All access must pass through DocumentController preview/download with authentication
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

@@ -36,8 +36,8 @@ class ApiController
     }
 
     /**
-     * Enforce authentication for API requests.
-     * Returns authenticated staff user or throws 401.
+     * Enforce authentication and CSRF protection for API requests.
+     * Returns authenticated staff user or throws 401/419.
      */
     protected function requireAuth(): array
     {
@@ -45,6 +45,23 @@ class ApiController
         if (!$user) {
             $this->jsonError('Authentication required to access this API resource.', [], 401);
         }
+
+        // Enforce CSRF protection on API state mutations when using session cookie authentication
+        if (in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['POST', 'PUT', 'DELETE', 'PATCH'], true)) {
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+            $isBearer = str_starts_with($authHeader, 'Bearer ');
+            if (!$isBearer) {
+                $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_SERVER['HTTP_X_XSRF_TOKEN'] ?? null;
+                if (!$token) {
+                    $input = $this->getJsonInput();
+                    $token = $input['csrf_token'] ?? null;
+                }
+                if (!verify_csrf($token)) {
+                    $this->jsonError('CSRF token missing or invalid for API mutation request.', ['csrf_token' => 'Required or invalid'], 419);
+                }
+            }
+        }
+
         return $user;
     }
 
