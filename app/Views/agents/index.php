@@ -31,15 +31,15 @@ $currentView = $_GET['view'] ?? 'table';
     </div>
     <div class="d-flex align-items-center gap-2 flex-wrap">
       <!-- 3 View Options Switcher (Responsive) -->
-      <div class="btn-group btn-group-sm bg-white shadow-sm border rounded-pill p-1" role="group" aria-label="View Mode">
+      <div class="btn-group btn-group-sm bg-white shadow-sm border rounded-pill p-1 view-switcher-pill-group" role="group" aria-label="View Mode">
         <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold agent-view-btn <?= $currentView === 'table' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" onclick="switchAgentView('table')" id="btnAgentViewTable" title="Table View">
-          <i class="fa-solid fa-table-list me-1"></i> <span class="d-none d-sm-inline">Table</span>
+          <i class="fa-solid fa-table-list me-1"></i> <span>Table</span>
         </button>
         <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold agent-view-btn <?= $currentView === 'grid' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" onclick="switchAgentView('grid')" id="btnAgentViewGrid" title="Grid Cards View">
-          <i class="fa-solid fa-grip me-1"></i> <span class="d-none d-sm-inline">Grid Cards</span>
+          <i class="fa-solid fa-grip me-1"></i> <span>Cards</span>
         </button>
         <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold agent-view-btn <?= $currentView === 'compact' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" onclick="switchAgentView('compact')" id="btnAgentViewCompact" title="Compact List View">
-          <i class="fa-solid fa-list-ul me-1"></i> <span class="d-none d-sm-inline">Compact List</span>
+          <i class="fa-solid fa-list-ul me-1"></i> <span>List</span>
         </button>
       </div>
 
@@ -108,10 +108,15 @@ $currentView = $_GET['view'] ?? 'table';
   <!-- VIEW OPTION 1: AGENTS DATA TABLE VIEW -->
   <!-- ================================================================= -->
   <div id="agentViewTable" class="agent-view-container <?= $currentView === 'table' ? '' : 'd-none' ?>">
-    <div class="card card-enterprise">
+    <div class="card card-enterprise card-table-enterprise shadow-sm">
+      <!-- Mobile Scroll Hint -->
+      <div class="d-md-none px-3 py-2 bg-light border-bottom d-flex align-items-center justify-content-between text-muted" style="font-size: 0.74rem;">
+        <span><i class="fa-solid fa-arrows-left-right text-primary me-1"></i> Swipe table sideways &bull; Agent code pinned</span>
+        <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.68rem;">Table View</span>
+      </div>
       <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0" id="agentsTable">
+        <div class="table-responsive mb-0">
+          <table class="table table-hover table-mobile-sticky-first align-middle mb-0" id="agentsTable">
             <thead class="table-light">
               <tr>
                 <th style="min-width: 110px;">Agent Code</th>
@@ -862,10 +867,11 @@ document.addEventListener('DOMContentLoaded', function() {
   } else {
     try {
       const saved = localStorage.getItem('vt_agent_view');
-      if (saved) {
+      if (window.innerWidth < 768 && (!saved || saved === 'table')) {
+        switchAgentView('grid');
+      } else if (saved) {
         switchAgentView(saved);
       } else if (window.innerWidth < 768) {
-        // Mobile view default to Grid Cards for optimal UX
         switchAgentView('grid');
       }
     } catch(e) {}

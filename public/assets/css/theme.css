@@ -1464,3 +1464,91 @@ img { max-width: 100%; height: auto; }
   z-index: 5;
 }
 
+/* ==========================================================================
+   MOBILE DATA TABLE RESPONSIVENESS & 3-VIEW SWITCHER
+   ========================================================================== */
+
+/* View Switcher Pills */
+.view-switcher-pill-group {
+  background: #ffffff;
+  border: 1px solid var(--vt-border, #e2e8f0);
+}
+
+.view-switcher-pill-group .btn {
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+/* Table Enterprise Cards */
+.card-table-enterprise {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+@media (max-width: 767.98px) {
+  /* View Switcher: Stretch evenly on mobile screens */
+  .view-switcher-pill-group {
+    width: 100% !important;
+    display: flex !important;
+  }
+  .view-switcher-pill-group .btn {
+    flex: 1 1 0 !important;
+    padding: 0.4rem 0.35rem !important;
+    font-size: 0.76rem !important;
+    text-align: center !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+  }
+
+  /* Table Card Flush on Mobile */
+  .card-table-enterprise {
+    padding: 0 !important;
+    margin-bottom: 1rem !important;
+    border-radius: 12px !important;
+  }
+  .card-table-enterprise .card-body {
+    padding: 0 !important;
+  }
+  .card-table-enterprise .table-responsive {
+    margin-bottom: 0 !important;
+    border-radius: 0 !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-x: contain !important;
+  }
+
+  /* Sticky First Column on Mobile for Quick Identification */
+  .table-mobile-sticky-first th:first-child,
+  .table-mobile-sticky-first td:first-child {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 3 !important;
+    background-color: var(--vt-surface, #ffffff) !important;
+    box-shadow: 4px 0 10px rgba(15, 23, 42, 0.08) !important;
+    min-width: 150px !important;
+    max-width: 175px !important;
+  }
+  .table-mobile-sticky-first thead th:first-child {
+    z-index: 4 !important;
+    background: #f8fafc !important;
+  }
+  [data-theme="dark-obsidian"] .table-mobile-sticky-first th:first-child,
+  [data-theme="dark-obsidian"] .table-mobile-sticky-first td:first-child {
+    background-color: #111827 !important;
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.4) !important;
+  }
+  [data-theme="dark-obsidian"] .table-mobile-sticky-first thead th:first-child {
+    background: #0b1120 !important;
+  }
+
+  /* Compact List Items on Mobile */
+  .staff-view-container .list-group-item,
+  .agent-view-container .list-group-item,
+  .supplier-view-container .list-group-item {
+    padding: 0.85rem !important;
+  }
+}
+

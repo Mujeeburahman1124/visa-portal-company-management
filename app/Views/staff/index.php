@@ -25,16 +25,16 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       <p class="text-muted small mb-0">Manage operations officers, branch staff assignments, roles, and administrative privileges.</p>
     </div>
     <div class="d-flex align-items-center gap-2 flex-wrap">
-      <!-- 3 View Options Switcher -->
-      <div class="btn-group btn-group-sm bg-white shadow-sm border rounded-pill p-1" role="group" aria-label="View Mode">
+      <!-- 3 View Options Switcher (Responsive) -->
+      <div class="btn-group btn-group-sm bg-white shadow-sm border rounded-pill p-1 view-switcher-pill-group" role="group" aria-label="View Mode">
         <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold staff-view-btn <?= $currentView === 'table' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" onclick="switchStaffView('table')" id="btnStaffViewTable" title="Table View">
-          <i class="fa-solid fa-table-list me-1"></i> <span class="d-none d-sm-inline">Table</span>
+          <i class="fa-solid fa-table-list me-1"></i> <span>Table</span>
         </button>
         <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold staff-view-btn <?= $currentView === 'grid' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" onclick="switchStaffView('grid')" id="btnStaffViewGrid" title="Grid Cards View">
-          <i class="fa-solid fa-grip me-1"></i> <span class="d-none d-sm-inline">Grid Cards</span>
+          <i class="fa-solid fa-grip me-1"></i> <span>Cards</span>
         </button>
         <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold staff-view-btn <?= $currentView === 'compact' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" onclick="switchStaffView('compact')" id="btnStaffViewCompact" title="Compact List View">
-          <i class="fa-solid fa-list-ul me-1"></i> <span class="d-none d-sm-inline">Compact List</span>
+          <i class="fa-solid fa-list-ul me-1"></i> <span>List</span>
         </button>
       </div>
 
@@ -147,9 +147,14 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   <!-- VIEW OPTION 1: STAFF DATA TABLE VIEW -->
   <!-- ================================================================= -->
   <div id="staffViewTable" class="staff-view-container <?= $currentView === 'table' ? '' : 'd-none' ?>">
-    <div class="card card-enterprise shadow-sm">
-    <div class="table-responsive">
-      <table class="table table-modern align-middle mb-0">
+    <div class="card card-enterprise card-table-enterprise shadow-sm">
+      <!-- Mobile Scroll Hint -->
+      <div class="d-md-none px-3 py-2 bg-light border-bottom d-flex align-items-center justify-content-between text-muted" style="font-size: 0.74rem;">
+        <span><i class="fa-solid fa-arrows-left-right text-primary me-1"></i> Swipe table sideways &bull; Staff name pinned</span>
+        <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.68rem;">Table View</span>
+      </div>
+      <div class="table-responsive mb-0">
+        <table class="table table-modern table-mobile-sticky-first align-middle mb-0">
         <thead class="table-light">
           <tr>
             <th scope="col" style="min-width: 200px;">Staff Officer</th>
@@ -739,14 +744,15 @@ function updateStaffPermissionsFromRole() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Restore saved view preference
+  // Restore saved view preference (defaults to grid on mobile screens)
   const urlParams = new URLSearchParams(window.location.search);
   if (!urlParams.has('view')) {
     const saved = localStorage.getItem('staff_active_view');
-    if (saved && ['table', 'grid', 'compact'].includes(saved)) {
+    if (window.innerWidth < 768 && (!saved || saved === 'table')) {
+      switchStaffView('grid');
+    } else if (saved && ['table', 'grid', 'compact'].includes(saved)) {
       switchStaffView(saved);
     } else if (window.innerWidth < 768) {
-      // Mobile-friendly default view
       switchStaffView('grid');
     }
   }

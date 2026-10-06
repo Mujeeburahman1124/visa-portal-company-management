@@ -163,15 +163,6 @@ $flash = get_flash();
       </div>
     </div>
 
-    <!-- 1-Click Credential Helper -->
-    <div class="p-2 mb-3 rounded" style="background: rgba(255,255,255,0.04); border: 1px dashed rgba(255,255,255,0.12); font-size: 0.75rem;">
-      <div class="d-flex justify-content-between align-items-center">
-        <span class="text-secondary"><i class="fa-solid fa-key me-1 text-danger"></i> Super Admin Access:</span>
-        <button type="button" class="btn btn-outline-danger btn-sm py-0 px-1.5" style="font-size: 0.7rem;" onclick="document.getElementById('adminEmail').value='admin@system.com'; document.getElementById('adminPass').value='admin123';">
-          Use Default Admin
-        </button>
-      </div>
-    </div>
 
     <button type="submit" class="btn-admin-submit" id="btnAdminSubmit">
       <i class="fa-solid fa-lock-open" id="adminSubmitIcon"></i>
