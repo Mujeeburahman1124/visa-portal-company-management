@@ -6,7 +6,23 @@ declare(strict_types=1);
  * Runs php -l on every PHP file in app/, public/, and scripts/
  */
 
-$phpBinary = 'C:\\xampp\\php\\php.exe';
+// Portable PHP Binary Discovery
+$phpBinary = (function (): string {
+    if (defined('PHP_BINARY') && !empty(PHP_BINARY) && (is_executable(PHP_BINARY) || file_exists(PHP_BINARY))) {
+        return PHP_BINARY;
+    }
+    if (file_exists('C:\\xampp\\php\\php.exe')) {
+        return 'C:\\xampp\\php\\php.exe';
+    }
+    $isWin = stripos(PHP_OS, 'WIN') === 0;
+    $lookupCmd = $isWin ? 'where php 2>nul' : 'which php 2>/dev/null';
+    $out = [];
+    @exec($lookupCmd, $out);
+    if (!empty($out[0]) && file_exists(trim($out[0]))) {
+        return trim($out[0]);
+    }
+    return 'php';
+})();
 $directories = [
     __DIR__ . '/../app',
     __DIR__ . '/../public',

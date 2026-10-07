@@ -48,16 +48,32 @@ class StageTransitionService
             $assignedStaffId = (int)($app['assigned_staff_id'] ?? 0);
             $staffId = (int)($currentUser['id'] ?? 0);
 
-            // Staff must have permission or be assigned officer
-            if (!user_can('applications.stage') && !user_can('applications.edit') && !user_can('applications.manage') && $roleSlug !== 'branch-manager') {
-                if ($assignedStaffId !== $staffId) {
-                    return ['success' => false, 'message' => 'Unauthorized: You do not have permission to transition stages for this application.'];
-                }
-            }
-
             // Enforce branch isolation
             if ($userBranch > 0 && $appBranch > 0 && $userBranch !== $appBranch) {
                 return ['success' => false, 'message' => 'Unauthorized: You cannot transition applications belonging to another branch.'];
+            }
+
+            // Final decision checks (Approval / Rejection)
+            $isFinalDecision = in_array($newStatus, ['Approved', 'Rejected', 'Refused'], true) 
+                || in_array($newStage, ['Visa Issued & Completed', 'Application Rejected / Closed', 'Application Rejected'], true);
+
+            if ($isFinalDecision) {
+                $canApprove = user_can('applications.approve') || user_can('applications.final_decision') || in_array($roleSlug, ['visa-manager', 'branch-manager'], true);
+                $canReject = user_can('applications.reject') || user_can('applications.final_decision') || in_array($roleSlug, ['visa-manager', 'branch-manager'], true);
+
+                if (($newStatus === 'Approved' || $newStage === 'Visa Issued & Completed') && !$canApprove) {
+                    return ['success' => false, 'message' => 'Unauthorized: You do not have permission to grant final approval for visa applications.'];
+                }
+                if (($newStatus === 'Rejected' || $newStatus === 'Refused' || str_contains($newStage, 'Rejected')) && !$canReject) {
+                    return ['success' => false, 'message' => 'Unauthorized: You do not have permission to issue final rejections for visa applications.'];
+                }
+            } else {
+                // Staff must have stage transition permission or be assigned officer
+                if (!user_can('applications.stage') && !user_can('applications.edit') && !user_can('applications.manage') && $roleSlug !== 'branch-manager') {
+                    if ($assignedStaffId !== $staffId) {
+                        return ['success' => false, 'message' => 'Unauthorized: You do not have permission to transition stages for this application.'];
+                    }
+                }
             }
         }
 

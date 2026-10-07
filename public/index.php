@@ -109,12 +109,13 @@ set_error_handler(function (int $errno, string $errstr, string $errfile, int $er
 });
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Automatically initialize database schema and seed data on bootstrap
-try {
-    DatabaseBootstrapper::init();
-} catch (\Throwable $e) {
-    error_log('[VISA-TRACK] DatabaseBootstrapper::init() failed: ' . $e->getMessage());
-    // Do NOT expose DB error details to the user — fall through; queries will fail safely
+// Run database schema migration only if explicitly enabled via DB_AUTO_MIGRATE (never during production web requests)
+if ((bool)\App\Config\Env::get('DB_AUTO_MIGRATE', false)) {
+    try {
+        DatabaseBootstrapper::init();
+    } catch (\Throwable $e) {
+        error_log('[VISA-TRACK] DatabaseBootstrapper::init() failed: ' . $e->getMessage());
+    }
 }
 
 $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
@@ -682,6 +683,12 @@ switch ($uri) {
     case '/tasks/details':
         require_permission('tasks.view');
         (new App\Controllers\TaskController())->details();
+        break;
+
+    case '/tasks/proof':
+    case '/tasks/proof-download':
+        require_permission('tasks.view');
+        (new App\Controllers\TaskController())->downloadProof();
         break;
 
     // Management & Workflow: Reports & Analytics (Protected: Management/Finance)

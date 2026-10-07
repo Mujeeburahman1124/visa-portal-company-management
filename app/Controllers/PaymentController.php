@@ -1153,14 +1153,16 @@ class PaymentController
             // 1. Debit wallet
             $debitResult = \App\Services\WalletService::debit($customerId, $amount, "Visa settlement via online link for {$link['application_number']}", $appId);
             $wtxId = $debitResult['transaction_id'] ?? null;
+            $wtxRecordId = $debitResult['id'] ?? null;
 
             // 2. Complete payment record
             $result = \App\Services\PaymentLinkService::completePayment(
                 $token,
                 'Customer Wallet',
                 $wtxId ?: 'WALLET_TXN',
-                null,
-                "Settled via Customer Digital Wallet Balance"
+                (float)$amount,
+                "Settled via Customer Digital Wallet Balance",
+                $wtxRecordId
             );
 
             if ($result['success']) {

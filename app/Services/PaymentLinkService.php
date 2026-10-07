@@ -175,15 +175,52 @@ class PaymentLinkService
         string $token,
         string $paymentMethod,
         string $transactionRef,
-        ?int $walletTransactionId = null,
+        mixed $arg4 = null,
         ?string $notes = null,
-        ?float $paidAmount = null
+        mixed $arg6 = null
     ): array {
         $pdo = Database::getConnection();
         $link = self::getLinkByToken($token);
 
         if (!$link) {
             return ['success' => false, 'message' => 'Payment link not found or invalid.'];
+        }
+
+        // Normalize argument order flexibly across all callers:
+        // Canonical: ($token, $paymentMethod, $transactionRef, ?float $paidAmount, ?string $notes, ?int $walletTransactionId)
+        // Legacy: ($token, $paymentMethod, $transactionRef, ?int $walletTransactionId, ?string $notes, ?float $paidAmount)
+        $paidAmount = null;
+        $walletTransactionId = null;
+
+        if (is_float($arg4) || (is_numeric($arg4) && !is_int($arg4))) {
+            $paidAmount = (float)$arg4;
+            $walletTransactionId = is_numeric($arg6) ? (int)$arg6 : null;
+        } elseif (is_int($arg4)) {
+            if ($arg6 !== null && is_numeric($arg6)) {
+                $walletTransactionId = (int)$arg4;
+                $paidAmount = (float)$arg6;
+            } else {
+                // If single number passed, treat as paidAmount if matches link amount, or walletTransactionId
+                if (abs((float)$arg4 - (float)$link['amount']) < 0.01) {
+                    $paidAmount = (float)$arg4;
+                    $walletTransactionId = null;
+                } else {
+                    $walletTransactionId = (int)$arg4;
+                    $paidAmount = null;
+                }
+            }
+        } elseif ($arg6 !== null && is_numeric($arg6)) {
+            $paidAmount = (float)$arg6;
+        }
+
+        // If wallet transaction ID not set, resolve from transactionRef if it is a WTX reference
+        if ($walletTransactionId === null && !empty($transactionRef)) {
+            $wtxStmt = $pdo->prepare("SELECT id FROM wallet_transactions WHERE transaction_id = ? LIMIT 1");
+            $wtxStmt->execute([$transactionRef]);
+            $wtxFound = $wtxStmt->fetchColumn();
+            if ($wtxFound) {
+                $walletTransactionId = (int)$wtxFound;
+            }
         }
 
         // 1. IDEMPOTENCY / DUPLICATE CHECK: Verify if transactionRef has already been recorded

@@ -22,12 +22,25 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       <h3 class="fw-bold brand-font mb-1">Customer Payments, Invoices &amp; Links</h3>
       <p class="text-muted small mb-0">End-to-end payment tracking: Customer &rarr; Supplier &rarr; Applicant &rarr; Passport &rarr; Visa Type &rarr; Invoice &rarr; Wallet.</p>
     </div>
-    <div class="d-flex flex-wrap gap-2">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <!-- 3 View Mode Switcher -->
+      <div class="btn-group btn-group-sm bg-white shadow-sm border rounded-pill p-1 payment-view-switcher" role="group" aria-label="Payment View Mode">
+        <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold payment-view-btn btn-primary shadow-sm" id="btnPaymentViewTable" onclick="switchPaymentView('table')" title="Tabular View">
+          <i class="fa-solid fa-table-list me-1"></i> <span>Table</span>
+        </button>
+        <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold payment-view-btn btn-light text-muted" id="btnPaymentViewGrid" onclick="switchPaymentView('grid')" title="Card Grid View">
+          <i class="fa-solid fa-grip me-1"></i> <span>Cards</span>
+        </button>
+        <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold payment-view-btn btn-light text-muted" id="btnPaymentViewCompact" onclick="switchPaymentView('compact')" title="Compact List View">
+          <i class="fa-solid fa-bars me-1"></i> <span>Compact</span>
+        </button>
+      </div>
+
       <a href="/payments/history" class="btn btn-outline-dark btn-sm px-3 fw-semibold shadow-sm">
-        <i class="fa-solid fa-clock-rotate-left me-1"></i> Payment History
+        <i class="fa-solid fa-clock-rotate-left me-1"></i> History
       </a>
       <a href="/payments/links" class="btn btn-outline-info btn-sm px-3 fw-semibold shadow-sm">
-        <i class="fa-solid fa-list-check me-1"></i> Payment Links (<?= $metrics['total_online_links'] ?>)
+        <i class="fa-solid fa-list-check me-1"></i> Links (<?= $metrics['total_online_links'] ?>)
       </a>
       <button type="button" class="btn btn-outline-primary btn-sm px-3 fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#generateLinkModal">
         <i class="fa-solid fa-link me-1"></i> Generate Link
@@ -209,7 +222,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   </div>
 
   <!-- Payments & Invoices Table (100% Horizontal Responsive Grid) -->
-  <div class="card card-enterprise shadow-sm">
+  <div id="paymentViewTable" class="payment-view-container">
+    <div class="card card-enterprise shadow-sm">
     <div class="table-responsive" style="-webkit-overflow-scrolling: touch;">
       <table class="table table-hover align-middle mb-0 table-custom" style="font-size: 0.86rem; min-width: 1080px;">
         <thead class="table-light">
@@ -292,6 +306,133 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       </table>
     </div>
   </div>
+</div>
+
+<!-- ================================================================= -->
+<!-- VIEW OPTION 2: PAYMENTS GRID CARDS VIEW -->
+<!-- ================================================================= -->
+<div id="paymentViewGrid" class="payment-view-container d-none mb-4">
+  <div class="row g-3">
+    <?php if (empty($payments)): ?>
+      <div class="col-12 text-center py-5 text-muted">No payment records found.</div>
+    <?php else: ?>
+      <?php foreach ($payments as $p): ?>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card card-enterprise h-100 shadow-sm border">
+            <div class="card-body p-3.5 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="badge bg-light text-dark border fw-bold px-2.5 py-1">
+                    <i class="fa-solid fa-receipt me-1 text-primary"></i><?= e($p['payment_number']) ?>
+                  </span>
+                  <span class="badge bg-success-subtle text-success fw-bold px-2 py-0.5" style="font-size: 0.72rem;">
+                    <i class="fa-solid fa-circle-check me-1"></i><?= e($p['status']) ?>
+                  </span>
+                </div>
+
+                <h6 class="fw-bold text-dark mb-1 text-truncate">
+                  <?= e($p['customer_name'] ?? 'Direct Walk-in') ?>
+                </h6>
+                <div class="text-muted small mb-2 text-truncate" style="font-size: 0.75rem;">
+                  ID: <?= e($p['customer_code'] ?? '—') ?> &bull; Pass: <?= e($p['passport_number'] ?: 'N/A') ?>
+                </div>
+
+                <div class="p-2.5 bg-light rounded-3 border mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-muted small">Service:</span>
+                    <strong class="text-dark small text-truncate" style="max-width: 170px;"><?= $p['flag_emoji'] ?? '✈️' ?> <?= e($p['country_name'] ?? 'Visa') ?></strong>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-muted small">Method:</span>
+                    <span class="badge bg-primary-subtle text-primary small"><?= e($p['payment_method']) ?></span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">Date:</span>
+                    <span class="small fw-semibold text-secondary"><?= format_date($p['payment_date']) ?></span>
+                  </div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between mb-2 p-2 bg-white rounded border">
+                  <span class="text-muted small text-uppercase fw-bold" style="font-size: 0.68rem;">Amount Paid:</span>
+                  <span class="fw-bold text-success fs-5"><?= format_currency((float)$p['amount']) ?></span>
+                </div>
+              </div>
+
+              <div class="pt-2 border-top d-flex align-items-center justify-content-between gap-1 mt-2">
+                <div class="btn-group btn-group-sm shadow-sm" role="group">
+                  <a href="/payments/receipt?id=<?= $p['id'] ?>" target="_blank" class="btn btn-outline-secondary" title="Print Official Receipt">
+                    <i class="fa-solid fa-print me-1"></i> Receipt
+                  </a>
+                  <a href="/payments/invoice?app_id=<?= $p['application_id'] ?>" target="_blank" class="btn btn-outline-primary" title="View Full Tax Invoice">
+                    <i class="fa-solid fa-file-invoice me-1"></i> Invoice
+                  </a>
+                </div>
+
+                <?php if ($canDeletePayment): ?>
+                  <form action="/payments/delete" method="POST" class="d-inline" onsubmit="return confirm('Delete payment <?= e($p['payment_number']) ?>?');">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="payment_id" value="<?= (int)$p['id'] ?>">
+                    <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-2" title="Delete Payment">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                  </form>
+                <?php endif; ?>
+              </div>
+            </div>
+          </div>
+        </div>
+      <?php endforeach; ?>
+    <?php endif; ?>
+  </div>
+</div>
+
+<!-- ================================================================= -->
+<!-- VIEW OPTION 3: PAYMENTS COMPACT LIST VIEW -->
+<!-- ================================================================= -->
+<div id="paymentViewCompact" class="payment-view-container d-none mb-4">
+  <div class="card card-enterprise shadow-sm border">
+    <div class="list-group list-group-flush">
+      <?php if (empty($payments)): ?>
+        <div class="p-4 text-center text-muted">No payment records available.</div>
+      <?php else: ?>
+        <?php foreach ($payments as $p): ?>
+          <div class="list-group-item p-3 border-start border-4 border-success d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-2" style="min-width: 240px; flex: 1 1 300px;">
+              <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                  <span class="badge bg-light text-dark border fw-bold"><?= e($p['payment_number']) ?></span>
+                  <span class="fw-bold text-dark fs-6"><?= e($p['customer_name'] ?? 'Direct Walk-in') ?></span>
+                  <span class="badge bg-info-subtle text-info border" style="font-size: 0.68rem;"><?= $p['flag_emoji'] ?? '✈️' ?> <?= e($p['country_name'] ?? 'General') ?></span>
+                </div>
+                <div class="text-muted small d-flex align-items-center gap-2 mt-0.5" style="font-size: 0.74rem;">
+                  <span><i class="fa-regular fa-credit-card me-1 text-primary"></i><?= e($p['payment_method']) ?></span>
+                  <span>&bull;</span>
+                  <span><?= format_date($p['payment_date']) ?></span>
+                  <?php if (!empty($p['transaction_reference'])): ?>
+                    <span>&bull;</span>
+                    <span class="font-monospace">Ref: <?= e($p['transaction_reference']) ?></span>
+                  <?php endif; ?>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-3 ms-auto">
+              <span class="fw-bold text-success fs-6"><?= format_currency((float)$p['amount']) ?></span>
+              <div class="btn-group btn-group-sm shadow-sm" role="group">
+                <a href="/payments/receipt?id=<?= $p['id'] ?>" target="_blank" class="btn btn-outline-secondary" title="Print Official Receipt">
+                  <i class="fa-solid fa-print"></i>
+                </a>
+                <a href="/payments/invoice?app_id=<?= $p['application_id'] ?>" target="_blank" class="btn btn-outline-primary" title="View Full Tax Invoice">
+                  <i class="fa-solid fa-file-invoice"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      <?php endif; ?>
+    </div>
+  </div>
+</div>
 </div>
 
 <!-- Modal: Generate Payment Link -->
@@ -613,7 +754,51 @@ document.addEventListener('DOMContentLoaded', function () {
       openModalById('recordPaymentModal');
     }
   }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const paramView = urlParams.get('view');
+  let savedView = null;
+  try { savedView = localStorage.getItem('vt_payment_view'); } catch(e) {}
+
+  if (paramView) {
+    switchPaymentView(paramView);
+  } else if (savedView) {
+    switchPaymentView(savedView);
+  } else if (window.innerWidth < 768) {
+    switchPaymentView('grid'); // Default to cards on mobile
+  } else {
+    switchPaymentView('table');
+  }
 });
+
+function switchPaymentView(viewMode) {
+  document.querySelectorAll('.payment-view-container').forEach(el => el.classList.add('d-none'));
+  document.querySelectorAll('.payment-view-btn').forEach(btn => {
+    btn.classList.remove('btn-primary', 'shadow-sm');
+    btn.classList.add('btn-light', 'text-muted');
+  });
+
+  if (viewMode === 'grid') {
+    const el = document.getElementById('paymentViewGrid');
+    if (el) el.classList.remove('d-none');
+    const btn = document.getElementById('btnPaymentViewGrid');
+    if (btn) { btn.classList.remove('btn-light', 'text-muted'); btn.classList.add('btn-primary', 'shadow-sm'); }
+  } else if (viewMode === 'compact') {
+    const el = document.getElementById('paymentViewCompact');
+    if (el) el.classList.remove('d-none');
+    const btn = document.getElementById('btnPaymentViewCompact');
+    if (btn) { btn.classList.remove('btn-light', 'text-muted'); btn.classList.add('btn-primary', 'shadow-sm'); }
+  } else {
+    const el = document.getElementById('paymentViewTable');
+    if (el) el.classList.remove('d-none');
+    const btn = document.getElementById('btnPaymentViewTable');
+    if (btn) { btn.classList.remove('btn-light', 'text-muted'); btn.classList.add('btn-primary', 'shadow-sm'); }
+  }
+
+  try {
+    localStorage.setItem('vt_payment_view', viewMode);
+  } catch(e) {}
+}
 </script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

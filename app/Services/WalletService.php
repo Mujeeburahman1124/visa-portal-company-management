@@ -95,12 +95,14 @@ class WalletService
                 $invoiceId, $paymentMethod, $reference, $convertedAmount ?? $amount, $convertedCurrency ?? $currency
             ]);
 
+            $wtxRecordId = (int)$pdo->lastInsertId();
             $pdo->commit();
 
             AuditService::log('WALLET_CREDIT', 'Wallet', $customerId, "Credited {$currency} " . number_format($amount, 2) . " to customer wallet. Ref: {$txnId}");
 
             return [
                 'success' => true,
+                'id' => $wtxRecordId,
                 'transaction_id' => $txnId,
                 'new_balance' => $newBalance
             ];
@@ -176,12 +178,14 @@ class WalletService
                 $invoiceId, $paymentMethod, $reference, $convertedAmount ?? $amount, $convertedCurrency ?? $currency
             ]);
 
+            $wtxRecordId = (int)$pdo->lastInsertId();
             $pdo->commit();
 
             AuditService::log('WALLET_DEBIT', 'Wallet', $customerId, "Debited {$currency} " . number_format($amount, 2) . " from customer wallet. Ref: {$txnId}");
 
             return [
                 'success' => true,
+                'id' => $wtxRecordId,
                 'transaction_id' => $txnId,
                 'new_balance' => $newBalance
             ];
@@ -189,6 +193,22 @@ class WalletService
             $pdo->rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * Backward-compatible alias for credit()
+     */
+    public static function creditCustomer(int $customerId, float $amount, string $description, ?int $paymentId = null, ?int $applicationId = null, ?int $createdBy = null, string $currency = 'USD'): array
+    {
+        return self::credit($customerId, $amount, $description, $paymentId, $applicationId, $createdBy, $currency);
+    }
+
+    /**
+     * Backward-compatible alias for debit()
+     */
+    public static function debitCustomer(int $customerId, float $amount, string $description, ?int $applicationId = null, ?int $createdBy = null, string $currency = 'USD'): array
+    {
+        return self::debit($customerId, $amount, $description, $applicationId, $createdBy, $currency);
     }
 
     /**

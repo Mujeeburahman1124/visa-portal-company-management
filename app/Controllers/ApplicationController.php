@@ -835,12 +835,37 @@ class ApplicationController
             redirect("/applications/show?id={$appId}", 'A rejection reason is strictly mandatory when rejecting an application.', 'danger');
         }
 
-        $stmt = $pdo->prepare("SELECT id, application_number, customer_id, current_stage, status, assigned_staff_id FROM applications WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT id, application_number, customer_id, branch_id, current_stage, status, assigned_staff_id FROM applications WHERE id = ?");
         $stmt->execute([$appId]);
         $app = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$app) {
             redirect('/applications', 'Application not found.', 'danger');
+        }
+
+        // 1. RBAC Check for Final Decision
+        $isAdmin = is_super_admin($user) || is_admin($user);
+        $roleSlug = $user['role_slug'] ?? '';
+
+        if ($decision === 'Approved') {
+            if (!$isAdmin && !user_can('applications.approve') && !user_can('applications.final_decision') && !in_array($roleSlug, ['visa-manager', 'branch-manager'], true)) {
+                redirect("/applications/show?id={$appId}", 'Unauthorized: You do not have permission to approve visa applications.', 'danger');
+            }
+        } else {
+            if (!$isAdmin && !user_can('applications.reject') && !user_can('applications.final_decision') && !in_array($roleSlug, ['visa-manager', 'branch-manager'], true)) {
+                redirect("/applications/show?id={$appId}", 'Unauthorized: You do not have permission to reject visa applications.', 'danger');
+            }
+        }
+
+        // 2. Branch isolation check
+        $scopedBranchId = get_scoped_branch_id(0, $user);
+        if ($scopedBranchId > 0 && (int)$app['branch_id'] !== $scopedBranchId) {
+            redirect("/applications/show?id={$appId}", 'Unauthorized: This application belongs to a different branch.', 'danger');
+        }
+
+        // 3. Prevent duplicate final decisions
+        if (in_array($app['status'], ['Approved', 'Rejected', 'Completed'], true)) {
+            redirect("/applications/show?id={$appId}", "This application has already reached a final decision ({$app['status']}).", 'warning');
         }
 
         $pdo->beginTransaction();
@@ -1080,6 +1105,27 @@ class ApplicationController
             redirect("/applications/show?id={$appId}", 'Visa number and expiry date are required for approval.', 'danger');
         }
 
+        $stmt = $pdo->prepare("SELECT id, application_number, branch_id, status FROM applications WHERE id = ?");
+        $stmt->execute([$appId]);
+        $app = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$app) {
+            redirect('/applications', 'Application not found.', 'danger');
+        }
+
+        // 1. RBAC Check for Visa Approval
+        $isAdmin = is_super_admin($user) || is_admin($user);
+        $roleSlug = $user['role_slug'] ?? '';
+        if (!$isAdmin && !user_can('applications.approve') && !user_can('applications.final_decision') && !in_array($roleSlug, ['visa-manager', 'branch-manager'], true)) {
+            redirect("/applications/show?id={$appId}", 'Unauthorized: You do not have permission to grant visa approvals.', 'danger');
+        }
+
+        // 2. Branch isolation check
+        $scopedBranchId = get_scoped_branch_id(0, $user);
+        if ($scopedBranchId > 0 && (int)$app['branch_id'] !== $scopedBranchId) {
+            redirect("/applications/show?id={$appId}", 'Unauthorized: This application belongs to a different branch.', 'danger');
+        }
+
         // Handle Visa PDF upload if provided
         $filePath = null;
         if (!empty($_FILES['visa_file']['name']) && $_FILES['visa_file']['error'] === UPLOAD_ERR_OK) {
@@ -1137,6 +1183,27 @@ class ApplicationController
             redirect("/applications/show?id={$appId}", 'Customer-facing rejection reason is mandatory.', 'danger');
         }
 
+        $stmt = $pdo->prepare("SELECT id, application_number, branch_id, status FROM applications WHERE id = ?");
+        $stmt->execute([$appId]);
+        $app = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$app) {
+            redirect('/applications', 'Application not found.', 'danger');
+        }
+
+        // 1. RBAC Check for Visa Rejection
+        $isAdmin = is_super_admin($user) || is_admin($user);
+        $roleSlug = $user['role_slug'] ?? '';
+        if (!$isAdmin && !user_can('applications.reject') && !user_can('applications.final_decision') && !in_array($roleSlug, ['visa-manager', 'branch-manager'], true)) {
+            redirect("/applications/show?id={$appId}", 'Unauthorized: You do not have permission to issue visa rejections.', 'danger');
+        }
+
+        // 2. Branch isolation check
+        $scopedBranchId = get_scoped_branch_id(0, $user);
+        if ($scopedBranchId > 0 && (int)$app['branch_id'] !== $scopedBranchId) {
+            redirect("/applications/show?id={$appId}", 'Unauthorized: This application belongs to a different branch.', 'danger');
+        }
+
         $filePath = null;
         if (!empty($_FILES['rejection_file']['name']) && $_FILES['rejection_file']['error'] === UPLOAD_ERR_OK) {
             $dir = dirname(__DIR__, 2) . '/storage/uploads/rejections';
@@ -1188,6 +1255,27 @@ class ApplicationController
 
         if ($appId <= 0 || empty($returnReason)) {
             redirect("/applications/show?id={$appId}", 'Return reason is required.', 'danger');
+        }
+
+        $stmt = $pdo->prepare("SELECT id, application_number, branch_id, status FROM applications WHERE id = ?");
+        $stmt->execute([$appId]);
+        $app = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$app) {
+            redirect('/applications', 'Application not found.', 'danger');
+        }
+
+        // 1. RBAC Check for Return
+        $isAdmin = is_super_admin($user) || is_admin($user);
+        $roleSlug = $user['role_slug'] ?? '';
+        if (!$isAdmin && !user_can('applications.return') && !user_can('applications.edit') && !user_can('applications.manage') && !in_array($roleSlug, ['visa-manager', 'branch-manager'], true)) {
+            redirect("/applications/show?id={$appId}", 'Unauthorized: You do not have permission to return applications for modification.', 'danger');
+        }
+
+        // 2. Branch isolation check
+        $scopedBranchId = get_scoped_branch_id(0, $user);
+        if ($scopedBranchId > 0 && (int)$app['branch_id'] !== $scopedBranchId) {
+            redirect("/applications/show?id={$appId}", 'Unauthorized: This application belongs to a different branch.', 'danger');
         }
 
         $pdo->prepare("INSERT INTO application_returns (application_id, return_reason, required_changes, deadline, staff_comment, returned_by)
@@ -1272,10 +1360,15 @@ class ApplicationController
     {
         AuthMiddleware::handle();
         $pdo = Database::getConnection();
+        $user = auth_user();
+
+        if (!$user) {
+            redirect('/login', 'Please sign in to continue.', 'danger');
+        }
 
         $id = (int)($_GET['id'] ?? 0);
         if ($id <= 0) {
-            redirect('/applications', 'Application not found.', 'danger');
+            redirect('/applications', 'Invalid application ID.', 'danger');
         }
 
         $stmt = $pdo->prepare("SELECT a.*, c.full_name as customer_name, c.customer_code, c.email as customer_email, c.mobile as customer_mobile 
@@ -1287,6 +1380,23 @@ class ApplicationController
 
         if (!$app) {
             redirect('/applications', 'Application not found.', 'danger');
+        }
+
+        // 1. RBAC Check: require applications.edit or applications.manage
+        $isAdmin = is_super_admin($user) || is_admin($user);
+        $roleSlug = $user['role_slug'] ?? '';
+        $isAssigned = ((int)($app['assigned_staff_id'] ?? 0) === (int)$user['id']);
+
+        if (!$isAdmin && !user_can('applications.edit') && !user_can('applications.manage') && $roleSlug !== 'branch-manager') {
+            if (!$isAssigned) {
+                redirect('/applications', 'Unauthorized: You do not have permission to edit this application.', 'danger');
+            }
+        }
+
+        // 2. Branch isolation check
+        $scopedBranchId = get_scoped_branch_id(0, $user);
+        if ($scopedBranchId > 0 && !empty($app['branch_id']) && (int)$app['branch_id'] !== $scopedBranchId) {
+            redirect('/applications', 'Unauthorized: This application belongs to a different branch.', 'danger');
         }
 
         $countries = $pdo->query("SELECT id, name, iso_code, flag_emoji FROM countries WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
@@ -1304,35 +1414,104 @@ class ApplicationController
         $pdo = Database::getConnection();
         $user = auth_user();
 
+        if (!$user) {
+            redirect('/login', 'Please sign in to continue.', 'danger');
+        }
+
         $id = (int)($_POST['id'] ?? 0);
         if ($id <= 0) {
+            redirect('/applications', 'Invalid application ID.', 'danger');
+        }
+
+        // Fetch current application with all sensitive fields
+        $currStmt = $pdo->prepare("SELECT * FROM applications WHERE id = ?");
+        $currStmt->execute([$id]);
+        $currentApp = $currStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$currentApp) {
             redirect('/applications', 'Application not found.', 'danger');
         }
 
-        $visaServiceId = (int)($_POST['visa_service_id'] ?? 0);
-        $passportNumber = trim($_POST['passport_number'] ?? '');
-        $travelDate = !empty($_POST['travel_date']) ? $_POST['travel_date'] : null;
-        $returnDate = !empty($_POST['return_date']) ? $_POST['return_date'] : null;
-        $applicationDate = !empty($_POST['submission_date']) ? $_POST['submission_date'] : (!empty($_POST['application_date']) ? $_POST['application_date'] : date('Y-m-d'));
-        $expectedDate = !empty($_POST['expected_completion_date']) ? $_POST['expected_completion_date'] : null;
-        $priority = trim($_POST['priority'] ?? 'Standard');
-        $branchId = (int)($_POST['branch_id'] ?? 1);
-        $supplierId = !empty($_POST['supplier_id']) ? (int)$_POST['supplier_id'] : null;
-        $assignedStaffId = !empty($_POST['assigned_staff_id']) ? (int)$_POST['assigned_staff_id'] : null;
-        $sellingPrice = (float)($_POST['selling_price'] ?? 0.00);
-        $supplierCost = (float)($_POST['supplier_cost'] ?? 0.00);
-        $embassyFee = (float)($_POST['embassy_fee'] ?? 0.00);
-        $serviceFee = (float)($_POST['service_fee'] ?? 0.00);
-        $discountAmount = (float)($_POST['discount_amount'] ?? ($_POST['discount'] ?? 0.00));
-        $taxAmount = (float)($_POST['tax_amount'] ?? 0.00);
-        $otherExpenses = $embassyFee + $serviceFee;
-        $notes = trim($_POST['notes'] ?? ($_POST['internal_notes'] ?? ''));
+        // 1. RBAC & IDOR check: Verify user can edit applications
+        $isAdmin = is_super_admin($user) || is_admin($user);
+        $roleSlug = $user['role_slug'] ?? '';
+        $isAssigned = ((int)($currentApp['assigned_staff_id'] ?? 0) === (int)$user['id']);
 
-        // Fetch current paid amount
-        $currStmt = $pdo->prepare("SELECT paid_amount, destination_country, visa_category, visa_type, visa_duration, entry_type, processing_type FROM applications WHERE id = ?");
-        $currStmt->execute([$id]);
-        $currentApp = $currStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$isAdmin && !user_can('applications.edit') && !user_can('applications.manage') && $roleSlug !== 'branch-manager') {
+            if (!$isAssigned) {
+                redirect('/applications', 'Unauthorized: You do not have permission to edit this application.', 'danger');
+            }
+        }
+
+        // 2. Branch Isolation check
+        $scopedBranchId = get_scoped_branch_id(0, $user);
+        if ($scopedBranchId > 0 && (int)$currentApp['branch_id'] !== $scopedBranchId) {
+            redirect('/applications', 'Unauthorized: This application belongs to a different branch.', 'danger');
+        }
+
+        // 3. Sensitive Field Protection: Branch reassignment
+        $targetBranchId = (int)$currentApp['branch_id'];
+        if ($isAdmin || $roleSlug === 'branch-manager' || user_can('branches.manage')) {
+            $requestedBranch = (int)($_POST['branch_id'] ?? $currentApp['branch_id']);
+            if ($requestedBranch > 0 && ($isAdmin || $requestedBranch === $scopedBranchId)) {
+                $targetBranchId = $requestedBranch;
+            }
+        }
+
+        // 4. Sensitive Field Protection: Staff Assignment
+        $assignedStaffId = (int)($currentApp['assigned_staff_id'] ?? 0);
+        if ($isAdmin || $roleSlug === 'branch-manager' || user_can('applications.assign') || user_can('applications.assign_staff')) {
+            if (isset($_POST['assigned_staff_id'])) {
+                $newStaff = !empty($_POST['assigned_staff_id']) ? (int)$_POST['assigned_staff_id'] : null;
+                if ($newStaff !== null) {
+                    $staffCheck = $pdo->prepare("SELECT branch_id FROM users WHERE id = ? AND is_active = 1");
+                    $staffCheck->execute([$newStaff]);
+                    $staffBranch = $staffCheck->fetchColumn();
+                    if ($staffBranch !== false && ($isAdmin || (int)$staffBranch === $targetBranchId)) {
+                        $assignedStaffId = $newStaff;
+                    }
+                } else {
+                    $assignedStaffId = null;
+                }
+            }
+        }
+
+        // 5. Sensitive Field Protection: Financial fields (selling_price, supplier_cost, etc.)
+        $canEditFinancials = $isAdmin || user_can('finance.manage') || user_can('applications.financial_edit') || in_array($roleSlug, ['accounts', 'finance', 'branch-manager'], true);
+
+        if ($canEditFinancials) {
+            $sellingPrice = (float)($_POST['selling_price'] ?? $currentApp['selling_price']);
+            $supplierCost = (float)($_POST['supplier_cost'] ?? $currentApp['supplier_cost']);
+            $embassyFee = (float)($_POST['embassy_fee'] ?? 0.00);
+            $serviceFee = (float)($_POST['service_fee'] ?? 0.00);
+            $discountAmount = (float)($_POST['discount_amount'] ?? ($_POST['discount'] ?? $currentApp['discount']));
+            $taxAmount = (float)($_POST['tax_amount'] ?? $currentApp['tax_amount']);
+            $otherExpenses = $embassyFee + $serviceFee;
+            $supplierId = !empty($_POST['supplier_id']) ? (int)$_POST['supplier_id'] : $currentApp['supplier_id'];
+        } else {
+            // Keep existing server-side financial values untouched
+            $sellingPrice = (float)$currentApp['selling_price'];
+            $supplierCost = (float)$currentApp['supplier_cost'];
+            $otherExpenses = (float)$currentApp['other_expenses'];
+            $discountAmount = (float)($currentApp['discount_amount'] ?? $currentApp['discount']);
+            $taxAmount = (float)$currentApp['tax_amount'];
+            $supplierId = $currentApp['supplier_id'];
+        }
+
         $paidAmount = (float)($currentApp['paid_amount'] ?? 0.00);
+        $totalAmount = $sellingPrice > 0 ? max(0.0, $sellingPrice - $discountAmount + $taxAmount) : max(0.0, $supplierCost + $otherExpenses + $taxAmount - $discountAmount);
+        $balanceAmount = max(0.0, $totalAmount - $paidAmount);
+        $grossProfit = round($totalAmount - $supplierCost - $otherExpenses, 2);
+
+        // General fields
+        $visaServiceId = (int)($_POST['visa_service_id'] ?? $currentApp['visa_service_id']);
+        $passportNumber = trim($_POST['passport_number'] ?? $currentApp['passport_number']);
+        $travelDate = !empty($_POST['travel_date']) ? $_POST['travel_date'] : $currentApp['travel_date'];
+        $returnDate = !empty($_POST['return_date']) ? $_POST['return_date'] : $currentApp['return_date'];
+        $applicationDate = !empty($_POST['submission_date']) ? $_POST['submission_date'] : (!empty($_POST['application_date']) ? $_POST['application_date'] : $currentApp['application_date']);
+        $expectedDate = !empty($_POST['expected_completion_date']) ? $_POST['expected_completion_date'] : $currentApp['expected_completion_date'];
+        $priority = trim($_POST['priority'] ?? $currentApp['priority']);
+        $notes = trim($_POST['notes'] ?? ($_POST['internal_notes'] ?? ($currentApp['internal_notes'] ?? '')));
 
         // Fetch selected visa service details to sync metadata if changed
         $destinationCountry = $currentApp['destination_country'] ?? '';
@@ -1342,7 +1521,7 @@ class ApplicationController
         $entryType = $currentApp['entry_type'] ?? 'Single Entry';
         $processingType = $currentApp['processing_type'] ?? 'Normal';
 
-        if ($visaServiceId > 0) {
+        if ($visaServiceId > 0 && $visaServiceId !== (int)$currentApp['visa_service_id']) {
             $srvStmt = $pdo->prepare("SELECT vs.*, ct.name as country_name, ct.iso_code as country_code, vc.name as category_name 
                 FROM visa_services vs 
                 JOIN countries ct ON vs.country_id = ct.id 
@@ -1360,10 +1539,6 @@ class ApplicationController
             }
         }
 
-        $totalAmount = $sellingPrice > 0 ? max(0.0, $sellingPrice - $discountAmount + $taxAmount) : max(0.0, $supplierCost + $otherExpenses + $taxAmount - $discountAmount);
-        $balanceAmount = max(0.0, $totalAmount - $paidAmount);
-        $grossProfit = round($totalAmount - $supplierCost - $otherExpenses, 2);
-
         $stmt = $pdo->prepare("UPDATE applications SET 
             visa_service_id = ?, passport_number = ?, travel_date = ?, return_date = ?, 
             application_date = ?, expected_completion_date = ?, priority = ?, 
@@ -1376,7 +1551,7 @@ class ApplicationController
         $stmt->execute([
             $visaServiceId, $passportNumber, $travelDate, $returnDate,
             $applicationDate, $expectedDate, $priority,
-            $branchId, $supplierId, $assignedStaffId,
+            $targetBranchId, $supplierId, $assignedStaffId,
             $destinationCountry, $visaCategory, $visaType, $visaDuration, $entryType, $processingType,
             $sellingPrice, $supplierCost, $otherExpenses, $discountAmount,
             $discountAmount, $taxAmount, $totalAmount, $balanceAmount, $grossProfit,
@@ -1385,7 +1560,11 @@ class ApplicationController
         ]);
 
         FinanceService::recalculateApplication($id);
-        AuditService::log('APPLICATION_UPDATED', 'Applications', $id, "Updated application #{$id}", [], $user['id'] ?? null);
+        AuditService::log('APPLICATION_UPDATED', 'Applications', $id, "Updated application #{$id}", [
+            'branch_id' => $targetBranchId,
+            'assigned_staff_id' => $assignedStaffId,
+            'priority' => $priority
+        ], $user['id'] ?? null);
 
         redirect("/applications/show?id={$id}", "Application updated successfully.", 'success');
     }
@@ -1396,51 +1575,85 @@ class ApplicationController
         $pdo = Database::getConnection();
         $user = auth_user();
 
+        if (!$user) {
+            redirect('/login', 'Please sign in to continue.', 'danger');
+        }
+
         $id = (int)($_POST['application_id'] ?? $_POST['id'] ?? 0);
         if ($id <= 0) {
             redirect('/applications', 'Application not found.', 'danger');
         }
 
-        $app = $pdo->query("SELECT application_number FROM applications WHERE id = {$id}")->fetch();
+        // 1. Explicit application.delete permission check
+        $isAdmin = is_super_admin($user) || is_admin($user);
+        if (!$isAdmin && !user_can('applications.delete')) {
+            redirect('/applications', 'Unauthorized: You do not have permission to delete applications.', 'danger');
+        }
+
+        // 2. Fetch application with branch info
+        $stmt = $pdo->prepare("SELECT id, application_number, branch_id, customer_id, status FROM applications WHERE id = ?");
+        $stmt->execute([$id]);
+        $app = $stmt->fetch(PDO::FETCH_ASSOC);
+
         if (!$app) {
             redirect('/applications', 'Application not found.', 'danger');
         }
 
+        // 3. Branch isolation check
+        $scopedBranchId = get_scoped_branch_id(0, $user);
+        if ($scopedBranchId > 0 && (int)$app['branch_id'] !== $scopedBranchId) {
+            redirect('/applications', 'Unauthorized: You cannot delete applications from another branch.', 'danger');
+        }
+
+        $reason = trim($_POST['delete_reason'] ?? $_POST['reason'] ?? 'Staff application deletion request');
+
+        // 4. Verify whether dependent financial, document, or legal audit records exist
+        $hasPayments = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE application_id = {$id}")->fetchColumn();
+        $hasInvoices = (int)$pdo->query("SELECT COUNT(*) FROM invoices WHERE application_id = {$id}")->fetchColumn();
+        $hasSupplierPayments = (int)$pdo->query("SELECT COUNT(*) FROM supplier_payments WHERE application_id = {$id}")->fetchColumn();
+        $hasWalletTx = (int)$pdo->query("SELECT COUNT(*) FROM wallet_transactions WHERE application_id = {$id}")->fetchColumn();
+        $hasDocuments = (int)$pdo->query("SELECT COUNT(*) FROM documents WHERE application_id = {$id}")->fetchColumn();
+        $hasApprovals = (int)$pdo->query("SELECT COUNT(*) FROM visa_approvals WHERE application_id = {$id}")->fetchColumn();
+
+        $hasFinancialOrLegalRecords = ($hasPayments > 0 || $hasInvoices > 0 || $hasSupplierPayments > 0 || $hasWalletTx > 0 || $hasDocuments > 0 || $hasApprovals > 0);
+
+        if ($hasFinancialOrLegalRecords) {
+            // SAFE ARCHIVE WORKFLOW: Preserve financial, ledger, and document history!
+            $archiveNote = sprintf("\n[Archived by %s (ID: %d) on %s. Reason: %s]", $user['name'] ?? 'Staff', $user['id'] ?? 0, date('Y-m-d H:i:s'), $reason);
+            $pdo->prepare("UPDATE applications SET is_archived = 1, status = 'Archived', internal_notes = CONCAT(COALESCE(internal_notes, ''), ?) WHERE id = ?")
+                ->execute([$archiveNote, $id]);
+
+            AuditService::log('APPLICATION_ARCHIVED', 'Applications', $id, "Archived application {$app['application_number']} (financial/legal history preserved). Reason: {$reason}", [
+                'payments' => $hasPayments,
+                'invoices' => $hasInvoices,
+                'documents' => $hasDocuments,
+                'reason' => $reason
+            ], $user['id'] ?? null);
+
+            redirect('/applications', "Application {$app['application_number']} has associated financial or document history and has been securely archived rather than permanently purged.", 'info');
+            return;
+        }
+
+        // If NO financial or document records exist (e.g. an empty draft created by mistake):
         $pdo->beginTransaction();
         try {
-            // Child stages, status history, assignments and lifecycle records
-            try { $pdo->prepare("DELETE FROM application_stages WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM application_status_history WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM application_assignments WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM application_notes WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM application_tasks WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM application_returns WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM visa_approvals WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM visa_rejections WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM supplier_payments WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM agent_applications WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM agent_payments WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
+            // Safely remove transient draft child records
+            $pdo->prepare("DELETE FROM application_stages WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM application_status_history WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM application_assignments WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM application_notes WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM application_tasks WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM application_returns WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM document_requests WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM tasks WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM appointments WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM communications WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM notifications WHERE application_id = ?")->execute([$id]);
 
-            // Financial records (refunds before payments, wallet tx, invoices, links)
-            try { $pdo->prepare("DELETE FROM refunds WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM wallet_transactions WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM payments WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM invoices WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM payment_links WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-
-            // Documents, tasks, appointments, communications, notifications
-            try { $pdo->prepare("DELETE FROM notifications WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM documents WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM document_requests WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM tasks WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM appointments WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-            try { $pdo->prepare("DELETE FROM communications WHERE application_id = ?")->execute([$id]); } catch (\Throwable $e) {}
-
-            // Applications record
             $pdo->prepare("DELETE FROM applications WHERE id = ?")->execute([$id]);
             $pdo->commit();
 
-            AuditService::log('APPLICATION_DELETED', 'Applications', $id, "Deleted visa application {$app['application_number']}", [], $user['id'] ?? null);
+            AuditService::log('APPLICATION_DELETED', 'Applications', $id, "Deleted uncommitted application {$app['application_number']}. Reason: {$reason}", ['reason' => $reason], $user['id'] ?? null);
 
             redirect('/applications', "Application {$app['application_number']} deleted successfully.", 'success');
         } catch (\Throwable $e) {

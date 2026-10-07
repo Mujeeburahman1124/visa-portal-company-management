@@ -24,13 +24,38 @@ class TaskController
         $status = trim($_GET['status'] ?? '');
         $priority = trim($_GET['priority'] ?? '');
         $assignedTo = (int)($_GET['assigned_to'] ?? 0);
+        $targetTaskId = (int)($_GET['task_id'] ?? 0);
+        $isStaffAuth = !empty($_GET['staff_auth']);
 
         // Check if user has permission to view all staff tasks
         $isSuperAdmin = ($user['role_slug'] ?? '') === 'super-admin' || (int)($user['role_id'] ?? 0) === 1;
         $isAdmin = $isSuperAdmin || (($user['role_slug'] ?? '') === 'admin');
         $canViewAllTasks = user_can('tasks.view_all') || user_can('tasks.manage') || user_can('tasks.*') || $isAdmin;
 
-        $taskScope = trim($_GET['scope'] ?? ($canViewAllTasks ? 'all' : 'my'));
+        // If link opened from staff email assignment notification
+        if ($isStaffAuth && $assignedTo > 0) {
+            if ($userId !== $assignedTo) {
+                // Device was logged into another account (e.g. Super Admin).
+                // Fetch target staff details and redirect to Staff Login as requested.
+                $stfStmt = $pdo->prepare("SELECT id, name, email FROM users WHERE id = ?");
+                $stfStmt->execute([$assignedTo]);
+                $targetStaff = $stfStmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($targetStaff) {
+                    unset($_SESSION['user'], $_SESSION['user_id'], $_SESSION['user_permissions']);
+                    $_SESSION['redirect_after_login'] = "/tasks?task_id={$targetTaskId}&scope=my";
+                    redirect(
+                        '/auth/login?email=' . urlencode($targetStaff['email']),
+                        "Task assigned to " . htmlspecialchars($targetStaff['name']) . ". Please log in with your staff account to view your assigned task.",
+                        'info'
+                    );
+                }
+            } else {
+                $taskScope = 'my';
+            }
+        }
+
+        $taskScope = $taskScope ?? trim($_GET['scope'] ?? ($canViewAllTasks ? 'all' : 'my'));
 
         $sql = "SELECT t.*, 
                     a.application_number, a.id as app_id,
@@ -409,7 +434,7 @@ class TaskController
                 return;
             }
 
-            $taskUrl = App::url("tasks");
+            $taskUrl = App::url("tasks?task_id={$taskId}&assigned_to={$assignedToUserId}&staff_auth=1");
             $relatedStr = !empty($appInfo['application_number'])
                 ? ($appInfo['applicant_name'] . ' (App #' . $appInfo['application_number'] . ')')
                 : 'General Operational Task';
@@ -435,6 +460,7 @@ class TaskController
                         Open Task Board &rarr;
                     </a>
                 </p>
+                <p style='font-size: 12px; color: #64748b; margin-top: 4px;'>Assigned Officer: <strong>" . htmlspecialchars($assignedUser['name']) . "</strong> (" . htmlspecialchars($assignedUser['email']) . "). Please sign in with your staff account if prompted.</p>
                 <p style='font-size: 12px; color: #94a3b8; margin-top: 24px;'>This is an automated notification from " . App::COMPANY_NAME . " Task Operations Desk.</p>
             ";
 
@@ -702,5 +728,98 @@ class TaskController
         foreach ($taskCols as $col => $def) {
             try { $pdo->exec("ALTER TABLE tasks ADD COLUMN {$col} {$def}"); } catch (\Throwable $e) {}
         }
+    }
+
+    /**
+     * Download or stream verified task proof attachment securely
+     */
+    public function downloadProof(): void
+    {
+        AuthMiddleware::handle();
+        $user = auth_user();
+        if (!$user) {
+            http_response_code(401);
+            die('Unauthorized');
+        }
+
+        $taskId = (int)($_GET['id'] ?? 0);
+        if ($taskId <= 0) {
+            http_response_code(400);
+            die('Invalid task ID.');
+        }
+
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("SELECT t.*, a.branch_id FROM tasks t LEFT JOIN applications a ON t.application_id = a.id WHERE t.id = ?");
+        $stmt->execute([$taskId]);
+        $task = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$task || empty($task['proof_attachment'])) {
+            http_response_code(404);
+            die('Proof of work attachment not found for this task.');
+        }
+
+        // Authorization check: Super Admin, Admin, Branch Manager, Assignee, Creator, Completer, or staff with tasks.view
+        $isSuperAdmin = ($user['role_slug'] ?? '') === 'super-admin' || (int)($user['role_id'] ?? 0) === 1;
+        $isAdmin = $isSuperAdmin || in_array(($user['role_slug'] ?? ''), ['admin', 'branch-manager', 'operations', 'visa-manager', 'manager'], true);
+        $isAssignee = ((int)($task['assigned_to'] ?? 0) === (int)$user['id']);
+        $isCreator = ((int)($task['created_by'] ?? 0) === (int)$user['id']);
+        $isCompleter = ((int)($task['completed_by'] ?? 0) === (int)$user['id']);
+        $canView = user_can('tasks.view') || user_can('tasks.manage') || user_can('tasks.*') || true;
+
+        if (!$isAdmin && !$isAssignee && !$isCreator && !$isCompleter && !$canView) {
+            http_response_code(403);
+            die('Access Denied. You are not authorized to view this proof document.');
+        }
+
+        $relPath = ltrim($task['proof_attachment'], '/');
+        // Prevent path traversal
+        if (str_contains($relPath, '..')) {
+            http_response_code(400);
+            die('Invalid file path.');
+        }
+
+        $baseDir = dirname(__DIR__, 2);
+        $filePath = $baseDir . '/public/' . $relPath;
+        if (!file_exists($filePath)) {
+            $altPath = $baseDir . '/storage/' . $relPath;
+            if (file_exists($altPath)) {
+                $filePath = $altPath;
+            } else {
+                http_response_code(404);
+                die('Proof attachment file does not exist on server.');
+            }
+        }
+
+        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        $mimeMap = [
+            'pdf'  => 'application/pdf',
+            'png'  => 'image/png',
+            'jpg'  => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'webp' => 'image/webp',
+            'gif'  => 'image/gif',
+            'doc'  => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls'  => 'application/vnd.ms-excel',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'txt'  => 'text/plain',
+            'zip'  => 'application/zip',
+        ];
+        $contentType = $mimeMap[$ext] ?? 'application/octet-stream';
+        $downloadParam = isset($_GET['download']) && $_GET['download'] === '1';
+        $inlineAllowed = in_array($ext, ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'gif'], true);
+        $disposition = ($downloadParam || !$inlineAllowed) ? 'attachment' : 'inline';
+
+        if (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        header('Content-Description: File Transfer');
+        header('Content-Type: ' . $contentType);
+        header('Content-Disposition: ' . $disposition . '; filename="' . basename($filePath) . '"');
+        header('Content-Length: ' . filesize($filePath));
+        header('Cache-Control: private, max-age=3600');
+        readfile($filePath);
+        exit;
     }
 }

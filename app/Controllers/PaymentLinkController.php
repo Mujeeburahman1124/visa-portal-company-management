@@ -78,8 +78,15 @@ class PaymentLinkController
                     null
                 );
 
-                $walletTxnId = (int)($debitRes['transaction_id'] ?? null);
-                $res = PaymentLinkService::completePayment($token, 'Customer Wallet', 'WLT-' . strtoupper(substr(md5(uniqid()), 0, 10)), $walletTxnId, "Paid using Customer Pre-funded Wallet");
+                $walletTxnId = (int)($debitRes['id'] ?? null);
+                $res = PaymentLinkService::completePayment(
+                    $token,
+                    'Customer Wallet',
+                    $debitRes['transaction_id'] ?? ('WLT-' . strtoupper(substr(md5(uniqid()), 0, 10))),
+                    (float)$amount,
+                    "Paid using Customer Pre-funded Wallet",
+                    $walletTxnId
+                );
 
                 if ($res['success']) {
                     redirect("/payments/receipt?id={$res['payment_id']}", "Payment completed successfully from wallet! Receipt generated.", 'success');
@@ -102,7 +109,14 @@ class PaymentLinkController
             }
 
             $txnRef = $verifyRes['transaction_id'];
-            $res = PaymentLinkService::completePayment($token, 'Stripe', $txnRef, $amount, "Online Credit Card Payment via Stripe Gateway ({$txnRef})");
+            $res = PaymentLinkService::completePayment(
+                $token,
+                'Stripe',
+                $txnRef,
+                (float)$amount,
+                "Online Credit Card Payment via Stripe Gateway ({$txnRef})",
+                null
+            );
 
             if ($res['success']) {
                 redirect("/payments/receipt?id={$res['payment_id']}", "Stripe online payment authorized! Receipt generated.", 'success');

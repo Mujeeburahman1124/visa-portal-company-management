@@ -49,14 +49,27 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       <p class="text-muted small mb-0">Track visa submission follow-ups, document requests, embassy appointments, and complete work with verifiable proof.</p>
     </div>
 
-    <div class="d-flex align-items-center gap-2">
+    <div class="d-flex align-items-center flex-wrap gap-2 w-100 w-md-auto justify-content-between justify-content-md-end">
+      <!-- 3 View Mode Switcher -->
+      <div class="btn-group btn-group-sm bg-white shadow-sm border rounded-pill p-1 task-view-switcher" role="group" aria-label="Task View Mode">
+        <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold task-view-btn btn-primary shadow-sm" id="btnTaskViewTable" onclick="switchTaskView('table')" title="Tabular View">
+          <i class="fa-solid fa-table-list me-1"></i> <span>Table</span>
+        </button>
+        <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold task-view-btn btn-light text-muted" id="btnTaskViewGrid" onclick="switchTaskView('grid')" title="Card Grid View">
+          <i class="fa-solid fa-grip me-1"></i> <span>Cards</span>
+        </button>
+        <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold task-view-btn btn-light text-muted" id="btnTaskViewCompact" onclick="switchTaskView('compact')" title="Compact List View">
+          <i class="fa-solid fa-bars me-1"></i> <span>Compact</span>
+        </button>
+      </div>
+
       <?php if ($canViewAllTasks): ?>
         <div class="btn-group shadow-sm" role="group">
           <a href="/tasks?scope=all<?= $selectedStatus ? '&status=' . urlencode($selectedStatus) : '' ?>" class="btn btn-sm <?= $taskScope === 'all' ? 'btn-primary fw-bold' : 'btn-light border' ?>">
-            <i class="fa-solid fa-users me-1"></i> All Team Tasks
+            <i class="fa-solid fa-users me-1"></i> <span class="d-none d-sm-inline">All Team</span><span class="d-sm-none">Team</span>
           </a>
           <a href="/tasks?scope=my<?= $selectedStatus ? '&status=' . urlencode($selectedStatus) : '' ?>" class="btn btn-sm <?= $taskScope === 'my' ? 'btn-primary fw-bold' : 'btn-light border' ?>">
-            <i class="fa-solid fa-user-check me-1"></i> My Assigned Tasks
+            <i class="fa-solid fa-user-check me-1"></i> <span class="d-none d-sm-inline">My Tasks</span><span class="d-sm-none">Mine</span>
           </a>
         </div>
       <?php endif; ?>
@@ -75,7 +88,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <input type="hidden" name="scope" value="<?= e($taskScope) ?>">
         <?php endif; ?>
 
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
           <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
             <option value="">-- All Statuses --</option>
             <option value="Pending" <?= $selectedStatus === 'Pending' ? 'selected' : '' ?>>Pending</option>
@@ -85,7 +98,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </select>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
           <select name="priority" class="form-select form-select-sm" onchange="this.form.submit()">
             <option value="">-- All Priorities --</option>
             <option value="Normal" <?= $selectedPriority === 'Normal' ? 'selected' : '' ?>>Normal Priority</option>
@@ -96,7 +109,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         </div>
 
         <?php if ($canViewAllTasks && !empty($staffList)): ?>
-          <div class="col-md-4">
+          <div class="col-8 col-md-4">
             <select name="assigned_to" class="form-select form-select-sm" onchange="this.form.submit()">
               <option value="0">-- All Assigned Officers --</option>
               <?php foreach ($staffList as $stf): ?>
@@ -106,19 +119,25 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               <?php endforeach; ?>
             </select>
           </div>
+          <div class="col-4 col-md-2 text-end ms-auto">
+            <a href="/tasks" class="btn btn-outline-secondary btn-sm w-100">
+              <i class="fa-solid fa-rotate-left me-1"></i> Reset
+            </a>
+          </div>
+        <?php else: ?>
+          <div class="col-12 col-md-2 text-end ms-auto">
+            <a href="/tasks" class="btn btn-outline-secondary btn-sm w-100">
+              <i class="fa-solid fa-rotate-left me-1"></i> Reset
+            </a>
+          </div>
         <?php endif; ?>
-
-        <div class="col-md-2 text-end ms-auto">
-          <a href="/tasks" class="btn btn-outline-secondary btn-sm w-100">
-            <i class="fa-solid fa-rotate-left me-1"></i> Reset
-          </a>
-        </div>
       </form>
     </div>
   </div>
 
-  <!-- Tasks Registry Card -->
-  <div class="card card-enterprise shadow-sm border mb-4">
+  <!-- Tasks Registry Card (Tabular View) -->
+  <div id="taskViewTable" class="task-view-container">
+    <div class="card card-enterprise shadow-sm border mb-4">
     <div class="card-header bg-white border-bottom py-3 px-3 d-flex align-items-center justify-content-between">
       <span class="fw-bold small text-uppercase text-secondary">
         <i class="fa-solid fa-list me-1 text-primary"></i> 
@@ -234,7 +253,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                                   'completed_by' => $t['completed_by_name'] ?? 'Staff',
                                   'completed_at' => format_datetime($t['completed_at']),
                                   'notes' => $t['completion_notes'] ?: ($t['proof_of_work'] ?: 'No notes recorded.'),
-                                  'attachment' => !empty($t['proof_attachment']) ? '/' . ltrim($t['proof_attachment'], '/') : null
+                                  'attachment' => !empty($t['proof_attachment']) ? '/tasks/proof?id=' . (int)$t['id'] : null,
+                                  'ext' => !empty($t['proof_attachment']) ? strtolower(pathinfo($t['proof_attachment'], PATHINFO_EXTENSION)) : ''
                                 ]), ENT_QUOTES, 'UTF-8') ?>)">
                           <i class="fa-solid fa-file-shield me-1"></i> Proof
                         </button>
@@ -272,6 +292,232 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <?php endif; ?>
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- ================================================================= -->
+  <!-- VIEW OPTION 2: TASK CARDS / GRID VIEW (MOBILE-FIRST) -->
+  <!-- ================================================================= -->
+  <div id="taskViewGrid" class="task-view-container d-none mb-4">
+    <div class="row g-3">
+      <?php if (empty($tasks)): ?>
+        <div class="col-12 text-center py-5">
+          <div class="empty-state py-3">
+            <div class="empty-state-icon" style="width: 48px; height: 48px; font-size: 1.3rem;">
+              <i class="fa-solid fa-circle-check text-success"></i>
+            </div>
+            <div class="empty-state-title fs-6">No tasks found</div>
+            <div class="empty-state-text small text-muted">No operational tasks match your active filters or assigned workstation.</div>
+          </div>
+        </div>
+      <?php else: ?>
+        <?php foreach ($tasks as $t): ?>
+          <?php
+            $isCompleted = ($t['status'] === 'Completed');
+            $isOverdue = (!$isCompleted && !empty($t['due_date']) && $t['due_date'] < date('Y-m-d'));
+            $prio = strtolower($t['priority'] ?? 'normal');
+            $prioBadge = ($prio === 'critical' || $prio === 'urgent') ? 'bg-danger text-white' : (($prio === 'high') ? 'bg-warning text-dark' : 'bg-primary-subtle text-primary');
+            $cardBorder = ($prio === 'critical' || $prio === 'urgent') ? 'border-danger' : (($prio === 'high') ? 'border-warning' : '');
+          ?>
+          <div class="col-12 col-md-6 col-lg-4" id="task-card-<?= (int)$t['id'] ?>">
+            <div class="card card-enterprise h-100 shadow-sm border <?= $cardBorder ?>">
+              <div class="card-body p-3.5 d-flex flex-column justify-content-between">
+                <div>
+                  <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                    <span class="badge bg-light text-secondary border px-2 py-1" style="font-size: 0.72rem;">
+                      <i class="fa-solid fa-tag me-1 text-primary"></i><?= e($t['task_type'] ?? 'General') ?>
+                    </span>
+                    <span class="badge <?= $prioBadge ?> fw-semibold px-2 py-1" style="font-size: 0.72rem;">
+                      <?= e($t['priority']) ?>
+                    </span>
+                  </div>
+
+                  <h6 class="fw-bold text-dark mb-1 lh-sm" title="<?= e($t['task_title']) ?>">
+                    <?= e($t['task_title']) ?>
+                  </h6>
+
+                  <?php if (!empty($t['description'])): ?>
+                    <p class="text-muted small mb-2 text-truncate-2" style="font-size: 0.78rem;">
+                      <?= e($t['description']) ?>
+                    </p>
+                  <?php endif; ?>
+
+                  <div class="p-2 bg-light rounded border mb-2.5">
+                    <?php if (!empty($t['application_number'])): ?>
+                      <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span class="text-muted small" style="font-size: 0.75rem;">Application:</span>
+                        <a href="/applications/show?id=<?= $t['app_id'] ?>" class="fw-bold text-primary text-decoration-none small">
+                          <i class="fa-solid fa-folder me-1"></i><?= e($t['application_number']) ?>
+                        </a>
+                      </div>
+                      <div class="d-flex align-items-center justify-content-between">
+                        <span class="text-muted small" style="font-size: 0.75rem;">Applicant:</span>
+                        <span class="fw-semibold text-dark small text-truncate" style="max-width: 170px; font-size: 0.75rem;"><?= e($t['customer_name'] ?? '—') ?></span>
+                      </div>
+                    <?php else: ?>
+                      <span class="text-muted small"><i class="fa-solid fa-bolt me-1 text-warning"></i>General Operations Desk Task</span>
+                    <?php endif; ?>
+                  </div>
+
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="small text-muted" style="font-size: 0.75rem;">
+                      <i class="fa-solid fa-user-circle me-1 text-primary"></i><?= e($t['assigned_to_name'] ?? 'Unassigned') ?>
+                    </div>
+                    <span class="badge <?= $isOverdue ? 'bg-danger text-white' : ($isCompleted ? 'bg-light text-secondary border' : 'bg-light text-dark border') ?>" style="font-size: 0.72rem;">
+                      <i class="fa-regular fa-calendar me-1"></i><?= format_date($t['due_date']) ?>
+                    </span>
+                  </div>
+                </div>
+
+                <div class="pt-2 border-top d-flex align-items-center justify-content-between gap-1 mt-2">
+                  <div>
+                    <?php if ($isCompleted): ?>
+                      <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold px-2 py-1" style="font-size: 0.72rem;">
+                        <i class="fa-solid fa-check me-1"></i> Done
+                      </span>
+                    <?php elseif ($t['status'] === 'In Progress'): ?>
+                      <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-semibold px-2 py-1" style="font-size: 0.72rem;">
+                        <i class="fa-solid fa-spinner fa-spin me-1"></i> Progress
+                      </span>
+                    <?php else: ?>
+                      <span class="badge bg-warning-subtle text-warning-text border border-warning-subtle fw-semibold px-2 py-1" style="font-size: 0.72rem;">
+                        <i class="fa-regular fa-clock me-1"></i> Pending
+                      </span>
+                    <?php endif; ?>
+                  </div>
+
+                  <div class="d-inline-flex gap-1">
+                    <?php if (!$isCompleted): ?>
+                      <button type="button" class="btn btn-success btn-sm py-1 px-2.5 shadow-sm fw-bold" 
+                              onclick="openCompleteTaskModal(<?= (int)$t['id'] ?>, '<?= e(addslashes($t['task_title'])) ?>')">
+                        <i class="fa-solid fa-check me-1"></i> Complete
+                      </button>
+                    <?php else: ?>
+                      <button type="button" class="btn btn-outline-success btn-sm py-1 px-2 fw-semibold" 
+                              onclick="viewProofModal(<?= htmlspecialchars(json_encode([
+                                'id' => (int)$t['id'],
+                                'title' => $t['task_title'],
+                                'completed_by' => $t['completed_by_name'] ?? 'Staff',
+                                'completed_at' => format_datetime($t['completed_at']),
+                                'notes' => $t['completion_notes'] ?: ($t['proof_of_work'] ?: 'No notes recorded.'),
+                                'attachment' => !empty($t['proof_attachment']) ? '/tasks/proof?id=' . (int)$t['id'] : null,
+                                'ext' => !empty($t['proof_attachment']) ? strtolower(pathinfo($t['proof_attachment'], PATHINFO_EXTENSION)) : ''
+                              ]), ENT_QUOTES, 'UTF-8') ?>)">
+                        <i class="fa-solid fa-file-shield me-1"></i> Proof
+                      </button>
+                    <?php endif; ?>
+
+                    <?php if ($canEditTask): ?>
+                      <button type="button" class="btn btn-outline-primary btn-sm py-1 px-2" title="Edit Task"
+                              onclick="openEditTaskModal(<?= htmlspecialchars(json_encode([
+                                'id' => (int)$t['id'],
+                                'title' => $t['task_title'],
+                                'description' => $t['description'] ?? '',
+                                'task_type' => $t['task_type'] ?? 'General',
+                                'priority' => $t['priority'] ?? 'Normal',
+                                'due_date' => $t['due_date'] ?? '',
+                                'status' => $t['status'] ?? 'Pending',
+                                'assigned_to' => (int)($t['assigned_to'] ?? 0)
+                              ]), ENT_QUOTES, 'UTF-8') ?>)">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                      </button>
+                    <?php endif; ?>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      <?php endif; ?>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- VIEW OPTION 3: COMPACT LIST VIEW -->
+  <!-- ================================================================= -->
+  <div id="taskViewCompact" class="task-view-container d-none mb-4">
+    <div class="card card-enterprise shadow-sm border">
+      <div class="list-group list-group-flush">
+        <?php if (empty($tasks)): ?>
+          <div class="p-4 text-center text-muted">No operational tasks available.</div>
+        <?php else: ?>
+          <?php foreach ($tasks as $t): ?>
+            <?php
+              $isCompleted = ($t['status'] === 'Completed');
+              $isOverdue = (!$isCompleted && !empty($t['due_date']) && $t['due_date'] < date('Y-m-d'));
+              $prio = strtolower($t['priority'] ?? 'normal');
+              $prioBorder = ($prio === 'critical' || $prio === 'urgent') ? '#dc2626' : (($prio === 'high') ? '#f59e0b' : '#2563eb');
+            ?>
+            <div class="list-group-item p-3 border-start border-4 d-flex flex-wrap align-items-center justify-content-between gap-2" style="border-left-color: <?= $prioBorder ?> !important;">
+              <div class="d-flex align-items-center gap-2" style="min-width: 240px; flex: 1 1 300px;">
+                <div class="flex-grow-1">
+                  <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                    <span class="fw-bold text-dark fs-6"><?= e($t['task_title']) ?></span>
+                    <span class="badge bg-light text-secondary border" style="font-size: 0.68rem;"><?= e($t['task_type'] ?? 'General') ?></span>
+                    <?php if (!empty($t['application_number'])): ?>
+                      <a href="/applications/show?id=<?= $t['app_id'] ?>" class="badge bg-primary-subtle text-primary border border-primary-subtle text-decoration-none" style="font-size: 0.68rem;">
+                        #<?= e($t['application_number']) ?>
+                      </a>
+                    <?php endif; ?>
+                  </div>
+                  <div class="text-muted small d-flex align-items-center gap-2 mt-0.5" style="font-size: 0.74rem;">
+                    <span><i class="fa-solid fa-user me-1 text-primary"></i><?= e($t['assigned_to_name'] ?? 'Unassigned') ?></span>
+                    <span>&bull;</span>
+                    <span class="<?= $isOverdue ? 'text-danger fw-bold' : '' ?>"><i class="fa-regular fa-calendar me-1"></i><?= format_date($t['due_date']) ?> <?= $isOverdue ? '(Overdue)' : '' ?></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex align-items-center gap-2 ms-auto">
+                <?php if ($isCompleted): ?>
+                  <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.72rem;">Done</span>
+                <?php elseif ($t['status'] === 'In Progress'): ?>
+                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.72rem;">In Progress</span>
+                <?php else: ?>
+                  <span class="badge bg-warning-subtle text-warning-text border border-warning-subtle" style="font-size: 0.72rem;">Pending</span>
+                <?php endif; ?>
+
+                <?php if (!$isCompleted): ?>
+                  <button type="button" class="btn btn-success btn-sm py-1 px-2.5 fw-bold" 
+                          onclick="openCompleteTaskModal(<?= (int)$t['id'] ?>, '<?= e(addslashes($t['task_title'])) ?>')">
+                    <i class="fa-solid fa-check me-1"></i> Complete
+                  </button>
+                <?php else: ?>
+                  <button type="button" class="btn btn-outline-success btn-sm py-1 px-2 fw-semibold" 
+                          onclick="viewProofModal(<?= htmlspecialchars(json_encode([
+                            'id' => (int)$t['id'],
+                            'title' => $t['task_title'],
+                            'completed_by' => $t['completed_by_name'] ?? 'Staff',
+                            'completed_at' => format_datetime($t['completed_at']),
+                            'notes' => $t['completion_notes'] ?: ($t['proof_of_work'] ?: 'No notes recorded.'),
+                            'attachment' => !empty($t['proof_attachment']) ? '/tasks/proof?id=' . (int)$t['id'] : null,
+                            'ext' => !empty($t['proof_attachment']) ? strtolower(pathinfo($t['proof_attachment'], PATHINFO_EXTENSION)) : ''
+                          ]), ENT_QUOTES, 'UTF-8') ?>)">
+                    <i class="fa-solid fa-file-shield me-1"></i> Proof
+                  </button>
+                <?php endif; ?>
+
+                <?php if ($canEditTask): ?>
+                  <button type="button" class="btn btn-outline-primary btn-sm py-1 px-2" title="Edit Task"
+                          onclick="openEditTaskModal(<?= htmlspecialchars(json_encode([
+                            'id' => (int)$t['id'],
+                            'title' => $t['task_title'],
+                            'description' => $t['description'] ?? '',
+                            'task_type' => $t['task_type'] ?? 'General',
+                            'priority' => $t['priority'] ?? 'Normal',
+                            'due_date' => $t['due_date'] ?? '',
+                            'status' => $t['status'] ?? 'Pending',
+                            'assigned_to' => (int)($t['assigned_to'] ?? 0)
+                          ]), ENT_QUOTES, 'UTF-8') ?>)">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </button>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        <?php endif; ?>
       </div>
     </div>
   </div>
@@ -350,10 +596,17 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
         <div id="proofAttachmentContainer" class="d-none">
           <label class="form-label small fw-bold text-secondary text-uppercase" style="font-size: 0.72rem;">Proof Document Attachment:</label>
-          <div>
+          <div class="d-flex flex-wrap gap-2 mb-2">
             <a href="#" id="proofAttachmentLink" target="_blank" class="btn btn-outline-primary btn-sm fw-semibold">
-              <i class="fa-solid fa-download me-1"></i> Download / Inspect Proof File
+              <i class="fa-solid fa-eye me-1"></i> Preview / Inspect Proof File
             </a>
+            <a href="#" id="proofDownloadLink" class="btn btn-outline-secondary btn-sm fw-semibold">
+              <i class="fa-solid fa-download me-1"></i> Download File
+            </a>
+          </div>
+          <!-- Inline Image Preview for screenshots & photo proof -->
+          <div id="proofImagePreviewWrap" class="d-none mt-2 p-2 bg-light rounded border text-center">
+            <img id="proofImagePreview" src="" alt="Proof Preview" class="img-fluid rounded shadow-sm" style="max-height: 360px; object-fit: contain;">
           </div>
         </div>
       </div>
@@ -567,16 +820,88 @@ function viewProofModal(data) {
 
   var container = document.getElementById('proofAttachmentContainer');
   var link = document.getElementById('proofAttachmentLink');
+  var dlLink = document.getElementById('proofDownloadLink');
+  var imgWrap = document.getElementById('proofImagePreviewWrap');
+  var imgEl = document.getElementById('proofImagePreview');
+
   if (data.attachment) {
     link.href = data.attachment;
+    if (dlLink) dlLink.href = data.attachment + '&download=1';
     container.classList.remove('d-none');
+
+    var ext = (data.ext || '').toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
+      imgEl.src = data.attachment;
+      imgWrap.classList.remove('d-none');
+    } else {
+      imgWrap.classList.add('d-none');
+      imgEl.src = '';
+    }
   } else {
     container.classList.add('d-none');
+    imgWrap.classList.add('d-none');
+    imgEl.src = '';
   }
 
   var modal = new bootstrap.Modal(document.getElementById('viewProofModal'));
   modal.show();
 }
+
+function switchTaskView(viewMode) {
+  document.querySelectorAll('.task-view-container').forEach(el => el.classList.add('d-none'));
+  document.querySelectorAll('.task-view-btn').forEach(btn => {
+    btn.classList.remove('btn-primary', 'shadow-sm');
+    btn.classList.add('btn-light', 'text-muted');
+  });
+
+  if (viewMode === 'grid') {
+    const el = document.getElementById('taskViewGrid');
+    if (el) el.classList.remove('d-none');
+    const btn = document.getElementById('btnTaskViewGrid');
+    if (btn) { btn.classList.remove('btn-light', 'text-muted'); btn.classList.add('btn-primary', 'shadow-sm'); }
+  } else if (viewMode === 'compact') {
+    const el = document.getElementById('taskViewCompact');
+    if (el) el.classList.remove('d-none');
+    const btn = document.getElementById('btnTaskViewCompact');
+    if (btn) { btn.classList.remove('btn-light', 'text-muted'); btn.classList.add('btn-primary', 'shadow-sm'); }
+  } else {
+    const el = document.getElementById('taskViewTable');
+    if (el) el.classList.remove('d-none');
+    const btn = document.getElementById('btnTaskViewTable');
+    if (btn) { btn.classList.remove('btn-light', 'text-muted'); btn.classList.add('btn-primary', 'shadow-sm'); }
+  }
+
+  try {
+    localStorage.setItem('vt_task_view', viewMode);
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const paramView = urlParams.get('view');
+  let savedView = null;
+  try { savedView = localStorage.getItem('vt_task_view'); } catch(e) {}
+
+  if (paramView) {
+    switchTaskView(paramView);
+  } else if (savedView) {
+    switchTaskView(savedView);
+  } else if (window.innerWidth < 768) {
+    switchTaskView('grid'); // Default to card view on mobile
+  } else {
+    switchTaskView('table');
+  }
+
+  // Highlight specific task if task_id passed in URL
+  const targetId = urlParams.get('task_id');
+  if (targetId) {
+    const targetEl = document.getElementById('task-card-' + targetId);
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      targetEl.querySelector('.card')?.classList.add('border-primary', 'shadow-lg');
+    }
+  }
+});
 </script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

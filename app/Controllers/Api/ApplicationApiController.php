@@ -291,4 +291,113 @@ class ApplicationApiController extends ApiController
         $res = DuplicateDetectionService::checkApplicationDuplicate($customerId, $serviceId);
         $this->jsonSuccess($res);
     }
+
+    /**
+     * PUT/POST /api/applications/{id}
+     */
+    public function update(int $id): void
+    {
+        $user = $this->requireAuth();
+        if ($id <= 0) {
+            $this->jsonError('Invalid application ID', [], 400);
+        }
+
+        $pdo = Database::getConnection();
+        $currStmt = $pdo->prepare("SELECT * FROM applications WHERE id = ?");
+        $currStmt->execute([$id]);
+        $currentApp = $currStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$currentApp) {
+            $this->jsonError('Application not found', [], 404);
+        }
+
+        $isAdmin = is_super_admin($user) || is_admin($user);
+        $roleSlug = $user['role_slug'] ?? '';
+        $isAssigned = ((int)($currentApp['assigned_staff_id'] ?? 0) === (int)$user['id']);
+
+        if (!$isAdmin && !user_can('applications.edit') && !user_can('applications.manage') && $roleSlug !== 'branch-manager') {
+            if (!$isAssigned) {
+                $this->jsonError('Unauthorized: You do not have permission to edit this application.', [], 403);
+            }
+        }
+
+        $scopedBranchId = $this->getScopedBranchId();
+        if ($scopedBranchId > 0 && (int)$currentApp['branch_id'] !== $scopedBranchId) {
+            $this->jsonError('Unauthorized: This application belongs to a different branch.', [], 403);
+        }
+
+        $input = $this->getJsonInput();
+        $priority = trim($input['priority'] ?? $currentApp['priority']);
+        $notes = trim($input['notes'] ?? ($currentApp['internal_notes'] ?? ''));
+
+        $stmt = $pdo->prepare("UPDATE applications SET priority = ?, internal_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+        $stmt->execute([$priority, $notes, $id]);
+
+        AuditService::log('APPLICATION_UPDATED', 'Applications', $id, "Updated application #{$id} via API", ['priority' => $priority], (int)$user['id']);
+
+        $this->jsonSuccess(['id' => $id, 'priority' => $priority], 'Application updated successfully');
+    }
+
+    /**
+     * DELETE /api/applications/{id}
+     */
+    public function destroy(int $id): void
+    {
+        $user = $this->requireAuth();
+        if ($id <= 0) {
+            $this->jsonError('Invalid application ID', [], 400);
+        }
+
+        $isAdmin = is_super_admin($user) || is_admin($user);
+        if (!$isAdmin && !user_can('applications.delete')) {
+            $this->jsonError('Unauthorized: You do not have permission to delete applications.', [], 403);
+        }
+
+        $pdo = Database::getConnection();
+        $stmt = $pdo->prepare("SELECT id, application_number, branch_id, status FROM applications WHERE id = ?");
+        $stmt->execute([$id]);
+        $app = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$app) {
+            $this->jsonError('Application not found', [], 404);
+        }
+
+        $scopedBranchId = $this->getScopedBranchId();
+        if ($scopedBranchId > 0 && (int)$app['branch_id'] !== $scopedBranchId) {
+            $this->jsonError('Unauthorized: You cannot delete applications from another branch.', [], 403);
+        }
+
+        $input = $this->getJsonInput();
+        $reason = trim($input['reason'] ?? 'API deletion request');
+
+        $hasPayments = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE application_id = {$id}")->fetchColumn();
+        $hasInvoices = (int)$pdo->query("SELECT COUNT(*) FROM invoices WHERE application_id = {$id}")->fetchColumn();
+        $hasDocuments = (int)$pdo->query("SELECT COUNT(*) FROM documents WHERE application_id = {$id}")->fetchColumn();
+
+        if ($hasPayments > 0 || $hasInvoices > 0 || $hasDocuments > 0) {
+            $archiveNote = sprintf("\n[Archived by %s (ID: %d) on %s via API. Reason: %s]", $user['name'] ?? 'Staff', $user['id'] ?? 0, date('Y-m-d H:i:s'), $reason);
+            $pdo->prepare("UPDATE applications SET is_archived = 1, status = 'Archived', internal_notes = CONCAT(COALESCE(internal_notes, ''), ?) WHERE id = ?")
+                ->execute([$archiveNote, $id]);
+
+            AuditService::log('APPLICATION_ARCHIVED', 'Applications', $id, "Archived application {$app['application_number']} via API (financial/legal history preserved). Reason: {$reason}", [], (int)$user['id']);
+
+            $this->jsonSuccess(['id' => $id, 'archived' => true], "Application has financial or document history and has been securely archived.");
+            return;
+        }
+
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare("DELETE FROM application_stages WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM application_status_history WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM application_assignments WHERE application_id = ?")->execute([$id]);
+            $pdo->prepare("DELETE FROM applications WHERE id = ?")->execute([$id]);
+            $pdo->commit();
+
+            AuditService::log('APPLICATION_DELETED', 'Applications', $id, "Deleted uncommitted application {$app['application_number']} via API", [], (int)$user['id']);
+            $this->jsonSuccess(['id' => $id, 'deleted' => true], "Application deleted successfully");
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            $this->jsonError("Failed to delete application: " . $e->getMessage(), [], 500);
+        }
+    }
 }

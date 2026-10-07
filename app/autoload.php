@@ -306,6 +306,9 @@ function user_permissions(bool $forceFresh = false): array {
     static $staticCache = [];
     $user = auth_user();
     if (!$user) return [];
+    if (isset($user['permissions']) && is_array($user['permissions'])) {
+        return $user['permissions'];
+    }
     $roleId = (int)($user['role_id'] ?? 0);
     if (!$forceFresh && isset($staticCache[$roleId])) {
         return $staticCache[$roleId];

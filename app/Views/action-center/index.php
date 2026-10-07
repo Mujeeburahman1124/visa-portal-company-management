@@ -34,26 +34,28 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       <p class="text-muted small mb-0">Comprehensive operational triage for tasks, leave approvals, verification requests, document alerts, and staff requests.</p>
     </div>
 
-    <div class="d-flex gap-2 align-items-center">
-      <!-- Leave & Request Trigger Buttons -->
-      <button type="button" class="btn btn-outline-primary btn-sm px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#applyLeaveModal">
-        <i class="fa-solid fa-calendar-plus me-1"></i> Apply Leave
-      </button>
-      <button type="button" class="btn btn-outline-info btn-sm px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#createRequestModal">
-        <i class="fa-solid fa-hand-holding-hand me-1"></i> Staff Request
-      </button>
-      <button type="button" class="btn btn-primary btn-sm px-3 shadow fw-semibold" data-bs-toggle="modal" data-bs-target="#createTaskModal">
-        <i class="fa-solid fa-plus me-1"></i> Create Task
-      </button>
-
+    <div class="d-flex flex-wrap gap-2 align-items-center w-100 w-lg-auto justify-content-between justify-content-lg-end">
       <!-- My Actions vs Team Actions Switcher -->
-      <div class="btn-group shadow-sm bg-white p-1 rounded border ms-2">
-        <a href="/action-center?scope=my&tab=<?= e($activeTab) ?>" id="scopeMyBtn" class="btn btn-sm <?= $scope === 'my' ? 'btn-primary' : 'btn-light text-dark' ?> px-3 fw-semibold">
+      <div class="btn-group shadow-sm bg-white p-1 rounded border w-100 w-sm-auto mb-1 mb-sm-0">
+        <a href="/action-center?scope=my&tab=<?= e($activeTab) ?>" id="scopeMyBtn" class="btn btn-sm <?= $scope === 'my' ? 'btn-primary' : 'btn-light text-dark' ?> px-3 fw-semibold flex-fill flex-sm-grow-0">
           <i class="fa-solid fa-user me-1"></i> My Scope
         </a>
-        <a href="/action-center?scope=team&tab=<?= e($activeTab) ?>" id="scopeTeamBtn" class="btn btn-sm <?= $scope === 'team' ? 'btn-primary' : 'btn-light text-dark' ?> px-3 fw-semibold">
+        <a href="/action-center?scope=team&tab=<?= e($activeTab) ?>" id="scopeTeamBtn" class="btn btn-sm <?= $scope === 'team' ? 'btn-primary' : 'btn-light text-dark' ?> px-3 fw-semibold flex-fill flex-sm-grow-0">
           <i class="fa-solid fa-users me-1"></i> Team Scope
         </a>
+      </div>
+
+      <!-- Action Trigger Buttons -->
+      <div class="d-flex gap-1.5 w-100 w-sm-auto">
+        <button type="button" class="btn btn-outline-primary btn-sm flex-fill px-2.5 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#applyLeaveModal">
+          <i class="fa-solid fa-calendar-plus me-1"></i> <span class="d-none d-sm-inline">Apply </span>Leave
+        </button>
+        <button type="button" class="btn btn-outline-info btn-sm flex-fill px-2.5 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#createRequestModal">
+          <i class="fa-solid fa-hand-holding-hand me-1"></i> <span class="d-none d-sm-inline">Staff </span>Request
+        </button>
+        <button type="button" class="btn btn-primary btn-sm flex-fill px-2.5 shadow fw-semibold" data-bs-toggle="modal" data-bs-target="#createTaskModal">
+          <i class="fa-solid fa-plus me-1"></i> <span class="d-none d-sm-inline">Create </span>Task
+        </button>
       </div>
     </div>
   </div>
@@ -61,7 +63,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   <!-- Action Category Tabs -->
   <div class="card card-enterprise mb-4">
     <div class="card-header p-0 bg-white">
-      <ul class="nav nav-tabs card-header-tabs m-0 px-3" id="actionCenterTabs" role="tablist">
+      <ul class="nav nav-tabs card-header-tabs m-0 px-2 px-md-3 flex-nowrap overflow-x-auto text-nowrap" id="actionCenterTabs" role="tablist" style="scrollbar-width: none; -ms-overflow-style: none; -webkit-overflow-scrolling: touch;">
         <li class="nav-item">
           <button class="nav-link <?= $activeTab === 'missing' ? 'active fw-bold' : '' ?> py-3 small" data-bs-toggle="tab" data-bs-target="#tab-missing">
             <i class="fa-solid fa-file-circle-exclamation text-danger me-1"></i> Missing Docs 
