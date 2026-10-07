@@ -23,13 +23,29 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       <h3 class="fw-bold brand-font text-dark mb-1">Global Branch Network</h3>
       <p class="text-muted small mb-0">Manage worldwide branch desks, operations hubs, staff assignments, and localized revenues.</p>
     </div>
-    <button class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#newBranchModal">
-      <i class="fa-solid fa-plus me-1"></i> Register New Branch
-    </button>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <!-- 3 View Options Switcher (Responsive) -->
+      <div class="btn-group btn-group-sm bg-white shadow-sm border rounded-pill p-1 view-switcher-pill-group" role="group" aria-label="Branch View Mode">
+        <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold branch-view-btn btn-primary shadow-sm" id="btnBranchViewGrid" onclick="switchBranchView('grid')" title="Cards Grid View">
+          <i class="fa-solid fa-grip me-1"></i> <span class="d-none d-sm-inline">Cards</span>
+        </button>
+        <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold branch-view-btn btn-light text-muted" id="btnBranchViewTable" onclick="switchBranchView('table')" title="Table View">
+          <i class="fa-solid fa-table-list me-1"></i> <span class="d-none d-sm-inline">Table</span>
+        </button>
+        <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold branch-view-btn btn-light text-muted" id="btnBranchViewCompact" onclick="switchBranchView('compact')" title="Compact List View">
+          <i class="fa-solid fa-list-ul me-1"></i> <span class="d-none d-sm-inline">Compact</span>
+        </button>
+      </div>
+
+      <button class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#newBranchModal">
+        <i class="fa-solid fa-plus me-1"></i> Register New Branch
+      </button>
+    </div>
   </div>
 
-  <!-- Branch Cards Grid -->
-  <div class="row g-3">
+  <!-- VIEW OPTION 1: BRANCH CARDS GRID -->
+  <div id="branchViewGrid" class="branch-view-container">
+    <div class="row g-3">
     <?php foreach ($branches as $b): ?>
       <?php $isActive = (int)$b['is_active'] === 1; ?>
       <div class="col-md-6 col-lg-3">
@@ -138,8 +154,125 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         </div>
       </div>
     <?php endforeach; ?>
+    </div>
   </div>
-</div>
+
+  <!-- VIEW OPTION 2: BRANCH DATA TABLE -->
+  <div id="branchViewTable" class="branch-view-container d-none mb-4">
+    <div class="card card-enterprise shadow-sm border bg-white">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr class="small text-muted text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+              <th class="ps-3">Branch &amp; Hub</th>
+              <th>Code</th>
+              <th>Status</th>
+              <th>Assigned Staff</th>
+              <th>Live Applications</th>
+              <th>Branch Revenue</th>
+              <th>Contact Details</th>
+              <th class="text-end pe-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($branches as $b): ?>
+              <?php $isActive = (int)$b['is_active'] === 1; ?>
+              <tr>
+                <td class="ps-3">
+                  <div class="fw-bold text-dark"><?= e($b['name']) ?></div>
+                  <div class="small text-muted"><i class="fa-solid fa-location-dot me-1 text-danger"></i> <?= e($b['city']) ?>, <?= e($b['country']) ?></div>
+                </td>
+                <td>
+                  <span class="badge bg-primary-subtle text-primary fw-bold border"><?= e($b['code']) ?></span>
+                </td>
+                <td>
+                  <span class="badge <?= $isActive ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' ?> fw-semibold">
+                    <?= $isActive ? 'Active' : 'Suspended' ?>
+                  </span>
+                </td>
+                <td>
+                  <div class="small fw-semibold text-dark"><i class="fa-solid fa-users me-1 text-muted"></i> <?= (int)$b['staff_count'] ?> officers</div>
+                </td>
+                <td>
+                  <div class="small fw-bold text-primary"><i class="fa-solid fa-folder-open me-1"></i> <?= (int)$b['total_applications'] ?></div>
+                </td>
+                <td>
+                  <div class="small fw-bold text-success"><?= format_currency((float)$b['total_revenue']) ?></div>
+                </td>
+                <td>
+                  <div class="small text-muted" style="font-size: 0.75rem;">
+                    <div><i class="fa-solid fa-phone me-1 text-primary"></i> <?= e($b['phone'] ?: '—') ?></div>
+                    <div><i class="fa-regular fa-envelope me-1 text-primary"></i> <?= e($b['email'] ?: '—') ?></div>
+                  </div>
+                </td>
+                <td class="text-end pe-3">
+                  <div class="d-flex align-items-center justify-content-end gap-1">
+                    <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" data-bs-toggle="modal" data-bs-target="#editBranchModal<?= $b['id'] ?>" title="Edit Branch">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                    <form action="/branches/toggle-status" method="POST" class="d-inline">
+                      <?= csrf_field() ?>
+                      <input type="hidden" name="id" value="<?= $b['id'] ?>">
+                      <button type="submit" class="btn btn-sm <?= $isActive ? 'btn-outline-danger' : 'btn-outline-success' ?> py-1 px-2" title="<?= $isActive ? 'Suspend' : 'Activate' ?>">
+                        <i class="fa-solid <?= $isActive ? 'fa-ban' : 'fa-check' ?>"></i>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW OPTION 3: BRANCH COMPACT LIST VIEW -->
+  <div id="branchViewCompact" class="branch-view-container d-none mb-4">
+    <div class="list-group shadow-xs rounded-3">
+      <?php foreach ($branches as $b): ?>
+        <?php $isActive = (int)$b['is_active'] === 1; ?>
+        <div class="list-group-item list-group-item-action d-flex flex-wrap align-items-center justify-content-between p-3 gap-2 border-start-0 border-end-0">
+          <div class="d-flex align-items-center gap-3 flex-grow-1" style="min-width: 240px;">
+            <div class="rounded-pill p-2 bg-primary-subtle text-primary fw-bold text-center" style="width: 48px; height: 48px; line-height: 32px;">
+              <?= e($b['code']) ?>
+            </div>
+            <div>
+              <div class="d-flex align-items-center gap-2">
+                <h6 class="fw-bold text-dark mb-0"><?= e($b['name']) ?></h6>
+                <span class="badge <?= $isActive ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' ?> fw-semibold" style="font-size: 0.68rem;">
+                  <?= $isActive ? 'Active' : 'Suspended' ?>
+                </span>
+              </div>
+              <div class="small text-muted" style="font-size: 0.75rem;">
+                <i class="fa-solid fa-location-dot text-danger me-1"></i> <?= e($b['city']) ?>, <?= e($b['country']) ?> &bull; 
+                <span class="text-dark fw-medium"><?= (int)$b['staff_count'] ?> officers</span> &bull; 
+                <span class="text-primary fw-medium"><?= (int)$b['total_applications'] ?> apps</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-3">
+            <span class="badge bg-success-subtle text-success border fw-bold px-2.5 py-1.5" style="font-size: 0.8rem;">
+              <?= format_currency((float)$b['total_revenue']) ?>
+            </span>
+            <div class="btn-group btn-group-sm">
+              <button type="button" class="btn btn-outline-primary py-1 px-2.5" data-bs-toggle="modal" data-bs-target="#editBranchModal<?= $b['id'] ?>">
+                <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+              </button>
+              <form action="/branches/toggle-status" method="POST" class="d-inline">
+                <?= csrf_field() ?>
+                <input type="hidden" name="id" value="<?= $b['id'] ?>">
+                <button type="submit" class="btn <?= $isActive ? 'btn-outline-danger' : 'btn-outline-success' ?> py-1 px-2 border-start-0">
+                  <i class="fa-solid <?= $isActive ? 'fa-ban' : 'fa-check' ?>"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
 
 <!-- MODAL: ADD BRANCH -->
 <div class="modal fade" id="newBranchModal" tabindex="-1">
@@ -195,5 +328,53 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </div>
   </div>
 </div>
+
+<script>
+function switchBranchView(mode) {
+  document.querySelectorAll('.branch-view-container').forEach(el => el.classList.add('d-none'));
+  document.querySelectorAll('.branch-view-btn').forEach(btn => {
+    btn.classList.remove('btn-primary', 'shadow-sm', 'active');
+    btn.classList.add('btn-light', 'text-muted');
+  });
+
+  if (mode === 'table') {
+    const tableEl = document.getElementById('branchViewTable');
+    if (tableEl) tableEl.classList.remove('d-none');
+    const tableBtn = document.getElementById('btnBranchViewTable');
+    if (tableBtn) {
+      tableBtn.classList.remove('btn-light', 'text-muted');
+      tableBtn.classList.add('btn-primary', 'shadow-sm', 'active');
+    }
+    try { localStorage.setItem('vt_branch_view', 'table'); } catch(e) {}
+  } else if (mode === 'compact') {
+    const compactEl = document.getElementById('branchViewCompact');
+    if (compactEl) compactEl.classList.remove('d-none');
+    const compactBtn = document.getElementById('btnBranchViewCompact');
+    if (compactBtn) {
+      compactBtn.classList.remove('btn-light', 'text-muted');
+      compactBtn.classList.add('btn-primary', 'shadow-sm', 'active');
+    }
+    try { localStorage.setItem('vt_branch_view', 'compact'); } catch(e) {}
+  } else {
+    const gridEl = document.getElementById('branchViewGrid');
+    if (gridEl) gridEl.classList.remove('d-none');
+    const gridBtn = document.getElementById('btnBranchViewGrid');
+    if (gridBtn) {
+      gridBtn.classList.remove('btn-light', 'text-muted');
+      gridBtn.classList.add('btn-primary', 'shadow-sm', 'active');
+    }
+    try { localStorage.setItem('vt_branch_view', 'grid'); } catch(e) {}
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const savedView = (function() {
+    try { return localStorage.getItem('vt_branch_view') || (window.innerWidth < 768 ? 'grid' : 'grid'); } catch(e) { return 'grid'; }
+  })();
+  if (savedView === 'table' || savedView === 'compact') {
+    switchBranchView(savedView);
+  }
+});
+</script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

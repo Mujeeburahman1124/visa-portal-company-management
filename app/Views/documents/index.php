@@ -316,13 +316,16 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         <span class="badge bg-light text-muted border"><?= count($documents) ?> displayed</span>
       </div>
       <div class="d-flex align-items-center gap-2">
-        <!-- View Mode Switcher -->
-        <div class="btn-group btn-group-sm" role="group" aria-label="Display View">
-          <button type="button" class="btn btn-primary active text-white" id="docViewListBtn" onclick="setDocumentView('list')" title="List / Table View">
-            <i class="fa-solid fa-list me-1"></i> List
+        <!-- 3 View Options Switcher (Responsive) -->
+        <div class="btn-group btn-group-sm bg-white shadow-sm border rounded-pill p-1 view-switcher-pill-group" role="group" aria-label="View Mode">
+          <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold doc-view-btn btn-primary shadow-sm" id="docViewListBtn" onclick="setDocumentView('table')" title="Table View">
+            <i class="fa-solid fa-table-list me-1"></i> <span class="d-none d-sm-inline">Table</span>
           </button>
-          <button type="button" class="btn btn-outline-secondary" id="docViewGridBtn" onclick="setDocumentView('grid')" title="Grid / Card View">
-            <i class="fa-solid fa-grip me-1"></i> Grid
+          <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold doc-view-btn btn-light text-muted" id="docViewGridBtn" onclick="setDocumentView('grid')" title="Card Grid View">
+            <i class="fa-solid fa-grip me-1"></i> <span class="d-none d-sm-inline">Cards</span>
+          </button>
+          <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold doc-view-btn btn-light text-muted" id="docViewCompactBtn" onclick="setDocumentView('compact')" title="Compact List View">
+            <i class="fa-solid fa-list-ul me-1"></i> <span class="d-none d-sm-inline">Compact</span>
           </button>
         </div>
       </div>
@@ -842,6 +845,99 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             </div>
           </div>
         <?php endforeach; ?>
+      </div>
+
+      <!-- Compact List View Mode -->
+      <div id="documentCompactView" class="p-3 d-none">
+        <div class="list-group shadow-xs rounded-3">
+          <?php foreach ($documents as $doc): ?>
+            <?php
+              $statusBadgeClass = 'badge bg-secondary';
+              if ($doc['status'] === 'VERIFIED') $statusBadgeClass = 'badge bg-success';
+              elseif ($doc['status'] === 'REJECTED') $statusBadgeClass = 'badge bg-danger';
+              elseif ($doc['status'] === 'UNDER_REVIEW') $statusBadgeClass = 'badge bg-warning text-dark';
+
+              $ext = strtolower(pathinfo($doc['file_name'] ?? '', PATHINFO_EXTENSION));
+              $fileIcon = 'fa-file text-secondary';
+              if ($ext === 'pdf') { $fileIcon = 'fa-file-pdf text-danger'; }
+              elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) { $fileIcon = 'fa-file-image text-primary'; }
+              elseif (in_array($ext, ['doc', 'docx'], true)) { $fileIcon = 'fa-file-word text-info'; }
+            ?>
+            <div class="list-group-item list-group-item-action d-flex flex-wrap align-items-center justify-content-between p-2.5 gap-2 border-start-0 border-end-0">
+              <div class="d-flex align-items-center gap-2.5 flex-grow-1" style="min-width: 240px;">
+                <div class="rounded p-2 bg-light d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                  <i class="fa-solid <?= $fileIcon ?> fs-5"></i>
+                </div>
+                <div class="text-truncate">
+                  <div class="fw-bold text-dark text-truncate" style="max-width: 260px;" title="<?= e($doc['document_title'] ?: $doc['doc_type_name']) ?>">
+                    <?= e($doc['document_title'] ?: $doc['doc_type_name']) ?>
+                    <span class="badge bg-light text-muted border ms-1" style="font-size: 0.68rem;">v<?= (int)$doc['version'] ?></span>
+                  </div>
+                  <div class="small text-muted text-truncate" style="font-size: 0.74rem;">
+                    <span class="text-dark fw-medium"><?= e($doc['customer_name'] ?: 'General Applicant') ?></span> &bull; 
+                    <?= e($doc['file_name']) ?> &bull; 
+                    <?= number_format(((float)$doc['file_size']) / 1024, 1) ?> KB
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="<?= $statusBadgeClass ?> px-2 py-1" style="font-size: 0.72rem;"><?= e($doc['status']) ?></span>
+                <span class="badge <?= $doc['expiry_info']['badge_class'] ?>" style="font-size: 0.72rem;"><?= e($doc['expiry_info']['label']) ?></span>
+                <?php if (!empty($doc['application_number'])): ?>
+                  <a href="/applications/show?id=<?= $doc['app_id'] ?>" class="badge bg-primary-subtle text-primary border text-decoration-none" style="font-size: 0.72rem;">
+                    <?= e($doc['application_number']) ?>
+                  </a>
+                <?php endif; ?>
+              </div>
+
+              <div class="d-flex align-items-center gap-1">
+                <button type="button" 
+                        class="btn btn-sm btn-outline-primary py-1 px-2" 
+                        data-doc-id="<?= (int)$doc['id'] ?>"
+                        data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-applicant="<?= htmlspecialchars($doc['customer_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-filename="<?= htmlspecialchars($doc['file_name'], ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-status="<?= htmlspecialchars($doc['status'], ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-reason="<?= htmlspecialchars($doc['rejection_reason'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-expiry="<?= htmlspecialchars($doc['expiry_date'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-type-id="<?= (int)$doc['document_type_id'] ?>"
+                        data-doc-notes="<?= htmlspecialchars($doc['notes'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        onclick="openDocPreview(this)" 
+                        title="Preview">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+                <a href="/documents/download?id=<?= $doc['id'] ?>" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Download">
+                  <i class="fa-solid fa-download"></i>
+                </a>
+                <button type="button" 
+                        class="btn btn-sm btn-outline-info text-dark py-1 px-2" 
+                        data-doc-id="<?= (int)$doc['id'] ?>"
+                        data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-applicant="<?= htmlspecialchars($doc['customer_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-filename="<?= htmlspecialchars($doc['file_name'], ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-status="<?= htmlspecialchars($doc['status'], ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-reason="<?= htmlspecialchars($doc['rejection_reason'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-expiry="<?= htmlspecialchars($doc['expiry_date'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-type-id="<?= (int)$doc['document_type_id'] ?>"
+                        data-doc-notes="<?= htmlspecialchars($doc['notes'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        onclick="openEditDocModal(this)" 
+                        title="Edit">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button type="button" 
+                        class="btn btn-sm btn-outline-danger py-1 px-2" 
+                        data-doc-id="<?= (int)$doc['id'] ?>"
+                        data-doc-title="<?= htmlspecialchars($doc['document_title'] ?: $doc['doc_type_name'], ENT_QUOTES, 'UTF-8') ?>"
+                        data-doc-applicant="<?= htmlspecialchars($doc['customer_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                        onclick="openDeleteDocModal(this)" 
+                        title="Delete">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </div>
       </div>
 
       <!-- Pagination Component -->
@@ -1600,46 +1696,61 @@ function openVersionHistoryModal(id, title) {
 function setDocumentView(mode) {
   const tableView = document.getElementById('documentTableView');
   const gridView = document.getElementById('documentGridView');
+  const compactView = document.getElementById('documentCompactView');
   const mobileCards = document.getElementById('documentMobileCards');
   const listBtn = document.getElementById('docViewListBtn');
   const gridBtn = document.getElementById('docViewGridBtn');
+  const compactBtn = document.getElementById('docViewCompactBtn');
+
+  // Hide all containers
+  if (tableView) tableView.classList.add('d-none');
+  if (gridView) gridView.classList.add('d-none');
+  if (compactView) compactView.classList.add('d-none');
+  if (mobileCards) mobileCards.classList.add('d-none');
+
+  // Reset all buttons to inactive pill style
+  [listBtn, gridBtn, compactBtn].forEach(btn => {
+    if (btn) {
+      btn.classList.remove('btn-primary', 'shadow-sm', 'text-white', 'active');
+      btn.classList.add('btn-light', 'text-muted');
+    }
+  });
 
   if (mode === 'grid') {
-    if (tableView) tableView.classList.add('d-none');
-    if (mobileCards) mobileCards.classList.add('d-none');
     if (gridView) gridView.classList.remove('d-none');
     if (gridBtn) {
-      gridBtn.classList.add('active', 'btn-primary', 'text-white');
-      gridBtn.classList.remove('btn-outline-secondary');
-    }
-    if (listBtn) {
-      listBtn.classList.remove('active', 'btn-primary', 'text-white');
-      listBtn.classList.add('btn-outline-secondary');
+      gridBtn.classList.remove('btn-light', 'text-muted');
+      gridBtn.classList.add('btn-primary', 'shadow-sm', 'text-white', 'active');
     }
     try { localStorage.setItem('vt_doc_view', 'grid'); } catch(e) {}
+  } else if (mode === 'compact') {
+    if (compactView) compactView.classList.remove('d-none');
+    if (compactBtn) {
+      compactBtn.classList.remove('btn-light', 'text-muted');
+      compactBtn.classList.add('btn-primary', 'shadow-sm', 'text-white', 'active');
+    }
+    try { localStorage.setItem('vt_doc_view', 'compact'); } catch(e) {}
   } else {
+    // default table / list
     if (tableView) tableView.classList.remove('d-none');
-    if (mobileCards) mobileCards.classList.remove('d-none');
-    if (gridView) gridView.classList.add('d-none');
+    if (window.innerWidth < 768 && mobileCards) {
+      mobileCards.classList.remove('d-none');
+    }
     if (listBtn) {
-      listBtn.classList.add('active', 'btn-primary', 'text-white');
-      listBtn.classList.remove('btn-outline-secondary');
+      listBtn.classList.remove('btn-light', 'text-muted');
+      listBtn.classList.add('btn-primary', 'shadow-sm', 'text-white', 'active');
     }
-    if (gridBtn) {
-      gridBtn.classList.remove('active', 'btn-primary', 'text-white');
-      gridBtn.classList.add('btn-outline-secondary');
-    }
-    try { localStorage.setItem('vt_doc_view', 'list'); } catch(e) {}
+    try { localStorage.setItem('vt_doc_view', 'table'); } catch(e) {}
   }
 }
 
 // Automatically configure Popper fixed positioning for all table dropdowns & restore view
 document.addEventListener('DOMContentLoaded', function() {
   const savedView = (function() {
-    try { return localStorage.getItem('vt_doc_view') || 'list'; } catch(e) { return 'list'; }
+    try { return localStorage.getItem('vt_doc_view') || (window.innerWidth < 768 ? 'grid' : 'table'); } catch(e) { return 'table'; }
   })();
-  if (savedView === 'grid') {
-    setDocumentView('grid');
+  if (savedView === 'grid' || savedView === 'compact') {
+    setDocumentView(savedView);
   }
 
   function initFixedDropdowns() {

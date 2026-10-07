@@ -27,12 +27,16 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
       <p class="text-muted small mb-0">Live tracking by date, applicant name, passport, phone, email, visa number, and destination.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
-      <div class="btn-group btn-group-sm" role="group">
-        <a href="?<?= http_build_query(array_merge($_GET, ['view' => 'table'])) ?>" class="btn <?= $viewMode === 'table' ? 'btn-primary' : 'btn-outline-secondary' ?>">
-          <i class="fa-solid fa-table-list me-1"></i> Table View
+      <!-- 3 View Options Switcher (Responsive) -->
+      <div class="btn-group btn-group-sm bg-white shadow-sm border rounded-pill p-1 view-switcher-pill-group" role="group" aria-label="View Mode">
+        <a href="?<?= http_build_query(array_merge($_GET, ['view' => 'table'])) ?>" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold <?= $viewMode === 'table' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" title="Table View">
+          <i class="fa-solid fa-table-list me-1"></i> <span class="d-none d-sm-inline">Table</span>
         </a>
-        <a href="?<?= http_build_query(array_merge($_GET, ['view' => 'timeline'])) ?>" class="btn <?= $viewMode === 'timeline' ? 'btn-primary' : 'btn-outline-secondary' ?>">
-          <i class="fa-solid fa-timeline me-1"></i> Visual Timeline
+        <a href="?<?= http_build_query(array_merge($_GET, ['view' => 'grid'])) ?>" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold <?= $viewMode === 'grid' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" title="Cards Grid View">
+          <i class="fa-solid fa-grip me-1"></i> <span class="d-none d-sm-inline">Cards</span>
+        </a>
+        <a href="?<?= http_build_query(array_merge($_GET, ['view' => 'timeline'])) ?>" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold <?= $viewMode === 'timeline' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" title="Timeline View">
+          <i class="fa-solid fa-timeline me-1"></i> <span class="d-none d-sm-inline">Timeline</span>
         </a>
       </div>
     </div>
@@ -269,6 +273,60 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
             </tbody>
           </table>
         </div>
+      </div>
+
+    <?php elseif ($viewMode === 'grid'): ?>
+
+      <!-- CARDS GRID VIEW -->
+      <div class="row g-3 mb-4">
+        <?php foreach ($applications as $app): ?>
+          <?php
+            $healthClass = ((int)$app['calculated_health'] < 50) ? 'bg-danger' : (((int)$app['calculated_health'] < 80) ? 'bg-warning text-dark' : 'bg-success');
+          ?>
+          <div class="col-12 col-md-6 col-xl-4">
+            <div class="card card-enterprise h-100 shadow-sm border">
+              <div class="card-body p-3.5 d-flex flex-column justify-content-between">
+                <div>
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="badge bg-primary-subtle text-primary fw-bold border"><?= e($app['application_number']) ?></span>
+                    <span class="badge <?= $healthClass ?> text-white" title="<?= e($app['health_reason'] ?? 'Health') ?>">
+                      <?= (int)$app['calculated_health'] ?>% Health
+                    </span>
+                  </div>
+                  <h6 class="fw-bold text-dark mb-1 d-flex align-items-center gap-1">
+                    <span><?= $app['flag_emoji'] ?></span>
+                    <span class="text-truncate"><?= e($app['customer_name']) ?></span>
+                  </h6>
+                  <div class="text-muted small mb-3">
+                    <span class="font-monospace"><?= e($app['passport_number']) ?></span> &bull; <?= e($app['country_name']) ?> (<?= e($app['service_name']) ?>)
+                  </div>
+                  <div class="p-2.5 bg-light rounded border mb-3 small">
+                    <div class="d-flex justify-content-between mb-1">
+                      <span class="text-muted">Stage:</span>
+                      <strong class="text-primary text-truncate ms-2"><?= e($app['current_stage']) ?></strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                      <span class="text-muted">Officer:</span>
+                      <span class="text-dark"><?= e($app['staff_name'] ?? 'Unassigned') ?></span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                      <span class="text-muted">Target SLA:</span>
+                      <span class="text-muted"><?= e($app['expected_completion_date'] ?? 'N/A') ?></span>
+                    </div>
+                  </div>
+                </div>
+                <div class="d-flex gap-2 pt-2 border-top">
+                  <a href="/tracking/show?id=<?= $app['id'] ?>" class="btn btn-primary btn-sm flex-grow-1 fw-semibold">
+                    <i class="fa-solid fa-route me-1"></i> Track Visa
+                  </a>
+                  <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-outline-secondary btn-sm" title="Workspace">
+                    <i class="fa-solid fa-folder-open"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        <?php endforeach; ?>
       </div>
 
     <?php else: ?>
