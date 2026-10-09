@@ -64,9 +64,9 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
     </a>
     
     <!-- Page Title / Breadcrumb Trail (Smart Progressive Display: Breadcrumb on ≥1440px, Title on ≥1200px, hidden on <1200px) -->
-    <div class="d-none d-xl-block topbar-breadcrumb-container flex-shrink-0">
-      <nav aria-label="breadcrumb" class="d-none d-xxl-block">
-        <ol class="breadcrumb mb-0" style="font-size: 0.70rem;">
+    <div class="d-none d-xl-flex flex-column justify-content-center topbar-breadcrumb-container flex-shrink-0" style="min-width: 160px; line-height: 1.2;">
+      <nav aria-label="breadcrumb" class="d-none d-xxl-block mb-0 pb-0">
+        <ol class="breadcrumb mb-0 py-0" style="font-size: 0.70rem; line-height: 1.2;">
           <li class="breadcrumb-item"><a href="/dashboard" class="text-decoration-none text-muted"><i class="fa-solid fa-house-chimney small me-1"></i>Home</a></li>
           <?php if (empty($uriSegments) || $currentUri === '/dashboard'): ?>
             <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Dashboard</li>
@@ -91,7 +91,7 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
       <?php
         $cleanTitle = trim(explode('—', (string)($pageTitle ?? 'Operations Dashboard'))[0]);
       ?>
-      <div class="fw-bold page-title-header text-truncate" style="font-size: 0.95rem; max-width: 170px;" title="<?= e($cleanTitle) ?>"><?= e($cleanTitle) ?></div>
+      <div class="fw-bold page-title-header text-truncate mt-0.5" style="font-size: 0.95rem; line-height: 1.2; max-width: 220px;" title="<?= e($cleanTitle) ?>"><?= e($cleanTitle) ?></div>
     </div>
   </div>
 

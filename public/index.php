@@ -978,6 +978,16 @@ switch ($uri) {
         break;
 
     // Administration: System Settings, Countries & Visa Services / Packages (Protected)
+    case '/visa-packages':
+    case '/services':
+    case '/visa-services':
+        (new App\Controllers\VisaPackageController())->index();
+        break;
+
+    case '/visa-packages/upload-image':
+        (new App\Controllers\VisaPackageController())->uploadImage();
+        break;
+
     case '/visa-packages/store':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
         (new App\Controllers\VisaPackageController())->store();

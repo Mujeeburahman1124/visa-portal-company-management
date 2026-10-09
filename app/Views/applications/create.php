@@ -2,6 +2,7 @@
 $pageTitle = 'New Visa Application — VISA TRACK';
 $flash = get_flash();
 $currentUser = auth_user();
+$preselectedServiceId = (int)($_GET['service_id'] ?? 0);
 require_once dirname(__DIR__) . '/layouts/header.php';
 require_once dirname(__DIR__) . '/layouts/sidebar.php';
 require_once dirname(__DIR__) . '/layouts/topbar.php';
@@ -542,6 +543,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 <option value="__custom__" class="fw-bold text-primary">+ Enter Manually / Custom Package...</option>
                 <?php foreach ($services as $srv): ?>
                   <option value="<?= $srv['id'] ?>" 
+                          <?= ($preselectedServiceId === (int)$srv['id']) ? 'selected' : '' ?>
                           data-country-id="<?= $srv['country_id'] ?>"
                           data-category-id="<?= $srv['category_id'] ?? '' ?>"
                           data-price="<?= $srv['selling_price'] ?>"
@@ -1920,6 +1922,13 @@ function checkManualSelect(sel, manualBoxId) {
   }
   updateServiceInfo();
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+  const srvSelect = document.getElementById('serviceSelect');
+  if (srvSelect && srvSelect.value && srvSelect.value !== '__custom__') {
+    onServiceChanged();
+  }
+});
 </script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

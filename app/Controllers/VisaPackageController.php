@@ -248,6 +248,7 @@ class VisaPackageController
         $categoryId = (int)($_POST['category_id'] ?? 0);
         $supplierId = !empty($_POST['supplier_id']) ? (int)$_POST['supplier_id'] : null;
         $name = trim($_POST['name'] ?? '');
+        $description = trim($_POST['description'] ?? '');
         $duration = trim($_POST['duration'] ?? '30 Days');
         $maxStay = trim($_POST['max_stay'] ?? $duration);
         $validity = trim($_POST['validity'] ?? '60 Days');
@@ -277,18 +278,38 @@ class VisaPackageController
         $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name . '-' . $duration . '-' . time()), '-'));
 
         $stmt = $pdo->prepare("INSERT INTO visa_services (
-            country_id, category_id, supplier_id, supplier_name, name, slug, duration, max_stay, validity,
+            country_id, category_id, supplier_id, supplier_name, name, slug, description, duration, max_stay, validity,
             entry_type, processing_type, estimated_days, supplier_cost, service_fee,
             tax_rate, selling_price, currency, effective_date, notes, cancellation_policy, is_active, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
 
         $stmt->execute([
-            $countryId, $categoryId, $supplierId, $supplierName, $name, $slug, $duration, $maxStay, $validity,
+            $countryId, $categoryId, $supplierId, $supplierName, $name, $slug, $description, $duration, $maxStay, $validity,
             $entryType, $processingType, $estimatedDays, $supplierCost, $serviceFee,
             $taxRate, $sellingPrice, $currency, $effectiveDate, $notes, $cancellationPolicy
         ]);
 
         $newId = (int)$pdo->lastInsertId();
+
+        // Handle Cover Image Upload
+        $imageUrl = trim($_POST['image_url'] ?? '');
+        if (!empty($_FILES['cover_image']['tmp_name']) && is_uploaded_file($_FILES['cover_image']['tmp_name'])) {
+            $ext = strtolower(pathinfo($_FILES['cover_image']['name'], PATHINFO_EXTENSION));
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
+                $destDir = dirname(__DIR__, 2) . '/public/assets/images/destinations';
+                if (!is_dir($destDir)) {
+                    mkdir($destDir, 0755, true);
+                }
+                $fileName = 'pkg_' . $newId . '_' . time() . '.' . $ext;
+                $destPath = $destDir . '/' . $fileName;
+                if (move_uploaded_file($_FILES['cover_image']['tmp_name'], $destPath)) {
+                    $imageUrl = '/assets/images/destinations/' . $fileName;
+                }
+            }
+        }
+        if (!empty($imageUrl)) {
+            $pdo->prepare("UPDATE visa_services SET image_url = ? WHERE id = ?")->execute([$imageUrl, $newId]);
+        }
 
         // 1. Record Initial Immutable Price History Snapshot
         $histStmt = $pdo->prepare("INSERT INTO visa_package_price_history (
@@ -312,7 +333,8 @@ class VisaPackageController
 
         AuditService::log('CREATE', 'VisaServices', $newId, "Created new Visa Package: {$name} ({$currency} " . number_format($sellingPrice, 2) . ")");
 
-        redirect('/visa-packages', "Visa Package '{$name}' created successfully with price history recorded!", 'success');
+        $returnTo = !empty($_POST['return_to']) ? $_POST['return_to'] : (str_contains($_SERVER['HTTP_REFERER'] ?? '', 'dashboard') ? '/dashboard' : '/visa-packages');
+        redirect($returnTo, "Visa Package '{$name}' created successfully with price history recorded!", 'success');
     }
 
     public function update(): void
@@ -326,6 +348,7 @@ class VisaPackageController
         $categoryId = (int)($_POST['category_id'] ?? 0);
         $supplierId = !empty($_POST['supplier_id']) ? (int)$_POST['supplier_id'] : null;
         $name = trim($_POST['name'] ?? '');
+        $description = trim($_POST['description'] ?? '');
         $duration = trim($_POST['duration'] ?? '30 Days');
         $maxStay = trim($_POST['max_stay'] ?? $duration);
         $validity = trim($_POST['validity'] ?? '60 Days');
@@ -367,18 +390,38 @@ class VisaPackageController
         );
 
         $stmt = $pdo->prepare("UPDATE visa_services SET
-            country_id = ?, category_id = ?, supplier_id = ?, supplier_name = ?, name = ?, duration = ?, max_stay = ?,
+            country_id = ?, category_id = ?, supplier_id = ?, supplier_name = ?, name = ?, description = ?, duration = ?, max_stay = ?,
             validity = ?, entry_type = ?, processing_type = ?, estimated_days = ?,
             supplier_cost = ?, service_fee = ?, tax_rate = ?, selling_price = ?, currency = ?, effective_date = ?, notes = ?,
             cancellation_policy = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?");
 
         $stmt->execute([
-            $countryId, $categoryId, $supplierId, $supplierName, $name, $duration, $maxStay,
+            $countryId, $categoryId, $supplierId, $supplierName, $name, $description, $duration, $maxStay,
             $validity, $entryType, $processingType, $estimatedDays,
             $supplierCost, $serviceFee, $taxRate, $sellingPrice, $currency, $effectiveDate, $notes,
             $cancellationPolicy, $isActive, $id
         ]);
+
+        // Handle Cover Image Upload
+        $imageUrl = trim($_POST['image_url'] ?? '');
+        if (!empty($_FILES['cover_image']['tmp_name']) && is_uploaded_file($_FILES['cover_image']['tmp_name'])) {
+            $ext = strtolower(pathinfo($_FILES['cover_image']['name'], PATHINFO_EXTENSION));
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
+                $destDir = dirname(__DIR__, 2) . '/public/assets/images/destinations';
+                if (!is_dir($destDir)) {
+                    mkdir($destDir, 0755, true);
+                }
+                $fileName = 'pkg_' . $id . '_' . time() . '.' . $ext;
+                $destPath = $destDir . '/' . $fileName;
+                if (move_uploaded_file($_FILES['cover_image']['tmp_name'], $destPath)) {
+                    $imageUrl = '/assets/images/destinations/' . $fileName;
+                }
+            }
+        }
+        if (!empty($imageUrl)) {
+            $pdo->prepare("UPDATE visa_services SET image_url = ? WHERE id = ?")->execute([$imageUrl, $id]);
+        }
 
         // If price or supplier changed, maintain COMPLETE immutable price history
         if ($priceChanged) {
@@ -419,7 +462,8 @@ class VisaPackageController
         }
 
         AuditService::log('UPDATE', 'VisaServices', $id, "Updated Visa Package: {$name} ({$currency} " . number_format($sellingPrice, 2) . ")");
-        redirect('/visa-packages', "Visa Package '{$name}' updated successfully! Price history recorded.", 'success');
+        $returnTo = !empty($_POST['return_to']) ? $_POST['return_to'] : (str_contains($_SERVER['HTTP_REFERER'] ?? '', 'dashboard') ? '/dashboard' : '/visa-packages');
+        redirect($returnTo, "Visa Package '{$name}' updated successfully! Price history recorded.", 'success');
     }
 
     public function priceHistory(): void
@@ -571,4 +615,47 @@ class VisaPackageController
         AuditService::log('INVENTORY_ADJUSTMENT', 'VisaServices', $serviceId, "Recorded inventory adjustment for {$pkg['name']}: {$notes}");
         redirect('/visa-packages?tab=inventory', "Inventory transaction recorded successfully for '{$pkg['name']}'!", 'success');
     }
+
+    public function uploadImage(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id <= 0) {
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'Invalid package ID']);
+                exit;
+            }
+            redirect('/dashboard', 'Invalid package ID.', 'danger');
+        }
+
+        $imageUrl = '';
+        if (!empty($_FILES['image']['tmp_name']) && is_uploaded_file($_FILES['image']['tmp_name'])) {
+            $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
+                $destDir = dirname(__DIR__, 2) . '/public/assets/images/destinations';
+                if (!is_dir($destDir)) {
+                    mkdir($destDir, 0755, true);
+                }
+                $fileName = 'pkg_' . $id . '_' . time() . '.' . $ext;
+                $destPath = $destDir . '/' . $fileName;
+                if (move_uploaded_file($_FILES['image']['tmp_name'], $destPath)) {
+                    $imageUrl = '/assets/images/destinations/' . $fileName;
+                    $pdo->prepare("UPDATE visa_services SET image_url = ? WHERE id = ?")->execute([$imageUrl, $id]);
+                    AuditService::log('UPDATE', 'VisaServices', $id, "Updated cover image for package #{$id}");
+                }
+            }
+        }
+
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => !empty($imageUrl), 'image_url' => $imageUrl]);
+            exit;
+        }
+
+        redirect('/dashboard', 'Cover image updated successfully!', 'success');
+    }
 }
+

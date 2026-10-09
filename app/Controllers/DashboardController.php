@@ -213,6 +213,39 @@ class DashboardController
         $stageStmt->execute($baseParams);
         $stages = $stageStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
+        // 4b. Daily pipeline activity for the current week (Monday to Sunday, 100% real database counts)
+        $dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        $weeklyActivity = [];
+        $mondayTs = strtotime('monday this week');
+        $mondayDate = date('Y-m-d', $mondayTs);
+        $sundayDate = date('Y-m-d', strtotime('sunday this week', $mondayTs));
+
+        for ($d = 0; $d < 7; $d++) {
+            $currDate = date('Y-m-d', strtotime("+{$d} days", $mondayTs));
+            $weeklyActivity[$currDate] = [
+                'day' => $dayNames[$d],
+                'letter' => substr($dayNames[$d], 0, 1),
+                'date' => $currDate,
+                'count' => 0,
+                'is_today' => ($currDate === $today)
+            ];
+        }
+
+        try {
+            $weekDailyStmt = $pdo->prepare("SELECT substr(application_date, 1, 10) as app_date, COUNT(*) as cnt 
+                FROM applications {$baseWhere} AND substr(application_date, 1, 10) >= ? AND substr(application_date, 1, 10) <= ?
+                GROUP BY substr(application_date, 1, 10)");
+            $weekDailyStmt->execute(array_merge($baseParams, [$mondayDate, $sundayDate]));
+            $dateRows = $weekDailyStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            foreach ($dateRows as $dr) {
+                $dKey = $dr['app_date'] ?? '';
+                if (isset($weeklyActivity[$dKey])) {
+                    $weeklyActivity[$dKey]['count'] = (int)$dr['cnt'];
+                }
+            }
+        } catch (\Throwable $ignored) {}
+        $weeklyActivity = array_values($weeklyActivity);
+
         // 5. Applications by Status (Scoped)
         $statusStmt = $pdo->prepare("SELECT status, COUNT(*) as count 
             FROM applications {$baseWhere} 
@@ -404,7 +437,7 @@ class DashboardController
                 FROM visa_services vs
                 LEFT JOIN countries c ON vs.country_id = c.id
                 WHERE vs.is_active = 1
-                ORDER BY active_files_count DESC, vs.id ASC LIMIT 6");
+                ORDER BY active_files_count DESC, vs.id ASC LIMIT 3");
             $popularPackages = $pkgStmt ? $pkgStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         } catch (\Throwable $e) {
             $popularPackages = [];
