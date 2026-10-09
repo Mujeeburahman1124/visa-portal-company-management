@@ -23,7 +23,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
     <div>
       <h3 class="fw-bold brand-font text-dark mb-0">Wallets &amp; Financial Ledgers</h3>
-      <p class="text-muted small mb-0">Centralized accounting ledger for customer prepayments, supplier advance balances, agent credit limits &amp; multi-currency conversions.</p>
+      <p class="text-muted small mb-0">Centralized accounting ledger for customer prepayments, agent credit limits &amp; multi-currency conversions.</p>
     </div>
     <div class="d-flex gap-2">
       <button type="button" class="btn btn-outline-primary px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#customerWalletModal">

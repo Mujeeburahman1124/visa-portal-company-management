@@ -152,7 +152,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <div class="bento-stat-value" style="font-size: 2.15rem;"><?= format_currency($finance['gross_profit']) ?></div>
             <div class="bento-stat-badge">
               <span class="bento-badge-pill"><i class="fa-solid fa-chart-line"></i> Margin</span>
-              <span>Supplier cost: <?= format_currency($finance['supplier_cost']) ?></span>
+              <span>Cost: <?= format_currency($finance['supplier_cost']) ?></span>
             </div>
           </a>
         </div>

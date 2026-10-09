@@ -113,10 +113,10 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       <div class="card-body p-3">
         <form action="/visa-packages" method="GET" class="row g-2 align-items-center">
           <input type="hidden" name="tab" value="packages">
-          <div class="col-md-3">
+          <div class="col-md-4">
             <div class="input-group input-group-sm">
               <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
-              <input type="text" name="search" class="form-control" placeholder="Search package name, supplier..." value="<?= e($_GET['search'] ?? '') ?>">
+              <input type="text" name="search" class="form-control" placeholder="Search package name..." value="<?= e($_GET['search'] ?? '') ?>">
             </div>
           </div>
           <div class="col-md-3">
@@ -129,22 +129,12 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               <?php endforeach; ?>
             </select>
           </div>
-          <div class="col-md-2">
+          <div class="col-md-3">
             <select name="category_id" class="form-select form-select-sm">
               <option value="">-- All Categories --</option>
               <?php foreach ($categories as $cat): ?>
                 <option value="<?= $cat['id'] ?>" <?= ((int)($_GET['category_id'] ?? 0) === (int)$cat['id']) ? 'selected' : '' ?>>
                   <?= e($cat['name']) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <select name="supplier_id" class="form-select form-select-sm">
-              <option value="">-- All Suppliers --</option>
-              <?php foreach ($suppliers as $sup): ?>
-                <option value="<?= $sup['id'] ?>" <?= ((int)($_GET['supplier_id'] ?? 0) === (int)$sup['id']) ? 'selected' : '' ?>>
-                  <?= e($sup['name']) ?>
                 </option>
               <?php endforeach; ?>
             </select>
@@ -235,11 +225,6 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               <div class="travel-card-body">
                 <div class="d-flex align-items-center justify-content-between mb-1">
                   <span class="badge bg-light text-dark border small" style="font-size: 0.72rem;"><?= e($pkg['category_name']) ?></span>
-                  <?php if (!empty($pkg['supplier_company_name']) || !empty($pkg['supplier_name'])): ?>
-                    <span class="text-muted small text-truncate" style="font-size: 0.70rem; max-width: 140px;" title="<?= e($pkg['supplier_company_name'] ?: $pkg['supplier_name']) ?>">
-                      <i class="fa-solid fa-building me-1"></i><?= e($pkg['supplier_company_name'] ?: $pkg['supplier_name']) ?>
-                    </span>
-                  <?php endif; ?>
                 </div>
 
                 <h4 class="travel-card-title"><?= e($pkg['name']) ?></h4>
@@ -335,7 +320,6 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               <th>Package Name</th>
               <th>Destination</th>
               <th>Category</th>
-              <th>Supplier</th>
               <th>Duration &amp; Entry</th>
               <th>Cost Breakdown</th>
               <th>Selling Price</th>
@@ -346,7 +330,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <tbody>
             <?php if (empty($packages)): ?>
               <tr>
-                <td colspan="9" class="text-center py-5 text-muted">
+                <td colspan="8" class="text-center py-5 text-muted">
                   <i class="fa-solid fa-folder-open fs-3 d-block mb-2 text-secondary opacity-50"></i>
                   No visa packages found matching your criteria.
                 </td>
@@ -368,20 +352,11 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     <span class="badge bg-light text-dark border"><?= e($pkg['category_name']) ?></span>
                   </td>
                   <td>
-                    <?php if (!empty($pkg['supplier_company_name']) || !empty($pkg['supplier_name'])): ?>
-                      <span class="badge bg-primary-subtle text-primary border">
-                        <i class="fa-solid fa-building me-1"></i><?= e($pkg['supplier_company_name'] ?: $pkg['supplier_name']) ?>
-                      </span>
-                    <?php else: ?>
-                      <span class="text-muted small">Direct / In-house</span>
-                    <?php endif; ?>
-                  </td>
-                  <td>
                     <div class="small fw-semibold"><?= e($pkg['duration']) ?> (<?= e($pkg['entry_type'] ?: 'Single Entry') ?>)</div>
                     <div class="text-muted small"><?= e($pkg['processing_type'] ?: 'Normal') ?></div>
                   </td>
                   <td>
-                    <div class="text-muted small">Cost: <?= e($curr) ?> <?= number_format((float)$pkg['supplier_cost'], 2) ?></div>
+                    <div class="text-muted small">Base: <?= e($curr) ?> <?= number_format((float)$pkg['supplier_cost'], 2) ?></div>
                     <div class="text-muted small">Fee: <?= e($curr) ?> <?= number_format((float)$pkg['service_fee'], 2) ?> (VAT <?= (float)$pkg['tax_rate'] ?>%)</div>
                   </td>
                   <td>
@@ -792,16 +767,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                   <i class="fa-solid fa-calculator"></i> 4. Commercial Pricing &amp; Margin Breakdown
                 </h6>
                 <div class="row g-3 mb-3">
+                  <input type="hidden" name="supplier_id" id="createPkgSupplier" value="">
                   <div class="col-md-6 bento-input-group-clean">
-                    <label>Supplier / Vendor Partner</label>
-                    <select name="supplier_id" id="createPkgSupplier" class="form-select bento-input-control" onchange="updateCreateLivePreview()">
-                      <option value="" data-name="In-House Direct">-- In-House / Direct Processing --</option>
-                      <?php foreach ($suppliers as $s): ?>
-                        <option value="<?= $s['id'] ?>" data-name="<?= e($s['name']) ?>"><?= e($s['name']) ?> (<?= e($s['country']) ?>)</option>
-                      <?php endforeach; ?>
-                    </select>
-                  </div>
-                  <div class="col-md-3 bento-input-group-clean">
                     <label>Currency <span class="text-danger">*</span></label>
                     <select name="currency" id="pkgCurrency" class="form-select bento-input-control fw-bold text-dark" onchange="updateCreateLivePreview()">
                       <?php foreach (['USD', 'AED', 'LKR', 'EUR', 'GBP', 'SAR', 'QAR', 'INR', 'CAD', 'AUD'] as $cur): ?>
@@ -809,7 +776,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                       <?php endforeach; ?>
                     </select>
                   </div>
-                  <div class="col-md-3 bento-input-group-clean">
+                  <div class="col-md-6 bento-input-group-clean">
                     <label>Effective Date</label>
                     <input type="date" name="effective_date" class="form-control bento-input-control" value="<?= date('Y-m-d') ?>">
                   </div>
@@ -817,7 +784,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
                 <div class="row g-3 p-3 rounded-3" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
                   <div class="col-md-3 bento-input-group-clean">
-                    <label>Supplier Cost</label>
+                    <label>Base Cost</label>
                     <input type="number" step="0.01" name="supplier_cost" id="pkgSupplierCost" class="form-control bento-input-control" value="100.00" oninput="calcSellingPrice('create'); updateCreateLivePreview();">
                   </div>
                   <div class="col-md-3 bento-input-group-clean">
@@ -1101,16 +1068,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                   <i class="fa-solid fa-calculator"></i> 4. Commercial Pricing &amp; Margin Breakdown
                 </h6>
                 <div class="row g-3 mb-3">
+                  <input type="hidden" name="supplier_id" id="editPkgSupplier" value="">
                   <div class="col-md-6 bento-input-group-clean">
-                    <label>Supplier / Vendor Partner</label>
-                    <select name="supplier_id" id="editPkgSupplier" class="form-select bento-input-control" onchange="updateEditLivePreview()">
-                      <option value="" data-name="In-House Direct">-- In-House / Direct Processing --</option>
-                      <?php foreach ($suppliers as $s): ?>
-                        <option value="<?= $s['id'] ?>" data-name="<?= e($s['name']) ?>"><?= e($s['name']) ?> (<?= e($s['country']) ?>)</option>
-                      <?php endforeach; ?>
-                    </select>
-                  </div>
-                  <div class="col-md-3 bento-input-group-clean">
                     <label>Currency <span class="text-danger">*</span></label>
                     <select name="currency" id="editPkgCurrency" class="form-select bento-input-control fw-bold text-dark" onchange="updateEditLivePreview()">
                       <?php foreach (['USD', 'AED', 'LKR', 'EUR', 'GBP', 'SAR', 'QAR', 'INR', 'CAD', 'AUD'] as $cur): ?>
@@ -1118,7 +1077,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                       <?php endforeach; ?>
                     </select>
                   </div>
-                  <div class="col-md-3 bento-input-group-clean">
+                  <div class="col-md-6 bento-input-group-clean">
                     <label>Effective Date</label>
                     <input type="date" name="effective_date" id="editPkgEffectiveDate" class="form-control bento-input-control">
                   </div>
@@ -1126,7 +1085,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
                 <div class="row g-3 p-3 rounded-3" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
                   <div class="col-md-3 bento-input-group-clean">
-                    <label>Supplier Cost</label>
+                    <label>Base Cost</label>
                     <input type="number" step="0.01" name="supplier_cost" id="editPkgSupplierCost" class="form-control bento-input-control" oninput="calcSellingPrice('edit'); updateEditLivePreview();">
                   </div>
                   <div class="col-md-3 bento-input-group-clean">
@@ -1515,8 +1474,8 @@ function updateCreateLivePreview() {
 
   const catOpt = catEl ? catEl.options[catEl.selectedIndex] : null;
   const catName = catOpt ? (catOpt.getAttribute('data-name') || 'General') : 'General';
-  const supOpt = supEl ? supEl.options[supEl.selectedIndex] : null;
-  const supName = supOpt ? (supOpt.getAttribute('data-name') || 'In-House Direct') : 'In-House Direct';
+  const supOpt = (supEl && supEl.options) ? supEl.options[supEl.selectedIndex] : null;
+  const supName = supOpt ? (supOpt.getAttribute('data-name') || 'Direct') : 'Direct';
 
   const elCountryBadge = document.getElementById('createLiveCountryBadge');
   if (elCountryBadge) elCountryBadge.innerHTML = `<span class="fs-6">${flag}</span> <span>${cName}</span>`;
@@ -1603,8 +1562,8 @@ function updateEditLivePreview() {
 
   const catOpt = catEl ? catEl.options[catEl.selectedIndex] : null;
   const catName = catOpt ? (catOpt.getAttribute('data-name') || 'General') : 'General';
-  const supOpt = supEl ? supEl.options[supEl.selectedIndex] : null;
-  const supName = supOpt ? (supOpt.getAttribute('data-name') || 'In-House Direct') : 'In-House Direct';
+  const supOpt = (supEl && supEl.options) ? supEl.options[supEl.selectedIndex] : null;
+  const supName = supOpt ? (supOpt.getAttribute('data-name') || 'Direct') : 'Direct';
 
   const elCountryBadge = document.getElementById('editLiveCountryBadge');
   if (elCountryBadge) elCountryBadge.innerHTML = `<span class="fs-6">${flag}</span> <span>${cName}</span>`;

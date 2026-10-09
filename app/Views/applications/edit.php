@@ -102,7 +102,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 <input type="number" step="0.01" name="selling_price" class="form-control fw-bold" value="<?= e($app['selling_price'] ?? '0.00') ?>" required>
               </div>
               <div class="col-md-4">
-                <label class="form-label small fw-semibold text-secondary">Supplier / Vendor Cost ($)</label>
+                <label class="form-label small fw-semibold text-secondary">Base Operational Cost ($)</label>
                 <input type="number" step="0.01" name="supplier_cost" class="form-control" value="<?= e($app['supplier_cost'] ?? '0.00') ?>">
               </div>
               <div class="col-md-4">

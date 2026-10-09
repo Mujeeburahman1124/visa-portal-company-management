@@ -568,7 +568,7 @@ $activeTab = $_GET['tab'] ?? 'company';
         <div class="d-flex justify-content-between align-items-center mb-3">
           <div>
             <h6 class="fw-bold text-dark mb-0">Configured Visa Packages &amp; Pricing</h6>
-            <p class="text-muted small mb-0">Visa types, entry categories, SLA turnaround times, selling prices, and supplier costs.</p>
+            <p class="text-muted small mb-0">Visa types, entry categories, SLA turnaround times, selling prices, and cost prices.</p>
           </div>
           <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addServiceModal">
             <i class="fa-solid fa-plus me-1"></i> Add Visa Package
@@ -577,7 +577,7 @@ $activeTab = $_GET['tab'] ?? 'company';
 
         <div class="table-responsive">
           <table class="table-modern mb-0">
-            <thead><tr><th>Country</th><th>Service Package</th><th>Category</th><th>Duration / Stay</th><th>Entry</th><th>SLA Days</th><th>Selling Price</th><th>Supplier Cost</th></tr></thead>
+            <thead><tr><th>Country</th><th>Service Package</th><th>Category</th><th>Duration / Stay</th><th>Entry</th><th>SLA Days</th><th>Selling Price</th><th>Cost Price</th></tr></thead>
             <tbody>
               <?php foreach ($services as $srv): ?>
                 <tr>
@@ -986,7 +986,7 @@ $activeTab = $_GET['tab'] ?? 'company';
               <input type="number" step="0.01" name="selling_price" class="form-control" placeholder="250.00" required>
             </div>
             <div class="col-6">
-              <label class="form-label small fw-semibold">Supplier Cost ($)</label>
+              <label class="form-label small fw-semibold">Cost Price ($)</label>
               <input type="number" step="0.01" name="supplier_cost" class="form-control" placeholder="120.00">
             </div>
           </div>

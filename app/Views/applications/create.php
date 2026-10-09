@@ -579,7 +579,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     <input type="number" step="0.01" min="0" name="custom_selling_price" id="customSellingPriceInput" class="form-control form-control-sm" placeholder="e.g. 290.00" oninput="updateServiceInfo()">
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label small fw-semibold text-secondary mb-1">Supplier Cost ($)</label>
+                    <label class="form-label small fw-semibold text-secondary mb-1">Base Cost ($)</label>
                     <input type="number" step="0.01" min="0" name="custom_supplier_cost" id="customSupplierCostInput" class="form-control form-control-sm" placeholder="e.g. 210.00" oninput="updateServiceInfo()">
                   </div>
                   <div class="col-md-4">
@@ -854,7 +854,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               <span class="fw-semibold text-dark" id="dispSellingPrice">$0.00</span>
             </div>
             <div class="d-flex justify-content-between small mb-2">
-              <span class="text-muted">Supplier Cost:</span>
+              <span class="text-muted">Base Cost:</span>
               <span class="text-secondary" id="dispSupplierCost">$0.00</span>
             </div>
             <div class="d-flex justify-content-between small mb-2">
