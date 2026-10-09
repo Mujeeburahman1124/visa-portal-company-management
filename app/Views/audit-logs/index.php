@@ -30,7 +30,7 @@ foreach ($logs as $l) {
     </div>
   <?php endif; ?>
 
-  <?php if ($hasSystemErrors || ($_GET['action'] ?? '') === 'SYSTEM_ERROR'): ?>
+  <?php if ($hasSystemErrors): ?>
     <div class="alert alert-danger border-0 shadow-sm mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3 p-3">
       <div class="d-flex align-items-center gap-2">
         <i class="fa-solid fa-triangle-exclamation fs-5"></i>
@@ -147,15 +147,15 @@ foreach ($logs as $l) {
     <div id="auditViewTable" class="audit-view-container <?= $currentView === 'table' ? '' : 'd-none' ?>">
       <div class="card card-enterprise shadow-sm border">
         <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
+          <table class="table table-hover align-middle mb-0" style="min-width: 960px;">
             <thead class="table-light">
               <tr>
-                <th class="ps-3" style="min-width: 150px;">Timestamp</th>
-                <th style="min-width: 170px;">Actor / User</th>
-                <th>Module</th>
-                <th>Action</th>
+                <th class="ps-3" style="width: 170px;">Timestamp</th>
+                <th style="width: 180px;">Actor / User</th>
+                <th style="width: 120px;">Module</th>
+                <th style="width: 140px;">Action</th>
                 <th>Description &amp; Delta Context</th>
-                <th class="pe-3" style="min-width: 110px;">IP Address</th>
+                <th class="pe-3" style="width: 120px;">IP Address</th>
               </tr>
             </thead>
             <tbody>
@@ -185,6 +185,8 @@ foreach ($logs as $l) {
                   <td>
                     <?php if ($isError): ?>
                       <span class="badge bg-danger px-2.5 py-1 font-monospace" style="font-size: 0.72rem;"><?= e($log['action']) ?></span>
+                    <?php elseif ($log['action'] === 'RESOLVED_ERROR'): ?>
+                      <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 font-monospace" style="font-size: 0.72rem;"><i class="fa-solid fa-check me-1"></i>RESOLVED</span>
                     <?php else: ?>
                       <span class="badge bg-primary-subtle text-primary font-monospace px-2.5 py-1" style="font-size: 0.72rem;"><?= e($log['action']) ?></span>
                     <?php endif; ?>
@@ -192,7 +194,7 @@ foreach ($logs as $l) {
                   <td>
                     <div class="small fw-semibold text-dark mb-0.5"><?= e($log['description']) ?></div>
                     <?php if (!empty($log['details_json'])): ?>
-                      <pre class="bg-light p-1.5 rounded border small mb-0 text-muted font-monospace" style="font-size: 0.7rem; max-height: 80px; overflow-y: auto;"><?= e($log['details_json']) ?></pre>
+                      <pre class="bg-light p-2 rounded border small mb-0 text-muted font-monospace" style="font-size: 0.7rem; max-height: 90px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;"><?= e($log['details_json']) ?></pre>
                     <?php endif; ?>
                   </td>
                   <td class="pe-3">
