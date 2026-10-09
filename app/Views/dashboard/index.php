@@ -5,14 +5,11 @@ $currentUser = auth_user();
 $rawUName = trim((string)($currentUser['name'] ?? 'Staff'));
 $gName = ($rawUName === 'Super Admin' || $rawUName === '') ? 'Super Admin' : e(explode(' ', $rawUName)[0]);
 
-// Accurate rates for gauges & pill bars based strictly on user data
+// Operational counts strictly based on user database
 $totalFiles = max(1, (int)($kpi['total'] ?? 1));
 $approvedCount = (int)($kpi['approved'] ?? $kpi['completed'] ?? 0);
 $activeCount = (int)($kpi['active'] ?? 0);
 $actionCount = (int)($kpi['action_required'] ?? $kpi['pending'] ?? 0);
-$successRate = round(($approvedCount / $totalFiles) * 100);
-if ($successRate > 100) $successRate = 100;
-if ($successRate < 10 && $approvedCount > 0) $successRate = 10;
 
 require_once dirname(__DIR__) . '/layouts/header.php';
 require_once dirname(__DIR__) . '/layouts/sidebar.php';
@@ -465,8 +462,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     <!-- ─── THIRD BENTO ROW (TEAM COLLAB, RADIAL GAUGE, FINANCIAL PULSE) ──── -->
     <div class="row g-3 g-md-4 mb-4">
       
-      <!-- Left: Team Collaboration (Team Collaboration in Image) -->
-      <div class="col-12 col-lg-4">
+      <!-- Left: Team Collaboration -->
+      <div class="col-12 col-lg-6">
         <div class="bento-card">
           <div class="bento-card-head">
             <h3 class="bento-card-title">Team Collaboration</h3>
@@ -491,7 +488,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 </div>
                 <div class="bento-team-info">
                   <h5 class="bento-team-name"><?= e($currentUser['name'] ?? 'Super Admin') ?></h5>
-                  <p class="bento-team-role">Working on Visa Management System</p>
+                  <p class="bento-team-role">Visa Processing Operations</p>
                 </div>
                 <span class="bento-status-pill pill-completed">Active</span>
               </div>
@@ -523,56 +520,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         </div>
       </div>
 
-      <!-- Center: Project Progress Radial Arc Gauge (Project Progress in Image) -->
-      <div class="col-12 col-md-6 col-lg-4">
-        <div class="bento-card">
-          <div class="bento-card-head">
-            <h3 class="bento-card-title">Project Progress</h3>
-          </div>
-
-          <div class="bento-gauge-box">
-            <!-- Semi-Circular SVG Donut Gauge -->
-            <svg class="bento-gauge-svg" viewBox="0 0 200 110">
-              <!-- Background track -->
-              <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#F1F5F9" stroke-width="22" stroke-linecap="round" />
-              
-              <!-- Completed arc (Logo Brand Color) -->
-              <?php 
-                $gaugeTotalLen = 251.3;
-                $completedLen = ($successRate / 100) * $gaugeTotalLen;
-              ?>
-              <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="var(--bento-primary)" stroke-width="22" stroke-linecap="round" 
-                    stroke-dasharray="<?= $completedLen ?>, 300" />
-              
-              <!-- In Progress segment -->
-              <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="var(--bento-dark)" stroke-width="22" stroke-linecap="round" 
-                    stroke-dasharray="<?= min(50, $completedLen * 0.35) ?>, 300" />
-            </svg>
-
-            <!-- Center Percentage Display -->
-            <div class="bento-gauge-center">
-              <div class="bento-gauge-number"><?= $successRate ?>%</div>
-              <div class="bento-gauge-label">Visas Completed</div>
-            </div>
-
-            <!-- Legend Dots matching image -->
-            <div class="bento-gauge-legend">
-              <div class="bento-legend-item">
-                <span class="bento-legend-dot dot-completed"></span> Completed
-              </div>
-              <div class="bento-legend-item">
-                <span class="bento-legend-dot dot-progress"></span> In Progress
-              </div>
-              <div class="bento-legend-item">
-                <span class="bento-legend-dot dot-pending"></span> Pending
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right: Financial Pulse / Time Tracker (Time Tracker in Image) -->
-      <div class="col-12 col-md-6 col-lg-4">
+      <!-- Right: Financial Pulse / Live Session (50% Column Layout) -->
+      <div class="col-12 col-lg-6">
         <div class="bento-time-tracker">
           <div class="bento-tracker-bg-waves"></div>
           <!-- Abstract Organic Wave SVG -->
