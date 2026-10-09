@@ -5,7 +5,6 @@ namespace App\Services;
 
 use App\Config\Database;
 use PDO;
-use ZipArchive;
 
 class DatabaseBackupService
 {

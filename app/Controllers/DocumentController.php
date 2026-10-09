@@ -528,22 +528,12 @@ class DocumentController
             redirect("/documents/profile?application_id={$appId}", 'No uploaded documents available for this applicant to download.', 'warning');
         }
 
-        if (!class_exists('ZipArchive')) {
-            redirect("/documents/profile?application_id={$appId}", 'Server does not support ZipArchive extension.', 'danger');
-        }
-
-        $zip = new \ZipArchive();
         $tempDir = sys_get_temp_dir();
         $zipFilename = $tempDir . DIRECTORY_SEPARATOR . 'applicant_docs_' . $appId . '_' . time() . '.zip';
-
-        if ($zip->open($zipFilename, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
-            redirect("/documents/profile?application_id={$appId}", 'Failed to create zip archive.', 'danger');
-        }
-
         $cleanName = preg_replace('/[^A-Za-z0-9_\-]/', '_', (string)$app['customer_name']);
         $rootFolder = $cleanName . '_' . ($app['application_number'] ?: 'APP' . $appId);
 
-        $addedCount = 0;
+        $filesToZip = [];
         foreach ($docs as $d) {
             $filePath = App::uploadPath($d['file_path']);
             if (!file_exists($filePath)) {
@@ -559,17 +549,68 @@ class DocumentController
                 $ext = pathinfo((string)$d['file_name'], PATHINFO_EXTENSION);
                 $inZipName = "{$rootFolder}/{$category}/{$safeDocTitle}.{$ext}";
                 
-                $zip->addFile($filePath, $inZipName);
-                $addedCount++;
+                $filesToZip[] = [
+                    'source' => $filePath,
+                    'in_zip' => $inZipName
+                ];
             }
         }
 
-        $zip->close();
-
-        if ($addedCount === 0 || !file_exists($zipFilename)) {
-            if (file_exists($zipFilename)) @unlink($zipFilename);
+        if (empty($filesToZip)) {
             redirect("/documents/profile?application_id={$appId}", 'None of the document files could be retrieved from storage.', 'warning');
         }
+
+        $zipCreated = false;
+
+        // 1. Primary method: Native PHP ZipArchive
+        if (class_exists('ZipArchive')) {
+            $zip = new \ZipArchive();
+            if ($zip->open($zipFilename, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+                foreach ($filesToZip as $item) {
+                    $zip->addFile($item['source'], $item['in_zip']);
+                }
+                $zip->close();
+                $zipCreated = file_exists($zipFilename) && filesize($zipFilename) > 0;
+            }
+        }
+
+        // 2. Fallback method: PowerShell Compress-Archive (Windows) or tar (Unix)
+        if (!$zipCreated) {
+            $stagingDir = $tempDir . DIRECTORY_SEPARATOR . 'staging_' . $appId . '_' . time();
+            @mkdir($stagingDir, 0777, true);
+            foreach ($filesToZip as $item) {
+                $destPath = $stagingDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $item['in_zip']);
+                @mkdir(dirname($destPath), 0777, true);
+                @copy($item['source'], $destPath);
+            }
+
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                $psCmd = 'powershell -NoProfile -NonInteractive -Command "Compress-Archive -Path ' . escapeshellarg($stagingDir . DIRECTORY_SEPARATOR . '*') . ' -DestinationPath ' . escapeshellarg($zipFilename) . ' -Force"';
+                @exec($psCmd);
+            } else {
+                $tarCmd = 'tar -czf ' . escapeshellarg($zipFilename) . ' -C ' . escapeshellarg($stagingDir) . ' .';
+                @exec($tarCmd);
+            }
+
+            // Cleanup staging folder
+            $cleanStaging = function($dir) use (&$cleanStaging) {
+                if (!is_dir($dir)) return;
+                $files = array_diff(scandir($dir), ['.', '..']);
+                foreach ($files as $f) {
+                    (is_dir("$dir/$f")) ? $cleanStaging("$dir/$f") : @unlink("$dir/$f");
+                }
+                @rmdir($dir);
+            };
+            $cleanStaging($stagingDir);
+
+            $zipCreated = file_exists($zipFilename) && filesize($zipFilename) > 0;
+        }
+
+        if (!$zipCreated) {
+            redirect("/documents/profile?application_id={$appId}", 'Failed to create zip archive bundle.', 'danger');
+        }
+
+        $addedCount = count($filesToZip);
 
         AuditService::log('DOWNLOAD_ZIP', 'Applications', $appId, "Downloaded ZIP bundle of {$addedCount} documents for application {$app['application_number']}", [
             'application_id' => $appId,
