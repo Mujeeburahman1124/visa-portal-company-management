@@ -14,164 +14,189 @@ if ((int)$app['calculated_health'] < 50) $healthClass = 'health-critical';
 elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
 ?>
 
+<link rel="stylesheet" href="/assets/css/dashboard-bento.css?v=2.5">
+<link rel="stylesheet" href="/assets/css/pages/documents.css?v=2.5">
+
+<?php
+$statusBadgeClass = 'bg-secondary';
+if ($app['status'] === 'Approved') $statusBadgeClass = 'bg-success';
+elseif ($app['status'] === 'Pending') $statusBadgeClass = 'bg-warning text-dark';
+elseif ($app['status'] === 'Rejected') $statusBadgeClass = 'bg-danger';
+elseif ($app['status'] === 'In Process') $statusBadgeClass = 'bg-primary';
+elseif ($app['status'] === 'Action Required') $statusBadgeClass = 'bg-danger text-white';
+elseif ($app['status'] === 'Draft') $statusBadgeClass = 'bg-info text-dark';
+
+$priorityBadgeClass = 'bg-secondary text-white';
+if ($app['priority'] === 'Urgent') $priorityBadgeClass = 'bg-warning text-dark fw-bold';
+elseif ($app['priority'] === 'Critical') $priorityBadgeClass = 'bg-danger text-white fw-bold';
+elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-white';
+?>
+
 <div class="content-body">
   <?php if ($flash): ?>
-    <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'info')) ?> alert-dismissible fade show mb-4 shadow-sm" role="alert">
+    <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'info')) ?> alert-dismissible fade show mb-4 rounded-4 shadow-xs" role="alert">
       <div class="d-flex align-items-center gap-2">
-        <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation' : ($flash['type'] === 'success' ? 'fa-circle-check' : 'fa-circle-info') ?>"></i>
+        <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation text-danger' : ($flash['type'] === 'success' ? 'fa-circle-check text-success' : 'fa-circle-info text-info') ?>"></i>
         <span><?= e($flash['message']) ?></span>
       </div>
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
   <?php endif; ?>
 
-  <!-- 1. Top Master Breadcrumb & Action Header -->
-  <div class="card card-enterprise mb-4 bg-white">
-    <div class="card-body p-3 p-md-4">
-      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-        <div class="d-flex align-items-center gap-3">
-          <a href="/applications" class="btn btn-outline-secondary btn-sm" title="Back to Applications Directory"><i class="fa-solid fa-arrow-left"></i></a>
-          <div>
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-              <h4 class="fw-bold brand-font mb-0 text-primary" style="letter-spacing: -0.02em;"><?= e($app['application_number']) ?></h4>
-              <button class="btn btn-light btn-sm p-1 px-2 border text-muted" onclick="navigator.clipboard.writeText('<?= e($app['application_number']) ?>'); showToast('Application ID copied!', 'info');" title="Copy ID">
-                <i class="fa-regular fa-copy"></i>
-              </button>
-              <span class="fs-5"><?= $app['flag_emoji'] ?></span>
-              <span class="badge-status badge-status-<?= strtolower(str_replace(' ', '-', $app['status'])) ?>">
-                <?= e($app['status']) ?>
-              </span>
-              <span class="badge badge-priority-<?= strtolower($app['priority']) ?>">
-                <?= e($app['priority']) ?> PRIORITY
-              </span>
-              <button type="button" class="btn btn-light btn-sm health-meter <?= $healthClass ?> py-1 px-2" data-bs-toggle="modal" data-bs-target="#healthModal" onclick="openModalById('healthModal')" title="Click to view health diagnosis">
-                <i class="fa-solid fa-heart-pulse me-1"></i> Health: <?= (int)$app['calculated_health'] ?>%
-              </button>
-            </div>
-            <div class="text-muted small">
-              <a href="/customers/show?id=<?= $app['customer_id'] ?>" class="fw-bold text-dark text-decoration-none hover-underline">
-                <i class="fa-solid fa-user me-1 text-secondary"></i><?= e($app['customer_name']) ?>
-              </a>
-              (<?= e($app['customer_code']) ?>) &bull; 
-              <span class="fw-medium text-dark"><?= e($app['service_name']) ?></span> &bull; 
-              <span>Passport: <strong><?= e($app['passport_number'] ?: $app['current_passport'] ?: '—') ?></strong></span>
-            </div>
+  <!-- 1. Top Master Breadcrumb & Action Header (Executive Bento Header) -->
+  <div class="master-workspace-header">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div class="d-flex align-items-center gap-3">
+        <a href="/applications" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-xs bg-white" title="Back to Applications Directory">
+          <i class="fa-solid fa-arrow-left me-1"></i> Applications
+        </a>
+        <div>
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <h4 class="fw-bold mb-0 text-primary font-monospace" style="letter-spacing: -0.02em; font-size: 1.35rem;"><?= e($app['application_number']) ?></h4>
+            <button class="btn btn-light btn-sm p-1 px-2 border rounded-pill text-muted shadow-2xs" onclick="navigator.clipboard.writeText('<?= e($app['application_number']) ?>'); showToast('Application ID copied!', 'info');" title="Copy ID">
+              <i class="fa-regular fa-copy"></i>
+            </button>
+            <span class="fs-5"><?= $app['flag_emoji'] ?></span>
+            <span class="badge rounded-pill px-2.5 py-1 text-white fw-bold <?= $statusBadgeClass ?>" style="font-size: 0.72rem;">
+              <?= strtoupper(e($app['status'])) ?>
+            </span>
+            <span class="badge rounded-pill px-2.5 py-1 <?= $priorityBadgeClass ?>" style="font-size: 0.72rem;">
+              <?= strtoupper(e($app['priority'])) ?> PRIORITY
+            </span>
+            <button type="button" class="btn btn-light btn-sm health-meter rounded-pill <?= $healthClass ?> py-1 px-2.5 shadow-2xs fw-bold" data-bs-toggle="modal" data-bs-target="#healthModal" onclick="openModalById('healthModal')" title="Click to view health diagnosis" style="font-size: 0.72rem;">
+              <i class="fa-solid fa-heart-pulse me-1"></i> Health: <?= (int)$app['calculated_health'] ?>%
+            </button>
+          </div>
+          <div class="text-muted small d-flex flex-wrap align-items-center gap-2">
+            <a href="/customers/show?id=<?= $app['customer_id'] ?>" class="fw-bold text-dark text-decoration-none">
+              <i class="fa-solid fa-user me-1 text-secondary"></i><?= e($app['customer_name']) ?>
+            </a>
+            <span class="badge bg-light text-dark border font-monospace px-2 py-0.5">@<?= e($app['customer_code']) ?></span>
+            <span>&bull;</span>
+            <span class="fw-medium text-dark"><i class="fa-solid fa-passport me-1 text-secondary"></i><?= e($app['service_name']) ?></span>
+            <span>&bull;</span>
+            <span>Passport: <strong class="font-monospace text-primary"><?= e($app['passport_number'] ?: $app['current_passport'] ?: '—') ?></strong></span>
           </div>
         </div>
+      </div>
 
-        <!-- Master Operational Action Buttons -->
-        <div class="d-flex flex-wrap align-items-center gap-2">
-          <!-- Edit Application Button -->
-          <a href="/applications/edit?id=<?= $app['id'] ?>" class="btn btn-outline-secondary btn-sm px-3 shadow-sm">
-            <i class="fa-solid fa-pen-to-square me-1"></i> Edit Application
-          </a>
+      <!-- Master Operational Action Buttons -->
+      <div class="master-action-btn-group">
+        <!-- Edit Application Button -->
+        <a href="/applications/edit?id=<?= $app['id'] ?>" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-xs bg-white">
+          <i class="fa-solid fa-pen-to-square me-1"></i> Edit Application
+        </a>
 
-          <!-- Update Stage Button -->
-          <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" onclick="openModalById('stageTransitionModal', event)">
-            <i class="fa-solid fa-forward-step me-1"></i> Update Stage
+        <!-- Update Stage Button -->
+        <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 shadow-xs text-white fw-semibold" style="background: linear-gradient(135deg, #E11D48, #BE123C); border: none;" onclick="openModalById('stageTransitionModal', event)">
+          <i class="fa-solid fa-forward-step me-1"></i> Update Stage
+        </button>
+
+        <!-- Approve Visa Button -->
+        <button type="button" class="btn btn-success btn-sm rounded-pill px-3 shadow-xs text-white fw-semibold" onclick="openModalById('approveVisaModal', event)">
+          <i class="fa-solid fa-circle-check me-1"></i> Approve Visa
+        </button>
+
+        <!-- Decisions Dropdown -->
+        <div class="dropdown">
+          <button class="btn btn-outline-dark btn-sm rounded-pill px-3 shadow-xs dropdown-toggle bg-white" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fa-solid fa-gavel me-1"></i> Decisions
           </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3" style="font-size: 0.85rem; z-index: 1070;">
+            <li><button type="button" class="dropdown-item py-2 text-success fw-semibold" onclick="openModalById('approveVisaModal', event)"><i class="fa-solid fa-circle-check me-2"></i> Approve (Grant Visa)</button></li>
+            <li><button type="button" class="dropdown-item py-2 text-warning fw-semibold" onclick="openModalById('returnVisaModal', event)"><i class="fa-solid fa-rotate-left me-2"></i> Return for Modifications</button></li>
+            <li><button type="button" class="dropdown-item py-2 text-danger fw-semibold" onclick="openModalById('rejectVisaModal', event)"><i class="fa-solid fa-circle-xmark me-2"></i> Reject Application</button></li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li><button type="button" class="dropdown-item py-2" onclick="openModalById('requestDocModal', event)"><i class="fa-solid fa-file-circle-question text-primary me-2"></i> Request Additional Document</button></li>
+            <li><button type="button" class="dropdown-item py-2" onclick="openModalById('addCommModal', event)"><i class="fa-solid fa-phone text-info me-2"></i> Log Client Communication</button></li>
+          </ul>
+        </div>
 
-          <!-- Approve Visa Button -->
-          <button type="button" class="btn btn-success btn-sm px-3 shadow-sm" onclick="openModalById('approveVisaModal', event)">
-            <i class="fa-solid fa-circle-check me-1"></i> Approve Visa
+        <!-- Quick Actions Dropdown -->
+        <div class="dropdown">
+          <button class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 shadow-xs dropdown-toggle bg-white" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fa-solid fa-ellipsis-vertical"></i>
           </button>
-
-          <!-- Reject / Return Decision Dropdown -->
-          <div class="dropdown">
-            <button class="btn btn-outline-dark btn-sm px-3 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="fa-solid fa-gavel me-1"></i> Decisions
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; z-index: 1070;">
-              <li><button type="button" class="dropdown-item py-2 text-success fw-semibold" onclick="openModalById('approveVisaModal', event)"><i class="fa-solid fa-circle-check me-2"></i> Approve (Grant Visa)</button></li>
-              <li><button type="button" class="dropdown-item py-2 text-warning fw-semibold" onclick="openModalById('returnVisaModal', event)"><i class="fa-solid fa-rotate-left me-2"></i> Return for Modifications</button></li>
-              <li><button type="button" class="dropdown-item py-2 text-danger fw-semibold" onclick="openModalById('rejectVisaModal', event)"><i class="fa-solid fa-circle-xmark me-2"></i> Reject Application</button></li>
-              <li><hr class="dropdown-divider my-1"></li>
-              <li><button type="button" class="dropdown-item py-2" onclick="openModalById('requestDocModal', event)"><i class="fa-solid fa-file-circle-question text-primary me-2"></i> Request Additional Document</button></li>
-              <li><button type="button" class="dropdown-item py-2" onclick="openModalById('addCommModal', event)"><i class="fa-solid fa-phone text-info me-2"></i> Log Client Communication</button></li>
-            </ul>
-          </div>
-
-          <!-- Quick Actions Dropdown -->
-          <div class="dropdown">
-            <button class="btn btn-outline-secondary btn-sm px-2 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="fa-solid fa-ellipsis-vertical"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; z-index: 1070;">
-              <li><a class="dropdown-item py-2" href="/applications/edit?id=<?= $app['id'] ?>"><i class="fa-solid fa-pen-to-square text-primary me-2"></i> Edit Details</a></li>
-              <li><button type="button" class="dropdown-item py-2" onclick="openModalById('reassignStaffModal', event)"><i class="fa-solid fa-user-gear text-info me-2"></i> Reassign Staff</button></li>
-              <li><button type="button" class="dropdown-item py-2" onclick="openModalById('priorityModal', event)"><i class="fa-solid fa-flag text-warning me-2"></i> Change Priority</button></li>
-              <li><button type="button" class="dropdown-item py-2" onclick="openModalById('addNoteModal', event)"><i class="fa-solid fa-note-sticky text-secondary me-2"></i> Add Internal Note</button></li>
-              <li><hr class="dropdown-divider my-1"></li>
-              <li><a class="dropdown-item py-2" href="/payments/invoice?app_id=<?= $app['id'] ?>" target="_blank"><i class="fa-solid fa-file-invoice text-success me-2"></i> Print Invoice</a></li>
-              <li>
-                <form action="/applications/archive" method="POST" onsubmit="return confirm('Archive this visa application record?');">
-                  <?= csrf_field() ?>
-                  <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
-                  <button type="submit" class="dropdown-item py-2 text-warning"><i class="fa-solid fa-box-archive text-warning me-2"></i> Archive Application</button>
-                </form>
-              </li>
-              <li>
-                <form action="/applications/delete" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete this application (<?= e($app['application_number']) ?>) and all related records?');">
-                  <?= csrf_field() ?>
-                  <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
-                  <button type="submit" class="dropdown-item py-2 text-danger"><i class="fa-solid fa-trash-can text-danger me-2"></i> Delete Application</button>
-                </form>
-              </li>
-            </ul>
-          </div>
+          <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3" style="font-size: 0.85rem; z-index: 1070;">
+            <li><a class="dropdown-item py-2" href="/applications/edit?id=<?= $app['id'] ?>"><i class="fa-solid fa-pen-to-square text-primary me-2"></i> Edit Details</a></li>
+            <li><button type="button" class="dropdown-item py-2" onclick="openModalById('reassignStaffModal', event)"><i class="fa-solid fa-user-gear text-info me-2"></i> Reassign Staff</button></li>
+            <li><button type="button" class="dropdown-item py-2" onclick="openModalById('priorityModal', event)"><i class="fa-solid fa-flag text-warning me-2"></i> Change Priority</button></li>
+            <li><button type="button" class="dropdown-item py-2" onclick="openModalById('addNoteModal', event)"><i class="fa-solid fa-note-sticky text-secondary me-2"></i> Add Internal Note</button></li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li><a class="dropdown-item py-2" href="/payments/invoice?app_id=<?= $app['id'] ?>" target="_blank"><i class="fa-solid fa-file-invoice text-success me-2"></i> Print Invoice</a></li>
+            <li>
+              <form action="/applications/archive" method="POST" onsubmit="return confirm('Archive this visa application record?');">
+                <?= csrf_field() ?>
+                <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
+                <button type="submit" class="dropdown-item py-2 text-warning"><i class="fa-solid fa-box-archive text-warning me-2"></i> Archive Application</button>
+              </form>
+            </li>
+            <li>
+              <form action="/applications/delete" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete this application (<?= e($app['application_number']) ?>) and all related records?');">
+                <?= csrf_field() ?>
+                <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
+                <button type="submit" class="dropdown-item py-2 text-danger"><i class="fa-solid fa-trash-can text-danger me-2"></i> Delete Application</button>
+              </form>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 2. PRIMARY OPERATIONAL BANNERS: Current Stage & Next Action -->
+  <!-- 2. PRIMARY OPERATIONAL BANNERS: Current Stage & Next Action (Bento Cards) -->
   <div class="row g-3 mb-4">
-    <!-- Current Stage Banner -->
-    <div class="col-lg-6">
-      <div class="card card-enterprise h-100 border-start border-4 border-primary p-3 bg-white">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-          <span class="small fw-bold text-uppercase text-primary" style="font-size: 0.72rem; letter-spacing: 0.05em;">
-            <i class="fa-solid fa-circle-dot text-primary me-1"></i> Current Lifecycle Stage
-          </span>
-          <span class="badge bg-primary-subtle text-primary fw-semibold" style="font-size: 0.72rem;">
-            <?= e($app['status']) ?>
-          </span>
+    <!-- Current Stage Bento Banner -->
+    <div class="col-12 col-lg-6">
+      <div class="master-banner-card banner-stage">
+        <div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="small fw-bold text-uppercase text-danger d-flex align-items-center gap-1.5" style="font-size: 0.72rem; letter-spacing: 0.05em;">
+              <i class="fa-solid fa-circle-dot"></i> Current Lifecycle Stage
+            </span>
+            <span class="badge <?= $statusBadgeClass ?> px-2.5 py-1 rounded-pill" style="font-size: 0.7rem;">
+              <?= e($app['status']) ?>
+            </span>
+          </div>
+          <h4 class="fw-bold mb-2 text-dark" style="letter-spacing: -0.01em;"><?= e($app['current_stage']) ?></h4>
+          <div class="text-muted small mb-3 d-flex align-items-center flex-wrap gap-2">
+            <span>Officer: <strong><?= e($app['staff_name'] ?? 'Unassigned') ?></strong></span>
+            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill py-0 px-2 fw-semibold" style="font-size: 0.72rem;" onclick="openModalById('reassignStaffModal', event)" title="Reassign to another staff member">
+              <i class="fa-solid fa-user-pen me-1"></i> Reassign
+            </button>
+            <span>&bull;</span>
+            <span>Updated: <?= format_datetime($app['updated_at'] ?? $app['created_at']) ?></span>
+          </div>
         </div>
-        <h5 class="fw-bold mb-1" style="color: #0f172a;"><?= e($app['current_stage']) ?></h5>
-        <div class="text-muted small mb-2 d-flex align-items-center flex-wrap gap-1">
-          <span>Assigned Officer: <strong><?= e($app['staff_name'] ?? 'Unassigned') ?></strong></span>
-          <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 fw-semibold" style="font-size: 0.72rem;" onclick="openModalById('reassignStaffModal', event)" title="Reassign to another staff member">
-            <i class="fa-solid fa-user-pen me-1"></i> Reassign
-          </button>
-          <span>&bull; Updated: <?= format_datetime($app['updated_at'] ?? $app['created_at']) ?></span>
-        </div>
-        <div class="small text-secondary bg-light p-2 rounded">
-          <i class="fa-solid fa-clock me-1 text-muted"></i> 
-          <strong>Operational Deadline:</strong> <span class="<?= e($deadlineClass) ?>"><?= e($deadlineStatus) ?></span> 
-          (<?= format_date($app['expected_completion_date']) ?>)
+        <div class="p-2.5 bg-light rounded-3 border d-flex align-items-center justify-content-between flex-wrap gap-2 small">
+          <span class="text-muted"><i class="fa-solid fa-clock me-1 text-primary"></i> <strong>Operational Deadline:</strong></span>
+          <span class="badge rounded-pill px-2.5 py-1 fw-bold <?= e($deadlineClass) ?>"><?= e($deadlineStatus) ?> (<?= format_date($app['expected_completion_date']) ?>)</span>
         </div>
       </div>
     </div>
 
-    <!-- Next Action Banner -->
-    <div class="col-lg-6">
-      <div class="card card-enterprise h-100 border-start border-4 border-warning p-3 bg-white">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-          <span class="small fw-bold text-uppercase text-warning" style="font-size: 0.72rem; letter-spacing: 0.05em;">
-            <i class="fa-solid fa-bolt text-warning me-1"></i> Immediate Next Action
-          </span>
-          <span class="badge bg-warning-subtle text-dark fw-semibold" style="font-size: 0.72rem;">
-            Due: <?= format_date($app['next_action_due_date'] ?? date('Y-m-d', strtotime('+3 days'))) ?>
-          </span>
+    <!-- Next Action Bento Banner -->
+    <div class="col-12 col-lg-6">
+      <div class="master-banner-card banner-action">
+        <div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="small fw-bold text-uppercase d-flex align-items-center gap-1.5" style="color: #D97706; font-size: 0.72rem; letter-spacing: 0.05em;">
+              <i class="fa-solid fa-bolt"></i> Immediate Next Action
+            </span>
+            <span class="badge bg-warning text-dark rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.7rem;">
+              Due: <?= format_date($app['next_action_due_date'] ?? date('Y-m-d', strtotime('+3 days'))) ?>
+            </span>
+          </div>
+          <h4 class="fw-bold mb-2 text-dark" style="letter-spacing: -0.01em;"><?= e($app['next_action'] ?? 'Review checklist documents and prepare for stage progression') ?></h4>
+          <div class="text-muted small mb-3 d-flex align-items-center flex-wrap gap-2">
+            <span>Responsible: <strong><?= e($app['staff_name'] ?? 'Operations Team') ?></strong></span>
+            <span>&bull;</span>
+            <span>Priority: <span class="badge bg-danger-subtle text-danger font-monospace px-2 py-0.5"><?= e($app['priority']) ?></span></span>
+          </div>
         </div>
-        <h5 class="fw-bold mb-1 text-dark"><?= e($app['next_action'] ?? 'Review checklist documents and prepare for stage progression') ?></h5>
-        <div class="text-muted small mb-2">
-          <span>Responsible: <strong><?= e($app['staff_name'] ?? 'Operations Team') ?></strong></span> &bull; 
-          <span>Priority: <span class="fw-semibold text-danger"><?= e($app['priority']) ?></span></span>
-        </div>
-        <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded">
-          <span class="small text-muted"><i class="fa-solid fa-info-circle me-1"></i> Fulfill pending checklist items to advance</span>
-          <button type="button" class="btn btn-sm btn-warning text-dark py-1 px-3 fw-semibold" onclick="openModalById('stageTransitionModal', event)">
+        <div class="p-2.5 bg-light rounded-3 border d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <span class="small text-muted"><i class="fa-solid fa-circle-info me-1 text-warning"></i> Fulfill pending checklist items to advance</span>
+          <button type="button" class="btn btn-sm text-white rounded-pill px-3 py-1 fw-semibold shadow-xs" style="background: linear-gradient(135deg, #F59E0B, #D97706); border: none;" onclick="openModalById('stageTransitionModal', event)">
             <i class="fa-solid fa-circle-check me-1"></i> Advance Stage &rarr;
           </button>
         </div>
@@ -179,23 +204,24 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
     </div>
   </div>
 
-  <!-- 3. ⭐ VISA JOURNEY TIMELINE (CENTERPIECE) -->
-  <div class="card card-enterprise mb-4">
-    <div class="card-header bg-white border-bottom py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+  <!-- 3. VISA JOURNEY TIMELINE (BENTO TIMELINE CARD) -->
+  <div class="master-timeline-card">
+    <div class="master-timeline-header">
       <div>
-        <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-route text-primary me-2"></i> Visa Tracking Journey Timeline</h6>
-        <div class="text-muted small" style="font-size: 0.75rem;">Click any stage node to inspect operational history, assigned case worker, and specific notes.</div>
+        <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+          <i class="fa-solid fa-route text-primary fs-5"></i> Visa Tracking Journey Timeline
+        </h6>
+        <div class="text-muted small mt-0.5" style="font-size: 0.75rem;">Click any stage node to inspect operational history, assigned case worker, and specific notes.</div>
       </div>
       <div class="d-flex align-items-center gap-2">
-        <span class="small fw-semibold text-muted"><?= $completedCount ?> of <?= $totalStages ?> Stages (<?= $progressPercentage ?>%)</span>
-        <div class="progress" style="width: 120px; height: 8px;">
-          <div class="progress-bar bg-primary" role="progressbar" style="width: <?= $progressPercentage ?>%;" aria-valuenow="<?= $progressPercentage ?>" aria-valuemin="0" aria-valuemax="100"></div>
+        <span class="small fw-bold text-dark font-monospace"><?= $completedCount ?> of <?= $totalStages ?> Stages (<?= $progressPercentage ?>%)</span>
+        <div class="progress rounded-pill" style="width: 140px; height: 8px;">
+          <div class="progress-bar rounded-pill" role="progressbar" style="background: var(--bento-primary, #E11D48); width: <?= $progressPercentage ?>%;" aria-valuenow="<?= $progressPercentage ?>" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
       </div>
     </div>
 
-    <div class="card-body p-4">
-      <!-- Horizontal Timeline for Desktop / Vertical for Mobile -->
+    <div class="master-timeline-body">
       <div class="visa-journey-timeline">
         <?php foreach ($journeyStages as $js): ?>
           <?php
@@ -213,7 +239,7 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
             }
           ?>
           <div class="timeline-step <?= $nodeClass ?>" onclick="showStageDetails('<?= e(addslashes($js['name'])) ?>', '<?= e($js['state']) ?>', '<?= e($js['history']['changed_by_name'] ?? ($js['is_current'] ? ($app['staff_name'] ?? 'Assigned Staff') : '—')) ?>', '<?= format_datetime($js['history']['created_at'] ?? null) ?>', '<?= e(addslashes($js['history']['comments'] ?? 'Stage pending progression')) ?>')">
-            <div class="timeline-node">
+            <div class="timeline-node shadow-xs">
               <?= $nodeIcon ?>
             </div>
             <div class="timeline-content">
@@ -229,223 +255,360 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
     </div>
   </div>
 
-  <!-- 4. TABBED OPERATIONAL SECTIONS (Section 22: 12 Tabs) -->
-  <div class="card card-enterprise">
-    <div class="card-header bg-white border-bottom p-0">
-      <ul class="nav nav-tabs card-header-tabs m-0 px-3 overflow-x-auto flex-nowrap" id="appDetailsTabs" role="tablist">
-        <li class="nav-item">
-          <button class="nav-link active py-3 fw-semibold text-nowrap" id="overview-tab" data-bs-toggle="tab" data-bs-target="#info-pane" type="button" role="tab">
-            <i class="fa-solid fa-gauge-high me-1 text-primary"></i> Overview
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link py-3 fw-semibold text-nowrap" id="customer-tab" data-bs-toggle="tab" data-bs-target="#customer-pane" type="button" role="tab">
-            <i class="fa-solid fa-user me-1 text-primary"></i> Customer
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link py-3 fw-semibold text-nowrap" id="visa-tab" data-bs-toggle="tab" data-bs-target="#visa-pane" type="button" role="tab">
-            <i class="fa-solid fa-passport me-1 text-info"></i> Visa Details
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link py-3 fw-semibold text-nowrap" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs-pane" type="button" role="tab">
-            <i class="fa-solid fa-file-circle-check me-1 text-success"></i> Documents (<?= count($documentChecklist) ?>)
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link py-3 fw-semibold text-nowrap" id="doc-req-tab" data-bs-toggle="tab" data-bs-target="#doc-req-pane" type="button" role="tab">
-            <i class="fa-solid fa-file-circle-question me-1 text-warning"></i> Document Requests (<?= count($documentRequests) ?>)
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link py-3 fw-semibold text-nowrap" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments-pane" type="button" role="tab">
-            <i class="fa-solid fa-credit-card me-1 text-success"></i> Payments (<?= count($appPayments) ?>)
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link py-3 fw-semibold text-nowrap" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks-pane" type="button" role="tab">
-            <i class="fa-solid fa-list-check me-1 text-warning"></i> Tasks (<?= count($tasks) ?>)
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link py-3 fw-semibold text-nowrap" id="comm-tab" data-bs-toggle="tab" data-bs-target="#comm-pane" type="button" role="tab">
-            <i class="fa-solid fa-comments me-1 text-info"></i> Communication (<?= count($communications) ?>)
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link py-3 fw-semibold text-nowrap" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-pane" type="button" role="tab">
-            <i class="fa-solid fa-clock-rotate-left me-1 text-info"></i> Status History
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link py-3 fw-semibold text-nowrap" id="downloads-tab" data-bs-toggle="tab" data-bs-target="#decision-pane" type="button" role="tab">
-            <i class="fa-solid fa-download me-1 text-dark"></i> Downloads
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link py-3 fw-semibold text-nowrap" id="activity-tab" data-bs-toggle="tab" data-bs-target="#activity-pane" type="button" role="tab">
-            <i class="fa-solid fa-shield-halved me-1 text-danger"></i> Activity Log
-          </button>
-        </li>
-      </ul>
+  <!-- 4. TABBED OPERATIONAL SECTIONS -->
+  <div class="master-tabs-nav-wrap mb-4">
+    <div class="master-nav-tabs" role="tablist">
+      <button class="master-nav-tab-btn active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#info-pane" type="button" role="tab">
+        <i class="fa-solid fa-gauge-high text-danger"></i> Overview
+      </button>
+      <button class="master-nav-tab-btn" id="customer-tab" data-bs-toggle="tab" data-bs-target="#customer-pane" type="button" role="tab">
+        <i class="fa-solid fa-user text-danger"></i> Customer
+      </button>
+      <button class="master-nav-tab-btn" id="visa-tab" data-bs-toggle="tab" data-bs-target="#visa-pane" type="button" role="tab">
+        <i class="fa-solid fa-passport text-info"></i> Visa Details
+      </button>
+      <button class="master-nav-tab-btn" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs-pane" type="button" role="tab">
+        <i class="fa-solid fa-file-circle-check text-success"></i> Documents (<?= count($documentChecklist) ?>)
+      </button>
+      <button class="master-nav-tab-btn" id="doc-req-tab" data-bs-toggle="tab" data-bs-target="#doc-req-pane" type="button" role="tab">
+        <i class="fa-solid fa-file-circle-question text-warning"></i> Requests (<?= count($documentRequests) ?>)
+      </button>
+      <button class="master-nav-tab-btn" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments-pane" type="button" role="tab">
+        <i class="fa-solid fa-credit-card text-success"></i> Payments (<?= count($appPayments) ?>)
+      </button>
+      <button class="master-nav-tab-btn" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks-pane" type="button" role="tab">
+        <i class="fa-solid fa-list-check text-warning"></i> Tasks (<?= count($tasks) ?>)
+      </button>
+      <button class="master-nav-tab-btn" id="appointments-tab" data-bs-toggle="tab" data-bs-target="#appointments-pane" type="button" role="tab">
+        <i class="fa-solid fa-calendar-check text-primary"></i> Appointments (<?= count($appointments ?? []) ?>)
+      </button>
+      <button class="master-nav-tab-btn" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes-pane" type="button" role="tab">
+        <i class="fa-solid fa-note-sticky text-secondary"></i> Internal Notes
+      </button>
+      <button class="master-nav-tab-btn" id="comm-tab" data-bs-toggle="tab" data-bs-target="#comm-pane" type="button" role="tab">
+        <i class="fa-solid fa-comments text-info"></i> Communication (<?= count($communications) ?>)
+      </button>
+      <button class="master-nav-tab-btn" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-pane" type="button" role="tab">
+        <i class="fa-solid fa-clock-rotate-left text-info"></i> Status History
+      </button>
+      <button class="master-nav-tab-btn" id="downloads-tab" data-bs-toggle="tab" data-bs-target="#decision-pane" type="button" role="tab">
+        <i class="fa-solid fa-download text-dark"></i> Downloads
+      </button>
+      <button class="master-nav-tab-btn" id="activity-tab" data-bs-toggle="tab" data-bs-target="#activity-pane" type="button" role="tab">
+        <i class="fa-solid fa-shield-halved text-danger"></i> Activity Log
+      </button>
     </div>
 
-    <div class="card-body p-4">
+    <div class="card-body p-3 p-md-4">
       <div class="tab-content" id="appDetailsTabContent">
-        <!-- TAB 1: Application & Applicant Info -->
+        <!-- TAB 1: Overview (Executive Bento Cards) -->
         <div class="tab-pane fade show active" id="info-pane" role="tabpanel">
           <div class="row g-4">
-            <!-- Application Information -->
-            <div class="col-lg-6">
-              <h6 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="fa-solid fa-folder-open text-primary me-2"></i> Application Specifics</h6>
-              <div class="row g-2 small">
-                <div class="col-sm-5 text-muted">Application Number:</div>
-                <div class="col-sm-7 fw-bold text-primary"><?= e($app['application_number']) ?></div>
+            <!-- Bento Card 1: Application Specifics -->
+            <div class="col-12 col-lg-6">
+              <div class="master-data-card">
+                <div class="master-data-card-header">
+                  <div class="d-flex align-items-center gap-2">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(225, 29, 72, 0.1); color: #E11D48; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                      <i class="fa-solid fa-folder-open"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0 text-dark">Application Specifics</h6>
+                  </div>
+                  <span class="badge bg-light text-primary border font-monospace px-2.5 py-1">
+                    <?= e($app['application_number']) ?>
+                  </span>
+                </div>
 
-                <div class="col-sm-5 text-muted">Visa Service:</div>
-                <div class="col-sm-7 fw-semibold"><?= e($app['service_name']) ?></div>
-
-                <div class="col-sm-5 text-muted">Destination Country:</div>
-                <div class="col-sm-7"><?= $app['flag_emoji'] ?> <?= e($app['country_name']) ?> (<?= e($app['country_code']) ?>)</div>
-
-                <div class="col-sm-5 text-muted">Entry &amp; Processing Type:</div>
-                <div class="col-sm-7"><?= e($app['entry_type']) ?> &bull; <?= e($app['processing_type']) ?></div>
-
-                <div class="col-sm-5 text-muted">Application Date:</div>
-                <div class="col-sm-7"><?= format_date($app['application_date'] ?? $app['created_at']) ?></div>
-
-                <div class="col-sm-5 text-muted">Expected Completion:</div>
-                <div class="col-sm-7 <?= e($deadlineClass) ?> fw-semibold"><?= format_date($app['expected_completion_date']) ?> (<?= e($deadlineStatus) ?>)</div>
-
-                <div class="col-sm-5 text-muted">Travel &amp; Return Dates:</div>
-                <div class="col-sm-7"><?= format_date($app['travel_date']) ?> &rarr; <?= format_date($app['return_date']) ?></div>
-
-                <div class="col-sm-5 text-muted">Processing Branch:</div>
-                <div class="col-sm-7"><?= e($app['branch_name'] ?? 'Dubai Head Office') ?></div>
-
-                <div class="col-sm-5 text-muted">Created By:</div>
-                <div class="col-sm-7"><?= e($app['created_by_name'] ?? 'System') ?> on <?= format_datetime($app['created_at']) ?></div>
+                <div class="master-spec-list">
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Application Number:</span>
+                    <span class="master-spec-val font-monospace text-primary fw-bold"><?= e($app['application_number']) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Visa Service:</span>
+                    <span class="master-spec-val text-dark"><?= e($app['service_name']) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Destination Country:</span>
+                    <span class="master-spec-val"><?= $app['flag_emoji'] ?> <?= e($app['country_name']) ?> (<?= e($app['country_code']) ?>)</span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Entry &amp; Processing Type:</span>
+                    <span class="master-spec-val"><?= e($app['entry_type']) ?> &bull; <?= e($app['processing_type']) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Application Date:</span>
+                    <span class="master-spec-val"><?= format_date($app['application_date'] ?? $app['created_at']) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Expected Completion:</span>
+                    <span class="master-spec-val <?= e($deadlineClass) ?>"><?= format_date($app['expected_completion_date']) ?> (<?= e($deadlineStatus) ?>)</span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Travel &amp; Return Dates:</span>
+                    <span class="master-spec-val"><?= format_date($app['travel_date']) ?> &rarr; <?= format_date($app['return_date']) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Processing Branch:</span>
+                    <span class="master-spec-val"><?= e($app['branch_name'] ?? 'Dubai Head Office') ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Created By:</span>
+                    <span class="master-spec-val text-muted small"><?= e($app['created_by_name'] ?? 'Super Admin') ?> on <?= format_datetime($app['created_at']) ?></span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- Applicant Identity & Passport Summary -->
-            <div class="col-lg-6">
-              <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
-                <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-id-card text-success me-2"></i> Applicant Identity Summary</h6>
-                <a href="/customers/show?id=<?= $app['customer_id'] ?>" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">View Full Profile &rarr;</a>
-              </div>
-              <div class="row g-2 small">
-                <div class="col-sm-5 text-muted">Full Legal Name:</div>
-                <div class="col-sm-7 fw-bold text-dark"><?= e($app['customer_name']) ?></div>
-
-                <div class="col-sm-5 text-muted">Customer Code:</div>
-                <div class="col-sm-7"><span class="badge bg-light text-dark border"><?= e($app['customer_code']) ?></span></div>
-
-                <div class="col-sm-5 text-muted">Primary Passport:</div>
-                <div class="col-sm-7 fw-semibold"><i class="fa-solid fa-passport text-secondary me-1"></i><?= e($app['passport_number'] ?: $app['current_passport'] ?: '—') ?></div>
-
-                <div class="col-sm-5 text-muted">Passport Expiry:</div>
-                <div class="col-sm-7"><?= format_date($app['passport_expiry'] ?? $app['passport_expiry_date'] ?? null) ?></div>
-
-                <div class="col-sm-5 text-muted">Nationality &amp; Gender:</div>
-                <div class="col-sm-7"><?= e($app['customer_nationality']) ?> &bull; <?= e($app['customer_gender'] ?? '—') ?></div>
-
-                <div class="col-sm-5 text-muted">Date of Birth:</div>
-                <div class="col-sm-7"><?= format_date($app['customer_dob']) ?></div>
-
-                <div class="col-sm-5 text-muted">Mobile / WhatsApp:</div>
-                <div class="col-sm-7 d-flex align-items-center gap-2 flex-wrap">
-                  <a href="tel:<?= e($app['customer_mobile']) ?>" class="text-decoration-none"><?= e($app['customer_mobile']) ?></a>
-                  <?php 
-                    $cleanCustPhone = preg_replace('/[^0-9]/', '', $app['customer_whatsapp'] ?: $app['customer_mobile'] ?: '');
-                    if ($cleanCustPhone && user_can('whatsapp.send')): 
-                      $waApplicantMsg = "Hello " . ($app['customer_name'] ?? 'Applicant') . ", regarding your visa application " . ($app['application_number'] ?? '') . " with MS Travel Hub:";
-                  ?>
-                    <a href="https://api.whatsapp.com/send?phone=<?= $cleanCustPhone ?>&text=<?= urlencode($waApplicantMsg) ?>" 
-                       target="_blank" class="btn btn-outline-success btn-sm py-0 px-2 fw-semibold" style="font-size: 0.72rem;" title="Chat directly on WhatsApp App">
-                      <i class="fa-brands fa-whatsapp me-1"></i> Chat on WhatsApp
-                    </a>
-                  <?php endif; ?>
+            <!-- Bento Card 2: Applicant Identity Summary -->
+            <div class="col-12 col-lg-6">
+              <div class="master-data-card">
+                <div class="master-data-card-header">
+                  <div class="d-flex align-items-center gap-2">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(16, 185, 129, 0.1); color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                      <i class="fa-solid fa-id-card"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0 text-dark">Applicant Identity Summary</h6>
+                  </div>
+                  <a href="/customers/show?id=<?= $app['customer_id'] ?>" class="btn btn-sm btn-outline-danger rounded-pill py-1 px-3 fw-semibold shadow-2xs" style="font-size: 0.75rem;">
+                    View Full Profile &rarr;
+                  </a>
                 </div>
 
-                <div class="col-sm-5 text-muted">Email Address:</div>
-                <div class="col-sm-7"><a href="mailto:<?= e($app['customer_email']) ?>" class="text-decoration-none"><?= e($app['customer_email']) ?></a></div>
+                <div class="master-spec-list">
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Full Legal Name:</span>
+                    <span class="master-spec-val text-dark fw-bold"><?= e($app['customer_name']) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Customer Code:</span>
+                    <span class="master-spec-val font-monospace"><span class="badge bg-light text-dark border">@<?= e($app['customer_code']) ?></span></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Primary Passport:</span>
+                    <span class="master-spec-val font-monospace text-primary fw-bold"><i class="fa-solid fa-passport me-1 text-muted"></i><?= e($app['passport_number'] ?: $app['current_passport'] ?: '—') ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Passport Expiry:</span>
+                    <span class="master-spec-val font-monospace"><?= format_date($app['passport_expiry'] ?? $app['passport_expiry_date'] ?? null) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Nationality &amp; Gender:</span>
+                    <span class="master-spec-val"><?= e($app['customer_nationality']) ?> &bull; <?= e($app['customer_gender'] ?? '—') ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Date of Birth:</span>
+                    <span class="master-spec-val"><?= format_date($app['customer_dob']) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Mobile / WhatsApp:</span>
+                    <div class="master-spec-val d-flex align-items-center justify-content-end gap-2 flex-wrap">
+                      <a href="tel:<?= e($app['customer_mobile']) ?>" class="fw-semibold text-dark text-decoration-none font-monospace small"><?= e($app['customer_mobile']) ?></a>
+                      <?php 
+                        $cleanCustPhone = preg_replace('/[^0-9]/', '', $app['customer_whatsapp'] ?: $app['customer_mobile'] ?: '');
+                        if ($cleanCustPhone && user_can('whatsapp.send')): 
+                          $waApplicantMsg = "Hello " . ($app['customer_name'] ?? 'Applicant') . ", regarding your visa application " . ($app['application_number'] ?? '') . " with MS Travel Hub:";
+                      ?>
+                        <a href="https://api.whatsapp.com/send?phone=<?= $cleanCustPhone ?>&text=<?= urlencode($waApplicantMsg) ?>" 
+                           target="_blank" class="badge rounded-pill bg-success-subtle text-success border border-success-subtle py-1 px-2.5 text-decoration-none fw-semibold" title="Chat directly on WhatsApp">
+                          <i class="fa-brands fa-whatsapp me-1"></i> Chat on WhatsApp
+                        </a>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Email Address:</span>
+                    <span class="master-spec-val"><a href="mailto:<?= e($app['customer_email']) ?>" class="text-danger text-decoration-none small"><?= e($app['customer_email']) ?></a></span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- TAB 1B: Customer & Family Background -->
+        <!-- TAB 2: Customer & Family Background -->
         <div class="tab-pane fade" id="customer-pane" role="tabpanel">
           <div class="row g-4">
-            <!-- Family Details -->
-            <div class="col-lg-6">
-              <h6 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="fa-solid fa-people-roof text-primary me-2"></i> Family &amp; Parental Background</h6>
-              <div class="row g-2 small">
-                <div class="col-sm-5 text-muted">Father's Full Name:</div>
-                <div class="col-sm-7 fw-semibold"><?= e($customerFamily['father_name'] ?? 'Not Recorded') ?></div>
+            <!-- Family Details Bento Card -->
+            <div class="col-12 col-lg-6">
+              <div class="master-data-card">
+                <div class="master-data-card-header">
+                  <div class="d-flex align-items-center gap-2">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(225, 29, 72, 0.1); color: #E11D48; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                      <i class="fa-solid fa-people-roof"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0 text-dark">Family &amp; Parental Background</h6>
+                  </div>
+                </div>
 
-                <div class="col-sm-5 text-muted">Father's DOB:</div>
-                <div class="col-sm-7"><?= format_date($customerFamily['father_dob'] ?? null) ?></div>
-
-                <div class="col-sm-5 text-muted">Father's Birth Country:</div>
-                <div class="col-sm-7"><?= e($customerFamily['father_country_of_birth'] ?? '—') ?></div>
-
-                <div class="col-sm-5 text-muted">Father's Nationality:</div>
-                <div class="col-sm-7"><?= e($customerFamily['father_nationality'] ?? '—') ?></div>
-
-                <div class="col-sm-5 text-muted">Father's Religion:</div>
-                <div class="col-sm-7"><?= e($customerFamily['father_religion'] ?? '—') ?></div>
-
-                <div class="col-12 my-2"><hr class="my-1"></div>
-
-                <div class="col-sm-5 text-muted">Mother's Full Name:</div>
-                <div class="col-sm-7 fw-semibold"><?= e($customerFamily['mother_name'] ?? 'Not Recorded') ?></div>
-
-                <div class="col-sm-5 text-muted">Mother's DOB:</div>
-                <div class="col-sm-7"><?= format_date($customerFamily['mother_dob'] ?? null) ?></div>
-
-                <div class="col-sm-5 text-muted">Mother's Birth Country:</div>
-                <div class="col-sm-7"><?= e($customerFamily['mother_country_of_birth'] ?? '—') ?></div>
-
-                <div class="col-sm-5 text-muted">Mother's Nationality:</div>
-                <div class="col-sm-7"><?= e($customerFamily['mother_nationality'] ?? '—') ?></div>
-
-                <div class="col-sm-5 text-muted">Mother's Mobile:</div>
-                <div class="col-sm-7"><?= e($customerFamily['mother_mobile'] ?? '—') ?></div>
+                <div class="master-spec-list">
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Father's Full Name:</span>
+                    <span class="master-spec-val text-dark fw-semibold"><?= e($customerFamily['father_name'] ?? 'Not Recorded') ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Father's DOB:</span>
+                    <span class="master-spec-val"><?= format_date($customerFamily['father_dob'] ?? null) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Father's Birth Country:</span>
+                    <span class="master-spec-val"><?= e($customerFamily['father_country_of_birth'] ?? '—') ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Father's Nationality:</span>
+                    <span class="master-spec-val"><?= e($customerFamily['father_nationality'] ?? '—') ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Father's Religion:</span>
+                    <span class="master-spec-val"><?= e($customerFamily['father_religion'] ?? '—') ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Mother's Full Name:</span>
+                    <span class="master-spec-val text-dark fw-semibold"><?= e($customerFamily['mother_name'] ?? 'Not Recorded') ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Mother's DOB:</span>
+                    <span class="master-spec-val"><?= format_date($customerFamily['mother_dob'] ?? null) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Mother's Birth Country:</span>
+                    <span class="master-spec-val"><?= e($customerFamily['mother_country_of_birth'] ?? '—') ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Mother's Nationality:</span>
+                    <span class="master-spec-val"><?= e($customerFamily['mother_nationality'] ?? '—') ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Mother's Mobile:</span>
+                    <span class="master-spec-val font-monospace"><?= e($customerFamily['mother_mobile'] ?? '—') ?></span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- Residence & Employment Details -->
-            <div class="col-lg-6">
-              <h6 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="fa-solid fa-house-user text-success me-2"></i> Current Country of Residence</h6>
-              <div class="row g-2 small">
-                <div class="col-sm-5 text-muted">Residence Country:</div>
-                <div class="col-sm-7 fw-bold text-dark"><?= e($customerResidence['residence_country'] ?? $app['customer_nationality']) ?></div>
-
-                <div class="col-sm-5 text-muted">Residency / Visa Permit #:</div>
-                <div class="col-sm-7 font-monospace fw-semibold text-primary"><?= e($customerResidence['permit_number'] ?? 'Not Applicable') ?></div>
-
-                <div class="col-sm-5 text-muted">Permit Expiry Date:</div>
-                <div class="col-sm-7"><?= format_date($customerResidence['expiry_date'] ?? null) ?></div>
-
-                <div class="col-sm-5 text-muted">Current Employer / Sponsor:</div>
-                <div class="col-sm-7"><?= e($customerResidence['employer'] ?? '—') ?></div>
-
-                <div class="col-sm-5 text-muted">Job Title / Designation:</div>
-                <div class="col-sm-7"><?= e($customerResidence['job_title'] ?? '—') ?></div>
-
-                <div class="col-12 my-2"><hr class="my-1"></div>
-
-                <div class="col-sm-5 text-muted">Customer Address:</div>
-                <div class="col-sm-7"><?= e($app['customer_address'] ?? '—') ?></div>
-
-                <div class="col-sm-5 text-muted">Applicant Account:</div>
-                <div class="col-sm-7">
-                  <a href="/customers/show?id=<?= $app['customer_id'] ?>" class="btn btn-sm btn-outline-primary py-0 px-2 mt-1">
-                    <i class="fa-solid fa-user-pen me-1"></i> Edit Full Profile
+            <!-- Residence & Employment Bento Card -->
+            <div class="col-12 col-lg-6">
+              <div class="master-data-card">
+                <div class="master-data-card-header">
+                  <div class="d-flex align-items-center gap-2">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(16, 185, 129, 0.1); color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                      <i class="fa-solid fa-house-user"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0 text-dark">Current Country of Residence &amp; Employment</h6>
+                  </div>
+                  <a href="/customers/show?id=<?= $app['customer_id'] ?>" class="btn btn-sm btn-outline-primary rounded-pill py-1 px-3 fw-semibold shadow-2xs" style="font-size: 0.75rem;">
+                    <i class="fa-solid fa-user-pen me-1"></i> Edit Profile
                   </a>
+                </div>
+
+                <div class="master-spec-list">
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Residence Country:</span>
+                    <span class="master-spec-val text-dark fw-bold"><?= e($customerResidence['residence_country'] ?? $app['customer_nationality']) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Permit / Residency #:</span>
+                    <span class="master-spec-val font-monospace fw-semibold text-primary"><?= e($customerResidence['permit_number'] ?? 'Not Applicable') ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Permit Expiry Date:</span>
+                    <span class="master-spec-val font-monospace"><?= format_date($customerResidence['expiry_date'] ?? null) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Current Employer / Sponsor:</span>
+                    <span class="master-spec-val text-dark"><?= e($customerResidence['employer'] ?? '—') ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Job Title / Designation:</span>
+                    <span class="master-spec-val text-dark"><?= e($customerResidence['job_title'] ?? '—') ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Customer Address:</span>
+                    <span class="master-spec-val text-muted small"><?= e($app['customer_address'] ?? '—') ?></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: Visa Details -->
+        <div class="tab-pane fade" id="visa-pane" role="tabpanel">
+          <div class="row g-4">
+            <!-- Visa Specification Bento Card -->
+            <div class="col-12 col-lg-6">
+              <div class="master-data-card">
+                <div class="master-data-card-header">
+                  <div class="d-flex align-items-center gap-2">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(59, 130, 246, 0.1); color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                      <i class="fa-solid fa-passport"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0 text-dark">Visa Specification &amp; Policy</h6>
+                  </div>
+                </div>
+
+                <div class="master-spec-list">
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Destination Country:</span>
+                    <span class="master-spec-val fw-bold text-dark"><?= $app['flag_emoji'] ?> <?= e($app['country_name']) ?> (<?= e($app['country_code']) ?>)</span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Service Tier:</span>
+                    <span class="master-spec-val text-primary fw-bold"><?= e($app['service_name']) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Entry Type:</span>
+                    <span class="master-spec-val"><?= e($app['entry_type']) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Processing Type:</span>
+                    <span class="master-spec-val"><?= e($app['processing_type']) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Duration / Validity:</span>
+                    <span class="master-spec-val"><?= e($app['duration'] ?? '30 Days') ?> (Max Stay: <?= e($app['max_stay'] ?? '30 Days') ?>)</span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Estimated SLA:</span>
+                    <span class="master-spec-val font-monospace fw-bold"><?= (int)($app['estimated_days'] ?? 7) ?> Working Days</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Travel & Consular Timeline Bento Card -->
+            <div class="col-12 col-lg-6">
+              <div class="master-data-card">
+                <div class="master-data-card-header">
+                  <div class="d-flex align-items-center gap-2">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(16, 185, 129, 0.1); color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                      <i class="fa-solid fa-calendar-days"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0 text-dark">Travel &amp; Consular Timeline</h6>
+                  </div>
+                </div>
+
+                <div class="master-spec-list">
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Intended Travel Date:</span>
+                    <span class="master-spec-val fw-semibold text-dark"><?= format_date($app['travel_date']) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Expected Return Date:</span>
+                    <span class="master-spec-val fw-semibold text-dark"><?= format_date($app['return_date']) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Submission Date:</span>
+                    <span class="master-spec-val"><?= format_date($app['application_date'] ?? $app['created_at']) ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Consular Reference:</span>
+                    <span class="master-spec-val font-monospace fw-bold text-primary"><?= e($app['embassy_reference'] ?? 'Pending Submission') ?></span>
+                  </div>
+                  <div class="master-spec-row">
+                    <span class="master-spec-label">Processing Branch:</span>
+                    <span class="master-spec-val"><?= e($app['branch_name'] ?? 'Dubai Head Office') ?></span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -738,60 +901,6 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
           <?php endif; ?>
         </div>
 
-        <!-- TAB 5: Stage History & Audit Trail -->
-        <div class="tab-pane fade" id="history-pane" role="tabpanel">
-          <h6 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-timeline text-primary me-2"></i> Immutable Lifecycle Stage Transition Log</h6>
-          <?php if (empty($stageHistory)): ?>
-            <div class="p-4 text-center text-muted bg-light rounded">No stage transition history recorded yet.</div>
-          <?php else: ?>
-            <div class="table-responsive mb-4">
-              <table class="table-custom">
-                <thead>
-                  <tr>
-                    <th>Timestamp</th>
-                    <th>From Stage</th>
-                    <th>To Stage</th>
-                    <th>Status Shift</th>
-                    <th>Officer</th>
-                    <th>Comments / Reason</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php foreach ($stageHistory as $sh): ?>
-                    <tr>
-                      <td class="small text-muted"><?= format_datetime($sh['created_at']) ?></td>
-                      <td><span class="badge bg-light text-muted border"><?= e($sh['from_stage']) ?></span></td>
-                      <td><span class="badge bg-primary-subtle text-primary fw-semibold">&rarr; <?= e($sh['to_stage']) ?></span></td>
-                      <td><span class="small fw-medium"><?= e($sh['from_status']) ?> &rarr; <?= e($sh['to_status']) ?></span></td>
-                      <td><span class="fw-semibold small"><?= e($sh['changed_by_name'] ?? 'System') ?></span></td>
-                      <td class="small text-dark"><?= e($sh['comments']) ?></td>
-                    </tr>
-                  <?php endforeach; ?>
-                </tbody>
-              </table>
-            </div>
-          <?php endif; ?>
-
-          <h6 class="fw-bold mb-3 text-dark border-top pt-3"><i class="fa-solid fa-shield-halved text-secondary me-2"></i> Application Audit Trail Events</h6>
-          <?php if (empty($activityLogs)): ?>
-            <div class="p-4 text-center text-muted bg-light rounded">No detailed audit log entries recorded.</div>
-          <?php else: ?>
-            <div class="activity-timeline">
-              <?php foreach ($activityLogs as $log): ?>
-                <div class="activity-item p-2 border-bottom d-flex align-items-start gap-3">
-                  <div class="rounded-circle p-1 bg-light border text-primary mt-1" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
-                    <i class="fa-solid fa-clock"></i>
-                  </div>
-                  <div>
-                    <div class="fw-semibold text-dark small"><?= e($log['action']) ?> &bull; <span class="text-muted"><?= e($log['user_name'] ?? 'Staff') ?></span></div>
-                    <div class="text-muted small"><?= e($log['description']) ?></div>
-                    <div class="text-muted" style="font-size: 0.7rem;"><?= format_datetime($log['created_at']) ?></div>
-                  </div>
-                </div>
-              <?php endforeach; ?>
-            </div>
-          <?php endif; ?>
-        </div>
 
         <!-- TAB 6: Internal Notes -->
         <div class="tab-pane fade" id="notes-pane" role="tabpanel">
@@ -810,49 +919,66 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
         <!-- TAB 7: Payments & Finance -->
         <div class="tab-pane fade" id="payments-pane" role="tabpanel">
           
-          <!-- Financial Summary Cards -->
+          <!-- Financial Summary Cards (Bento Style) -->
           <div class="row g-3 mb-4">
-            <div class="col-6 col-md-3">
-              <div class="border rounded p-3 text-center bg-light h-100">
-                <div class="small text-muted mb-1 text-truncate">Total Invoice</div>
-                <div class="fs-5 fw-bold text-dark text-nowrap"><?= format_currency($app['total_amount'] ?? $app['selling_price'] ?? 0) ?></div>
+            <div class="col-6 col-lg-3">
+              <div class="master-data-card p-3 d-flex flex-column justify-content-between" style="border-left: 4px solid #2563EB;">
+                <div class="d-flex align-items-center justify-content-between text-muted small mb-1">
+                  <span class="fw-semibold">Total Invoice</span>
+                  <i class="fa-solid fa-file-invoice-dollar text-primary"></i>
+                </div>
+                <div class="fs-4 fw-bold text-dark font-monospace"><?= format_currency($app['total_amount'] ?? $app['selling_price'] ?? 0) ?></div>
+                <div class="text-muted" style="font-size: 0.7rem;">Contracted Amount</div>
               </div>
             </div>
-            <div class="col-6 col-md-3">
-              <div class="border rounded p-3 text-center bg-success bg-opacity-10 h-100">
-                <div class="small text-muted mb-1 text-truncate">Total Paid</div>
-                <div class="fs-5 fw-bold text-success text-nowrap"><?= format_currency($app['paid_amount'] ?? 0) ?></div>
+            <div class="col-6 col-lg-3">
+              <div class="master-data-card p-3 d-flex flex-column justify-content-between" style="border-left: 4px solid #10B981;">
+                <div class="d-flex align-items-center justify-content-between text-muted small mb-1">
+                  <span class="fw-semibold">Total Paid</span>
+                  <i class="fa-solid fa-circle-check text-success"></i>
+                </div>
+                <div class="fs-4 fw-bold text-success font-monospace"><?= format_currency($app['paid_amount'] ?? 0) ?></div>
+                <div class="text-muted" style="font-size: 0.7rem;">Verified Collections</div>
               </div>
             </div>
-            <div class="col-6 col-md-3">
-              <div class="border rounded p-3 text-center <?= ((float)($app['balance_amount'] ?? 0) > 0) ? 'bg-danger bg-opacity-10' : 'bg-light' ?> h-100">
-                <div class="small text-muted mb-1 text-truncate">Balance Due</div>
-                <div class="fs-5 fw-bold text-nowrap <?= ((float)($app['balance_amount'] ?? 0) > 0) ? 'text-danger' : 'text-muted' ?>"><?= format_currency($app['balance_amount'] ?? 0) ?></div>
+            <div class="col-6 col-lg-3">
+              <div class="master-data-card p-3 d-flex flex-column justify-content-between" style="border-left: 4px solid <?= ((float)($app['balance_amount'] ?? 0) > 0) ? '#E11D48' : '#64748B' ?>;">
+                <div class="d-flex align-items-center justify-content-between text-muted small mb-1">
+                  <span class="fw-semibold">Balance Due</span>
+                  <i class="fa-solid fa-receipt <?= ((float)($app['balance_amount'] ?? 0) > 0) ? 'text-danger' : 'text-secondary' ?>"></i>
+                </div>
+                <div class="fs-4 fw-bold <?= ((float)($app['balance_amount'] ?? 0) > 0) ? 'text-danger' : 'text-muted' ?> font-monospace"><?= format_currency($app['balance_amount'] ?? 0) ?></div>
+                <div class="text-muted" style="font-size: 0.7rem;">Outstanding Amount</div>
               </div>
             </div>
-            <div class="col-6 col-md-3">
-              <div class="border rounded p-3 text-center bg-light h-100 d-flex flex-column justify-content-center">
-                <div class="small text-muted mb-1 text-truncate">Payment Status</div>
-                <div class="fw-bold">
+            <div class="col-6 col-lg-3">
+              <div class="master-data-card p-3 d-flex flex-column justify-content-between" style="border-left: 4px solid #F59E0B;">
+                <div class="d-flex align-items-center justify-content-between text-muted small mb-1">
+                  <span class="fw-semibold">Payment Status</span>
+                  <i class="fa-solid fa-wallet text-warning"></i>
+                </div>
+                <div class="mt-1">
                   <?php
                     $bal = (float)($app['balance_amount'] ?? 0);
                     $paid = (float)($app['paid_amount'] ?? 0);
                     $total = (float)($app['total_amount'] ?? $app['selling_price'] ?? 0);
-                    if ($bal <= 0 && $paid > 0) echo '<span class="badge bg-success fs-6">PAID</span>';
-                    elseif ($paid > 0 && $bal > 0) echo '<span class="badge bg-warning text-dark fs-6">PARTIAL</span>';
-                    else echo '<span class="badge bg-danger fs-6">UNPAID</span>';
+                    if ($bal <= 0 && $paid > 0) echo '<span class="badge bg-success rounded-pill px-3 py-1 fs-6 fw-bold">PAID IN FULL</span>';
+                    elseif ($paid > 0 && $bal > 0) echo '<span class="badge bg-warning text-dark rounded-pill px-3 py-1 fs-6 fw-bold">PARTIAL PAID</span>';
+                    else echo '<span class="badge bg-danger rounded-pill px-3 py-1 fs-6 fw-bold">UNPAID DUE</span>';
                   ?>
                 </div>
+                <div class="text-muted" style="font-size: 0.7rem;">Settlement Stage</div>
               </div>
             </div>
           </div>
 
-          <!-- Record Payment Form -->
-          <div class="card border mb-4">
-            <div class="card-header bg-success bg-opacity-10 border-bottom py-3">
+          <!-- Record Payment Form Bento Card -->
+          <div class="master-data-card mb-4 p-0 overflow-hidden">
+            <div class="p-3 bg-light border-bottom d-flex align-items-center justify-content-between">
               <h6 class="mb-0 fw-bold text-success"><i class="fa-solid fa-circle-plus me-2"></i>Record New Payment</h6>
+              <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1">Direct Settlement</span>
             </div>
-            <div class="card-body p-4">
+            <div class="p-3 p-md-4">
               <form action="/payments/store" method="POST" enctype="multipart/form-data">
                 <?= csrf_field() ?>
                 <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
@@ -1313,41 +1439,6 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
           </div>
         </div>
 
-        <!-- TAB 3: Visa Details -->
-        <div class="tab-pane fade" id="visa-pane" role="tabpanel">
-          <div class="row g-4">
-            <div class="col-lg-6">
-              <h6 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="fa-solid fa-passport text-primary me-2"></i> Visa Specification &amp; Policy</h6>
-              <div class="row g-2 small">
-                <div class="col-sm-5 text-muted">Destination:</div>
-                <div class="col-sm-7 fw-bold text-dark"><?= $app['flag_emoji'] ?> <?= e($app['country_name']) ?> (<?= e($app['country_code']) ?>)</div>
-                <div class="col-sm-5 text-muted">Service Tier:</div>
-                <div class="col-sm-7 fw-semibold text-primary"><?= e($app['service_name']) ?></div>
-                <div class="col-sm-5 text-muted">Entry Type:</div>
-                <div class="col-sm-7"><?= e($app['entry_type']) ?></div>
-                <div class="col-sm-5 text-muted">Processing Type:</div>
-                <div class="col-sm-7"><?= e($app['processing_type']) ?></div>
-                <div class="col-sm-5 text-muted">Duration / Validity:</div>
-                <div class="col-sm-7"><?= e($app['duration'] ?? '30 Days') ?> (Max Stay: <?= e($app['max_stay'] ?? '30 Days') ?>)</div>
-                <div class="col-sm-5 text-muted">Estimated SLA:</div>
-                <div class="col-sm-7"><?= (int)($app['estimated_days'] ?? 7) ?> Working Days</div>
-              </div>
-            </div>
-            <div class="col-lg-6">
-              <h6 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="fa-solid fa-calendar-days text-success me-2"></i> Travel &amp; Consular Timeline</h6>
-              <div class="row g-2 small">
-                <div class="col-sm-5 text-muted">Intended Travel:</div>
-                <div class="col-sm-7 fw-semibold"><?= format_date($app['travel_date']) ?></div>
-                <div class="col-sm-5 text-muted">Expected Return:</div>
-                <div class="col-sm-7 fw-semibold"><?= format_date($app['return_date']) ?></div>
-                <div class="col-sm-5 text-muted">Submitted Date:</div>
-                <div class="col-sm-7"><?= format_date($app['application_date'] ?? $app['created_at']) ?></div>
-                <div class="col-sm-5 text-muted">Consular Reference:</div>
-                <div class="col-sm-7 font-monospace fw-bold"><?= e($app['embassy_reference'] ?? 'Pending Submission') ?></div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <!-- TAB 10: Status History -->
         <div class="tab-pane fade" id="history-pane" role="tabpanel">

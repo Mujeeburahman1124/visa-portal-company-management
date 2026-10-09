@@ -2755,7 +2755,239 @@
   }
 }
 
+/* ==========================================================================
+   MASTER WORKSPACE & VISA TRACKING DASHBOARD BENTO REDESIGN
+   ========================================================================== */
+.master-workspace-header {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 22px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+  margin-bottom: 1.5rem;
+}
 
+.master-action-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
 
+.master-banner-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.master-banner-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.master-banner-card.banner-stage::before {
+  background: linear-gradient(90deg, #E11D48, #F43F5E);
+}
+
+.master-banner-card.banner-action::before {
+  background: linear-gradient(90deg, #F59E0B, #D97706);
+}
+
+.master-timeline-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+  margin-bottom: 1.5rem;
+}
+
+.master-timeline-header {
+  padding: 1.15rem 1.5rem;
+  background: #FFFFFF;
+  border-bottom: 1px solid #F1F5F9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.master-timeline-body {
+  padding: 1.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.master-tabs-nav-wrap {
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.05);
+}
+
+.master-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  background: #FFFFFF;
+  border-bottom: 1.5px solid #F1F5F9;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 transparent;
+  flex-wrap: nowrap;
+}
+
+.master-nav-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+.master-nav-tabs::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+.master-nav-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #64748B;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.master-nav-tab-btn:hover {
+  color: #0F172A;
+  background: #F8FAFC;
+}
+
+.master-nav-tab-btn.active {
+  color: #E11D48;
+  background: #FFF1F3;
+  border-bottom-color: #E11D48;
+  font-weight: 700;
+}
+
+.master-data-card {
+  background: #FFFFFF;
+  border: 1.5px solid #F1F5F9;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+  height: 100%;
+  transition: all 0.2s ease;
+}
+
+.master-data-card:hover {
+  border-color: #E2E8F0;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.master-data-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+/* Master Spec Table / Key-Value List Layout */
+.master-spec-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.master-spec-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid #F8FAFC;
+  font-size: 0.86rem;
+}
+
+.master-spec-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.master-spec-label {
+  color: #64748B;
+  font-weight: 500;
+  width: 40%;
+  min-width: 140px;
+  flex-shrink: 0;
+}
+
+.master-spec-val {
+  color: #0F172A;
+  font-weight: 600;
+  text-align: right;
+  flex-grow: 1;
+  word-break: break-word;
+}
+
+/* Responsive Master Workspace Breakpoints */
+@media (max-width: 768px) {
+  .master-workspace-header {
+    padding: 1rem;
+    border-radius: 16px;
+  }
+  .master-action-btn-group {
+    width: 100%;
+  }
+  .master-action-btn-group .btn {
+    flex: 1 1 auto;
+  }
+  .master-data-card {
+    padding: 1.15rem;
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 576px) {
+  .master-spec-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+  }
+  .master-spec-label {
+    width: 100%;
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #94A3B8;
+  }
+  .master-spec-val {
+    text-align: left;
+    width: 100%;
+    font-size: 0.88rem;
+  }
+}
 
 
