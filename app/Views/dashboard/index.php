@@ -41,20 +41,6 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         </p>
       </div>
       <div class="bento-header-actions">
-        <?php if ($canCreateApp): ?>
-          <a href="/applications/create" class="bento-btn-primary">
-            <i class="fa-solid fa-plus"></i> Add Application
-          </a>
-        <?php endif; ?>
-        <?php if ($canViewFinance): ?>
-          <a href="/payments/create" class="bento-btn-dark">
-            <i class="fa-solid fa-receipt"></i> Collect Payment
-          </a>
-        <?php else: ?>
-          <a href="/tracking" class="bento-btn-outline">
-            <i class="fa-solid fa-route"></i> Tracking Hub
-          </a>
-        <?php endif; ?>
         <a href="/reports" class="bento-btn-outline">
           <i class="fa-solid fa-chart-pie"></i> Export / Reports
         </a>
@@ -726,7 +712,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         </a>
       </div>
 
-      <div class="bento-table-wrap">
+      <!-- Desktop Full Table View (>= 768px) -->
+      <div class="bento-table-wrap d-none d-md-block">
         <table class="bento-table">
           <thead>
             <tr>
@@ -794,6 +781,56 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </tbody>
         </table>
       </div>
+
+      <!-- Native Mobile App Card View (< 768px) -->
+      <div class="d-md-none bento-mobile-card-list">
+        <?php if (empty($urgentApplications)): ?>
+          <div class="text-center py-4 text-muted bg-light rounded-4 border">
+            <i class="fa-solid fa-circle-check text-success fs-3 d-block mb-2"></i>
+            All applications are progressing on schedule.
+          </div>
+        <?php else: ?>
+          <?php foreach ($urgentApplications as $uApp): ?>
+            <?php 
+              $prio = strtolower($uApp['priority']);
+              $isCrit = ($prio === 'critical' || $prio === 'urgent');
+            ?>
+            <div class="bento-mobile-app-card">
+              <div class="bento-mobile-card-header">
+                <a href="/applications/show?id=<?= $uApp['id'] ?>" class="badge bg-light text-dark border fw-bold text-decoration-none px-2.5 py-1">
+                  <?= e($uApp['application_number']) ?>
+                </a>
+                <div class="d-flex align-items-center gap-1.5">
+                  <span class="badge <?= $isCrit ? 'bg-danger text-white' : 'bg-light text-secondary border' ?> px-2 py-1">
+                    <?= e($uApp['priority']) ?>
+                  </span>
+                  <span class="badge <?= (int)($uApp['calculated_health'] ?? 100) < 50 ? 'bg-danger text-white' : 'bg-success-subtle text-success border border-success-subtle' ?> px-2 py-1">
+                    <?= (int)($uApp['calculated_health'] ?? 100) ?>%
+                  </span>
+                </div>
+              </div>
+
+              <div class="bento-mobile-card-body">
+                <div class="fw-bold text-dark fs-6 mb-0.5"><?= e($uApp['customer_name']) ?></div>
+                <div class="text-muted small mb-2"><i class="fa-solid fa-phone me-1 small"></i><?= e($uApp['mobile']) ?></div>
+                <div class="p-2 bg-light rounded-3 border mb-2.5">
+                  <div class="small fw-semibold text-dark"><i class="fa-solid fa-passport text-primary me-1.5"></i><?= e($uApp['service_name']) ?></div>
+                  <div class="d-flex align-items-center justify-content-between mt-1 text-muted" style="font-size: 0.72rem;">
+                    <span>Stage: <strong class="text-dark"><?= e($uApp['current_stage']) ?></strong></span>
+                    <span><i class="fa-regular fa-user me-1"></i><?= e($uApp['staff_name'] ?? 'Unassigned') ?></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bento-mobile-card-actions">
+                <a href="/applications/show?id=<?= $uApp['id'] ?>" class="bento-btn-primary w-100 text-center justify-content-center">
+                  Resolve &rarr;
+                </a>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </div>
     </div>
 
     <!-- =====================================================================
@@ -824,7 +861,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         </div>
       </div>
 
-      <div class="bento-table-wrap">
+      <!-- Desktop Full Table View (>= 768px) -->
+      <div class="bento-table-wrap d-none d-md-block">
         <table class="bento-table">
           <thead>
             <tr>
@@ -891,6 +929,64 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <?php endif; ?>
           </tbody>
         </table>
+      </div>
+
+      <!-- Native Mobile App Card View (< 768px) -->
+      <div class="d-md-none bento-mobile-card-list">
+        <?php if (empty($myTasks)): ?>
+          <div class="text-center py-4 text-muted bg-light rounded-4 border">
+            <i class="fa-solid fa-list-check text-success fs-3 d-block mb-2"></i>
+            No pending operational tasks in this view.
+          </div>
+        <?php else: ?>
+          <?php foreach ($myTasks as $t): ?>
+            <?php 
+              $isOverdue = !empty($t['due_date']) && $t['due_date'] < date('Y-m-d');
+              $tTitle = $t['task_title'] ?? $t['title'] ?? 'Operational Task';
+            ?>
+            <div class="bento-mobile-app-card">
+              <div class="bento-mobile-card-header">
+                <span class="badge <?= ($t['priority'] === 'Urgent' || $t['priority'] === 'Critical') ? 'bg-danger text-white' : 'bg-light text-secondary border' ?> px-2 py-1">
+                  <?= e($t['priority']) ?>
+                </span>
+                <span class="badge <?= $isOverdue ? 'bg-danger text-white' : 'bg-light text-secondary border' ?> px-2 py-1">
+                  <i class="fa-regular fa-clock me-1"></i><?= !empty($t['due_date']) ? format_date($t['due_date']) : 'No Deadline' ?>
+                </span>
+              </div>
+
+              <div class="bento-mobile-card-body">
+                <div class="fw-bold text-dark fs-6 mb-1"><?= e($tTitle) ?></div>
+                <?php if (!empty($t['description'])): ?>
+                  <div class="text-muted small mb-2"><?= e($t['description']) ?></div>
+                <?php endif; ?>
+
+                <div class="p-2 bg-light rounded-3 border mb-2.5">
+                  <div class="d-flex align-items-center justify-content-between small">
+                    <span class="text-muted">Linked File:</span>
+                    <?php if (!empty($t['application_number'])): ?>
+                      <a href="/applications/show?id=<?= $t['application_id'] ?? 0 ?>" class="fw-bold text-decoration-none" style="color: var(--bento-primary);">
+                        <?= e($t['application_number']) ?> (<?= e($t['customer_name'] ?? '') ?>)
+                      </a>
+                    <?php else: ?>
+                      <span class="text-muted">General Milestone</span>
+                    <?php endif; ?>
+                  </div>
+                  <div class="d-flex align-items-center justify-content-between small mt-1 text-muted">
+                    <span>Officer:</span>
+                    <strong class="text-dark"><i class="fa-regular fa-user me-1"></i><?= e($t['assigned_to_name'] ?? 'Officer') ?></strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bento-mobile-card-actions">
+                <button type="button" class="bento-btn-primary w-100 text-center justify-content-center"
+                        onclick="openCompleteTaskModal(<?= (int)$t['id'] ?>, '<?= e(addslashes($tTitle)) ?>')">
+                  <i class="fa-solid fa-check me-1"></i> Complete Task
+                </button>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        <?php endif; ?>
       </div>
     </div>
 
@@ -1002,7 +1098,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               <a href="/payments" class="bento-pill-btn-sm">View All Invoices &rarr;</a>
             </div>
 
-            <div class="bento-table-wrap">
+            <!-- Desktop Full Table View (>= 768px) -->
+            <div class="bento-table-wrap d-none d-md-block">
               <table class="bento-table">
                 <thead>
                   <tr>
@@ -1043,6 +1140,41 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 </tbody>
               </table>
             </div>
+
+            <!-- Native Mobile App Card View (< 768px) -->
+            <div class="d-md-none bento-mobile-card-list">
+              <?php if (empty($unpaidInvoices)): ?>
+                <div class="text-center py-4 text-muted bg-light rounded-4 border">All customer invoices settled!</div>
+              <?php else: ?>
+                <?php foreach ($unpaidInvoices as $inv): ?>
+                  <div class="bento-mobile-app-card">
+                    <div class="bento-mobile-card-header">
+                      <a href="/applications/show?id=<?= $inv['id'] ?>" class="badge bg-light text-dark border fw-bold text-decoration-none px-2.5 py-1">
+                        <?= e($inv['application_number']) ?>
+                      </a>
+                      <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold px-2 py-1">
+                        Due: <?= format_currency((float)$inv['balance_amount']) ?>
+                      </span>
+                    </div>
+
+                    <div class="bento-mobile-card-body">
+                      <div class="fw-bold text-dark fs-6 mb-0.5"><?= e($inv['customer_name']) ?></div>
+                      <div class="text-muted small mb-2"><i class="fa-solid fa-phone me-1 small"></i><?= e($inv['mobile']) ?></div>
+                      <div class="d-flex align-items-center justify-content-between p-2 bg-light rounded-3 border mb-2.5 small">
+                        <span class="text-muted">Total Invoice:</span>
+                        <span class="fw-bold text-dark"><?= format_currency((float)$inv['total_amount']) ?></span>
+                      </div>
+                    </div>
+
+                    <div class="bento-mobile-card-actions">
+                      <a href="/payments/create?application_id=<?= $inv['id'] ?>" class="bento-btn-primary w-100 text-center justify-content-center">
+                        <i class="fa-solid fa-receipt me-1"></i> Collect Payment
+                      </a>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </div>
           </div>
         </div>
 
@@ -1055,7 +1187,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               <a href="/payments" class="bento-pill-btn-sm">All Ledger &rarr;</a>
             </div>
 
-            <div class="bento-table-wrap">
+            <!-- Desktop Full Table View (>= 768px) -->
+            <div class="bento-table-wrap d-none d-md-block">
               <table class="bento-table">
                 <thead>
                   <tr>
@@ -1084,6 +1217,25 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 </tbody>
               </table>
             </div>
+
+            <!-- Native Mobile App Card View (< 768px) -->
+            <div class="d-md-none bento-mobile-card-list">
+              <?php if (empty($recentPayments)): ?>
+                <div class="text-center py-4 text-muted bg-light rounded-4 border">No recent receipts recorded.</div>
+              <?php else: ?>
+                <?php foreach ($recentPayments as $rp): ?>
+                  <div class="bento-mobile-app-card p-2.5 mb-2">
+                    <div class="d-flex align-items-center justify-content-between">
+                      <div>
+                        <div class="fw-bold text-dark small"><?= e($rp['customer_name'] ?? 'Applicant') ?></div>
+                        <div class="text-muted" style="font-size: 0.7rem;"><?= e($rp['application_number'] ?? '') ?> &bull; <?= format_date($rp['payment_date'] ?? date('Y-m-d')) ?></div>
+                      </div>
+                      <div class="fw-bold text-success fs-6"><?= format_currency((float)$rp['amount']) ?></div>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </div>
           </div>
         </div>
       </div>
@@ -1103,7 +1255,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               <a href="/staff" class="bento-pill-btn-sm">Manage Team &rarr;</a>
             </div>
 
-            <div class="bento-table-wrap">
+            <!-- Desktop Full Table View (>= 768px) -->
+            <div class="bento-table-wrap d-none d-md-block">
               <table class="bento-table">
                 <thead>
                   <tr>
@@ -1140,6 +1293,30 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 </tbody>
               </table>
             </div>
+
+            <!-- Native Mobile App Card View (< 768px) -->
+            <div class="d-md-none bento-mobile-card-list">
+              <?php if (empty($staffWorkload)): ?>
+                <div class="text-center py-4 text-muted bg-light rounded-4 border">No active staff members.</div>
+              <?php else: ?>
+                <?php foreach ($staffWorkload as $sw): ?>
+                  <div class="bento-mobile-app-card p-2.5 mb-2">
+                    <div class="d-flex align-items-center justify-content-between mb-1.5">
+                      <div>
+                        <div class="fw-bold text-dark small"><?= e($sw['name']) ?></div>
+                        <div class="text-muted" style="font-size: 0.7rem;"><?= e($sw['designation'] ?? $sw['role_name']) ?></div>
+                      </div>
+                      <span class="badge bg-light text-secondary border"><?= e($sw['role_name']) ?></span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-around p-1.5 bg-light rounded-3 border text-center" style="font-size: 0.72rem;">
+                      <div><span class="text-muted d-block">Active</span><strong class="text-dark"><?= $sw['active_cases'] ?></strong></div>
+                      <div><span class="text-muted d-block">Urgent</span><strong class="<?= $sw['urgent_cases'] > 0 ? 'text-danger' : 'text-muted' ?>"><?= $sw['urgent_cases'] ?></strong></div>
+                      <div><span class="text-muted d-block">Tasks</span><strong class="text-dark"><?= $sw['pending_tasks'] ?></strong></div>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </div>
           </div>
         </div>
       <?php endif; ?>
@@ -1156,7 +1333,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <?php endif; ?>
           </div>
 
-          <div class="bento-table-wrap">
+          <!-- Desktop Full Table View (>= 768px) -->
+          <div class="bento-table-wrap d-none d-md-block">
             <table class="bento-table">
               <thead>
                 <tr>
@@ -1189,6 +1367,26 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 <?php endif; ?>
               </tbody>
             </table>
+          </div>
+
+          <!-- Native Mobile App Card View (< 768px) -->
+          <div class="d-md-none bento-mobile-card-list">
+            <?php if (empty($recentActivities)): ?>
+              <div class="text-center py-4 text-muted bg-light rounded-4 border">No recent session logs recorded.</div>
+            <?php else: ?>
+              <?php foreach ($recentActivities as $act): ?>
+                <div class="bento-mobile-app-card p-2.5 mb-2">
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <span class="fw-bold text-dark small"><?= e($act['user_name'] ?? 'System') ?></span>
+                    <span class="text-muted" style="font-size: 0.7rem;"><?= format_datetime($act['created_at']) ?></span>
+                  </div>
+                  <div class="mb-1">
+                    <span class="badge bg-light text-secondary border px-2 py-0.5" style="font-size: 0.68rem;"><?= e($act['action']) ?></span>
+                  </div>
+                  <div class="small text-muted" style="font-size: 0.72rem;"><?= e($act['description']) ?></div>
+                </div>
+              <?php endforeach; ?>
+            <?php endif; ?>
           </div>
         </div>
       </div>

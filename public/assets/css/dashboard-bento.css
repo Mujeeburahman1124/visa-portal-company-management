@@ -1057,7 +1057,7 @@
    ========================================================================== */
 @media (max-width: 768px) {
   .bento-dashboard-wrap {
-    padding: 1rem 0.85rem 6.5rem 0.85rem;
+    padding: 0.85rem 0.75rem 105px 0.75rem !important;
   }
 
   .bento-header-title {
@@ -1079,45 +1079,163 @@
     flex: 1;
     font-size: 0.82rem;
     padding: 0.6rem 1rem;
+    text-align: center;
+    justify-content: center;
   }
 
-  /* 2x2 Grid for Top Stat Cards */
+  /* 2x2 Grid for Top Stat Cards (Resolves narrow squishing & clipped text) */
   .bento-stat-grid {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 0.75rem !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .bento-stat-grid > [class*="col-"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    flex: none !important;
   }
 
   .bento-stat-card {
-    min-height: 150px;
-    padding: 1.15rem 1rem;
-    border-radius: var(--bento-radius-md);
+    min-height: 130px !important;
+    padding: 0.95rem 0.85rem !important;
+    border-radius: 16px !important;
   }
 
-  .bento-stat-value {
-    font-size: 1.85rem;
-    margin: 0.5rem 0;
+  .bento-stat-top {
+    gap: 0.35rem !important;
   }
 
   .bento-stat-title {
-    font-size: 0.82rem;
+    font-size: 0.76rem !important;
+    line-height: 1.25 !important;
+    font-weight: 600 !important;
   }
 
   .bento-arrow-circle {
-    width: 28px;
-    height: 28px;
-    font-size: 0.75rem;
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 0.65rem !important;
+  }
+
+  .bento-stat-value {
+    font-size: 1.65rem !important;
+    margin: 0.35rem 0 !important;
+    line-height: 1.1 !important;
+  }
+
+  .bento-stat-badge {
+    font-size: 0.68rem !important;
+    gap: 0.35rem !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow: hidden !important;
   }
 
   .bento-badge-pill {
-    font-size: 0.68rem;
-    padding: 0.15rem 0.4rem;
+    font-size: 0.66rem !important;
+    padding: 0.15rem 0.4rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
   }
 
-  /* Cards Spacing */
+  .bento-stat-badge > span:not(.bento-badge-pill) {
+    font-size: 0.66rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Operational Alert Strip on Mobile */
+  .bento-alert-strip {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    border-radius: 16px !important;
+    padding: 0.75rem !important;
+    gap: 0.65rem !important;
+  }
+
+  .bento-alert-strip-label {
+    border-right: none !important;
+    padding-right: 0 !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .bento-time-summary {
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+
+  .bento-time-pill {
+    flex: 1 !important;
+    text-align: center !important;
+  }
+
+  /* Cards Spacing & Headers on Mobile */
   .bento-card {
-    padding: 1.15rem;
-    border-radius: var(--bento-radius-md);
+    padding: 1rem 0.95rem !important;
+    border-radius: 18px !important;
+  }
+
+  .bento-card-head {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.65rem !important;
+    margin-bottom: 0.85rem !important;
+  }
+
+  .bento-card-head > div:last-child,
+  .bento-card-head > a.bento-pill-btn-sm {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+
+  /* Native Mobile App Card Component */
+  .bento-mobile-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .bento-mobile-app-card {
+    background: #FFFFFF;
+    border: 1px solid var(--bento-card-border);
+    border-radius: 16px;
+    padding: 1rem 0.95rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .bento-mobile-app-card:hover {
+    border-color: var(--bento-card-border-hover);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  }
+
+  .bento-mobile-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.65rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #F1F5F9;
+  }
+
+  .bento-mobile-card-actions {
+    margin-top: 0.75rem;
+  }
+
+  .bento-mobile-card-actions .bento-btn-primary {
+    width: 100% !important;
+    padding: 0.55rem 1rem !important;
+    font-size: 0.84rem !important;
+    border-radius: var(--bento-radius-pill) !important;
   }
 
   /* Mobile App Bottom Floating Dock */
