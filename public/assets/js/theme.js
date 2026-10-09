@@ -7,51 +7,59 @@
   'use strict';
 
   const STORAGE_KEY = 'vt_theme';
-  const DEFAULT_THEME = 'ocean-royal';
+  const DEFAULT_THEME = 'ms-ruby-prestige';
 
   const THEMES = [
     {
-      id: 'ocean-royal',
-      name: 'Ocean Royal',
-      feel: 'Modern SaaS + Travel',
-      swatches: ['#1e40af', '#0891b2', '#7c3aed'],
+      id: 'ms-ruby-prestige',
+      name: 'MS Ruby Prestige (Official Brand)',
+      feel: 'Signature Ruby Gem & Obsidian Midnight',
+      swatches: ['#e11d48', '#0f172a', '#2563eb'],
     },
     {
-      id: 'sunset-fusion',
-      name: 'Sunset Fusion',
-      feel: 'Premium Colorful Recruitment',
-      swatches: ['#be185d', '#e11d48', '#ea580c'],
+      id: 'aviation-sapphire',
+      name: 'Aviation Sapphire & Ruby',
+      feel: 'Global Flight Orbit & Ruby Accent',
+      swatches: ['#1e40af', '#e11d48', '#0284c7'],
     },
     {
-      id: 'emerald-royal',
-      name: 'Emerald Royal',
-      feel: 'Premium Business & Finance',
-      swatches: ['#065f46', '#0d9488', '#1d4ed8'],
+      id: 'imperial-gold',
+      name: 'Imperial Gold & Diamond',
+      feel: 'VIP Luxury Concierge & Diamond Facets',
+      swatches: ['#d97706', '#be123c', '#1e293b'],
     },
     {
-      id: 'violet-aurora',
-      name: 'Violet Aurora',
-      feel: 'Modern Technology SaaS',
-      swatches: ['#5b21b6', '#2563eb', '#db2777'],
+      id: 'consular-emerald',
+      name: 'Consular Emerald & Crimson',
+      feel: 'Embassy Approval Green & Ruby Seal',
+      swatches: ['#059669', '#e11d48', '#0f172a'],
     },
     {
-      id: 'crimson-midnight',
-      name: 'Crimson Midnight',
-      feel: 'Premium International Business',
-      swatches: ['#991b1b', '#881337', '#92400e'],
-    },
-    {
-      id: 'dark-mode',
+      id: 'obsidian-dark',
       name: 'Obsidian Dark (Dark Mode)',
-      feel: 'Sleek Dark Mode & Neon Accents',
-      swatches: ['#090d16', '#3b82f6', '#38bdf8'],
+      feel: 'Executive OLED Dark & Glowing Ruby',
+      swatches: ['#090d16', '#f43f5e', '#38bdf8'],
     },
   ];
+
+  const LEGACY_THEME_MAP = {
+    'ocean-royal': 'ms-ruby-prestige',
+    'sunset-fusion': 'ms-ruby-prestige',
+    'emerald-royal': 'consular-emerald',
+    'violet-aurora': 'aviation-sapphire',
+    'crimson-midnight': 'imperial-gold',
+    'dark-mode': 'obsidian-dark',
+  };
 
   /* ── Read saved theme (runs before DOM ready to avoid flash) ── */
   function getSavedTheme() {
     try {
-      return localStorage.getItem(STORAGE_KEY) || DEFAULT_THEME;
+      let t = localStorage.getItem(STORAGE_KEY);
+      if (t && LEGACY_THEME_MAP[t]) {
+        t = LEGACY_THEME_MAP[t];
+        try { localStorage.setItem(STORAGE_KEY, t); } catch (e) {}
+      }
+      return (t && THEMES.some(function(item) { return item.id === t; })) ? t : DEFAULT_THEME;
     } catch (e) {
       return DEFAULT_THEME;
     }

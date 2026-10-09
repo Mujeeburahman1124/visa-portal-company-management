@@ -23,11 +23,11 @@ $flash = get_flash();
 
   <style>
     :root {
-      --primary-color: #2563eb;
-      --primary-hover: #1d4ed8;
-      --navy-dark: #0a1324;
-      --navy-deep: #060a14;
-      --accent-cyan: #06b6d4;
+      --primary-color: #e11d48;
+      --primary-hover: #be123c;
+      --navy-dark: #0f172a;
+      --navy-deep: #020617;
+      --accent-cyan: #2563eb;
       --accent-emerald: #10b981;
       --text-main: #0f172a;
       --text-muted: #64748b;
@@ -44,7 +44,7 @@ $flash = get_flash();
       padding: 0;
       min-height: 100vh;
       font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: radial-gradient(circle at 50% 10%, #112240 0%, #0a1325 50%, #050a14 100%);
+      background: radial-gradient(circle at 50% 10%, #1e1124 0%, #0f172a 50%, #05070f 100%);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -61,7 +61,7 @@ $flash = get_flash();
       left: 15%;
       width: 500px;
       height: 500px;
-      background: radial-gradient(circle, rgba(37, 99, 235, 0.16) 0%, rgba(37, 99, 235, 0) 70%);
+      background: radial-gradient(circle, rgba(225, 29, 72, 0.18) 0%, rgba(225, 29, 72, 0) 70%);
       pointer-events: none;
       filter: blur(40px);
       z-index: 0;
@@ -73,7 +73,7 @@ $flash = get_flash();
       right: 15%;
       width: 520px;
       height: 520px;
-      background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0) 70%);
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, rgba(225, 29, 72, 0) 70%);
       pointer-events: none;
       filter: blur(50px);
       z-index: 0;
@@ -108,7 +108,7 @@ $flash = get_flash();
       box-shadow: 
         0 25px 60px -15px rgba(2, 6, 23, 0.6),
         0 0 0 1px rgba(255, 255, 255, 0.4) inset,
-        0 8px 24px -6px rgba(37, 99, 235, 0.12);
+        0 8px 24px -6px rgba(225, 29, 72, 0.12);
       transition: transform 0.25s ease, box-shadow 0.25s ease;
     }
 
@@ -121,7 +121,7 @@ $flash = get_flash();
     .brand-logo-img {
       max-height: 64px;
       width: auto;
-      filter: drop-shadow(0 4px 10px rgba(37, 99, 235, 0.25));
+      filter: drop-shadow(0 4px 10px rgba(225, 29, 72, 0.25));
       margin-bottom: 0.75rem;
       transition: transform 0.2s ease;
     }
@@ -219,9 +219,9 @@ $flash = get_flash();
     }
 
     .input-group-pro:focus-within {
-      border-color: #2563eb;
+      border-color: #e11d48;
       background: #ffffff;
-      box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.12);
+      box-shadow: 0 0 0 3.5px rgba(225, 29, 72, 0.15);
     }
 
     .input-icon-pro {
@@ -236,7 +236,7 @@ $flash = get_flash();
     }
 
     .input-group-pro:focus-within .input-icon-pro {
-      color: #2563eb;
+      color: #e11d48;
     }
 
     .form-control-pro {
@@ -272,7 +272,7 @@ $flash = get_flash();
     }
 
     .password-toggle-btn:hover {
-      color: #2563eb;
+      color: #e11d48;
     }
 
     /* Options Row */
@@ -299,18 +299,18 @@ $flash = get_flash();
       width: 15px;
       height: 15px;
       border-radius: 4px;
-      accent-color: #2563eb;
+      accent-color: #e11d48;
     }
 
     .forgot-pass-link {
-      color: #2563eb;
+      color: #e11d48;
       text-decoration: none;
       font-weight: 600;
       transition: color 0.15s ease;
     }
 
     .forgot-pass-link:hover {
-      color: #1d4ed8;
+      color: #be123c;
       text-decoration: underline;
     }
 
@@ -318,7 +318,7 @@ $flash = get_flash();
     .btn-submit-pro {
       width: 100%;
       height: 46px;
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
       color: #ffffff;
       border: none;
       border-radius: 10px;
@@ -327,7 +327,7 @@ $flash = get_flash();
       font-weight: 700;
       letter-spacing: 0.01em;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+      box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -336,14 +336,14 @@ $flash = get_flash();
     }
 
     .btn-submit-pro:hover {
-      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+      background: linear-gradient(135deg, #be123c 0%, #9f1239 100%);
       transform: translateY(-1.5px);
-      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.45);
+      box-shadow: 0 8px 20px rgba(225, 29, 72, 0.45);
     }
 
     .btn-submit-pro:active {
       transform: translateY(0);
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+      box-shadow: 0 2px 8px rgba(225, 29, 72, 0.3);
     }
 
     .btn-submit-pro:disabled {

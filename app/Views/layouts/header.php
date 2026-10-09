@@ -32,13 +32,13 @@
 
   <!-- Anti-FOUC: apply stored theme before any render -->
   <script>
-    (function(){try{var t=localStorage.getItem('vt_theme')||'ocean-royal';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+    (function(){try{var m={'ocean-royal':'ms-ruby-prestige','sunset-fusion':'ms-ruby-prestige','emerald-royal':'consular-emerald','violet-aurora':'aviation-sapphire','crimson-midnight':'imperial-gold','dark-mode':'obsidian-dark'};var t=localStorage.getItem('vt_theme')||'ms-ruby-prestige';if(m[t])t=m[t];document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
   </script>
 
   <?php
     // Dynamic Website Themes from system_settings (MS Travel Hub Logo Harmonized)
-    $thPrimary = '#1E40AF';
-    $thAccent = '#E11D48';
+    $thPrimary = '#E11D48';
+    $thAccent = '#0F172A';
     $thRadius = '14px';
     $thFont = "'Outfit', 'Inter', sans-serif";
     $thMode = 'light';

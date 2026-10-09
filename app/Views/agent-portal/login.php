@@ -8,7 +8,11 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤝</text></svg>">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/theme.css?v=2.3">
   <link rel="stylesheet" href="/assets/css/main.css?v=7.0.0">
+  <script>
+    (function(){try{var m={'ocean-royal':'ms-ruby-prestige','sunset-fusion':'ms-ruby-prestige','emerald-royal':'consular-emerald','violet-aurora':'aviation-sapphire','crimson-midnight':'imperial-gold','dark-mode':'obsidian-dark'};var t=localStorage.getItem('vt_theme')||'ms-ruby-prestige';if(m[t])t=m[t];document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+  </script>
   <style>
     @media (max-width: 576px) {
       .auth-card-compact { padding: 1.25rem 1rem !important; border-radius: 14px !important; }

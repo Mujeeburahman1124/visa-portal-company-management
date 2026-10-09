@@ -754,20 +754,20 @@ $activeTab = $_GET['tab'] ?? 'company';
                 <div class="mb-3">
                   <label class="form-label small fw-semibold">Dashboard Luxury Theme Presets</label>
                   <div class="d-flex flex-wrap gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 shadow-sm" onclick="applyThemePreset('ocean-royal', '#1e40af', '#0891b2')">
-                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#1e40af;"></span> Ocean Royal
+                    <button type="button" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1 shadow-sm" onclick="applyThemePreset('ms-ruby-prestige', '#e11d48', '#0f172a')">
+                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#e11d48;"></span> MS Ruby Prestige (Official)
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1 shadow-sm" onclick="applyThemePreset('sunset-fusion', '#be185d', '#ea580c')">
-                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#be185d;"></span> Sunset Fusion
+                    <button type="button" class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 shadow-sm" onclick="applyThemePreset('aviation-sapphire', '#1e40af', '#e11d48')">
+                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#1e40af;"></span> Aviation Sapphire & Ruby
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-success d-flex align-items-center gap-1 shadow-sm" onclick="applyThemePreset('emerald-royal', '#065f46', '#0d9488')">
-                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#065f46;"></span> Emerald Royal
+                    <button type="button" class="btn btn-sm btn-outline-warning d-flex align-items-center gap-1 shadow-sm" style="color:#d97706;border-color:#d97706;" onclick="applyThemePreset('imperial-gold', '#d97706', '#be123c')">
+                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#d97706;"></span> Imperial Gold & Diamond
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-dark d-flex align-items-center gap-1 shadow-sm" style="color:#7c3aed;border-color:#7c3aed;" onclick="applyThemePreset('violet-aurora', '#5b21b6', '#2563eb')">
-                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#5b21b6;"></span> Violet Aurora
+                    <button type="button" class="btn btn-sm btn-outline-success d-flex align-items-center gap-1 shadow-sm" onclick="applyThemePreset('consular-emerald', '#059669', '#e11d48')">
+                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#059669;"></span> Consular Emerald & Crimson
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 shadow-sm" onclick="applyThemePreset('crimson-midnight', '#991b1b', '#92400e')">
-                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#991b1b;"></span> Crimson Midnight
+                    <button type="button" class="btn btn-sm btn-outline-dark d-flex align-items-center gap-1 shadow-sm" onclick="applyThemePreset('obsidian-dark', '#f43f5e', '#38bdf8')">
+                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#090d16;border:1px solid #f43f5e;"></span> Obsidian Dark Mode
                     </button>
                   </div>
                 </div>
@@ -1332,12 +1332,12 @@ function updateLiveThemePreview() {
 }
 
 function resetThemeDefaults() {
-  if (document.getElementById('themePrimaryColor')) document.getElementById('themePrimaryColor').value = '#0284c7';
-  if (document.getElementById('themePrimaryColorHex')) document.getElementById('themePrimaryColorHex').value = '#0284c7';
-  if (document.getElementById('themeAccentColor')) document.getElementById('themeAccentColor').value = '#059669';
-  if (document.getElementById('themeAccentColorHex')) document.getElementById('themeAccentColorHex').value = '#059669';
-  if (document.getElementById('themeFontFamily')) document.getElementById('themeFontFamily').value = "'Times New Roman', Times, serif";
-  if (document.getElementById('themeBorderRadius')) document.getElementById('themeBorderRadius').value = '8px';
+  if (document.getElementById('themePrimaryColor')) document.getElementById('themePrimaryColor').value = '#e11d48';
+  if (document.getElementById('themePrimaryColorHex')) document.getElementById('themePrimaryColorHex').value = '#e11d48';
+  if (document.getElementById('themeAccentColor')) document.getElementById('themeAccentColor').value = '#0f172a';
+  if (document.getElementById('themeAccentColorHex')) document.getElementById('themeAccentColorHex').value = '#0f172a';
+  if (document.getElementById('themeFontFamily')) document.getElementById('themeFontFamily').value = "'Outfit', sans-serif";
+  if (document.getElementById('themeBorderRadius')) document.getElementById('themeBorderRadius').value = '10px';
   if (document.getElementById('themeModeSelect')) document.getElementById('themeModeSelect').value = 'light';
   updateLiveThemePreview();
 }
