@@ -1333,57 +1333,53 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <?php endif; ?>
           </div>
 
-          <!-- Desktop Full Table View (>= 768px) -->
-          <div class="bento-table-wrap d-none d-md-block">
-            <table class="bento-table">
-              <thead>
-                <tr>
-                  <th>Timestamp</th>
-                  <th>User</th>
-                  <th>Action</th>
-                  <th class="text-end">Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                <?php if (empty($recentActivities)): ?>
-                  <tr><td colspan="4" class="text-center py-4 text-muted">No recent session logs recorded.</td></tr>
-                <?php else: ?>
-                  <?php foreach ($recentActivities as $act): ?>
-                    <tr>
-                      <td class="text-muted small"><?= format_datetime($act['created_at']) ?></td>
-                      <td><span class="fw-bold small text-dark"><?= e($act['user_name'] ?? 'System') ?></span></td>
-                      <td>
-                        <span class="badge bg-light text-secondary border small px-2 py-1" style="border-radius: var(--bento-radius-pill);">
-                          <?= e($act['action']) ?>
-                        </span>
-                      </td>
-                      <td class="text-end">
-                        <span class="small text-truncate d-inline-block text-muted" style="max-width: 280px;" title="<?= e($act['description']) ?>">
-                          <?= e($act['description']) ?>
-                        </span>
-                      </td>
-                    </tr>
-                  <?php endforeach; ?>
-                <?php endif; ?>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Native Mobile App Card View (< 768px) -->
-          <div class="d-md-none bento-mobile-card-list">
+          <!-- Operations Audit Trail: Highly Responsive Stream UI (Laptop & Mobile Optimized) -->
+          <?php
+            $getActivityMeta = function(string $action) {
+                $a = strtoupper($action);
+                if (str_contains($a, 'LOGIN') || str_contains($a, 'AUTH')) {
+                    return ['icon' => 'fa-arrow-right-to-bracket', 'bg' => 'rgba(225, 29, 72, 0.1)', 'color' => 'var(--bento-primary)'];
+                } elseif (str_contains($a, 'DOC') || str_contains($a, 'FILE') || str_contains($a, 'UPLOAD')) {
+                    return ['icon' => 'fa-file-lines', 'bg' => 'rgba(14, 165, 233, 0.12)', 'color' => '#0284C7'];
+                } elseif (str_contains($a, 'OCR') || str_contains($a, 'PASSPORT')) {
+                    return ['icon' => 'fa-id-card', 'bg' => 'rgba(168, 85, 247, 0.12)', 'color' => '#9333EA'];
+                } elseif (str_contains($a, 'PAY') || str_contains($a, 'INVOICE') || str_contains($a, 'RECEIPT')) {
+                    return ['icon' => 'fa-receipt', 'bg' => 'rgba(16, 185, 129, 0.12)', 'color' => '#059669'];
+                } elseif (str_contains($a, 'ERROR') || str_contains($a, 'EXCEPTION')) {
+                    return ['icon' => 'fa-triangle-exclamation', 'bg' => 'rgba(239, 68, 68, 0.12)', 'color' => '#DC2626'];
+                } elseif (str_contains($a, 'TASK')) {
+                    return ['icon' => 'fa-list-check', 'bg' => 'rgba(245, 158, 11, 0.12)', 'color' => '#D97706'];
+                }
+                return ['icon' => 'fa-clock-rotate-left', 'bg' => '#F1F5F9', 'color' => '#64748B'];
+            };
+          ?>
+          <div class="bento-audit-stream">
             <?php if (empty($recentActivities)): ?>
-              <div class="text-center py-4 text-muted bg-light rounded-4 border">No recent session logs recorded.</div>
+              <div class="text-center py-4 text-muted bg-light rounded-4 border">
+                <i class="fa-solid fa-shield-halved fs-3 text-secondary d-block mb-2"></i>
+                No recent session logs recorded.
+              </div>
             <?php else: ?>
               <?php foreach ($recentActivities as $act): ?>
-                <div class="bento-mobile-app-card p-2.5 mb-2">
-                  <div class="d-flex align-items-center justify-content-between mb-1">
-                    <span class="fw-bold text-dark small"><?= e($act['user_name'] ?? 'System') ?></span>
-                    <span class="text-muted" style="font-size: 0.7rem;"><?= format_datetime($act['created_at']) ?></span>
+                <?php $meta = $getActivityMeta((string)($act['action'] ?? '')); ?>
+                <div class="bento-audit-item">
+                  <div class="bento-audit-icon-wrap" style="background: <?= $meta['bg'] ?>; color: <?= $meta['color'] ?>;">
+                    <i class="fa-solid <?= $meta['icon'] ?>"></i>
                   </div>
-                  <div class="mb-1">
-                    <span class="badge bg-light text-secondary border px-2 py-0.5" style="font-size: 0.68rem;"><?= e($act['action']) ?></span>
+                  <div class="bento-audit-content">
+                    <div class="bento-audit-top-row">
+                      <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                        <strong class="bento-audit-user"><?= e($act['user_name'] ?? 'System') ?></strong>
+                        <span class="badge bg-light text-secondary border font-monospace bento-audit-badge"><?= e($act['action'] ?? 'SYSTEM') ?></span>
+                      </div>
+                      <span class="bento-audit-time" title="<?= e($act['created_at'] ?? '') ?>">
+                        <i class="fa-regular fa-clock me-1 small"></i><?= !empty($act['created_at']) ? format_datetime($act['created_at']) : '' ?>
+                      </span>
+                    </div>
+                    <p class="bento-audit-desc mb-0">
+                      <?= e($act['description'] ?: 'Activity recorded.') ?>
+                    </p>
                   </div>
-                  <div class="small text-muted" style="font-size: 0.72rem;"><?= e($act['description']) ?></div>
                 </div>
               <?php endforeach; ?>
             <?php endif; ?>
