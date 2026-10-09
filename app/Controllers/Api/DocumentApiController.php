@@ -52,8 +52,7 @@ class DocumentApiController extends ApiController
         $params = [];
 
         if ($scopedBranchId > 0) {
-            $sql .= " AND (a.branch_id = ? OR (a.branch_id IS NULL AND c.branch_id = ?))";
-            $params[] = $scopedBranchId;
+            $sql .= " AND (a.branch_id = ? OR a.branch_id IS NULL)";
             $params[] = $scopedBranchId;
         }
 

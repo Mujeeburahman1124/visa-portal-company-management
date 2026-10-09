@@ -51,7 +51,7 @@ class PaymentController
         if ($search !== '') {
             $sql .= " AND (p.payment_number LIKE ? OR p.invoice_number LIKE ? OR c.full_name LIKE ? OR a.application_number LIKE ? OR a.passport_number LIKE ? OR p.transaction_reference LIKE ? OR s.company_name LIKE ?)";
             $term = "%{$search}%";
-            $params = array_fill(0, 7, $term);
+            $params = array_merge($params, array_fill(0, 7, $term));
         }
 
         if ($status !== '') {

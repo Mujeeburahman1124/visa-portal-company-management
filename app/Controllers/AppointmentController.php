@@ -48,7 +48,7 @@ class AppointmentController
         if ($search !== '') {
             $sql .= " AND (c.full_name LIKE ? OR a.application_number LIKE ? OR ap.center_name LIKE ? OR ap.reference_number LIKE ?)";
             $term = "%{$search}%";
-            $params = array_fill(0, 4, $term);
+            $params = array_merge($params, array_fill(0, 4, $term));
         }
 
         $sql .= " ORDER BY ap.appointment_date ASC, ap.appointment_time ASC";

@@ -53,8 +53,7 @@ class DocumentController
         $userBranch = (int)($user['branch_id'] ?? 0);
         $roleSlug = $user['role_slug'] ?? '';
         if ($userBranch > 0 && !in_array($roleSlug, ['super-admin', 'admin'], true)) {
-            $sql .= " AND (c.branch_id = ? OR a.branch_id = ?)";
-            $params[] = $userBranch;
+            $sql .= " AND (a.branch_id = ? OR a.branch_id IS NULL)";
             $params[] = $userBranch;
         }
 
@@ -492,7 +491,7 @@ class DocumentController
             redirect('/documents', 'Invalid application ID.', 'danger');
         }
 
-        $stmt = $pdo->prepare("SELECT a.*, c.full_name as customer_name, c.customer_code, c.branch_id as customer_branch_id 
+        $stmt = $pdo->prepare("SELECT a.*, c.full_name as customer_name, c.customer_code, a.branch_id as customer_branch_id 
                                FROM applications a 
                                JOIN customers c ON a.customer_id = c.id 
                                WHERE a.id = ?");

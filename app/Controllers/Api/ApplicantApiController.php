@@ -30,7 +30,11 @@ class ApplicantApiController extends ApiController
 
         $params = [];
         if ($branchId > 0) {
-            $sql .= " AND (c.branch_id = ? OR c.branch_id IS NULL OR c.branch_id = 0)";
+            $sql .= " AND (
+                (SELECT u.branch_id FROM users u WHERE u.id = c.created_by) = ? 
+                OR EXISTS (SELECT 1 FROM applications a WHERE a.customer_id = c.id AND a.branch_id = ?)
+            )";
+            $params[] = $branchId;
             $params[] = $branchId;
         }
 
