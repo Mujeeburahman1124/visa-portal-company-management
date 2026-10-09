@@ -708,60 +708,19 @@ switch ($uri) {
         (new App\Controllers\ReportController())->index();
         break;
 
-    // Administration: Suppliers & Partners
+    // Retired: Suppliers & Visa Vendors (Removed from system requirements)
     case '/suppliers':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
-        (new App\Controllers\SupplierController())->index();
-        break;
-
     case '/suppliers/store':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
-        (new App\Controllers\SupplierController())->store();
-        break;
-
     case '/suppliers/update':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
-        (new App\Controllers\SupplierController())->update();
-        break;
-
     case '/suppliers/pay':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
-        (new App\Controllers\SupplierController())->pay();
-        break;
-
     case '/suppliers/payments':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
-        (new App\Controllers\SupplierController())->payments();
-        break;
-
     case '/suppliers/delete':
-        RoleMiddleware::authorize(['super-admin', 'admin']);
-        (new App\Controllers\SupplierController())->delete();
-        break;
-
     case '/suppliers/wallet':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager', 'visa-manager']);
-        (new App\Controllers\SupplierController())->wallet();
-        break;
-
     case '/suppliers/wallet/topup':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
-        (new App\Controllers\SupplierController())->walletTopUp();
-        break;
-
     case '/suppliers/wallet/deduct':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
-        (new App\Controllers\SupplierController())->walletDeduct();
-        break;
-
     case '/suppliers/reset-password':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
-        (new App\Controllers\SupplierController())->resetPassword();
-        break;
-
     case '/suppliers/send-activation':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
-        (new App\Controllers\SupplierController())->sendActivation();
+        redirect('/dashboard');
         break;
 
     // Retired: Staff Attendance & Payroll (Removed from system requirements)
@@ -1346,90 +1305,30 @@ switch ($uri) {
         }
         break;
 
-    // Supplier Self-Service Portal
+    // Retired: Supplier Self-Service Portal (Removed from system requirements)
     case '/supplier':
     case '/supplier-portal':
-        session_start_safe();
-        if (!empty($_SESSION['supplier_auth'])) {
-            redirect('/supplier/dashboard');
-        } else {
-            redirect('/supplier/login');
-        }
-        break;
-
     case '/supplier/login':
     case '/supplier-portal/login':
-        $supCtrl = new App\Controllers\SupplierPortalController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $supCtrl->login();
-        } else {
-            $supCtrl->showLogin();
-        }
-        break;
-
     case '/supplier/activate':
     case '/supplier-portal/activate':
-        $supCtrl = new App\Controllers\SupplierPortalController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $supCtrl->processActivate();
-        } else {
-            $supCtrl->showActivate();
-        }
-        break;
-
     case '/supplier/forgot-password':
     case '/supplier-portal/forgot-password':
-        $supCtrl = new App\Controllers\SupplierPortalController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $supCtrl->forgotPassword();
-        } else {
-            $supCtrl->showForgotPassword();
-        }
-        break;
-
     case '/supplier/reset-password':
     case '/supplier-portal/reset-password':
-        $supCtrl = new App\Controllers\SupplierPortalController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $supCtrl->resetPassword();
-        } else {
-            $supCtrl->showResetPassword();
-        }
-        break;
-
     case '/supplier/logout':
     case '/supplier-portal/logout':
-        (new App\Controllers\SupplierPortalController())->logout();
-        break;
-
     case '/supplier/dashboard':
     case '/supplier-portal/dashboard':
-        (new App\Controllers\SupplierPortalController())->dashboard();
-        break;
-
     case '/supplier/applications':
     case '/supplier-portal/applications':
-        (new App\Controllers\SupplierPortalController())->applications();
-        break;
-
     case '/supplier/update-status':
     case '/supplier-portal/update-status':
-        (new App\Controllers\SupplierPortalController())->updateStatus();
-        break;
-
     case '/supplier/payments':
     case '/supplier-portal/payments':
-        (new App\Controllers\SupplierPortalController())->payments();
-        break;
-
     case '/supplier/profile':
     case '/supplier-portal/profile':
-        $supCtrl = new App\Controllers\SupplierPortalController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $supCtrl->updateProfile();
-        } else {
-            $supCtrl->profile();
-        }
+        redirect('/dashboard');
         break;
 
     // RESTful API Endpoints & Global Live Search

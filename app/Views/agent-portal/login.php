@@ -65,8 +65,6 @@
     </div>
     <div class="text-center mt-3 small text-muted">
       <a href="/auth/login" class="text-decoration-none text-secondary"><i class="fa-solid fa-arrow-left me-1"></i>Staff Login</a>
-      &nbsp;|&nbsp;
-      <a href="/supplier/login" class="text-decoration-none text-secondary">Supplier Portal</a>
     </div>
   </div>
 </div>

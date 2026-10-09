@@ -264,11 +264,6 @@ elseif ((int)$app['calculated_health'] < 80) $healthClass = 'health-at-risk';
           </button>
         </li>
         <li class="nav-item">
-          <button class="nav-link py-3 fw-semibold text-nowrap" id="supplier-tab" data-bs-toggle="tab" data-bs-target="#supplier-pane" type="button" role="tab">
-            <i class="fa-solid fa-building-flag me-1 text-secondary"></i> Supplier
-          </button>
-        </li>
-        <li class="nav-item">
           <button class="nav-link py-3 fw-semibold text-nowrap" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks-pane" type="button" role="tab">
             <i class="fa-solid fa-list-check me-1 text-warning"></i> Tasks (<?= count($tasks) ?>)
           </button>

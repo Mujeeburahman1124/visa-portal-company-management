@@ -831,25 +831,10 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               </select>
             </div>
 
-            <div class="row g-2 mb-3">
-              <div class="col-6">
-                <label class="form-label small fw-semibold text-secondary">Group / Supplier Ref #</label>
-                <input type="text" name="supplier_reference" class="form-control form-control-sm" placeholder="e.g. SUP-99812">
-              </div>
-              <div class="col-6">
-                <label class="form-label small fw-semibold text-secondary">Embassy / Govt Ref #</label>
-                <input type="text" name="embassy_reference" class="form-control form-control-sm" placeholder="e.g. EMB-2026-44">
-              </div>
-            </div>
-
             <div class="mb-0">
-              <label class="form-label small fw-semibold text-secondary">Visa Vendor / Supplier</label>
-              <select name="supplier_id" class="form-select">
-                <option value="">-- Direct Consulate / In-House --</option>
-                <?php foreach ($suppliers as $sup): ?>
-                  <option value="<?= $sup['id'] ?>"><?= e($sup['company_name'] ?? $sup['name']) ?></option>
-                <?php endforeach; ?>
-              </select>
+              <label class="form-label small fw-semibold text-secondary">Embassy / Govt Reference #</label>
+              <input type="text" name="embassy_reference" class="form-control form-control-sm" placeholder="e.g. EMB-2026-44">
+              <input type="hidden" name="supplier_id" value="">
             </div>
           </div>
         </div>

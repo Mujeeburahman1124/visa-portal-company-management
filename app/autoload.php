@@ -184,7 +184,7 @@ function is_agent_authenticated(): bool {
 }
 
 function is_supplier_authenticated(): bool {
-    return !empty($_SESSION['supplier_auth']);
+    return false;
 }
 
 function auth_agent(): ?array {
@@ -192,7 +192,7 @@ function auth_agent(): ?array {
 }
 
 function auth_supplier(): ?array {
-    return $_SESSION['supplier_auth'] ?? null;
+    return null;
 }
 
 function session_start_safe(): void {

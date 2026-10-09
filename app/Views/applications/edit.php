@@ -167,17 +167,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               </select>
             </div>
 
-            <div class="mb-0">
-              <label class="form-label small fw-semibold text-secondary">Outsource Supplier / Partner</label>
-              <select name="supplier_id" class="form-select">
-                <option value="">-- In-House Direct Processing --</option>
-                <?php foreach ($suppliers as $sup): ?>
-                  <option value="<?= $sup['id'] ?>" <?= (int)($app['supplier_id'] ?? 0) === (int)$sup['id'] ? 'selected' : '' ?>>
-                    <?= e($sup['company_name']) ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
+            <input type="hidden" name="supplier_id" value="<?= (int)($app['supplier_id'] ?? 0) ?>">
           </div>
         </div>
 

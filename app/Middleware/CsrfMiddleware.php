@@ -48,8 +48,6 @@ class CsrfMiddleware
                     redirect('/portal/dashboard');
                 } elseif (is_agent_authenticated()) {
                     redirect('/agent/dashboard');
-                } elseif (is_supplier_authenticated()) {
-                    redirect('/supplier/dashboard');
                 } else {
                     redirect('/auth/login');
                 }

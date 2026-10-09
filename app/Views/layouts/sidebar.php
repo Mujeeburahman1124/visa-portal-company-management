@@ -25,8 +25,7 @@ $canViewTasks       = $isAdmin || user_can('tasks.view') || user_can('tasks.mana
 $canViewReports     = $isAdmin || user_can('reports.view') || user_can('reports.manage');
 
 // Administration
-$canViewSuppliers   = $isAdmin || user_can('suppliers.view') || user_can('suppliers.manage');
-$canViewAgents      = $isAdmin || user_can('agents.view') || user_can('agents.manage') || user_can('suppliers.view');
+$canViewAgents      = $isAdmin || user_can('agents.view') || user_can('agents.manage');
 $canViewCountries   = $isAdmin || user_can('visa_services.view') || user_can('visa.view') || user_can('settings.view') || ($roleSlug === 'visa-manager') || ($roleSlug === 'branch-manager');
 $canViewVisaServices = $isAdmin || user_can('visa_services.view') || user_can('visa.view') || ($roleSlug === 'visa-manager');
 $canViewBranches    = $isAdmin || user_can('branches.view') || user_can('branches.manage');
@@ -152,15 +151,8 @@ $canViewAttendance  = $isAdmin || user_can('payroll.view') || user_can('staff.vi
     <?php endif; // end management section ?>
 
     <!-- Section: Administration -->
-    <?php if ($canViewSuppliers || $canViewAgents || $canViewCountries || $canViewVisaServices || $canViewBranches || $canViewStaff || $canViewRoles || $canViewPayroll || $canViewAttendance || $canViewAudit || $canViewSettings): ?>
+    <?php if ($canViewAgents || $canViewCountries || $canViewVisaServices || $canViewBranches || $canViewStaff || $canViewRoles || $canViewPayroll || $canViewAttendance || $canViewAudit || $canViewSettings): ?>
     <div class="sidebar-heading mt-2"><span>Administration</span></div>
-
-    <?php if ($canViewSuppliers): ?>
-    <a href="/suppliers" class="nav-link-custom <?= str_starts_with($currentUri, '/suppliers') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Visa Vendors & Suppliers">
-      <i class="fa-solid fa-building-flag nav-icon"></i>
-      <span class="nav-label">Suppliers</span>
-    </a>
-    <?php endif; ?>
 
     <?php if ($canViewAgents): ?>
     <a href="/agents" class="nav-link-custom <?= str_starts_with($currentUri, '/agents') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="B2B Travel Agents & Partner Network">
@@ -240,10 +232,6 @@ $canViewAttendance  = $isAdmin || user_can('payroll.view') || user_can('staff.vi
     <a href="/agent/dashboard" target="_blank" class="nav-link-custom" style="color: #6ee7b7;" data-bs-toggle="tooltip" data-bs-placement="right" title="Open Agent Partner Portal">
       <i class="fa-solid fa-arrow-up-right-from-square text-success nav-icon"></i>
       <span class="nav-label">Agent Portal</span>
-    </a>
-    <a href="/supplier/dashboard" target="_blank" class="nav-link-custom" style="color: #cbd5e1;" data-bs-toggle="tooltip" data-bs-placement="right" title="Open Embassy & Supplier Portal">
-      <i class="fa-solid fa-arrow-up-right-from-square text-secondary nav-icon"></i>
-      <span class="nav-label">Supplier Portal</span>
     </a>
   </div>
 

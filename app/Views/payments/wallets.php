@@ -29,9 +29,6 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       <button type="button" class="btn btn-outline-primary px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#customerWalletModal">
         <i class="fa-solid fa-wallet me-1"></i> Top-up Customer
       </button>
-      <button type="button" class="btn btn-outline-success px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#supplierWalletModal">
-        <i class="fa-solid fa-building me-1"></i> Top-up Supplier
-      </button>
       <button type="button" class="btn btn-outline-info px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#agentWalletModal">
         <i class="fa-solid fa-user-tie me-1"></i> Top-up Agent
       </button>
@@ -43,11 +40,6 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     <li class="nav-item">
       <a class="nav-link <?= $activeTab === 'customers' ? 'active fw-bold' : '' ?>" href="/payments/wallets?tab=customers">
         <i class="fa-solid fa-user me-1 text-primary"></i> Customer Wallets (<?= count($customerWallets) ?>)
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link <?= $activeTab === 'suppliers' ? 'active fw-bold' : '' ?>" href="/payments/wallets?tab=suppliers">
-        <i class="fa-solid fa-building me-1 text-success"></i> Supplier Wallets (<?= count($supplierWallets) ?>)
       </a>
     </li>
     <li class="nav-item">

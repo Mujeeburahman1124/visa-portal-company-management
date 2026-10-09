@@ -319,8 +319,6 @@ $flash = get_flash();
       <a href="/portal/login" class="text-decoration-none fw-semibold text-info"><i class="fa-solid fa-plane-departure me-1"></i>Applicant Portal</a>
       <span>&bull;</span>
       <a href="/agent/login" class="text-decoration-none fw-semibold text-primary"><i class="fa-solid fa-handshake me-1"></i>Agent</a>
-      <span>&bull;</span>
-      <a href="/supplier/login" class="text-decoration-none fw-semibold text-secondary"><i class="fa-solid fa-truck-fast me-1"></i>Supplier</a>
     </div>
   </div>
   
