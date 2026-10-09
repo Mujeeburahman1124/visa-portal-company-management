@@ -49,6 +49,33 @@
   </div>
 </div>
 
+<?php
+$curFootUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+?>
+<!-- Native Mobile App Bottom Navigation Bar (Bankio Mobile View) -->
+<nav class="mobile-app-bottom-nav d-md-none" id="mobileAppBottomNav">
+  <a href="/dashboard" class="mobile-nav-item <?= $curFootUri === '/dashboard' ? 'active' : '' ?>">
+    <i class="fa-solid fa-shapes"></i>
+    <span>Dashboard</span>
+  </a>
+  <a href="/applications" class="mobile-nav-item <?= (str_starts_with($curFootUri, '/applications') && !str_starts_with($curFootUri, '/applications/create')) ? 'active' : '' ?>">
+    <i class="fa-solid fa-folder-open"></i>
+    <span>Applications</span>
+  </a>
+  <!-- Center Fast-Scan Action Button (FAB) -->
+  <a href="/applications/create" class="mobile-nav-scan-fab" title="Fast-Path Passport Scan">
+    <i class="fa-solid fa-camera"></i>
+  </a>
+  <a href="/documents" class="mobile-nav-item <?= str_starts_with($curFootUri, '/documents') ? 'active' : '' ?>">
+    <i class="fa-solid fa-file-circle-check"></i>
+    <span>Documents</span>
+  </a>
+  <a href="javascript:void(0)" class="mobile-nav-item" id="mobileMenuOpenBtn" onclick="document.getElementById('sidebarToggleBtn')?.click();">
+    <i class="fa-solid fa-bars-staggered"></i>
+    <span>Menu</span>
+  </a>
+</nav>
+
 <!-- Core JS Dependencies -->
 <script src="/assets/js/bootstrap.bundle.min.js"></script>
 <script src="/assets/js/flatpickr.min.js"></script>

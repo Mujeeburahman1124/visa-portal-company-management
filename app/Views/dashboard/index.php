@@ -18,12 +18,12 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </div>
   <?php endif; ?>
 
-  <!-- Dynamic Role-Based Hero Banner -->
-  <div class="dashboard-hero-banner d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+  <!-- Dynamic Role-Based Hero Banner (MS Travel Hub Brand) -->
+  <div class="dashboard-hero-banner d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div class="position-relative" style="z-index: 2;">
-      <div class="d-flex align-items-center gap-2 mb-1">
-        <span class="pulse-dot"></span>
-        <span class="badge bg-white bg-opacity-20 text-white fw-bold px-2 py-1" style="font-size: 0.7rem; letter-spacing: 0.06em; backdrop-filter: blur(4px);">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="hero-status-pill">
+          <span class="hero-pulse-dot"></span>
           <?php if ($dashboardType === 'admin'): ?>
             EXECUTIVE CONTROL &bull; REAL-TIME SYNC
           <?php elseif ($dashboardType === 'branch'): ?>
@@ -33,12 +33,17 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <?php else: ?>
             VISA PROCESSING DESK &bull; ACTIVE SHIFT
           <?php endif; ?>
-        <span class="text-white-50 small" id="dashboardLiveDate">&bull; <?= date('l, F j, Y') ?></span>
+          <span class="opacity-75 small" id="dashboardLiveDate">&bull; <?= date('l, F j, Y') ?></span>
+        </span>
       </div>
-      <h2 class="fw-bold brand-font text-white mb-1" style="font-size: 1.75rem; letter-spacing: -0.02em;">
-        <span id="userLiveGreeting">Good <?= (date('H') < 12) ? 'morning' : ((date('H') < 17) ? 'afternoon' : 'evening') ?></span>, <?= e(explode(' ', $currentUser['name'] ?? 'Staff')[0]) ?> 👋
+      <?php
+        $rawUName = trim((string)($currentUser['name'] ?? 'Staff'));
+        $gName = ($rawUName === 'Super Admin' || $rawUName === '') ? 'Super Admin' : e(explode(' ', $rawUName)[0]);
+      ?>
+      <h2 class="fw-bold hero-greeting-title text-white mb-1" style="font-size: 1.85rem;">
+        <span id="userLiveGreeting">Good <?= (date('H') < 12) ? 'morning' : ((date('H') < 17) ? 'afternoon' : 'evening') ?></span>, <?= $gName ?> 👋
       </h2>
-      <p class="text-white-50 small mb-0">
+      <p class="text-white-50 small mb-0" style="font-size: 0.88rem; max-width: 650px;">
         <?php if ($dashboardType === 'admin'): ?>
           Unified command center for global visa operations, team bottlenecks &amp; compliance SLAs.
         <?php elseif ($dashboardType === 'branch'): ?>
@@ -54,41 +59,33 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     <div class="d-flex align-items-center gap-2 position-relative" style="z-index: 2;">
       <?php if ($dashboardType === 'accounts'): ?>
         <?php if ($canCreatePayment): ?>
-          <a href="/payments" class="btn btn-light btn-sm px-3 shadow fw-semibold text-primary">
-            <i class="fa-solid fa-receipt text-primary me-1"></i> Payments &amp; Invoices
+          <a href="/payments" class="btn hero-action-glass-btn btn-sm px-3 shadow fw-semibold">
+            <i class="fa-solid fa-receipt me-1"></i> Invoices
           </a>
-          <a href="/payment-links" class="btn btn-primary btn-sm px-3 shadow fw-semibold" style="background: var(--ms-gradient-ruby); border: 1px solid rgba(255,255,255,0.25);">
+          <a href="/payment-links" class="btn hero-action-glass-btn btn-sm px-3 shadow fw-semibold">
             <i class="fa-solid fa-link me-1"></i> Payment Links
           </a>
         <?php endif; ?>
       <?php elseif ($dashboardType === 'processing'): ?>
-        <a href="/tasks" class="btn btn-light btn-sm px-3 shadow fw-semibold text-primary">
-          <i class="fa-solid fa-list-check text-primary me-1"></i> My Tasks (<?= $kpi['my_tasks'] ?>)
+        <a href="/tasks" class="btn hero-action-glass-btn btn-sm px-3 shadow fw-semibold">
+          <i class="fa-solid fa-list-check me-1"></i> My Tasks (<?= $kpi['my_tasks'] ?>)
         </a>
-        <?php if ($canCreateApp): ?>
-          <a href="/applications/create" class="btn btn-primary btn-sm px-3 shadow fw-semibold" style="background: var(--ms-gradient-ruby); border: 1px solid rgba(255,255,255,0.25);">
-            <i class="fa-solid fa-plus me-1"></i> New Application
-          </a>
-        <?php else: ?>
-          <a href="/applications" class="btn btn-primary btn-sm px-3 shadow fw-semibold" style="background: var(--ms-gradient-ruby); border: 1px solid rgba(255,255,255,0.25);">
-            <i class="fa-solid fa-folder-open me-1"></i> My Queue
-          </a>
-        <?php endif; ?>
+        <a href="/applications" class="btn hero-action-glass-btn btn-sm px-3 shadow fw-semibold">
+          <i class="fa-solid fa-folder-open me-1"></i> My Queue
+        </a>
       <?php else: ?>
-        <a href="/tracking" class="btn btn-light btn-sm px-3 shadow fw-semibold text-primary">
-          <i class="fa-solid fa-route text-primary me-1"></i> Tracking Hub
+        <a href="/tracking" class="btn hero-action-glass-btn btn-sm px-3 shadow fw-semibold">
+          <i class="fa-solid fa-route me-1"></i> Tracking Hub
         </a>
-        <?php if ($canCreateApp): ?>
-          <a href="/applications/create" class="btn btn-primary btn-sm px-3 shadow fw-semibold" style="background: var(--ms-gradient-ruby); border: 1px solid rgba(255,255,255,0.25);">
-            <i class="fa-solid fa-plus me-1"></i> New Application
-          </a>
-        <?php endif; ?>
+        <a href="/reports" class="btn hero-action-glass-btn btn-sm px-3 shadow fw-semibold">
+          <i class="fa-solid fa-chart-line me-1"></i> Analytics
+        </a>
       <?php endif; ?>
     </div>
   </div>
 
-  <!-- Operational Alerts Bar (Scoped by Role) -->
-  <div class="row g-2 mb-3">
+  <!-- Operational Alerts Bar -->
+  <div class="row g-2 mb-4">
     <div class="col-12">
       <div class="live-alerts-bar">
         <div class="d-flex flex-wrap align-items-center gap-2">
@@ -148,6 +145,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       </div>
     </div>
   </div>
+
 
   <!-- Primary 6-Grid KPI Stat Cards (Tailored by Role) -->
   <div class="row g-2 g-md-3 mb-4">
@@ -356,6 +354,100 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       </div>
     <?php endif; ?>
   </div>
+
+  <!-- =========================================================================
+       MACBOOK BENTO SECTION: ACTIVE VISA PACKAGES & SERVICES
+       ========================================================================= -->
+  <?php if (!empty($popularPackages)): ?>
+  <div class="macos-card mb-4">
+    <div class="macos-card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div class="d-flex align-items-center gap-2.5">
+        <div class="macos-traffic-lights d-none d-sm-flex">
+          <span class="tl-dot tl-red"></span>
+          <span class="tl-dot tl-yellow"></span>
+          <span class="tl-dot tl-green"></span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <div class="macos-icon-bubble bg-primary-subtle text-primary">
+            <i class="fa-solid fa-cube"></i>
+          </div>
+          <div>
+            <h5 class="fw-bold mb-0 text-dark macos-card-title">Active Visa Packages &amp; Service Tiers</h5>
+            <div class="text-muted small" style="font-size: 0.76rem;">SLA Turnaround Times &bull; Official Government Fees &bull; Active Pipeline Files</div>
+          </div>
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <a href="/services" class="btn btn-outline-primary btn-sm py-1 px-3 rounded-pill fw-semibold" style="font-size: 0.8rem;">
+          <i class="fa-solid fa-layer-group me-1"></i> All Services Catalog &rarr;
+        </a>
+      </div>
+    </div>
+    
+    <div class="macos-card-body p-3 p-md-4">
+      <div class="row g-3">
+        <?php foreach ($popularPackages as $pkg): ?>
+          <div class="col-12 col-md-6 col-xl-4">
+            <div class="macos-package-card h-100">
+              <div class="d-flex align-items-start justify-content-between mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="fs-5"><?= e($pkg['flag_emoji'] ?? '🌐') ?></span>
+                  <div>
+                    <span class="badge bg-light text-dark border small fw-semibold" style="font-size: 0.7rem;">
+                      <?= e($pkg['country_name'] ?? 'Global') ?>
+                    </span>
+                    <?php if (($pkg['processing_type'] ?? '') === 'Express'): ?>
+                      <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle small fw-bold" style="font-size: 0.7rem;">
+                        <i class="fa-solid fa-bolt me-1"></i>Express
+                      </span>
+                    <?php else: ?>
+                      <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle small fw-bold" style="font-size: 0.7rem;">
+                        <i class="fa-regular fa-clock me-1"></i>Normal
+                      </span>
+                    <?php endif; ?>
+                  </div>
+                </div>
+                <div class="text-end">
+                  <div class="fw-bold text-primary font-monospace fs-5" style="letter-spacing: -0.02em;">
+                    $<?= number_format((float)($pkg['selling_price'] ?? 0), 2) ?>
+                  </div>
+                  <div class="text-muted" style="font-size: 0.68rem;">Retail Price</div>
+                </div>
+              </div>
+
+              <h6 class="fw-bold text-dark mb-1 text-truncate" title="<?= e($pkg['name']) ?>">
+                <?= e($pkg['name']) ?>
+              </h6>
+              
+              <div class="text-muted small mb-3 d-flex align-items-center gap-2" style="font-size: 0.74rem;">
+                <span><i class="fa-regular fa-calendar-check me-1 text-primary"></i><?= e($pkg['duration'] ?? 'Flexible') ?></span>
+                <span>&bull;</span>
+                <span><i class="fa-solid fa-stopwatch me-1 text-secondary"></i>Est. <?= (int)($pkg['estimated_days'] ?? 7) ?> Days</span>
+                <span>&bull;</span>
+                <span><?= e($pkg['entry_type'] ?? 'Single Entry') ?></span>
+              </div>
+
+              <div class="d-flex align-items-center justify-content-between pt-2.5 border-top mt-auto" style="font-size: 0.74rem;">
+                <div class="text-muted">
+                  <?php if (!empty($pkg['active_files_count'])): ?>
+                    <span class="badge bg-success-subtle text-success fw-bold">
+                      <i class="fa-solid fa-check-circle me-1"></i><?= (int)$pkg['active_files_count'] ?> Active Files
+                    </span>
+                  <?php else: ?>
+                    <span class="text-muted small">0 active files</span>
+                  <?php endif; ?>
+                </div>
+                <a href="/services/show?id=<?= (int)$pkg['id'] ?>" class="text-primary text-decoration-none fw-semibold">
+                  Details <i class="fa-solid fa-chevron-right small ms-1"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+  </div>
+  <?php endif; ?>
 
   <?php if ($dashboardType === 'accounts'): ?>
     <!-- ACCOUNTS DESK SECTION 1: INVOICING & PAYMENT STREAMS -->
@@ -637,13 +729,18 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
   <?php else: ?>
     <!-- ADMIN & BRANCH MANAGER: ACTION CENTER HIGHLIGHTS -->
-    <div class="card card-enterprise mb-4">
-      <div class="card-header d-flex align-items-center justify-content-between">
-        <div class="d-flex align-items-center gap-2">
-          <span class="badge bg-danger fw-bold px-2 py-1"><i class="fa-solid fa-bolt me-1"></i>ACTION CENTER</span>
-          <span class="fw-bold text-dark small text-uppercase">Items Requiring Operational Attention</span>
+    <div class="macos-card mb-4">
+      <div class="macos-card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2.5">
+          <div class="macos-traffic-lights d-none d-sm-flex">
+            <span class="tl-dot tl-red"></span>
+            <span class="tl-dot tl-yellow"></span>
+            <span class="tl-dot tl-green"></span>
+          </div>
+          <span class="badge bg-danger fw-bold px-2.5 py-1 rounded-pill"><i class="fa-solid fa-bolt me-1"></i>ACTION CENTER</span>
+          <span class="fw-bold text-dark small text-uppercase macos-card-title">Items Requiring Operational Attention</span>
         </div>
-        <a href="/action-center" class="btn btn-outline-danger btn-sm py-0 px-2 fw-semibold" style="font-size: 0.78rem;">
+        <a href="/action-center" class="btn btn-outline-danger btn-sm py-1 px-3 rounded-pill fw-semibold" style="font-size: 0.78rem;">
           View All Actions &rarr;
         </a>
       </div>

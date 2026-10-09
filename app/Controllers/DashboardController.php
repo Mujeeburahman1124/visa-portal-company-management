@@ -396,6 +396,20 @@ class DashboardController
             }
         }
 
+        // 13. Active Visa Packages & Service Lines (For Dashboard Bento Details)
+        $popularPackages = [];
+        try {
+            $pkgStmt = $pdo->query("SELECT vs.*, c.name as country_name, c.flag_emoji,
+                (SELECT COUNT(*) FROM applications a WHERE a.visa_service_id = vs.id AND a.is_archived = 0) as active_files_count
+                FROM visa_services vs
+                LEFT JOIN countries c ON vs.country_id = c.id
+                WHERE vs.is_active = 1
+                ORDER BY active_files_count DESC, vs.id ASC LIMIT 6");
+            $popularPackages = $pkgStmt ? $pkgStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+        } catch (\Throwable $e) {
+            $popularPackages = [];
+        }
+
         require_once dirname(__DIR__) . '/Views/dashboard/index.php';
     }
 }

@@ -1,0 +1,387 @@
+/* applications-create.css — macOS & iOS Aesthetic for Visa Application & OCR Fast Path */
+
+:root {
+  --mac-bg-glass: rgba(255, 255, 255, 0.82);
+  --mac-border-glass: rgba(0, 0, 0, 0.08);
+  --mac-shadow: 0 12px 34px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --mac-accent: #0071e3;
+  --mac-accent-hover: #0077ed;
+  --mac-accent-subtle: rgba(0, 113, 227, 0.09);
+  --mac-success: #34c759;
+  --mac-success-subtle: rgba(52, 199, 89, 0.12);
+  --mac-warning: #ff9500;
+  --mac-warning-subtle: rgba(255, 149, 0, 0.12);
+  --mac-danger: #ff3b30;
+  --mac-danger-subtle: rgba(255, 59, 48, 0.12);
+  --mac-radius: 16px;
+  --mac-radius-sm: 10px;
+}
+
+/* Glass Card */
+.mac-card {
+  background: var(--mac-bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--mac-border-glass);
+  border-radius: var(--mac-radius);
+  box-shadow: var(--mac-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Passport Scan Hero Card */
+.passport-hero-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 245, 255, 0.9) 100%);
+  border: 1.5px solid rgba(0, 113, 227, 0.18);
+  border-radius: var(--mac-radius);
+  box-shadow: 0 16px 40px rgba(0, 113, 227, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.passport-hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #0071e3, #5ac8fa, #34c759);
+}
+
+.passport-dropzone {
+  border: 2px dashed rgba(0, 113, 227, 0.35);
+  border-radius: var(--mac-radius-sm);
+  background: rgba(255, 255, 255, 0.65);
+  padding: 2.2rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.passport-dropzone:hover, .passport-dropzone.dragover {
+  border-color: var(--mac-accent);
+  background: rgba(0, 113, 227, 0.04);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 113, 227, 0.1);
+}
+
+.dropzone-icon-ring {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(0, 113, 227, 0.1) 0%, rgba(90, 200, 250, 0.15) 100%);
+  color: var(--mac-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.85rem;
+  margin-bottom: 1rem;
+  transition: transform 0.3s ease;
+}
+
+.passport-dropzone:hover .dropzone-icon-ring {
+  transform: scale(1.1);
+}
+
+/* Fast-Path Action Buttons */
+.btn-mac-primary {
+  background: linear-gradient(180deg, #0077ed 0%, #0071e3 100%);
+  color: #fff;
+  border: 1px solid rgba(0, 113, 227, 0.3);
+  box-shadow: 0 3px 8px rgba(0, 113, 227, 0.3);
+  border-radius: 980px;
+  padding: 0.55rem 1.35rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  transition: all 0.2s ease;
+}
+
+.btn-mac-primary:hover {
+  background: linear-gradient(180deg, #0081f7 0%, #0077ed 100%);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 113, 227, 0.35);
+}
+
+.btn-mac-secondary {
+  background: rgba(0, 0, 0, 0.05);
+  color: #1d1d1f;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 980px;
+  padding: 0.55rem 1.35rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-mac-secondary:hover {
+  background: rgba(0, 0, 0, 0.09);
+  color: #000;
+}
+
+/* Segmented Pill Control (iOS style) */
+.ios-segmented-control {
+  display: inline-flex;
+  background: rgba(120, 120, 128, 0.12);
+  padding: 3px;
+  border-radius: 12px;
+  user-select: none;
+}
+
+.ios-segmented-control label {
+  margin: 0;
+  padding: 6px 16px;
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: #3a3a3c;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ios-segmented-control input[type="radio"] {
+  display: none;
+}
+
+.ios-segmented-control input[type="radio"]:checked + label {
+  background: #ffffff;
+  color: #000;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Data Provenance Badge */
+.provenance-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.provenance-badge.ocr {
+  background: var(--mac-success-subtle);
+  color: #1a7f37;
+  border: 1px solid rgba(52, 199, 89, 0.3);
+}
+
+.provenance-badge.edited {
+  background: var(--mac-warning-subtle);
+  color: #b25000;
+  border: 1px solid rgba(255, 149, 0, 0.3);
+}
+
+.provenance-badge.manual {
+  background: rgba(0, 0, 0, 0.06);
+  color: #6e6e73;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* macOS Modal */
+.modal-mac .modal-content {
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  background: #fbfbfd;
+}
+
+.modal-mac .modal-header {
+  background: rgba(245, 245, 247, 0.9);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 1rem 1.5rem;
+}
+
+.traffic-dots {
+  display: inline-flex;
+  gap: 7px;
+  margin-right: 14px;
+}
+
+.traffic-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.traffic-dot.red { background: #ff5f56; }
+.traffic-dot.yellow { background: #ffbd2e; }
+.traffic-dot.green { background: #27c93f; }
+
+/* Interactive Passport Viewer in Review Modal */
+.passport-viewer-stage {
+  background: #1e1e24;
+  border-radius: 12px;
+  height: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+}
+
+.passport-viewer-stage img {
+  max-width: 95%;
+  max-height: 95%;
+  object-fit: contain;
+  transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transform-origin: center center;
+}
+
+.viewer-toolbar {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 20, 24, 0.85);
+  backdrop-filter: blur(14px);
+  border-radius: 30px;
+  padding: 5px 12px;
+  display: flex;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  z-index: 10;
+}
+
+.viewer-toolbar button {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 0.9rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.viewer-toolbar button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* OCR Progress Overlay */
+.ocr-progress-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--mac-radius-sm);
+}
+
+.ocr-scanner-radar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 3px solid rgba(0, 113, 227, 0.2);
+  border-top-color: var(--mac-accent);
+  animation: macSpin 0.9s linear infinite;
+  margin-bottom: 1.25rem;
+}
+
+@keyframes macSpin {
+  to { transform: rotate(360deg); }
+}
+
+.ocr-step-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.84rem;
+  color: #6e6e73;
+}
+
+.ocr-step-list li {
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ocr-step-list li.done {
+  color: #1a7f37;
+  font-weight: 500;
+}
+
+.ocr-step-list li.active {
+  color: var(--mac-accent);
+  font-weight: 600;
+}
+
+/* Confidence Tag */
+.conf-tag {
+  font-size: 0.73rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.conf-high {
+  background: var(--mac-success-subtle);
+  color: #1a7f37;
+}
+
+.conf-med {
+  background: var(--mac-warning-subtle);
+  color: #b25000;
+}
+
+.conf-low {
+  background: var(--mac-danger-subtle);
+  color: #cf222e;
+}
+
+.conf-not-detected {
+  background: rgba(207, 34, 46, 0.08);
+  color: #cf222e;
+  border: 1px solid rgba(207, 34, 46, 0.25);
+  font-weight: 500;
+}
+
+/* Applicant Photo Preview */
+.photo-preview-box {
+  width: 110px;
+  height: 130px;
+  border: 1.5px dashed rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fbfbfd;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.photo-preview-box:hover {
+  border-color: var(--mac-accent);
+  background: rgba(0, 113, 227, 0.03);
+}
+
+.photo-preview-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Responsive Tweaks */
+@media (max-width: 768px) {
+  .passport-viewer-stage {
+    height: 300px;
+  }
+  .modal-mac .modal-body .row {
+    flex-direction: column;
+  }
+}

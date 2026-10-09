@@ -1,0 +1,982 @@
+/* ==========================================================================
+   MS TRAVEL HUB — OFFICIAL LOGO-HARMONIZED DESIGN SYSTEM & THEME
+   Brand Assets: Ruby Diamond Gem (#E11D48), Midnight Obsidian (#0F172A),
+                 Royal Cobalt (#2563EB), Slate (#475569), Clean White (#FFFFFF)
+   Typography:   'Outfit' (Headings, Stats, Brand) & 'Inter' (Body, Data, Tables)
+   ========================================================================== */
+
+:root {
+  /* ── 1. Logo Brand Palette ────────────────────────────────────────── */
+  --brand-ruby:          #E11D48; /* Ruby Gem centerpiece from logo */
+  --brand-ruby-dark:     #BE123C;
+  --brand-ruby-deep:     #9F1239;
+  --brand-ruby-light:    #F43F5E;
+  --brand-ruby-subtle:   #FFF1F2;
+  --brand-ruby-border:   #FECDD3;
+
+  --brand-obsidian:      #0F172A; /* Airplane, flight orbit ring & "M" monogram */
+  --brand-midnight:      #1E293B;
+  --brand-slate-dark:    #334155;
+  --brand-slate:         #475569; /* "S" monogram */
+  --brand-slate-light:   #64748B;
+  --brand-slate-subtle:  #94A3B8;
+
+  --brand-royal:         #1E40AF; /* Flight sky / travel royal blue accent */
+  --brand-cobalt:        #2563EB;
+  --brand-cobalt-light:  #3B82F6;
+  --brand-cobalt-subtle: #EFF6FF;
+  --brand-cobalt-border: #DBEAFE;
+
+  --brand-emerald:       #059669;
+  --brand-emerald-subtle:#ECFDF5;
+  --brand-amber:         #D97706;
+  --brand-amber-subtle:  #FFFBEB;
+  --brand-purple:        #7C3AED;
+  --brand-purple-subtle: #F5F3FF;
+  --brand-cyan:          #0891B2;
+  --brand-cyan-subtle:   #ECFEFF;
+
+  /* Surfaces & Canvas */
+  --brand-canvas:        #F8FAFC;
+  --brand-surface:       #FFFFFF;
+  --brand-border:        #E2E8F0;
+  --brand-border-light:  #F1F5F9;
+
+  /* Gradients */
+  --gradient-royal-blue: linear-gradient(135deg, #1E40AF 0%, #2563EB 55%, #0284C7 100%);
+  --gradient-ruby-gem:   linear-gradient(135deg, #E11D48 0%, #F43F5E 50%, #BE123C 100%);
+  --gradient-hero-navy:  linear-gradient(135deg, #0B1329 0%, #111E3D 55%, #0D214F 100%);
+  --gradient-dark-brand: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+
+  /* Overrides for Portal Global Theme Engine */
+  --primary-color:       #1E40AF;
+  --primary-hover:       #1D4ED8;
+  --bs-primary:          #1E40AF;
+  --bs-primary-rgb:      30, 64, 175;
+  --accent-color:        #E11D48;
+  --color-primary:       #1E40AF;
+  --color-background:    #F8FAFC;
+  --color-surface:       #FFFFFF;
+  --vt-primary:          #1E40AF;
+  --vt-bg:               #F8FAFC;
+  --vt-surface:          #FFFFFF;
+  --vt-border:           #E2E8F0;
+
+  /* Global Radii */
+  --radius-sm:           8px;
+  --radius-md:           14px;
+  --radius-lg:           20px;
+  --radius-pill:         9999px;
+
+  /* Shadows */
+  --shadow-subtle:       0 2px 8px rgba(15, 23, 42, 0.04);
+  --shadow-card:         0 4px 20px rgba(15, 23, 42, 0.04);
+  --shadow-hover:        0 8px 26px rgba(15, 23, 42, 0.08);
+}
+
+/* ==========================================================================
+   2. GLOBAL TYPOGRAPHY (Inter for Body & Tables, Outfit for Headings & Numbers)
+   ========================================================================== */
+html, body, body.app-body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  background-color: var(--brand-canvas) !important;
+  color: var(--brand-obsidian) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6,
+.brand-font,
+.stat-value,
+.brand-title,
+.page-title-header,
+.dashboard-title,
+.hero-greeting-title,
+.card-header-title {
+  font-family: 'Outfit', 'Inter', -apple-system, sans-serif !important;
+  letter-spacing: -0.02em;
+}
+
+.content-body {
+  background-color: var(--brand-canvas) !important;
+  padding: 1.5rem 2rem 3rem !important;
+}
+
+/* Ruby Gem Brand Text */
+.ruby-gem {
+  background: var(--gradient-ruby-gem) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  font-weight: 800 !important;
+}
+
+/* ==========================================================================
+   3. CLEAN WHITE SIDEBAR WITH ROUNDED GRADIENT ACTIVE PILL (MATCHING IMAGE 2)
+   ========================================================================== */
+.app-sidebar {
+  background: #FFFFFF !important;
+  border-right: 1px solid var(--brand-border) !important;
+  box-shadow: 2px 0 20px rgba(15, 23, 42, 0.03) !important;
+}
+
+.sidebar-header {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid var(--brand-border) !important;
+  height: 72px !important;
+  padding: 0 1.5rem !important;
+}
+
+.sidebar-brand-text .brand-title {
+  font-size: 1.15rem !important;
+  font-weight: 800 !important;
+  color: var(--brand-obsidian) !important;
+  letter-spacing: -0.02em !important;
+}
+
+.sidebar-brand-text .brand-subtitle {
+  font-size: 0.62rem !important;
+  font-weight: 700 !important;
+  color: var(--brand-slate-light) !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.sidebar-heading {
+  color: var(--brand-slate-subtle) !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  padding: 1.25rem 1rem 0.5rem !important;
+  font-family: 'Outfit', 'Inter', sans-serif !important;
+}
+
+.nav-link-custom {
+  color: var(--brand-slate) !important;
+  padding: 0.75rem 1rem !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  font-size: 0.88rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.85rem !important;
+  margin-bottom: 4px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  text-decoration: none !important;
+}
+
+.nav-link-custom .nav-icon {
+  font-size: 1rem !important;
+  color: var(--brand-slate-light) !important;
+  width: 20px !important;
+  text-align: center !important;
+  transition: color 0.2s ease !important;
+}
+
+.nav-link-custom:hover {
+  background: #FFF1F2 !important;
+  color: #9F1239 !important;
+  transform: translateX(2px) !important;
+}
+
+.nav-link-custom:hover .nav-icon {
+  color: var(--brand-ruby) !important;
+}
+
+/* ACTIVE PILL: Radiant Ruby Gem Gradient matching Logo Diamond */
+.nav-link-custom.active,
+.sidebar-nav-item.active,
+html[data-theme] .nav-link-custom.active,
+:root[data-theme] .nav-link-custom.active {
+  background: var(--gradient-ruby-gem) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 18px rgba(225, 29, 72, 0.42) !important;
+  font-weight: 700 !important;
+}
+
+.nav-link-custom.active .nav-icon,
+html[data-theme] .nav-link-custom.active .nav-icon {
+  color: #FFFFFF !important;
+}
+
+.nav-link-custom.active .sidebar-badge {
+  background: rgba(255, 255, 255, 0.28) !important;
+  color: #FFFFFF !important;
+}
+
+/* ==========================================================================
+   4. TOPBAR & TOGGLE BUTTON BUG FIX (IMAGE 1 SPECIFIC RESOLUTION)
+   ========================================================================== */
+.app-topbar {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid var(--brand-border) !important;
+  height: 70px !important;
+  padding: 0 1.25rem !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.02) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  overflow: visible !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1040 !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+@media (min-width: 1440px) {
+  .app-topbar {
+    padding: 0 1.5rem !important;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .app-topbar {
+    height: 62px !important;
+    padding: 0 0.85rem !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .app-topbar {
+    height: 58px !important;
+    padding: 0 0.5rem !important;
+  }
+}
+
+/* UAE Clock: visible ONLY on ultra-wide screens (≥ 1600px) to guarantee zero overflow */
+.topbar-clock {
+  display: none !important;
+}
+@media (min-width: 1600px) {
+  .topbar-clock {
+    display: inline-flex !important;
+  }
+}
+
+/* User Profile Name/Role: visible on wide displays (≥ 1440px), sleek avatar on laptops/tablets */
+.topbar-user-info {
+  display: none !important;
+}
+@media (min-width: 1440px) {
+  .topbar-user-info {
+    display: block !important;
+  }
+}
+
+/* Topbar Toggle Buttons — FIX DUPLICATE BUTTON BUG */
+.topbar-toggle-btn {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 50% !important;
+  border: 1px solid var(--brand-border) !important;
+  background: #FFFFFF !important;
+  color: var(--brand-obsidian) !important;
+  box-shadow: var(--shadow-subtle) !important;
+  transition: all 0.2s ease !important;
+}
+
+.topbar-toggle-btn:hover {
+  background: #F8FAFC !important;
+  border-color: #CBD5E1 !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Ensure only ONE toggle button shows: never show both */
+#desktopSidebarToggleBtn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#sidebarToggleBtn {
+  display: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+@media (max-width: 991.98px) {
+  #desktopSidebarToggleBtn {
+    display: none !important;
+  }
+  #sidebarToggleBtn {
+    display: inline-flex !important;
+  }
+}
+
+/* Search input */
+.topbar-search input {
+  background: #FFFFFF !important;
+  border: 1px solid var(--brand-border) !important;
+  border-radius: var(--radius-pill) !important;
+  box-shadow: var(--shadow-subtle) !important;
+  height: 38px !important;
+  padding-left: 2.2rem !important;
+  font-size: 0.83rem !important;
+  color: var(--brand-obsidian) !important;
+  transition: all 0.2s ease !important;
+}
+
+.topbar-search input:focus {
+  border-color: var(--brand-cobalt) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+  outline: none !important;
+}
+
+.topbar-search .topbar-search-icon {
+  color: var(--brand-slate-light) !important;
+  left: 0.85rem !important;
+}
+
+/* Quick Action Button (MS Travel Hub Logo Gradient) */
+.topbar-quick-action-btn,
+.btn-primary {
+  background: var(--gradient-ruby-gem) !important;
+  border: none !important;
+  color: #FFFFFF !important;
+  border-radius: var(--radius-pill) !important;
+  font-weight: 600 !important;
+  box-shadow: 0 3px 12px rgba(225, 29, 72, 0.35) !important;
+  transition: all 0.2s ease !important;
+}
+
+.topbar-quick-action-btn {
+  height: 38px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.topbar-quick-action-btn:hover,
+.btn-primary:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 18px rgba(225, 29, 72, 0.45) !important;
+}
+
+/* Circular action icons & theme button */
+.topbar-icon-btn, .theme-selector-btn {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 50% !important;
+  border: 1px solid var(--brand-border) !important;
+  background: #FFFFFF !important;
+  color: var(--brand-slate) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  box-shadow: var(--shadow-subtle) !important;
+  transition: all 0.2s ease !important;
+}
+
+.topbar-icon-btn:hover, .theme-selector-btn:hover {
+  background: #F8FAFC !important;
+  border-color: #CBD5E1 !important;
+  color: var(--brand-obsidian) !important;
+}
+
+.topbar-actions-group {
+  margin-right: 0.15rem !important;
+}
+
+.topbar-user-btn {
+  padding: 2px 4px;
+  border-radius: 20px;
+  transition: background 0.15s ease;
+}
+
+.topbar-user-btn:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+/* ==========================================================================
+   5. DASHBOARD HERO BANNER & LIVE ALERTS (MS TRAVEL HUB LOGO PALETTE)
+   ========================================================================== */
+.dashboard-hero-banner,
+html[data-theme] .dashboard-hero-banner,
+:root[data-theme] .dashboard-hero-banner {
+  background: linear-gradient(135deg, #0F172A 0%, #1A0D1E 26%, #6B0E2A 58%, #9F1239 80%, #BE123C 92%, #E11D48 100%) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 1.85rem 2.25rem !important;
+  box-shadow: 0 12px 36px -4px rgba(15, 23, 42, 0.35), 0 6px 20px rgba(225, 29, 72, 0.25) !important;
+  color: #FFFFFF !important;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(225, 29, 72, 0.28) !important;
+}
+
+.dashboard-hero-banner::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 460px;
+  height: 460px;
+  background: radial-gradient(circle, rgba(225, 29, 72, 0.40) 0%, rgba(244, 63, 94, 0.18) 45%, transparent 70%) !important;
+  pointer-events: none;
+}
+
+.hero-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #FFFFFF;
+}
+
+.hero-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #10B981;
+  box-shadow: 0 0 8px #10B981;
+}
+
+.hero-action-glass-btn {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  color: #FFFFFF !important;
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-pill) !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.hero-action-glass-btn:hover {
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: #FFFFFF !important;
+  transform: translateY(-1px);
+}
+
+/* Live Alerts Bar */
+.live-alerts-bar {
+  background: #FFFFFF !important;
+  border: 1px solid var(--brand-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 0.85rem 1.25rem !important;
+  box-shadow: var(--shadow-subtle) !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0.75rem !important;
+}
+
+.alert-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 0.35rem 0.75rem !important;
+  border-radius: var(--radius-pill) !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.alert-pill:hover {
+  transform: translateY(-1px);
+}
+
+.alert-pill .count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-family: 'Outfit', sans-serif;
+}
+
+.alert-pill-amber {
+  background: var(--brand-amber-subtle) !important;
+  color: #B45309 !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+}
+.alert-pill-amber .count-badge {
+  background: #F59E0B;
+  color: #FFFFFF;
+}
+
+.alert-pill-cyan {
+  background: var(--brand-cyan-subtle) !important;
+  color: #0E7490 !important;
+  border: 1px solid rgba(6, 182, 212, 0.25) !important;
+}
+.alert-pill-cyan .count-badge {
+  background: #0891B2;
+  color: #FFFFFF;
+}
+
+.alert-pill-rose {
+  background: var(--brand-ruby-subtle) !important;
+  color: #BE123C !important;
+  border: 1px solid var(--brand-ruby-border) !important;
+}
+.alert-pill-rose .count-badge {
+  background: var(--brand-ruby);
+  color: #FFFFFF;
+}
+
+.alert-pill-ruby {
+  background: #FEF2F2 !important;
+  color: #991B1B !important;
+  border: 1px solid #FECACA !important;
+}
+.alert-pill-ruby .count-badge {
+  background: #DC2626;
+  color: #FFFFFF;
+}
+
+.date-summary-pill {
+  background: var(--brand-obsidian) !important;
+  color: #FFFFFF !important;
+  padding: 0.35rem 0.75rem !important;
+  border-radius: var(--radius-pill) !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+}
+
+.date-summary-pill strong {
+  font-family: 'Outfit', sans-serif;
+  color: #60A5FA;
+}
+
+/* ==========================================================================
+   6. PRIMARY 6 BENTO STAT CARDS (IMAGE 2 DESIGN SYSTEM)
+   ========================================================================== */
+.stat-card {
+  background: #FFFFFF !important;
+  border: 1px solid var(--brand-border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-card) !important;
+  padding: 1.35rem 1.4rem !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  text-decoration: none !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  height: 100%;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: var(--shadow-hover) !important;
+  border-color: #CBD5E1 !important;
+}
+
+.stat-card-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-card .stat-title {
+  font-size: 0.84rem !important;
+  font-weight: 600 !important;
+  color: var(--brand-slate) !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.stat-card .stat-value {
+  font-size: 2.25rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em !important;
+  color: var(--brand-obsidian) !important;
+  line-height: 1.15;
+  margin-bottom: 0.4rem;
+}
+
+.stat-card .stat-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-pill);
+}
+
+.stat-icon-wrapper {
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.25rem !important;
+  flex-shrink: 0;
+}
+
+/* Color variations matching Image 2 */
+.stat-card-blue .stat-icon-wrapper {
+  background: #EFF6FF !important;
+  color: #2563EB !important;
+}
+.stat-card-blue .stat-trend {
+  background: #EFF6FF;
+  color: #1E40AF;
+}
+
+.stat-card-cyan .stat-icon-wrapper {
+  background: #ECFEFF !important;
+  color: #0891B2 !important;
+}
+.stat-card-cyan .stat-trend {
+  background: #ECFEFF;
+  color: #0E7490;
+}
+
+.stat-card-danger .stat-icon-wrapper {
+  background: #FFF1F2 !important;
+  color: #E11D48 !important;
+}
+.stat-card-danger .stat-trend {
+  background: #FFF1F2;
+  color: #BE123C;
+}
+
+.stat-card-success .stat-icon-wrapper {
+  background: #ECFDF5 !important;
+  color: #059669 !important;
+}
+.stat-card-success .stat-trend {
+  background: #ECFDF5;
+  color: #047857;
+}
+
+.stat-card-purple .stat-icon-wrapper {
+  background: #F5F3FF !important;
+  color: #7C3AED !important;
+}
+.stat-card-purple .stat-trend {
+  background: #F5F3FF;
+  color: #6D28D9;
+}
+
+.stat-card-warning .stat-icon-wrapper {
+  background: #FFFBEB !important;
+  color: #D97706 !important;
+}
+.stat-card-warning .stat-trend {
+  background: #FFFBEB;
+  color: #B45309;
+}
+
+/* ==========================================================================
+   7. CLEAN ENTERPRISE CARDS & ACTION CENTER (IMAGE 2 DATA TABLE)
+   ========================================================================== */
+.card, .card-custom, .card-enterprise {
+  background: #FFFFFF !important;
+  border: 1px solid var(--brand-border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-card) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  overflow: hidden;
+}
+
+.card-header, .card-custom-header, .card-enterprise .card-header {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid var(--brand-border-light) !important;
+  padding: 1.15rem 1.5rem !important;
+  font-weight: 800 !important;
+  color: var(--brand-obsidian) !important;
+}
+
+.table-modern, .table {
+  width: 100%;
+  margin-bottom: 0;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+.table-modern thead th, .table thead th {
+  background: #F8FAFC !important;
+  color: var(--brand-slate-light) !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding: 0.95rem 1.25rem !important;
+  border-bottom: 1px solid var(--brand-border) !important;
+  border-top: none !important;
+  font-family: 'Outfit', sans-serif !important;
+}
+
+.table-modern tbody td, .table tbody td {
+  padding: 1rem 1.25rem !important;
+  vertical-align: middle !important;
+  border-bottom: 1px solid var(--brand-border-light) !important;
+  color: var(--brand-slate) !important;
+  font-size: 0.88rem !important;
+}
+
+.table-modern tbody tr:hover, .table tbody tr:hover {
+  background-color: #F8FAFC !important;
+}
+
+/* Badges */
+.badge {
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 700 !important;
+}
+
+.badge-priority-critical {
+  background: #FEE2E2 !important;
+  color: #DC2626 !important;
+  border: 1px solid rgba(220, 38, 38, 0.2) !important;
+  border-radius: var(--radius-pill) !important;
+  padding: 0.35rem 0.75rem !important;
+}
+
+.badge-priority-urgent {
+  background: #FEF3C7 !important;
+  color: #D97706 !important;
+  border: 1px solid rgba(217, 119, 6, 0.2) !important;
+  border-radius: var(--radius-pill) !important;
+  padding: 0.35rem 0.75rem !important;
+}
+
+.badge-priority-normal {
+  background: #F1F5F9 !important;
+  color: #475569 !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: var(--radius-pill) !important;
+  padding: 0.35rem 0.75rem !important;
+}
+
+/* ==========================================================================
+   8. MACBOOK / macOS DESIGN SYSTEM (GLASS, TRAFFIC LIGHTS, BENTO CARDS)
+   ========================================================================== */
+.macos-card {
+  background: rgba(255, 255, 255, 0.94) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  border: 1px solid rgba(226, 232, 240, 0.85) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.02) !important;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.macos-card-header {
+  background: rgba(248, 250, 252, 0.85) !important;
+  backdrop-filter: blur(12px) !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.75) !important;
+  padding: 1.1rem 1.4rem !important;
+}
+
+.macos-card-title {
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+}
+
+.macos-traffic-lights {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: rgba(15, 23, 42, 0.04);
+  border-radius: 12px;
+}
+
+.tl-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.tl-red { background: #FF5F56; }
+.tl-yellow { background: #FFBD2E; }
+.tl-green { background: #27C93F; }
+
+.macos-icon-bubble {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+/* macOS Visa Service Packages Bento Cards */
+.macos-package-card {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  border-radius: 14px !important;
+  padding: 1.25rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.macos-package-card:hover {
+  transform: translateY(-3px) !important;
+  border-color: rgba(37, 99, 235, 0.35) !important;
+  box-shadow: 0 10px 25px -4px rgba(37, 99, 235, 0.12) !important;
+}
+
+.macos-package-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-royal-blue);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.macos-package-card:hover::before {
+  opacity: 1;
+}
+
+/* Theme selector dot styling */
+.theme-selector-btn .theme-swatch-current {
+  width: 16px !important;
+  height: 16px !important;
+  border-radius: 50% !important;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25) !important;
+  transition: transform 0.2s ease;
+}
+
+.theme-selector-btn:hover .theme-swatch-current {
+  transform: scale(1.15);
+}
+
+/* Responsive Theme Dropdown for Mobile */
+@media (max-width: 767.98px) {
+  .theme-dropdown {
+    position: fixed !important;
+    top: 66px !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-width: calc(100vw - 24px) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 16px 48px rgba(15, 23, 42, 0.3) !important;
+    z-index: 2200 !important;
+  }
+}
+
+/* ==========================================================================
+   9. NATIVE MOBILE APP SHELL (< 768px)
+   ========================================================================== */
+.mobile-app-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--brand-border);
+  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.05);
+  z-index: 1040;
+  padding: 0 0.5rem;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  text-decoration: none;
+  color: var(--brand-slate-light);
+  font-size: 0.65rem;
+  font-weight: 600;
+  gap: 3px;
+  transition: all 0.2s ease;
+}
+
+.mobile-nav-item i {
+  font-size: 1.15rem;
+  transition: transform 0.2s ease;
+}
+
+.mobile-nav-item:hover, .mobile-nav-item.active {
+  color: var(--brand-ruby) !important;
+}
+
+.mobile-nav-item.active i {
+  transform: translateY(-2px);
+  color: var(--brand-ruby) !important;
+}
+
+.mobile-nav-scan-fab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--gradient-ruby-gem);
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.4);
+  margin-top: -16px;
+  border: 3px solid #FFFFFF;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+}
+
+.mobile-nav-scan-fab:active {
+  transform: scale(0.92);
+}
+
+.mobile-nav-scan-fab i {
+  font-size: 1.25rem;
+}
+
+@media (max-width: 767.98px) {
+  .mobile-app-bottom-nav {
+    display: flex !important;
+  }
+
+  body.app-body {
+    padding-bottom: 74px !important;
+  }
+
+  .content-body {
+    padding: 0.85rem 0.65rem 5rem !important;
+  }
+
+  .app-topbar {
+    height: 58px !important;
+    padding: 0 0.5rem !important;
+  }
+
+  .stat-card {
+    padding: 1.1rem !important;
+  }
+
+  .stat-card .stat-value {
+    font-size: 1.75rem !important;
+  }
+
+  .dashboard-hero-banner {
+    padding: 1.25rem 1rem !important;
+  }
+}

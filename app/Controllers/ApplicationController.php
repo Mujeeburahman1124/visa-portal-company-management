@@ -184,9 +184,146 @@ class ApplicationController
         $customVisaType = trim($_POST['custom_visa_type'] ?? '');
         $customVisaCat = trim($_POST['custom_visa_category'] ?? '');
 
+        $firstName = trim($_POST['first_name'] ?? '');
+        $middleName = trim($_POST['middle_name'] ?? '');
+        $lastName = trim($_POST['last_name'] ?? '');
+        $rawFullName = trim($_POST['full_name'] ?? '');
+        $passportNumber = strtoupper(trim($_POST['passport_number'] ?? ''));
+        $nationality = trim($_POST['nationality'] ?? $_POST['present_nationality'] ?? '');
+        $dob = !empty($_POST['dob']) ? $_POST['dob'] : (!empty($_POST['birth_date']) ? $_POST['birth_date'] : null);
+        $gender = trim($_POST['gender'] ?? 'Male');
+        $birthCountry = trim($_POST['birth_country'] ?? '');
+        $placeOfBirth = trim($_POST['place_of_birth'] ?? $_POST['birth_place'] ?? '');
+        $maritalStatus = trim($_POST['marital_status'] ?? 'Single');
+        $mobile = trim($_POST['mobile'] ?? $_POST['applicant_mobile'] ?? '');
+        $whatsapp = trim($_POST['whatsapp'] ?? $mobile);
+        $email = trim($_POST['email'] ?? '');
+        $residingCountry = trim($_POST['residing_country'] ?? $_POST['current_country'] ?? 'United Arab Emirates');
+        $city = trim($_POST['city'] ?? '');
+        $address = trim($_POST['address'] ?? '');
+        $profession = trim($_POST['profession'] ?? $_POST['occupation'] ?? '');
+        $education = trim($_POST['education'] ?? '');
+        $language = trim($_POST['language'] ?? 'English');
+
+        $passportIssueDate = !empty($_POST['passport_issue_date']) ? $_POST['passport_issue_date'] : (!empty($_POST['date_of_issue']) ? $_POST['date_of_issue'] : null);
+        $passportExpiryDate = !empty($_POST['passport_expiry_date']) ? $_POST['passport_expiry_date'] : (!empty($_POST['expiration_date']) ? $_POST['expiration_date'] : null);
+        $passportIssuingCountry = trim($_POST['passport_issuing_country'] ?? $nationality);
+        $passportPlaceOfIssue = trim($_POST['passport_place_of_issue'] ?? $placeOfBirth);
+
+        $fatherName = trim($_POST['father_name'] ?? '');
+        $motherName = trim($_POST['mother_name'] ?? '');
+        $spouseName = trim($_POST['spouse_name'] ?? $_POST['husband_name'] ?? '');
+
+        $sourceType = trim($_POST['source_type'] ?? 'Normal');
+        $visitReason = trim($_POST['visit_reason'] ?? 'Tourism');
+
         if ($customerId <= 0) {
-            redirect('/applications/create', 'Please select a registered applicant.', 'danger');
+            // Check if customer exists by passport number
+            if (!empty($passportNumber)) {
+                $chkP = $pdo->prepare("SELECT customer_id FROM customer_passports WHERE UPPER(passport_number) = ? LIMIT 1");
+                $chkP->execute([$passportNumber]);
+                $existingCustId = (int)$chkP->fetchColumn();
+                if ($existingCustId > 0) {
+                    $customerId = $existingCustId;
+                }
+            }
         }
+
+        if ($customerId <= 0) {
+            $computedName = trim($firstName . ($middleName ? ' ' . $middleName : '') . ' ' . $lastName);
+            $fullName = !empty($computedName) ? $computedName : $rawFullName;
+
+            if (!empty($fullName) || !empty($passportNumber)) {
+                $cCount = (int)$pdo->query("SELECT COALESCE(MAX(id), 0) FROM customers")->fetchColumn() + 1;
+                $customerCode = sprintf("CUST-%s-%05d", date('Y'), $cCount);
+                if (empty($fullName)) {
+                    $fullName = "Applicant {$customerCode}";
+                }
+                if (empty($lastName)) {
+                    $lastName = $fullName;
+                }
+
+                $insCust = $pdo->prepare("INSERT INTO customers (
+                    customer_code, full_name, first_name, middle_name, last_name,
+                    gender, dob, nationality, birth_country, place_of_birth, city,
+                    current_country, address, mobile, whatsapp, email,
+                    occupation, education, language, marital_status,
+                    created_by, is_active, created_at
+                ) VALUES (
+                    ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?,
+                    ?, 1, CURRENT_TIMESTAMP
+                )");
+                $insCust->execute([
+                    $customerCode, $fullName, $firstName, $middleName, $lastName,
+                    $gender, $dob, $nationality, $birthCountry, $placeOfBirth, $city,
+                    $residingCountry, $address, $mobile, $whatsapp, $email,
+                    $profession, $education, $language, $maritalStatus,
+                    $user['id'] ?? null
+                ]);
+                $customerId = (int)$pdo->lastInsertId();
+            }
+        }
+
+        if ($customerId <= 0) {
+            redirect('/applications/create', 'Please select a registered applicant or fill in the applicant passport details.', 'danger');
+        }
+
+        // Synchronize / update passport record
+        if (!empty($passportNumber)) {
+            $chkPass = $pdo->prepare("SELECT id FROM customer_passports WHERE customer_id = ? AND UPPER(passport_number) = ?");
+            $chkPass->execute([$customerId, $passportNumber]);
+            $passRecId = (int)$chkPass->fetchColumn();
+            if ($passRecId <= 0) {
+                $insPass = $pdo->prepare("INSERT INTO customer_passports (
+                    customer_id, passport_number, issuing_country, issue_date, expiry_date,
+                    place_of_issue, is_primary, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)");
+                $insPass->execute([
+                    $customerId, $passportNumber, $passportIssuingCountry, $passportIssueDate, $passportExpiryDate,
+                    $passportPlaceOfIssue
+                ]);
+            } else {
+                $upPass = $pdo->prepare("UPDATE customer_passports SET 
+                    issuing_country = COALESCE(NULLIF(?, ''), issuing_country),
+                    issue_date = COALESCE(?, issue_date),
+                    expiry_date = COALESCE(?, expiry_date),
+                    place_of_issue = COALESCE(NULLIF(?, ''), place_of_issue),
+                    is_primary = 1
+                    WHERE id = ?");
+                $upPass->execute([$passportIssuingCountry, $passportIssueDate, $passportExpiryDate, $passportPlaceOfIssue, $passRecId]);
+            }
+        }
+
+        // Synchronize / update family record
+        if (!empty($fatherName) || !empty($motherName) || !empty($spouseName)) {
+            $chkFam = $pdo->prepare("SELECT id FROM customer_family WHERE customer_id = ?");
+            $chkFam->execute([$customerId]);
+            $famId = (int)$chkFam->fetchColumn();
+            if ($famId <= 0) {
+                $insFam = $pdo->prepare("INSERT INTO customer_family (customer_id, father_name, mother_name, spouse_name, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)");
+                $insFam->execute([$customerId, $fatherName, $motherName, $spouseName]);
+            } else {
+                $upFam = $pdo->prepare("UPDATE customer_family SET 
+                    father_name = COALESCE(NULLIF(?, ''), father_name),
+                    mother_name = COALESCE(NULLIF(?, ''), mother_name),
+                    spouse_name = COALESCE(NULLIF(?, ''), spouse_name)
+                    WHERE id = ?");
+                $upFam->execute([$fatherName, $motherName, $spouseName, $famId]);
+            }
+        }
+
+        // Update customer profile fields if previously missing
+        $upCust = $pdo->prepare("UPDATE customers SET
+            birth_country = COALESCE(NULLIF(?, ''), birth_country),
+            city = COALESCE(NULLIF(?, ''), city),
+            education = COALESCE(NULLIF(?, ''), education),
+            language = COALESCE(NULLIF(?, ''), language),
+            occupation = COALESCE(NULLIF(?, ''), occupation)
+            WHERE id = ?");
+        $upCust->execute([$birthCountry, $city, $education, $language, $profession, $customerId]);
 
         if ($serviceId <= 0 && empty($customDestCountry) && empty($customVisaType)) {
             redirect('/applications/create', 'Please select both an applicant and a visa service package (or enter custom package details).', 'danger');
@@ -307,7 +444,8 @@ class ApplicationController
                 application_date, expected_completion_date, travel_date, return_date,
                 selling_price, discount, tax_amount, total_amount, paid_amount, balance_amount,
                 supplier_cost, other_expenses, gross_profit, supplier_reference, embassy_reference,
-                internal_notes, customer_notes, next_action, next_action_due_date, payment_type, payment_status, created_by
+                internal_notes, customer_notes, next_action, next_action_due_date, payment_type, payment_status, created_by,
+                source_type, visit_reason
             ) VALUES (
                 ?, ?, ?, ?, ?, ?,
                 'New Application', 'Draft', ?, 100, 'Application freshly initiated. Document checklist initialized.',
@@ -316,7 +454,8 @@ class ApplicationController
                 ?, ?, ?, ?,
                 ?, ?, ?, ?, 0.00, ?,
                 ?, ?, ?, ?, ?,
-                ?, ?, 'Collect and verify initial required documents', ?, ?, ?, ?
+                ?, ?, 'Collect and verify initial required documents', ?, ?, ?, ?,
+                ?, ?
             )";
 
             $nextActionDue = date('Y-m-d', strtotime('+3 days'));
@@ -330,7 +469,8 @@ class ApplicationController
                 $appDate, $expectedCompletionDate, $travelDate, $returnDate,
                 $sellingPrice, $discount, $taxAmount, $totalAmount, $totalAmount,
                 $supplierCost, $otherExpenses, $grossProfit, $supplierRef, $embassyRef,
-                $internalNotes, $customerNotes, $nextActionDue, $paymentType, $paymentStatus, $user['id'] ?? null
+                $internalNotes, $customerNotes, $nextActionDue, $paymentType, $paymentStatus, $user['id'] ?? null,
+                $sourceType, $visitReason
             ]);
 
             $appId = (int)$pdo->lastInsertId();
@@ -377,34 +517,181 @@ class ApplicationController
             // Auto-generate document checklist matrix from visa requirements
             DocumentChecklistService::generateForApplication($appId, $serviceId);
 
+            // Document storage directory
+            $docsUploadDir = dirname(__DIR__, 2) . '/public/uploads/documents/';
+            if (!is_dir($docsUploadDir)) {
+                @mkdir($docsUploadDir, 0777, true);
+            }
+
+            // Attach Passport Document from fast-path OCR scan if token provided
+            $tempPassToken = trim($_POST['temp_passport_token'] ?? '');
+            if (!empty($tempPassToken)) {
+                $tempDir = dirname(__DIR__, 2) . '/public/uploads/temp_ocr/';
+                $srcTemp = null;
+
+                if (!empty($_SESSION['temp_ocr_passports'][$tempPassToken]['file_path']) && file_exists($_SESSION['temp_ocr_passports'][$tempPassToken]['file_path'])) {
+                    $srcTemp = $_SESSION['temp_ocr_passports'][$tempPassToken]['file_path'];
+                } elseif (file_exists($tempDir . $tempPassToken)) {
+                    $srcTemp = $tempDir . $tempPassToken;
+                } else {
+                    $tempMatches = glob($tempDir . 'temp_passport_' . $tempPassToken . '.*');
+                    if (!empty($tempMatches) && file_exists($tempMatches[0])) {
+                        $srcTemp = $tempMatches[0];
+                    } else {
+                        $anyMatches = glob($tempDir . '*' . $tempPassToken . '*');
+                        if (!empty($anyMatches) && file_exists($anyMatches[0])) {
+                            $srcTemp = $anyMatches[0];
+                        }
+                    }
+                }
+
+                if ($srcTemp && file_exists($srcTemp)) {
+                    $ext = strtolower(pathinfo($srcTemp, PATHINFO_EXTENSION)) ?: 'jpg';
+                    $savedName = "appdoc_{$appId}_passport_" . time() . '.' . $ext;
+                    $targetPath = $docsUploadDir . $savedName;
+
+                    if (copy($srcTemp, $targetPath)) {
+                        $fSize = filesize($targetPath);
+                        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                        $mType = finfo_file($finfo, $targetPath) ?: 'image/jpeg';
+                        if (PHP_VERSION_ID < 80500) { @finfo_close($finfo); }
+
+                        $ocrConf = (float)($_POST['ocr_confidence'] ?? 95.0);
+                        $ocrProv = trim($_POST['ocr_provider'] ?? 'PassportOcrService');
+                        $origName = trim($_POST['passport_original_filename'] ?? ('Passport_' . ($passportNumber ?: 'Scan') . '.' . $ext));
+
+                        $docStmt = $pdo->prepare("INSERT INTO documents (
+                            application_id, customer_id, document_type_id, document_title,
+                            file_path, file_name, file_size, mime_type, version, status,
+                            ocr_status, ocr_confidence, ocr_provider,
+                            uploaded_by_type, uploaded_by_id, created_at
+                        ) VALUES (
+                            ?, ?, 1, 'Passport Bio Page',
+                            ?, ?, ?, ?, 1, 'VERIFIED',
+                            'COMPLETED', ?, ?,
+                            'Staff', ?, CURRENT_TIMESTAMP
+                        )");
+                        $docStmt->execute([
+                            $appId, $customerId,
+                            "/uploads/documents/{$savedName}", $origName, $fSize, $mType,
+                            $ocrConf, $ocrProv, $user['id'] ?? null
+                        ]);
+
+                        // Synchronize checklist status
+                        try {
+                            $upChecklist = $pdo->prepare("UPDATE document_checklists SET status = 'VERIFIED', verified_at = CURRENT_TIMESTAMP WHERE application_id = ? AND document_type_id = 1");
+                            $upChecklist->execute([$appId]);
+                        } catch (\Throwable $ign) {}
+
+                        AuditService::log('DOCUMENT_UPLOADED', 'documents', (int)$pdo->lastInsertId(), "Passport bio page auto-attached from OCR scan for Application {$appNumber}");
+                    }
+                }
+            } elseif (!empty($_FILES['passport_scan']['name']) && $_FILES['passport_scan']['error'] === UPLOAD_ERR_OK) {
+                // Direct passport file upload fallback
+                $tmpName = $_FILES['passport_scan']['tmp_name'];
+                $origName = $_FILES['passport_scan']['name'];
+                $fileSize = (int)$_FILES['passport_scan']['size'];
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $mimeType = finfo_file($finfo, $tmpName) ?: 'image/jpeg';
+                if (PHP_VERSION_ID < 80500) { @finfo_close($finfo); }
+                $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION)) ?: 'jpg';
+                $savedName = "appdoc_{$appId}_passport_" . time() . '.' . $ext;
+                $targetPath = $docsUploadDir . $savedName;
+
+                $copied = is_uploaded_file($tmpName) ? move_uploaded_file($tmpName, $targetPath) : copy($tmpName, $targetPath);
+                if ($copied) {
+                    $docStmt = $pdo->prepare("INSERT INTO documents (
+                        application_id, customer_id, document_type_id, document_title,
+                        file_path, file_name, file_size, mime_type, version, status,
+                        uploaded_by_type, uploaded_by_id, created_at
+                    ) VALUES (
+                        ?, ?, 1, 'Passport Bio Page',
+                        ?, ?, ?, ?, 1, 'VERIFIED',
+                        'Staff', ?, CURRENT_TIMESTAMP
+                    )");
+                    $docStmt->execute([
+                        $appId, $customerId,
+                        "/uploads/documents/{$savedName}", $origName, $fileSize, $mimeType,
+                        $user['id'] ?? null
+                    ]);
+                    try {
+                        $upChecklist = $pdo->prepare("UPDATE document_checklists SET status = 'VERIFIED', verified_at = CURRENT_TIMESTAMP WHERE application_id = ? AND document_type_id = 1");
+                        $upChecklist->execute([$appId]);
+                    } catch (\Throwable $ign) {}
+                    AuditService::log('DOCUMENT_UPLOADED', 'documents', (int)$pdo->lastInsertId(), "Passport bio page attached for Application {$appNumber}");
+                }
+            }
+
+            // Attach Applicant Photo if uploaded (PHOTO_WHITE_BG, document_type_id = 3)
+            if (!empty($_FILES['applicant_photo']['name']) && $_FILES['applicant_photo']['error'] === UPLOAD_ERR_OK) {
+                $tmpName = $_FILES['applicant_photo']['tmp_name'];
+                $origName = $_FILES['applicant_photo']['name'];
+                $fileSize = (int)$_FILES['applicant_photo']['size'];
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $mimeType = finfo_file($finfo, $tmpName) ?: 'image/jpeg';
+                if (PHP_VERSION_ID < 80500) { @finfo_close($finfo); }
+                $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION)) ?: 'jpg';
+                $savedName = "appdoc_{$appId}_photo_" . time() . '.' . $ext;
+                $targetPath = $docsUploadDir . $savedName;
+
+                $copied = is_uploaded_file($tmpName) ? move_uploaded_file($tmpName, $targetPath) : copy($tmpName, $targetPath);
+                if ($copied) {
+                    $docStmt = $pdo->prepare("INSERT INTO documents (
+                        application_id, customer_id, document_type_id, document_title,
+                        file_path, file_name, file_size, mime_type, version, status,
+                        uploaded_by_type, uploaded_by_id, created_at
+                    ) VALUES (
+                        ?, ?, 3, 'Applicant Photo (White Background)',
+                        ?, ?, ?, ?, 1, 'VERIFIED',
+                        'Staff', ?, CURRENT_TIMESTAMP
+                    )");
+                    $docStmt->execute([
+                        $appId, $customerId,
+                        "/uploads/documents/{$savedName}", $origName, $fileSize, $mimeType,
+                        $user['id'] ?? null
+                    ]);
+                    try {
+                        $upChecklist = $pdo->prepare("UPDATE document_checklists SET status = 'VERIFIED', verified_at = CURRENT_TIMESTAMP WHERE application_id = ? AND document_type_id = 3");
+                        $upChecklist->execute([$appId]);
+                    } catch (\Throwable $ign) {}
+                    AuditService::log('DOCUMENT_UPLOADED', 'documents', (int)$pdo->lastInsertId(), "Applicant photo attached for Application {$appNumber}");
+                }
+            }
+
             // Process Multiple Uploaded Documents (Part 2, 3, 4)
             if (!empty($_FILES['application_documents']['name']) && is_array($_FILES['application_documents']['name'])) {
                 $docTypes = $_POST['document_types'] ?? [];
                 $docTitles = $_POST['document_titles'] ?? [];
-                $docsUploadDir = dirname(__DIR__, 2) . '/public/uploads/documents/';
-                if (!is_dir($docsUploadDir)) {
-                    @mkdir($docsUploadDir, 0777, true);
-                }
 
                 $docStmt = $pdo->prepare("INSERT INTO documents (
                     application_id, customer_id, document_type_id, document_title, file_path, file_name, file_size, mime_type, version, status, uploaded_by_type, uploaded_by_id, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'Verified', 'Staff', ?, CURRENT_TIMESTAMP)");
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'VERIFIED', 'Staff', ?, CURRENT_TIMESTAMP)");
 
                 foreach ($_FILES['application_documents']['name'] as $idx => $origName) {
                     if (!empty($origName) && $_FILES['application_documents']['error'][$idx] === UPLOAD_ERR_OK) {
                         $tmpName = $_FILES['application_documents']['tmp_name'][$idx];
                         $fileSize = (int)$_FILES['application_documents']['size'][$idx];
                         $mimeType = $_FILES['application_documents']['type'][$idx] ?? 'application/octet-stream';
-                        $ext = pathinfo($origName, PATHINFO_EXTENSION);
+                        $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION)) ?: 'pdf';
                         $savedName = "appdoc_{$appId}_" . time() . "_{$idx}." . $ext;
                         $targetPath = $docsUploadDir . $savedName;
 
-                        if (move_uploaded_file($tmpName, $targetPath)) {
-                            $typeId = !empty($docTypes[$idx]) ? (int)$docTypes[$idx] : null;
+                        $copied = is_uploaded_file($tmpName) ? move_uploaded_file($tmpName, $targetPath) : copy($tmpName, $targetPath);
+                        if ($copied) {
+                            $typeId = !empty($docTypes[$idx]) ? (int)$docTypes[$idx] : 2;
+                            if ($typeId <= 0) {
+                                $typeId = 2;
+                            }
                             $title = !empty($docTitles[$idx]) ? trim($docTitles[$idx]) : pathinfo($origName, PATHINFO_FILENAME);
                             $filePath = "/uploads/documents/{$savedName}";
 
                             $docStmt->execute([$appId, $customerId, $typeId, $title, $filePath, $origName, $fileSize, $mimeType, $user['id'] ?? null]);
+                            if ($typeId) {
+                                try {
+                                    $upChecklist = $pdo->prepare("UPDATE document_checklists SET status = 'VERIFIED', verified_at = CURRENT_TIMESTAMP WHERE application_id = ? AND document_type_id = ?");
+                                    $upChecklist->execute([$appId, $typeId]);
+                                } catch (\Throwable $ign) {}
+                            }
                         }
                     }
                 }

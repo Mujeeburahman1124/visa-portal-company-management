@@ -7,6 +7,7 @@ use App\Config\App;
 use App\Config\Database;
 use App\Middleware\AuthMiddleware;
 use App\Services\AuditService;
+use App\Services\DocumentChecklistService;
 use App\Services\DocumentExpiryService;
 use App\Services\DocumentVerificationService;
 use App\Services\HealthCalculatorService;
@@ -156,7 +157,7 @@ class DocumentController
             return;
         }
 
-        // Pagination
+        // Flat Document Pagination
         $page = max(1, (int)($_GET['page'] ?? 1));
         $perPage = max(5, min(100, (int)($_GET['per_page'] ?? 15)));
         $totalRecords = count($allDocuments);
@@ -171,16 +172,143 @@ class DocumentController
         }
         unset($doc);
 
+        // ==============================================================
+        // 1. APPLICANT FOLDER DIRECTORY QUERY (PRIMARY PRESENTATION)
+        // ==============================================================
+        $folderSql = "SELECT a.id as application_id, a.application_number, a.status as application_status, a.current_stage,
+                             a.visa_service_id, a.branch_id, a.assigned_staff_id, a.created_at as app_created_at,
+                             a.priority,
+                             c.id as customer_id, c.customer_code, c.full_name as customer_name, c.nationality,
+                             c.current_country, c.mobile, c.whatsapp, c.email, c.gender,
+                             cp.passport_number,
+                             vs.name as service_name, ct.name as country_name, ct.flag_emoji,
+                             b.name as branch_name,
+                             u.name as assigned_staff_name,
+                             COUNT(d.id) as total_docs,
+                             SUM(CASE WHEN d.status = 'VERIFIED' THEN 1 ELSE 0 END) as verified_docs,
+                             SUM(CASE WHEN d.status IN ('UNDER_REVIEW', 'UPLOADED') THEN 1 ELSE 0 END) as pending_docs,
+                             SUM(CASE WHEN d.status = 'REJECTED' THEN 1 ELSE 0 END) as rejected_docs
+                      FROM applications a
+                      JOIN customers c ON a.customer_id = c.id
+                      LEFT JOIN customer_passports cp ON c.id = cp.customer_id AND cp.is_primary = 1
+                      LEFT JOIN visa_services vs ON a.visa_service_id = vs.id
+                      LEFT JOIN countries ct ON vs.country_id = ct.id
+                      LEFT JOIN branches b ON a.branch_id = b.id
+                      LEFT JOIN users u ON a.assigned_staff_id = u.id
+                      LEFT JOIN documents d ON d.application_id = a.id
+                      WHERE 1=1";
+
+        $folderParams = [];
+        if ($userBranch > 0 && !in_array($roleSlug, ['super-admin', 'admin'], true)) {
+            $folderSql .= " AND a.branch_id = ?";
+            $folderParams[] = $userBranch;
+        }
+
+        if ($search !== '') {
+            $folderSql .= " AND (c.full_name LIKE ? OR c.customer_code LIKE ? OR a.application_number LIKE ? OR cp.passport_number LIKE ? OR c.mobile LIKE ? OR c.email LIKE ?)";
+            $term = "%{$search}%";
+            $folderParams = array_merge($folderParams, [$term, $term, $term, $term, $term, $term]);
+        }
+
+        if ($serviceId > 0) {
+            $folderSql .= " AND a.visa_service_id = ?";
+            $folderParams[] = $serviceId;
+        }
+
+        if ($staffId > 0) {
+            $folderSql .= " AND a.assigned_staff_id = ?";
+            $folderParams[] = $staffId;
+        }
+
+        if ($countryId > 0) {
+            $folderSql .= " AND vs.country_id = ?";
+            $folderParams[] = $countryId;
+        }
+
+        if ($customerId > 0) {
+            $folderSql .= " AND a.customer_id = ?";
+            $folderParams[] = $customerId;
+        }
+
+        $branchIdFilter = (int)($_GET['branch_id'] ?? 0);
+        if ($branchIdFilter > 0) {
+            $folderSql .= " AND a.branch_id = ?";
+            $folderParams[] = $branchIdFilter;
+        }
+
+        if ($dateFrom !== '') {
+            $folderSql .= " AND DATE(a.created_at) >= ?";
+            $folderParams[] = $dateFrom;
+        }
+
+        if ($dateTo !== '') {
+            $folderSql .= " AND DATE(a.created_at) <= ?";
+            $folderParams[] = $dateTo;
+        }
+
+        $folderSql .= " GROUP BY a.id";
+
+        if ($status !== '') {
+            if ($status === 'VERIFIED') {
+                $folderSql .= " HAVING verified_docs > 0";
+            } elseif ($status === 'UNDER_REVIEW' || $status === 'PENDING') {
+                $folderSql .= " HAVING pending_docs > 0";
+            } elseif ($status === 'REJECTED') {
+                $folderSql .= " HAVING rejected_docs > 0";
+            }
+        }
+
+        $folderSql .= " ORDER BY a.created_at DESC";
+
+        $folderStmt = $pdo->prepare($folderSql);
+        $folderStmt->execute($folderParams);
+        $allFolders = $folderStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // Folder Pagination
+        $folderPage = max(1, (int)($_GET['f_page'] ?? $_GET['page'] ?? 1));
+        $folderPerPage = max(6, min(100, (int)($_GET['f_per_page'] ?? 12)));
+        $totalFolders = count($allFolders);
+        $folderTotalPages = max(1, (int)ceil($totalFolders / $folderPerPage));
+        if ($folderPage > $folderTotalPages) $folderPage = $folderTotalPages;
+
+        $folders = array_slice($allFolders, ($folderPage - 1) * $folderPerPage, $folderPerPage);
+
+        // Batch enrich folders with photos and accurate checklist metrics (Single Source of Truth)
+        if (!empty($folders)) {
+            foreach ($folders as &$f) {
+                $aId = (int)$f['application_id'];
+                $cId = (int)$f['customer_id'];
+
+                // Photo resolution via single source of truth
+                $photoDoc = DocumentChecklistService::getApplicantProfilePhoto($aId, $cId);
+                $f['photo_doc_id'] = $photoDoc ? (int)$photoDoc['id'] : null;
+
+                // Document checklist metrics via single source of truth
+                $chk = DocumentChecklistService::getChecklist($aId);
+                $f['total_docs'] = count($chk['items']);
+                $f['verified_docs'] = $chk['total_verified'];
+                $f['pending_docs'] = $chk['total_pending'];
+                $f['missing_docs'] = $chk['total_missing'];
+                $f['rejected_docs'] = $chk['total_rejected'];
+                $f['expired_docs'] = $chk['total_expired'];
+                $f['required_docs_count'] = $chk['total_required'];
+                $f['completion_percent'] = $chk['percentage'];
+            }
+            unset($f);
+        }
+
         // Filter Options
         $docTypes = $pdo->query("SELECT id, name FROM document_types WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $services = $pdo->query("SELECT id, name FROM visa_services WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $staffMembers = $pdo->query("SELECT id, name FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $countries = $pdo->query("SELECT id, name, flag_emoji FROM countries ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $customers = $pdo->query("SELECT id, full_name, customer_code FROM customers ORDER BY full_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $branches = $pdo->query("SELECT id, name, code FROM branches ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $categories = ['Identity', 'Financial', 'Employment', 'Travel', 'Academic', 'Legal', 'Medical', 'Other'];
 
         // Real Database Statistics
         $stats = [
+            'total_folders' => (int)$pdo->query("SELECT COUNT(*) FROM applications")->fetchColumn(),
             'total' => (int)$pdo->query("SELECT COUNT(*) FROM documents")->fetchColumn(),
             'pending_review' => (int)$pdo->query("SELECT COUNT(*) FROM documents WHERE status IN ('UNDER_REVIEW', 'UPLOADED')")->fetchColumn(),
             'verified' => (int)$pdo->query("SELECT COUNT(*) FROM documents WHERE status = 'VERIFIED'")->fetchColumn(),
@@ -190,6 +318,392 @@ class DocumentController
         ];
 
         require_once dirname(__DIR__) . '/Views/documents/index.php';
+    }
+
+    /**
+     * Dedicated Applicant Document Profile Workspace (Full Responsive Page)
+     */
+    public function profile(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $currentUser = auth_user();
+
+        $appId = (int)($_GET['application_id'] ?? $_GET['id'] ?? 0);
+        if ($appId <= 0) {
+            redirect('/documents', 'Please specify a valid visa application to view the document profile workspace.', 'warning');
+        }
+
+        // 1. Fetch Application + Customer + Relational Data
+        $stmt = $pdo->prepare("SELECT a.*, 
+                    c.id as customer_id, c.customer_code, c.first_name, c.middle_name, c.last_name, c.full_name as customer_name,
+                    c.gender, c.dob, c.nationality, c.place_of_birth, c.birth_country, c.city, c.education, c.language, c.marital_status, c.religion, c.occupation,
+                    c.mobile, c.whatsapp, c.email, c.current_country, c.address, c.notes as customer_notes,
+                    c.created_at as customer_created_at, c.updated_at as customer_updated_at,
+                    COALESCE(cp.passport_number, a.passport_number) as passport_number,
+                    COALESCE(cp.issuing_country, a.nationality, c.nationality) as passport_issuing_country,
+                    cp.issue_date as passport_issue_date,
+                    COALESCE(cp.expiry_date, a.passport_expiry_date) as passport_expiry_date,
+                    cp.place_of_issue as passport_place_of_issue,
+                    fam.father_name, fam.mother_name, fam.spouse_name,
+                    nid.id_number as national_id_number, nid.id_type as national_id_type, nid.expiry_date as national_id_expiry,
+                    vs.name as service_name, vs.duration as service_duration, vs.entry_type as service_entry_type,
+                    vs.processing_type as service_processing_type, vs.estimated_days as service_estimated_days,
+                    vs.selling_price as service_selling_price,
+                    vc.name as category_name,
+                    ct.name as destination_country_name, ct.flag_emoji,
+                    b.name as branch_name, b.code as branch_code,
+                    staff.name as assigned_staff_name, staff.email as assigned_staff_email,
+                    creator.name as created_by_name
+                FROM applications a
+                JOIN customers c ON a.customer_id = c.id
+                LEFT JOIN customer_passports cp ON cp.id = (SELECT id FROM customer_passports WHERE customer_id = c.id ORDER BY is_primary DESC, id DESC LIMIT 1)
+                LEFT JOIN customer_family fam ON fam.customer_id = c.id
+                LEFT JOIN customer_national_ids nid ON nid.id = (SELECT id FROM customer_national_ids WHERE customer_id = c.id ORDER BY is_primary DESC, id DESC LIMIT 1)
+                LEFT JOIN visa_services vs ON a.visa_service_id = vs.id
+                LEFT JOIN visa_categories vc ON vs.category_id = vc.id
+                LEFT JOIN countries ct ON vs.country_id = ct.id
+                LEFT JOIN branches b ON a.branch_id = b.id
+                LEFT JOIN users staff ON a.assigned_staff_id = staff.id
+                LEFT JOIN users creator ON a.created_by = creator.id
+                WHERE a.id = ?");
+        $stmt->execute([$appId]);
+        $app = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$app) {
+            redirect('/documents', 'Applicant or application record not found.', 'danger');
+        }
+
+        // 2. Security & Authorization: Branch and RBAC check
+        $mockDoc = ['application_id' => $appId, 'customer_id' => $app['customer_id']];
+        if (!self::authorizeDocumentAccess($mockDoc)) {
+            http_response_code(403);
+            die('Access Denied. You are not authorized to access documents for this application.');
+        }
+
+        // 3. Multi-Application Support (Requirement 42)
+        $stmtMulti = $pdo->prepare("SELECT a.id, a.application_number, a.status, a.current_stage, vs.name as service_name, a.created_at
+                                    FROM applications a
+                                    LEFT JOIN visa_services vs ON a.visa_service_id = vs.id
+                                    WHERE a.customer_id = ?
+                                    ORDER BY a.id DESC");
+        $stmtMulti->execute([(int)$app['customer_id']]);
+        $customerApplications = $stmtMulti->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // 4. Fetch All Documents for this application with version counts
+        $docStmt = $pdo->prepare("SELECT d.*, 
+                    dt.name as doc_type_name, dt.code as doc_type_code, dt.category, dt.requires_expiry,
+                    u.name as verified_by_name,
+                    uploader.name as uploaded_by_name,
+                    (SELECT COUNT(*) FROM document_versions dv WHERE dv.document_id = d.id) as version_count
+                FROM documents d
+                JOIN document_types dt ON d.document_type_id = dt.id
+                LEFT JOIN users u ON d.verified_by = u.id
+                LEFT JOIN users uploader ON (d.uploaded_by_type = 'Staff' AND d.uploaded_by_id = uploader.id)
+                WHERE d.application_id = ?
+                ORDER BY d.created_at DESC");
+        $docStmt->execute([$appId]);
+        $applicationDocuments = $docStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // Attach expiry analysis to each document
+        foreach ($applicationDocuments as &$doc) {
+            $doc['expiry_info'] = DocumentExpiryService::checkExpiry($doc['expiry_date'] ?? null);
+        }
+        unset($doc);
+
+        // 5. Document Checklist & Completion (Requirement 24 - Single Source of Truth)
+        $checklist = DocumentChecklistService::getChecklist($appId);
+
+        // 6. Profile Photo Resolution (Requirement 6 & PART 2, 36)
+        $photoDoc = DocumentChecklistService::getApplicantProfilePhoto($appId, (int)$app['customer_id']);
+
+        // 7. Quick Access Documents Resolution (Requirement 14 & 15)
+        $quickDocs = [
+            'photo' => $photoDoc,
+            'passport' => self::resolveQuickDocument($applicationDocuments, 'passport'),
+            'cv' => self::resolveQuickDocument($applicationDocuments, 'cv'),
+            'visa' => self::resolveQuickDocument($applicationDocuments, 'visa'),
+            'national_id' => self::resolveQuickDocument($applicationDocuments, 'national_id'),
+        ];
+
+        // 8. Group all documents by category (Requirement 16)
+        $allCategories = ['Identity', 'Employment', 'Academic', 'Financial', 'Travel', 'Medical', 'Legal', 'Corporate', 'Visa', 'Other'];
+        $categorizedDocs = [];
+        foreach ($allCategories as $cat) {
+            $categorizedDocs[$cat] = [];
+        }
+        foreach ($applicationDocuments as $d) {
+            $cat = $d['category'] ?: 'Other';
+            if (!isset($categorizedDocs[$cat])) {
+                $categorizedDocs[$cat] = [];
+            }
+            $categorizedDocs[$cat][] = $d;
+        }
+
+        // 9. Passport Validity Calculation (Requirement 13)
+        $passportValidity = self::calculatePassportValidity($app['passport_expiry_date'] ?? $app['passport_expiry'] ?? null);
+
+        // 10. Expiring Documents (Requirement 26)
+        $expiringDocs = [];
+        $today = date('Y-m-d');
+        $in30Days = date('Y-m-d', strtotime('+30 days'));
+        foreach ($applicationDocuments as $d) {
+            if (!empty($d['expiry_date']) && $d['expiry_date'] >= $today && $d['expiry_date'] <= $in30Days) {
+                $expiringDocs[] = $d;
+            }
+        }
+
+        // 11. Document Types for Upload Modal
+        $docTypes = $pdo->query("SELECT id, name, code, category, requires_expiry FROM document_types WHERE is_active = 1 ORDER BY category ASC, name ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // 12. Recent Activity for this Application/Documents (Requirement 48)
+        $activityStmt = $pdo->prepare("SELECT al.*, u.name as user_name 
+                                      FROM activity_logs al 
+                                      LEFT JOIN users u ON al.user_id = u.id 
+                                      WHERE (al.module = 'Applications' AND al.record_id = ?) 
+                                         OR (al.module = 'Documents' AND al.record_id IN (SELECT id FROM documents WHERE application_id = ?))
+                                         OR (al.description LIKE ?)
+                                      ORDER BY al.id DESC 
+                                      LIMIT 10");
+        $appNumTerm = "%{$app['application_number']}%";
+        $activityStmt->execute([$appId, $appId, $appNumTerm]);
+        $recentActivity = $activityStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        // 13. Audit Log this visit
+        AuditService::log('VIEW_DOC_WORKSPACE', 'Applications', $appId, "Viewed applicant document workspace for {$app['customer_name']} ({$app['application_number']})", [
+            'application_id' => $appId,
+            'customer_id' => $app['customer_id']
+        ], $currentUser['id'] ?? null);
+
+        require_once dirname(__DIR__) . '/Views/documents/profile.php';
+    }
+
+    /**
+     * Download All Application Documents as a Structured Category ZIP (Requirement 30)
+     */
+    public function downloadAll(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $currentUser = auth_user();
+
+        $appId = (int)($_GET['application_id'] ?? $_GET['id'] ?? 0);
+        if ($appId <= 0) {
+            redirect('/documents', 'Invalid application ID.', 'danger');
+        }
+
+        $stmt = $pdo->prepare("SELECT a.*, c.full_name as customer_name, c.customer_code, c.branch_id as customer_branch_id 
+                               FROM applications a 
+                               JOIN customers c ON a.customer_id = c.id 
+                               WHERE a.id = ?");
+        $stmt->execute([$appId]);
+        $app = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$app) {
+            redirect('/documents', 'Application not found.', 'danger');
+        }
+
+        if (!self::authorizeDocumentAccess(['application_id' => $appId, 'customer_id' => $app['customer_id']])) {
+            http_response_code(403);
+            die('Access Denied. You are not authorized to download files for this application.');
+        }
+
+        $docsStmt = $pdo->prepare("SELECT d.*, dt.name as doc_type_name, dt.category 
+                                  FROM documents d 
+                                  JOIN document_types dt ON d.document_type_id = dt.id 
+                                  WHERE d.application_id = ?");
+        $docsStmt->execute([$appId]);
+        $docs = $docsStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        if (empty($docs)) {
+            redirect("/documents/profile?application_id={$appId}", 'No uploaded documents available for this applicant to download.', 'warning');
+        }
+
+        if (!class_exists('ZipArchive')) {
+            redirect("/documents/profile?application_id={$appId}", 'Server does not support ZipArchive extension.', 'danger');
+        }
+
+        $zip = new \ZipArchive();
+        $tempDir = sys_get_temp_dir();
+        $zipFilename = $tempDir . DIRECTORY_SEPARATOR . 'applicant_docs_' . $appId . '_' . time() . '.zip';
+
+        if ($zip->open($zipFilename, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            redirect("/documents/profile?application_id={$appId}", 'Failed to create zip archive.', 'danger');
+        }
+
+        $cleanName = preg_replace('/[^A-Za-z0-9_\-]/', '_', (string)$app['customer_name']);
+        $rootFolder = $cleanName . '_' . ($app['application_number'] ?: 'APP' . $appId);
+
+        $addedCount = 0;
+        foreach ($docs as $d) {
+            $filePath = App::uploadPath($d['file_path']);
+            if (!file_exists($filePath)) {
+                $legacyPath = App::publicPath('uploads/documents/' . basename($d['file_path']));
+                if (file_exists($legacyPath)) {
+                    $filePath = $legacyPath;
+                }
+            }
+
+            if (file_exists($filePath) && is_readable($filePath)) {
+                $category = preg_replace('/[^A-Za-z0-9_\-]/', '_', (string)($d['category'] ?: 'Other'));
+                $safeDocTitle = preg_replace('/[^A-Za-z0-9_\-]/', '_', (string)($d['document_title'] ?: $d['doc_type_name']));
+                $ext = pathinfo((string)$d['file_name'], PATHINFO_EXTENSION);
+                $inZipName = "{$rootFolder}/{$category}/{$safeDocTitle}.{$ext}";
+                
+                $zip->addFile($filePath, $inZipName);
+                $addedCount++;
+            }
+        }
+
+        $zip->close();
+
+        if ($addedCount === 0 || !file_exists($zipFilename)) {
+            if (file_exists($zipFilename)) @unlink($zipFilename);
+            redirect("/documents/profile?application_id={$appId}", 'None of the document files could be retrieved from storage.', 'warning');
+        }
+
+        AuditService::log('DOWNLOAD_ZIP', 'Applications', $appId, "Downloaded ZIP bundle of {$addedCount} documents for application {$app['application_number']}", [
+            'application_id' => $appId,
+            'file_count' => $addedCount
+        ], $currentUser['id'] ?? null);
+
+        $downloadFilename = "Documents_{$app['application_number']}.zip";
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="' . $downloadFilename . '"');
+        header('Content-Length: ' . filesize($zipFilename));
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        readfile($zipFilename);
+        @unlink($zipFilename);
+        exit;
+    }
+
+    /**
+     * Resolve applicant profile photograph using PHOTO_WHITE_BG preference rule (Requirement 6 & PART 2, 36)
+     */
+    public static function resolveApplicantPhoto(array $docs, int $customerId, \PDO $pdo, int $applicationId = 0): ?array
+    {
+        if ($applicationId <= 0 && !empty($docs[0]['application_id'])) {
+            $applicationId = (int)$docs[0]['application_id'];
+        }
+        return DocumentChecklistService::getApplicantProfilePhoto($applicationId, $customerId);
+    }
+
+    /**
+     * Reusable helper for applicant profile photo resolution (PART 36)
+     */
+    public static function getApplicantProfilePhoto(int $applicationId, int $customerId): ?array
+    {
+        return DocumentChecklistService::getApplicantProfilePhoto($applicationId, $customerId);
+    }
+
+    /**
+     * Resolve quick-access document types: photo, passport, cv, visa, national_id (Requirement 14 & 15)
+     */
+    public static function resolveQuickDocument(array $docs, string $key): ?array
+    {
+        $matches = [];
+        foreach ($docs as $d) {
+            // Must have a valid file on disk
+            if (!DocumentChecklistService::hasValidFile($d['file_path'] ?? null)) {
+                continue;
+            }
+
+            $code = strtoupper((string)($d['doc_type_code'] ?? ''));
+            $name = strtolower((string)($d['doc_type_name'] ?? ''));
+            $cat = strtolower((string)($d['category'] ?? ''));
+
+            if ($key === 'passport') {
+                if ($code === 'PASSPORT_BIO' || strpos($name, 'passport bio') !== false || strpos($name, 'passport') !== false) {
+                    $matches[] = $d;
+                }
+            } elseif ($key === 'cv') {
+                if ($code === 'CV' || strpos($name, 'cv') !== false || strpos($name, 'resume') !== false || $code === 'EMPLOYMENT_LETTER' || $code === 'JOB_OFFER_CONTRACT') {
+                    $matches[] = $d;
+                }
+            } elseif ($key === 'visa') {
+                if ($code === 'VISA_COPY' || $code === 'VISA' || $code === 'RESIDENCE_PERMIT' || strpos($name, 'visa') !== false || $cat === 'visa') {
+                    $matches[] = $d;
+                }
+            } elseif ($key === 'national_id') {
+                if ($code === 'NATIONAL_ID' || strpos($name, 'national id') !== false || strpos($name, 'emirates id') !== false) {
+                    $matches[] = $d;
+                }
+            }
+        }
+
+        if (empty($matches)) {
+            return null;
+        }
+
+        // Recommended priority: VERIFIED > UNDER_REVIEW > UPLOADED > REJECTED > version DESC > id DESC
+        usort($matches, function ($a, $b) {
+            $statusRank = function ($status) {
+                if ($status === 'VERIFIED') return 4;
+                if ($status === 'UNDER_REVIEW') return 3;
+                if ($status === 'UPLOADED') return 2;
+                if ($status === 'REJECTED') return 1;
+                return 0;
+            };
+            $rA = $statusRank($a['status'] ?? '');
+            $rB = $statusRank($b['status'] ?? '');
+            if ($rA !== $rB) return $rB <=> $rA;
+
+            $vDiff = ((int)($b['version'] ?? 1)) <=> ((int)($a['version'] ?? 1));
+            if ($vDiff !== 0) return $vDiff;
+
+            return ((int)($b['id'] ?? 0)) <=> ((int)($a['id'] ?? 0));
+        });
+
+        return $matches[0];
+    }
+
+    /**
+     * Calculate passport validity status and days remaining (Requirement 13)
+     */
+    public static function calculatePassportValidity(?string $expiryDate): array
+    {
+        if (empty($expiryDate)) {
+            return [
+                'status' => 'UNKNOWN',
+                'label' => 'No Expiry Set',
+                'badge_class' => 'bg-secondary text-white',
+                'days_remaining' => null,
+                'description' => 'Passport expiry date not recorded.'
+            ];
+        }
+
+        $expTime = strtotime($expiryDate);
+        $todayTime = strtotime(date('Y-m-d'));
+        $diffSeconds = $expTime - $todayTime;
+        $days = (int)round($diffSeconds / 86400);
+
+        if ($days < 0) {
+            return [
+                'status' => 'EXPIRED',
+                'label' => 'EXPIRED',
+                'badge_class' => 'bg-danger text-white',
+                'days_remaining' => $days,
+                'description' => 'Expired ' . abs($days) . ' days ago. Renewal required.'
+            ];
+        } elseif ($days <= 180) { // Less than 6 months
+            return [
+                'status' => 'EXPIRING_SOON',
+                'label' => 'EXPIRING SOON',
+                'badge_class' => 'bg-warning text-dark',
+                'days_remaining' => $days,
+                'description' => 'Expires in ' . $days . ' days (< 6 months).'
+            ];
+        } else {
+            $years = round($days / 365, 1);
+            return [
+                'status' => 'VALID',
+                'label' => 'VALID',
+                'badge_class' => 'bg-success text-white',
+                'days_remaining' => $days,
+                'description' => 'Valid (' . $years . ' years / ' . $days . ' days remaining).'
+            ];
+        }
     }
 
     public function exportCsv(): void

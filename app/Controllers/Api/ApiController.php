@@ -54,7 +54,7 @@ class ApiController
                 $token = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_SERVER['HTTP_X_XSRF_TOKEN'] ?? null;
                 if (!$token) {
                     $input = $this->getJsonInput();
-                    $token = $input['csrf_token'] ?? null;
+                    $token = $input['csrf_token'] ?? $_POST['csrf_token'] ?? null;
                 }
                 if (!verify_csrf($token)) {
                     $this->jsonError('CSRF token missing or invalid for API mutation request.', ['csrf_token' => 'Required or invalid'], 419);

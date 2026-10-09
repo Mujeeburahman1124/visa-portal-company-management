@@ -6,6 +6,8 @@ require_once dirname(__DIR__) . '/layouts/sidebar.php';
 require_once dirname(__DIR__) . '/layouts/topbar.php';
 ?>
 
+<link rel="stylesheet" href="/assets/css/pages/documents.css?v=1.0">
+
 <div class="content-body">
   <?php if ($flash): ?>
     <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'warning')) ?> alert-dismissible fade show mb-4 shadow-sm" role="alert">
@@ -42,12 +44,12 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       <a href="/documents" class="text-decoration-none d-block h-100">
         <div class="stat-card stat-card-blue h-100">
           <div class="stat-icon-wrapper">
-            <i class="fa-solid fa-file-lines"></i>
+            <i class="fa-solid fa-folder-tree"></i>
           </div>
           <div class="stat-card-content">
-            <div class="stat-title">Total Docs</div>
-            <div class="stat-value"><?= $stats['total'] ?></div>
-            <div class="stat-trend"><i class="fa-solid fa-vault me-1"></i>All records</div>
+            <div class="stat-title">Folders</div>
+            <div class="stat-value"><?= $stats['total_folders'] ?? count($folders) ?></div>
+            <div class="stat-trend"><i class="fa-solid fa-users me-1"></i>Applicant files</div>
           </div>
         </div>
       </a>
@@ -312,13 +314,17 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   <div class="card card-enterprise bg-white">
     <div class="card-header bg-white border-bottom p-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
       <div class="fw-bold text-dark fs-6 d-flex align-items-center gap-2">
-        <i class="fa-solid fa-folder-closed text-primary"></i> Document Registry
-        <span class="badge bg-light text-muted border"><?= count($documents) ?> displayed</span>
+        <i class="fa-solid fa-folder-closed text-primary"></i>
+        <span id="docRegistryTitle">Applicant Folders Directory</span>
+        <span class="badge bg-light text-muted border" id="docRegistryCountBadge"><?= count($folders) ?> folders</span>
       </div>
       <div class="d-flex align-items-center gap-2">
-        <!-- 3 View Options Switcher (Responsive) -->
+        <!-- 4 View Options Switcher (Responsive) -->
         <div class="btn-group btn-group-sm bg-white shadow-sm border rounded-pill p-1 view-switcher-pill-group" role="group" aria-label="View Mode">
-          <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold doc-view-btn btn-primary shadow-sm" id="docViewListBtn" onclick="setDocumentView('table')" title="Table View">
+          <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold doc-view-btn btn-primary shadow-sm" id="docViewFoldersBtn" onclick="setDocumentView('folders')" title="Applicant Folder View">
+            <i class="fa-solid fa-folder me-1"></i> <span class="d-none d-sm-inline">Folders</span>
+          </button>
+          <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold doc-view-btn btn-light text-muted" id="docViewListBtn" onclick="setDocumentView('table')" title="Table View">
             <i class="fa-solid fa-table-list me-1"></i> <span class="d-none d-sm-inline">Table</span>
           </button>
           <button type="button" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold doc-view-btn btn-light text-muted" id="docViewGridBtn" onclick="setDocumentView('grid')" title="Card Grid View">
@@ -330,8 +336,143 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         </div>
       </div>
     </div>
+
+    <!-- 1. PRIMARY PRESENTATION: APPLICANT FOLDER DIRECTORY -->
+    <div id="documentFolderView" class="p-3">
+      <?php if (empty($folders)): ?>
+        <div class="empty-state-box p-5 text-center">
+          <div class="empty-state-icon mb-3" style="font-size: 2.5rem; color: #94a3b8;">
+            <i class="fa-solid fa-folder-open"></i>
+          </div>
+          <h5 class="fw-bold mb-1">No applicant folders found</h5>
+          <p class="text-muted small mb-3">No applicant files match your current search criteria.</p>
+          <a href="/documents" class="btn btn-outline-secondary btn-sm me-2">Clear Filters</a>
+          <a href="/applications/create" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-plus me-1"></i> New Application
+          </a>
+        </div>
+      <?php else: ?>
+        <div class="applicant-folder-grid">
+          <?php foreach ($folders as $f): ?>
+            <?php
+              $fStatusBadge = 'bg-secondary';
+              if ($f['application_status'] === 'Approved') $fStatusBadge = 'bg-success';
+              elseif ($f['application_status'] === 'Pending') $fStatusBadge = 'bg-warning text-dark';
+              elseif ($f['application_status'] === 'Rejected') $fStatusBadge = 'bg-danger';
+              elseif ($f['application_status'] === 'In Process') $fStatusBadge = 'bg-primary';
+              elseif ($f['application_status'] === 'Draft') $fStatusBadge = 'bg-info text-dark';
+            ?>
+            <div class="applicant-folder-card">
+              <div class="folder-card-header">
+                <div class="folder-tab-badge">
+                  <i class="fa-solid fa-folder-open text-primary"></i>
+                  <span class="font-monospace"><?= e($f['application_number']) ?></span>
+                </div>
+                <span class="badge <?= $fStatusBadge ?> px-2 py-1" style="font-size: 0.72rem;"><?= e($f['application_status']) ?></span>
+              </div>
+              <div class="folder-card-body">
+                <div class="folder-applicant-meta">
+                  <div class="folder-avatar-wrapper">
+                    <?php
+                      $nameParts = explode(' ', trim((string)($f['customer_name'] ?? '')));
+                      $firstInitial = !empty($nameParts[0]) ? mb_substr($nameParts[0], 0, 1) : 'A';
+                      $lastInitial = count($nameParts) > 1 ? mb_substr(end($nameParts), 0, 1) : '';
+                      $initials = strtoupper($firstInitial . $lastInitial) ?: 'AP';
+                    ?>
+                    <?php if (!empty($f['photo_doc_id'])): ?>
+                      <img src="/documents/preview?id=<?= (int)$f['photo_doc_id'] ?>" 
+                           alt="<?= e($f['customer_name']) ?>" 
+                           class="folder-avatar-img" 
+                           loading="lazy"
+                           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                      <div class="folder-avatar-initials" style="display:none;"><?= e($initials) ?></div>
+                    <?php else: ?>
+                      <div class="folder-avatar-initials"><?= e($initials) ?></div>
+                    <?php endif; ?>
+                  </div>
+                  <div class="min-w-0 flex-grow-1">
+                    <h6 class="folder-name-title mb-0">
+                      <a href="/documents/profile?application_id=<?= (int)$f['application_id'] ?>" class="text-dark text-decoration-none">
+                        <?= e($f['customer_name']) ?>
+                      </a>
+                    </h6>
+                    <div class="text-muted small">
+                      <span class="font-monospace text-secondary fw-semibold"><?= e($f['customer_code'] ?? 'MSC-000000') ?></span>
+                      <?php if (!empty($f['passport_number'])): ?>
+                        &bull; <i class="fa-solid fa-passport text-muted"></i> <?= e($f['passport_number']) ?>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 small">
+                  <div class="folder-route-pill">
+                    <span><?= e($f['nationality'] ?: 'Applicant') ?></span>
+                    <i class="fa-solid fa-arrow-right-long text-secondary" style="font-size: 0.65rem;"></i>
+                    <span><?= e($f['flag_emoji'] ?? '🌐') ?> <?= e($f['country_name'] ?? 'UAE') ?></span>
+                  </div>
+                  <span class="badge bg-light text-secondary border"><?= e($f['current_stage']) ?></span>
+                </div>
+
+                <!-- 4 Stats Strip: Total Docs, Verified, Pending, Missing -->
+                <div class="folder-doc-stats-strip">
+                  <div class="folder-stat-item">
+                    <span class="folder-stat-num text-dark"><?= (int)$f['total_docs'] ?></span>
+                    <span class="folder-stat-lbl">Documents</span>
+                  </div>
+                  <div class="folder-stat-item">
+                    <span class="folder-stat-num text-success"><?= (int)$f['verified_docs'] ?></span>
+                    <span class="folder-stat-lbl">Verified</span>
+                  </div>
+                  <div class="folder-stat-item">
+                    <span class="folder-stat-num text-warning"><?= (int)$f['pending_docs'] ?></span>
+                    <span class="folder-stat-lbl">Pending</span>
+                  </div>
+                  <div class="folder-stat-item">
+                    <span class="folder-stat-num <?= ((int)($f['missing_docs'] ?? 0) > 0) ? 'text-danger' : 'text-muted' ?>">
+                      <?= (int)($f['missing_docs'] ?? 0) ?>
+                    </span>
+                    <span class="folder-stat-lbl">Missing</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="folder-card-footer">
+                <a href="/documents/profile?application_id=<?= (int)$f['application_id'] ?>" class="btn btn-primary btn-sm btn-view-profile shadow-sm">
+                  <i class="fa-solid fa-folder-open me-1"></i> VIEW PROFILE
+                </a>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+
+        <!-- Folder Pagination -->
+        <?php if ($folderTotalPages > 1): ?>
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 p-3 mt-3 border-top">
+            <div class="small text-muted">
+              Showing <?= (($folderPage - 1) * $folderPerPage) + 1 ?> to <?= min($totalFolders, $folderPage * $folderPerPage) ?> of <?= $totalFolders ?> applicant folders
+            </div>
+            <ul class="pagination pagination-sm mb-0">
+              <?php if ($folderPage > 1): ?>
+                <li class="page-item"><a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['f_page' => $folderPage - 1])) ?>">&laquo; Prev</a></li>
+              <?php endif; ?>
+              <?php for ($p = 1; $p <= $folderTotalPages; $p++): ?>
+                <li class="page-item <?= ($p === $folderPage) ? 'active' : '' ?>">
+                  <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['f_page' => $p])) ?>"><?= $p ?></a>
+                </li>
+              <?php endfor; ?>
+              <?php if ($folderPage < $folderTotalPages): ?>
+                <li class="page-item"><a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['f_page' => $folderPage + 1])) ?>">Next &raquo;</a></li>
+              <?php endif; ?>
+            </ul>
+          </div>
+        <?php endif; ?>
+      <?php endif; ?>
+    </div>
+
+    <!-- 2. Flat Document Registry Views (Table, Cards, Compact) -->
     <?php if (empty($documents)): ?>
-      <div class="empty-state-box p-5 text-center">
+      <div id="documentEmptyState" class="empty-state-box p-5 text-center d-none">
         <div class="empty-state-icon mb-3" style="font-size: 2.5rem; color: #94a3b8;">
           <i class="fa-solid fa-folder-open"></i>
         </div>
@@ -1694,22 +1835,29 @@ function openVersionHistoryModal(id, title) {
 }
 
 function setDocumentView(mode) {
+  const folderView = document.getElementById('documentFolderView');
   const tableView = document.getElementById('documentTableView');
   const gridView = document.getElementById('documentGridView');
   const compactView = document.getElementById('documentCompactView');
   const mobileCards = document.getElementById('documentMobileCards');
+  const emptyState = document.getElementById('documentEmptyState');
+  const foldersBtn = document.getElementById('docViewFoldersBtn');
   const listBtn = document.getElementById('docViewListBtn');
   const gridBtn = document.getElementById('docViewGridBtn');
   const compactBtn = document.getElementById('docViewCompactBtn');
+  const titleSpan = document.getElementById('docRegistryTitle');
+  const badgeSpan = document.getElementById('docRegistryCountBadge');
 
   // Hide all containers
+  if (folderView) folderView.classList.add('d-none');
   if (tableView) tableView.classList.add('d-none');
   if (gridView) gridView.classList.add('d-none');
   if (compactView) compactView.classList.add('d-none');
   if (mobileCards) mobileCards.classList.add('d-none');
+  if (emptyState) emptyState.classList.add('d-none');
 
   // Reset all buttons to inactive pill style
-  [listBtn, gridBtn, compactBtn].forEach(btn => {
+  [foldersBtn, listBtn, gridBtn, compactBtn].forEach(btn => {
     if (btn) {
       btn.classList.remove('btn-primary', 'shadow-sm', 'text-white', 'active');
       btn.classList.add('btn-light', 'text-muted');
@@ -1717,41 +1865,66 @@ function setDocumentView(mode) {
   });
 
   if (mode === 'grid') {
-    if (gridView) gridView.classList.remove('d-none');
+    if (gridView) {
+      gridView.classList.remove('d-none');
+    } else if (emptyState) {
+      emptyState.classList.remove('d-none');
+    }
     if (gridBtn) {
       gridBtn.classList.remove('btn-light', 'text-muted');
       gridBtn.classList.add('btn-primary', 'shadow-sm', 'text-white', 'active');
     }
+    if (titleSpan) titleSpan.textContent = 'Document Registry Cards';
+    if (badgeSpan) badgeSpan.textContent = '<?= count($documents) ?> documents';
     try { localStorage.setItem('vt_doc_view', 'grid'); } catch(e) {}
   } else if (mode === 'compact') {
-    if (compactView) compactView.classList.remove('d-none');
+    if (compactView) {
+      compactView.classList.remove('d-none');
+    } else if (emptyState) {
+      emptyState.classList.remove('d-none');
+    }
     if (compactBtn) {
       compactBtn.classList.remove('btn-light', 'text-muted');
       compactBtn.classList.add('btn-primary', 'shadow-sm', 'text-white', 'active');
     }
+    if (titleSpan) titleSpan.textContent = 'Compact Document Registry';
+    if (badgeSpan) badgeSpan.textContent = '<?= count($documents) ?> documents';
     try { localStorage.setItem('vt_doc_view', 'compact'); } catch(e) {}
-  } else {
-    // default table / list
-    if (tableView) tableView.classList.remove('d-none');
-    if (window.innerWidth < 768 && mobileCards) {
-      mobileCards.classList.remove('d-none');
+  } else if (mode === 'table') {
+    if (tableView) {
+      tableView.classList.remove('d-none');
+      if (window.innerWidth < 768 && mobileCards) {
+        mobileCards.classList.remove('d-none');
+      }
+    } else if (emptyState) {
+      emptyState.classList.remove('d-none');
     }
     if (listBtn) {
       listBtn.classList.remove('btn-light', 'text-muted');
       listBtn.classList.add('btn-primary', 'shadow-sm', 'text-white', 'active');
     }
+    if (titleSpan) titleSpan.textContent = 'Document Flat Registry';
+    if (badgeSpan) badgeSpan.textContent = '<?= count($documents) ?> documents';
     try { localStorage.setItem('vt_doc_view', 'table'); } catch(e) {}
+  } else {
+    // Default is 'folders'
+    if (folderView) folderView.classList.remove('d-none');
+    if (foldersBtn) {
+      foldersBtn.classList.remove('btn-light', 'text-muted');
+      foldersBtn.classList.add('btn-primary', 'shadow-sm', 'text-white', 'active');
+    }
+    if (titleSpan) titleSpan.textContent = 'Applicant Folders Directory';
+    if (badgeSpan) badgeSpan.textContent = '<?= count($folders) ?> folders';
+    try { localStorage.setItem('vt_doc_view', 'folders'); } catch(e) {}
   }
 }
 
 // Automatically configure Popper fixed positioning for all table dropdowns & restore view
 document.addEventListener('DOMContentLoaded', function() {
   const savedView = (function() {
-    try { return localStorage.getItem('vt_doc_view') || (window.innerWidth < 768 ? 'grid' : 'table'); } catch(e) { return 'table'; }
+    try { return localStorage.getItem('vt_doc_view') || 'folders'; } catch(e) { return 'folders'; }
   })();
-  if (savedView === 'grid' || savedView === 'compact') {
-    setDocumentView(savedView);
-  }
+  setDocumentView(savedView);
 
   function initFixedDropdowns() {
     if (window.bootstrap && bootstrap.Dropdown) {

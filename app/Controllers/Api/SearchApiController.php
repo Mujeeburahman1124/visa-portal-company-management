@@ -23,7 +23,7 @@ class SearchApiController extends ApiController
     public function search(): void
     {
         $user = $this->requireAuth();
-        $scopedBranchId = $this->getScopedBranchId($user);
+        $scopedBranchId = $this->getScopedBranchId((int)($_GET['branch_id'] ?? 0));
 
         $query = trim($_GET['q'] ?? '');
         if (strlen($query) < 2) {
@@ -57,7 +57,7 @@ class SearchApiController extends ApiController
             $searchTerm, $searchTerm, $searchTerm, $searchTerm
         ];
 
-        if ($scopedBranchId !== null) {
+        if ($scopedBranchId > 0) {
             $appSql .= " AND a.branch_id = ?";
             $appParams[] = $scopedBranchId;
         }
@@ -86,8 +86,8 @@ class SearchApiController extends ApiController
             $searchTerm, $searchTerm
         ];
 
-        if ($scopedBranchId !== null) {
-            $custSql .= " AND (c.branch_id = ? OR c.branch_id IS NULL)";
+        if ($scopedBranchId > 0) {
+            $custSql .= " AND c.id IN (SELECT DISTINCT customer_id FROM applications WHERE branch_id = ?)";
             $custParams[] = $scopedBranchId;
         }
 

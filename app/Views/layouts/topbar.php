@@ -46,7 +46,7 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
   </div>
 <?php endif; ?>
 <header class="app-topbar" id="appTopbar">
-  <div class="d-flex align-items-center gap-2 gap-md-3">
+  <div class="d-flex align-items-center gap-2 gap-md-2.5 flex-shrink-0">
     <!-- Desktop Sidebar Collapse Toggle -->
     <button class="btn btn-light d-none d-lg-inline-flex p-2 border topbar-toggle-btn" id="desktopSidebarToggleBtn" type="button" aria-label="Toggle Desktop Sidebar" title="Collapse / Expand Navigation">
       <i class="fa-solid fa-bars-staggered text-dark"></i>
@@ -59,14 +59,14 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
 
     <!-- Mobile Brand Logo -->
     <a href="/dashboard" class="d-lg-none d-flex align-items-center text-decoration-none">
-      <img src="/assets/images/logo.png" alt="MS Travel Hub" style="height: 32px; width: auto;" class="me-1">
-      <span class="fw-bold fs-6 text-dark font-monospace">MS <span class="text-danger">TRAVEL</span></span>
+      <img src="/assets/images/logo.png" alt="MS Travel Hub" style="height: 30px; width: auto;" class="me-1">
+      <span class="fw-bold fs-6 text-dark font-monospace d-none d-md-inline">MS <span class="text-danger">TRAVEL</span></span>
     </a>
     
-    <!-- Breadcrumb Trail & Page Context (Responsive) -->
-    <div class="d-none d-lg-block topbar-breadcrumb-container" style="min-width: 180px; max-width: 340px;">
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb mb-0" style="font-size: 0.75rem;">
+    <!-- Page Title / Breadcrumb Trail (Smart Progressive Display: Breadcrumb on ≥1440px, Title on ≥1200px, hidden on <1200px) -->
+    <div class="d-none d-xl-block topbar-breadcrumb-container flex-shrink-0">
+      <nav aria-label="breadcrumb" class="d-none d-xxl-block">
+        <ol class="breadcrumb mb-0" style="font-size: 0.70rem;">
           <li class="breadcrumb-item"><a href="/dashboard" class="text-decoration-none text-muted"><i class="fa-solid fa-house-chimney small me-1"></i>Home</a></li>
           <?php if (empty($uriSegments) || $currentUri === '/dashboard'): ?>
             <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Dashboard</li>
@@ -89,17 +89,17 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
         </ol>
       </nav>
       <?php
-        $cleanTitle = trim(explode('—', (string)($pageTitle ?? 'Staff Operations'))[0]);
+        $cleanTitle = trim(explode('—', (string)($pageTitle ?? 'Operations Dashboard'))[0]);
       ?>
-      <div class="fw-bold fs-6 page-title-header text-truncate" title="<?= e($cleanTitle) ?>"><?= e($cleanTitle) ?></div>
+      <div class="fw-bold page-title-header text-truncate" style="font-size: 0.95rem; max-width: 170px;" title="<?= e($cleanTitle) ?>"><?= e($cleanTitle) ?></div>
     </div>
   </div>
 
-  <!-- Global Live Search Bar -->
-  <div class="topbar-search position-relative">
+  <!-- Global Live Search Bar (Flexibly scales with screen size) -->
+  <div class="topbar-search position-relative flex-grow-1 flex-md-grow-0 mx-1 mx-md-2" style="min-width: 120px; max-width: 280px;">
     <i class="fa-solid fa-magnifying-glass topbar-search-icon"></i>
-    <input type="text" id="globalSearchInput" class="form-control form-control-sm" placeholder="Search applicant, passport, application #..." autocomplete="off">
-    <span class="search-shortcut-badge d-none d-md-inline-block">Ctrl K</span>
+    <input type="text" id="globalSearchInput" class="form-control form-control-sm" placeholder="Search applicant, passport, file..." autocomplete="off">
+    <span class="search-shortcut-badge d-none d-xxl-inline-block">Ctrl K</span>
 
     <!-- Search Live Dropdown Results Container -->
     <div id="globalSearchResults" class="global-search-dropdown shadow-lg rounded-3 border d-none">
@@ -113,20 +113,20 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
     </div>
   </div>
 
-  <!-- Topbar Action Items -->
-  <div class="d-flex align-items-center gap-2 ms-auto topbar-actions-group">
-    <!-- UAE / Dubai Local Time Display -->
-    <div class="d-none d-md-flex align-items-center gap-2 px-2.5 py-1 rounded-pill bg-light border text-muted small flex-shrink-0" style="font-size: 0.78rem;" title="Official UAE Standard Time (GST, UTC+4)">
+  <!-- Topbar Action Items (Responsive flex container with safe right padding) -->
+  <div class="d-flex align-items-center gap-1 gap-md-1.5 ms-auto topbar-actions-group flex-shrink-0 pe-1">
+    <!-- UAE / Dubai Local Time Display (Visible on Ultra-Wide Screens ≥ 1600px to guarantee zero overflow) -->
+    <div class="topbar-clock align-items-center gap-1.5 px-2.5 py-1 rounded-pill bg-light border text-muted small flex-shrink-0" style="font-size: 0.78rem;" title="Official UAE Standard Time (GST, UTC+4)">
       <i class="fa-regular fa-clock text-primary"></i>
       <span class="fw-semibold text-dark" id="uaeLiveClock"><?= date('h:i A') ?></span>
-      <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.65rem;">GST (UAE)</span>
+      <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.65rem;">GST</span>
     </div>
 
-    <!-- Quick Actions Button (Responsive: hidden on xs phones, visible on sm+) -->
+    <!-- Quick Actions Button (Compact '+' on laptops/tablets, full text on wide displays ≥ 1440px) -->
     <div class="dropdown flex-shrink-0 d-none d-sm-block">
-      <button class="btn btn-primary btn-sm px-2.5 px-md-3 rounded-pill d-flex align-items-center gap-1 shadow-sm topbar-quick-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Quick Action">
+      <button class="btn btn-primary btn-sm px-2.5 px-xxl-3 rounded-pill d-flex align-items-center justify-content-center shadow-sm topbar-quick-action-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Quick Action">
         <i class="fa-solid fa-plus"></i>
-        <span class="d-none d-md-inline ms-1 fw-semibold">Quick Action</span>
+        <span class="d-none d-xxl-inline ms-1 fw-semibold">Quick Action</span>
       </button>
       <ul class="dropdown-menu dropdown-menu-end shadow border-0 topbar-quick-action-menu" style="font-size: 0.875rem;">
         <li class="dropdown-header small text-uppercase text-muted" style="font-size: 0.7rem;">Visa Operations</li>
@@ -142,21 +142,19 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
       </ul>
     </div>
 
-    <!-- Super Admin System Errors Warning Indicator -->
+    <!-- Super Admin System Errors Warning Indicator (Icon + badge pill on laptops, text on xxl) -->
     <?php if ($isSuperAdminUser && $systemErrorCount > 0): ?>
-      <a href="/audit-logs?action=SYSTEM_ERROR" class="btn btn-outline-danger btn-sm rounded-pill d-flex align-items-center gap-1 px-2 px-md-2.5 shadow-sm flex-shrink-0" title="System Errors Logged — Click to inspect">
+      <a href="/audit-logs?action=SYSTEM_ERROR" class="btn btn-outline-danger btn-sm rounded-pill d-flex align-items-center gap-1 px-2 shadow-sm flex-shrink-0" title="System Errors Logged — Click to inspect">
         <i class="fa-solid fa-triangle-exclamation text-danger"></i>
-        <span class="d-none d-md-inline small fw-bold">Errors</span>
+        <span class="d-none d-xxl-inline small fw-bold">Errors</span>
         <span class="badge bg-danger rounded-pill"><?= $systemErrorCount ?></span>
       </a>
     <?php endif; ?>
 
-    <!-- Theme Palette Selector (Responsive: hidden on xs phones, visible on sm+) -->
-    <div class="theme-selector-wrap flex-shrink-0 d-none d-sm-block">
+    <!-- Theme Palette Selector (Circular macOS button, responsive on all devices) -->
+    <div class="theme-selector-wrap flex-shrink-0">
       <button class="theme-selector-btn" type="button" aria-label="Choose Theme" title="Choose Theme">
         <span class="theme-swatch-current"></span>
-        <span class="d-none d-xl-inline">Theme</span>
-        <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem;"></i>
       </button>
     </div>
 
@@ -213,21 +211,21 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
       </div>
     </div>
 
-    <!-- User Profile Dropdown -->
-    <div class="dropdown flex-shrink-0">
-      <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-dark topbar-user-btn" data-bs-toggle="dropdown" aria-expanded="false" title="<?= e($currentUser['name'] ?? 'User Profile') ?>">
+    <!-- User Profile Dropdown (Guaranteed zero overflow, pristine spacing) -->
+    <div class="dropdown flex-shrink-0 user-profile-dropdown">
+      <a href="#" class="d-flex align-items-center gap-1.5 text-decoration-none text-dark topbar-user-btn" data-bs-toggle="dropdown" aria-expanded="false" title="<?= e($currentUser['name'] ?? 'User Profile') ?>">
         <?php $topbarAvatar = user_avatar_url($currentUser); if (!empty($topbarAvatar)): ?>
-          <img src="<?= e($topbarAvatar) ?>" alt="<?= e($currentUser['name'] ?? 'User Profile') ?>" class="rounded-circle shadow-sm topbar-user-avatar border" style="width: 36px; height: 36px; object-fit: cover;">
+          <img src="<?= e($topbarAvatar) ?>" alt="<?= e($currentUser['name'] ?? 'User Profile') ?>" class="rounded-circle shadow-sm topbar-user-avatar border" style="width: 36px; height: 36px; object-fit: cover; flex-shrink: 0;">
         <?php else: ?>
-          <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm topbar-user-avatar" style="width: 36px; height: 36px; font-size: 0.9rem;">
+          <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm topbar-user-avatar" style="width: 36px; height: 36px; font-size: 0.9rem; flex-shrink: 0;">
             <?= strtoupper(substr($currentUser['name'] ?? 'U', 0, 1)) ?>
           </div>
         <?php endif; ?>
-        <div class="d-none d-lg-block text-start" style="line-height: 1.1;">
-          <div class="fw-semibold small user-name-label"><?= e($currentUser['name'] ?? 'Staff') ?></div>
-          <div class="text-muted user-role-label" style="font-size: 0.72rem;"><?= e($currentUser['role_name'] ?? 'Staff') ?></div>
+        <div class="topbar-user-info text-start" style="line-height: 1.1; max-width: 110px;">
+          <div class="fw-semibold small user-name-label text-truncate"><?= e($currentUser['name'] ?? 'Staff') ?></div>
+          <div class="text-muted user-role-label text-truncate" style="font-size: 0.70rem;"><?= e($currentUser['role_name'] ?? 'Staff') ?></div>
         </div>
-        <i class="fa-solid fa-chevron-down text-muted small ms-1 d-none d-sm-inline-block"></i>
+        <i class="fa-solid fa-chevron-down text-muted small ms-0.5 d-none d-sm-inline-block" style="font-size: 0.65rem;"></i>
       </a>
       <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.875rem; min-width: 230px;">
         <li class="px-3 py-2 border-bottom bg-light rounded-top">

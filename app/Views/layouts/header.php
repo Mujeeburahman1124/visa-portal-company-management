@@ -25,6 +25,8 @@
   <link rel="stylesheet" href="/assets/css/theme.css?v=2.3">
   <!-- Application CSS -->
   <link rel="stylesheet" href="/assets/css/main.css?v=7.2.0">
+  <!-- Bankio FinTech Design System -->
+  <link rel="stylesheet" href="/assets/css/bankio-theme.css?v=2.0">
   <!-- Flatpickr Datepicker CSS -->
   <link rel="stylesheet" href="/assets/css/flatpickr.min.css">
 
@@ -34,11 +36,11 @@
   </script>
 
   <?php
-    // Dynamic Website Themes from system_settings
-    $thPrimary = '#0284c7';
-    $thAccent = '#059669';
-    $thRadius = '8px';
-    $thFont = "'Plus Jakarta Sans', sans-serif";
+    // Dynamic Website Themes from system_settings (MS Travel Hub Logo Harmonized)
+    $thPrimary = '#1E40AF';
+    $thAccent = '#E11D48';
+    $thRadius = '14px';
+    $thFont = "'Outfit', 'Inter', sans-serif";
     $thMode = 'light';
     try {
         $thPdo = \App\Config\Database::getConnection();
@@ -61,10 +63,14 @@
     }
     :root {
       --border-radius-base: <?= e($thRadius) ?>;
-      --font-heading: <?= $thFont ?>;
+      --font-heading: 'Outfit', 'Inter', sans-serif;
+      --font-body: 'Inter', -apple-system, sans-serif;
     }
-    .brand-font, h1.brand-font, h2.brand-font, h3.brand-font, h4.brand-font, h5.brand-font, h6.brand-font {
-      font-family: var(--font-heading);
+    body, body.app-body {
+      font-family: var(--font-body) !important;
+    }
+    .brand-font, h1, h2, h3, h4, h5, h6, .brand-title, .stat-value {
+      font-family: var(--font-heading) !important;
     }
     :root:not([data-theme]) .btn-primary,
     :root[data-theme=""] .btn-primary {

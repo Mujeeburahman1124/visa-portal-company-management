@@ -324,7 +324,7 @@ class CustomerController
 
             $docStmt = $pdo->prepare("INSERT INTO documents (
                 customer_id, document_type_id, document_title, file_path, file_name, file_size, mime_type, version, status, uploaded_by_type, uploaded_by_id, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'Verified', 'Staff', ?, CURRENT_TIMESTAMP)");
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'VERIFIED', 'Staff', ?, CURRENT_TIMESTAMP)");
 
             foreach ($_FILES['applicant_documents']['name'] as $idx => $origName) {
                 if (!empty($origName) && $_FILES['applicant_documents']['error'][$idx] === UPLOAD_ERR_OK) {

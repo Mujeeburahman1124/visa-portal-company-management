@@ -32,3 +32,6 @@
 /* 4. Utilities & Overrides Layer */
 @import url("./utilities/helpers.css?v=7.2.0");
 @import url("./utilities/responsive.css?v=7.2.0");
+
+/* 5. Bankio FinTech Design System */
+@import url("./bankio-theme.css?v=1.0");

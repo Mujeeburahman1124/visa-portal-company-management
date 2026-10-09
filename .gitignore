@@ -24,6 +24,10 @@ public/uploads/customers/*
 public/uploads/documents/*
 public/uploads/receipts/*
 public/uploads/avatars/*
+public/uploads/temp_ocr/*
+!public/uploads/temp_ocr/.gitkeep
+storage/cache/*
+!storage/cache/.gitkeep
 *.pdf
 !public/uploads/customers/.gitkeep
 !public/uploads/documents/.gitkeep

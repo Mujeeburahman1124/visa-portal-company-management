@@ -1,19 +1,30 @@
+/* ==========================================================================
+   GLOBAL TYPOGRAPHY — 'Inter' for Body & UI, 'Outfit' for Headings & Branding
+   ========================================================================== */
+
 body.app-body, html, body {
-  font-family: 'Times New Roman', Times, Georgia, serif !important;
-  color: var(--vt-text-body);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  color: var(--vt-text-body, #0F172A);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Headings, Brand, Metric Values, Badges */
 .brand-font, .brand-title, h1, h2, h3, h4, h5, h6,
-button, input, select, textarea, .btn, .nav-link-custom, .stat-value, .badge, .table,
+.stat-value, .hero-greeting-title, .page-title-header {
+  font-family: 'Outfit', 'Inter', -apple-system, sans-serif !important;
+  letter-spacing: -0.02em;
+}
+
+/* UI Elements, Inputs, Buttons, Tables */
+button, input, select, textarea, .btn, .nav-link-custom, .badge, .table,
 .form-control, .form-select, .card, .dropdown-menu, .modal {
-  font-family: 'Times New Roman', Times, Georgia, serif !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  color: var(--vt-text-main);
+  color: var(--vt-text-main, #0F172A);
   font-weight: 700;
   line-height: 1.25;
 }
@@ -31,10 +42,10 @@ i.fa-solid, i.fa-regular, i.fa-brands {
 }
 
 a {
-  color: var(--mh-blue);
+  color: var(--mh-blue, #1E40AF);
   text-decoration: none;
-  transition: all var(--vt-transition-fast);
+  transition: all var(--vt-transition-fast, 0.2s ease);
 }
 a:hover {
-  color: var(--mh-blue-hover);
+  color: var(--mh-blue-hover, #1D4ED8);
 }

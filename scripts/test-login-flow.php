@@ -12,7 +12,7 @@ require_once dirname(__DIR__) . '/app/autoload.php';
 
 use App\Controllers\AuthController;
 
-$_POST['email'] = 'admin@visatrack.com';
+$_POST['email'] = 'admin@system.com';
 $_POST['password'] = 'password';
 
 $ctrl = new AuthController();

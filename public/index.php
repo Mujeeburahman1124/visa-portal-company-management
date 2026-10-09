@@ -424,6 +424,17 @@ switch ($uri) {
         (new App\Controllers\DocumentController())->index();
         break;
 
+    case '/documents/profile':
+        require_permission('documents.view');
+        (new App\Controllers\DocumentController())->profile();
+        break;
+
+    case '/documents/download-all':
+    case '/documents/zip':
+        require_permission('documents.view');
+        (new App\Controllers\DocumentController())->downloadAll();
+        break;
+
     case '/documents/upload':
         (new App\Controllers\DocumentController())->upload();
         break;
@@ -1464,6 +1475,14 @@ switch ($uri) {
 
     case '/api/documents/reject':
         (new App\Controllers\Api\DocumentApiController())->reject((int)($_POST['document_id'] ?? $_GET['id'] ?? 0));
+        break;
+
+    case '/api/documents/ocr-passport':
+        (new App\Controllers\Api\DocumentApiController())->ocrPassport();
+        break;
+
+    case '/api/documents/temp-preview':
+        (new App\Controllers\Api\DocumentApiController())->tempPreview();
         break;
 
     case '/api/tasks':

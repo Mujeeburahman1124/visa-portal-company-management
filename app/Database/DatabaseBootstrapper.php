@@ -148,10 +148,24 @@ class DatabaseBootstrapper
                 mother_nationality TEXT,
                 mother_religion TEXT,
                 mother_mobile TEXT,
+                spouse_name TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
             );");
+
+            // Ensure columns for passport OCR and complete applicant profile
+            try { $pdo->exec("ALTER TABLE customers ADD COLUMN birth_country TEXT NULL;"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE customers ADD COLUMN city TEXT NULL;"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE customers ADD COLUMN education TEXT NULL;"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE customers ADD COLUMN language TEXT NULL;"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE customer_family ADD COLUMN spouse_name TEXT NULL;"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN source_type TEXT DEFAULT 'Direct';"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE applications ADD COLUMN visit_reason TEXT NULL;"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE documents ADD COLUMN ocr_status TEXT NULL;"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE documents ADD COLUMN ocr_confidence REAL NULL;"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE documents ADD COLUMN ocr_provider TEXT NULL;"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE documents ADD COLUMN ocr_data TEXT NULL;"); } catch (\Throwable $e) {}
 
             // Ensure visa_approvals table exists for SQLite
             $pdo->exec("CREATE TABLE IF NOT EXISTS visa_approvals (
