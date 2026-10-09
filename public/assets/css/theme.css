@@ -4,14 +4,12 @@
    Applied via: data-theme attribute on <html> element
    ========================================================================== */
 
-/* ─── THEME 1: MS RUBY PRESTIGE (Official Logo Brand / Default) ────────────── */
+/* ─── THEME 1: MS RUBY BRAND (Official Logo Identity / Default) ───────────── */
 :root,
 :root[data-theme="ms-ruby-prestige"],
 html[data-theme="ms-ruby-prestige"],
-:root[data-theme="ocean-royal"],
-html[data-theme="ocean-royal"],
-:root[data-theme="sunset-fusion"],
-html[data-theme="sunset-fusion"] {
+:root[data-theme="crimson-midnight"],
+html[data-theme="crimson-midnight"] {
   --color-primary:          #e11d48;
   --color-primary-light:    #fb7185;
   --color-primary-hover:    #be123c;
@@ -98,6 +96,8 @@ html[data-theme="sunset-fusion"] {
 /* ─── THEME 2: AVIATION SAPPHIRE & RUBY ───────────────────────────────────── */
 :root[data-theme="aviation-sapphire"],
 html[data-theme="aviation-sapphire"],
+:root[data-theme="ocean-royal"],
+html[data-theme="ocean-royal"],
 :root[data-theme="violet-aurora"],
 html[data-theme="violet-aurora"] {
   --color-primary:          #1e40af;
@@ -176,85 +176,87 @@ html[data-theme="violet-aurora"] {
   --mh-gradient-sidebar:    linear-gradient(180deg, #0a1128 0%, #060913 100%);
 }
 
-/* ─── THEME 3: IMPERIAL GOLD & DIAMOND ─────────────────────────────────────── */
+/* ─── THEME 3: SUNSET FLIGHT (LOGO CORAL & DIAMOND) ────────────────────────── */
+:root[data-theme="sunset-fusion"],
+html[data-theme="sunset-fusion"],
+:root[data-theme="sunset-coral"],
+html[data-theme="sunset-coral"],
 :root[data-theme="imperial-gold"],
-html[data-theme="imperial-gold"],
-:root[data-theme="crimson-midnight"],
-html[data-theme="crimson-midnight"] {
-  --color-primary:          #d97706;
-  --color-primary-light:    #fbbf24;
-  --color-primary-hover:    #b45309;
-  --color-secondary:        #be123c;
-  --color-secondary-hover:  #9f1239;
+html[data-theme="imperial-gold"] {
+  --color-primary:          #ea580c;
+  --color-primary-light:    #fb923c;
+  --color-primary-hover:    #c2410c;
+  --color-secondary:        #e11d48;
+  --color-secondary-hover:  #be123c;
   --color-accent:           #0f172a;
   --color-accent-hover:     #1e293b;
-  --color-supporting:       #0284c7;
-  --color-background:       #fffdf7;
+  --color-supporting:       #2563eb;
+  --color-background:       #fff7ed;
   --color-surface:          #ffffff;
-  --color-surface-alt:      #fefce8;
-  --color-surface-secondary:#fef3c7;
+  --color-surface-alt:      #ffedd5;
+  --color-surface-secondary:#fed7aa;
   --color-text:             #1c1917;
   --color-text-muted:       #78716c;
   --color-text-inverse:     #ffffff;
   --color-heading:          #1c1917;
-  --color-border:           #fef3c7;
-  --color-border-strong:    #fde68a;
-  --color-shadow:           rgba(217,119,6,0.10);
-  --color-shadow-strong:    rgba(217,119,6,0.20);
+  --color-border:           #fed7aa;
+  --color-border-strong:    #fdba74;
+  --color-shadow:           rgba(234,88,12,0.10);
+  --color-shadow-strong:    rgba(234,88,12,0.20);
   --color-success:          #059669;
   --color-success-bg:       #ecfdf5;
   --color-warning:          #d97706;
   --color-warning-bg:       #fffbeb;
   --color-danger:           #dc2626;
   --color-danger-bg:        #fef2f2;
-  --color-info:             #0284c7;
-  --color-info-bg:          #f0f9ff;
-  --gradient-primary:       linear-gradient(135deg,#d97706 0%,#f59e0b 50%,#be123c 100%);
-  --gradient-secondary:     linear-gradient(135deg,#be123c 0%,#d97706 100%);
-  --gradient-hero:          linear-gradient(135deg,#1c1917 0%,#451a03 50%,#0f172a 100%);
-  --gradient-accent:        linear-gradient(135deg,#be123c 0%,#d97706 100%);
-  --gradient-card:          linear-gradient(135deg,#fefce8 0%,#fffdf7 100%);
-  --gradient-cta:           linear-gradient(135deg,#d97706 0%,#be123c 100%);
+  --color-info:             #2563eb;
+  --color-info-bg:          #eff6ff;
+  --gradient-primary:       linear-gradient(135deg,#ea580c 0%,#f97316 50%,#e11d48 100%);
+  --gradient-secondary:     linear-gradient(135deg,#e11d48 0%,#ea580c 100%);
+  --gradient-hero:          linear-gradient(135deg,#1c1917 0%,#7c2d12 50%,#4c0519 100%);
+  --gradient-accent:        linear-gradient(135deg,#e11d48 0%,#ea580c 100%);
+  --gradient-card:          linear-gradient(135deg,#ffedd5 0%,#ffffff 100%);
+  --gradient-cta:           linear-gradient(135deg,#ea580c 0%,#e11d48 100%);
   --nav-bg:                 #ffffff;
-  --nav-shadow:             0 2px 20px rgba(217,119,6,0.08);
+  --nav-shadow:             0 2px 20px rgba(234,88,12,0.08);
   --nav-text:               #292524;
-  --nav-text-active:        #d97706;
-  --nav-border:             #fef3c7;
+  --nav-text-active:        #ea580c;
+  --nav-border:             #fed7aa;
   --footer-bg:              #1c1917;
   --footer-text:            #a8a29e;
   --footer-heading:         #ffffff;
-  --footer-link-hover:      #fde68a;
-  --hero-highlight:         #fde68a;
+  --footer-link-hover:      #fb923c;
+  --hero-highlight:         #fb923c;
 
   /* Admin & Dashboard Brand Tokens */
-  --mh-blue:                #d97706;
-  --mh-blue-hover:          #b45309;
-  --mh-blue-dark:           #92400e;
-  --mh-blue-deep:           #451a03;
-  --mh-blue-light:          #fffbeb;
-  --mh-blue-subtle:         #fef3c7;
-  --mh-blue-border:         #fde68a;
-  --mh-blue-glow:           rgba(217,119,6,0.35);
-  --mh-gradient-blue:       linear-gradient(135deg,#d97706 0%,#f59e0b 50%,#be123c 100%);
-  --mh-gradient-hero:       linear-gradient(135deg,#1c1917 0%,#451a03 50%,#0f172a 100%);
-  --vt-primary:             #d97706;
-  --vt-primary-hover:       #b45309;
-  --vt-primary-dark:        #92400e;
-  --vt-primary-light:       #fffbeb;
-  --vt-primary-subtle:      #fef3c7;
-  --vt-primary-border:      #fde68a;
-  --vt-bg:                  #fffdf7;
+  --mh-blue:                #ea580c;
+  --mh-blue-hover:          #c2410c;
+  --mh-blue-dark:           #9a3412;
+  --mh-blue-deep:           #7c2d12;
+  --mh-blue-light:          #fff7ed;
+  --mh-blue-subtle:         #ffedd5;
+  --mh-blue-border:         #fed7aa;
+  --mh-blue-glow:           rgba(234,88,12,0.35);
+  --mh-gradient-blue:       linear-gradient(135deg,#ea580c 0%,#f97316 50%,#e11d48 100%);
+  --mh-gradient-hero:       linear-gradient(135deg,#1c1917 0%,#7c2d12 50%,#4c0519 100%);
+  --vt-primary:             #ea580c;
+  --vt-primary-hover:       #c2410c;
+  --vt-primary-dark:        #9a3412;
+  --vt-primary-light:       #fff7ed;
+  --vt-primary-subtle:      #ffedd5;
+  --vt-primary-border:      #fed7aa;
+  --vt-bg:                  #fff7ed;
   --vt-surface:             #ffffff;
-  --vt-surface-muted:       #fefce8;
-  --vt-border:              #fef3c7;
-  --bs-primary:             #d97706;
-  --bs-primary-rgb:         217, 119, 6;
-  --primary-color:          #d97706;
-  --primary-hover:          #b45309;
-  --accent-color:           #be123c;
-  --bs-btn-bg:              #d97706;
-  --bs-btn-border-color:    #d97706;
-  --mh-gradient-sidebar:    linear-gradient(180deg, #1c1305 0%, #0d0a02 100%);
+  --vt-surface-muted:       #ffedd5;
+  --vt-border:              #fed7aa;
+  --bs-primary:             #ea580c;
+  --bs-primary-rgb:         234, 88, 12;
+  --primary-color:          #ea580c;
+  --primary-hover:          #c2410c;
+  --accent-color:           #e11d48;
+  --bs-btn-bg:              #ea580c;
+  --bs-btn-border-color:    #ea580c;
+  --mh-gradient-sidebar:    linear-gradient(180deg, #1c0f05 0%, #0d0602 100%);
 }
 
 /* ─── THEME 4: CONSULAR EMERALD & CRIMSON ──────────────────────────────────── */

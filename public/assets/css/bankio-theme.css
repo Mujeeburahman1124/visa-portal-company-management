@@ -48,19 +48,16 @@
   --gradient-hero-navy:  linear-gradient(135deg, #0B1329 0%, #111E3D 55%, #0D214F 100%);
   --gradient-dark-brand: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
 
-  /* Overrides for Portal Global Theme Engine */
-  --primary-color:       #1E40AF;
-  --primary-hover:       #1D4ED8;
-  --bs-primary:          #1E40AF;
-  --bs-primary-rgb:      30, 64, 175;
-  --accent-color:        #E11D48;
-  --color-primary:       #1E40AF;
-  --color-background:    #F8FAFC;
-  --color-surface:       #FFFFFF;
-  --vt-primary:          #1E40AF;
-  --vt-bg:               #F8FAFC;
-  --vt-surface:          #FFFFFF;
-  --vt-border:           #E2E8F0;
+  /* Connect Design System to Central Theme Engine */
+  --primary-color:       var(--color-primary, #E11D48);
+  --primary-hover:       var(--color-primary-hover, #BE123C);
+  --bs-primary:          var(--color-primary, #E11D48);
+  --accent-color:        var(--color-accent, #2563EB);
+  --vt-primary:          var(--color-primary, #E11D48);
+  --vt-primary-hover:    var(--color-primary-hover, #BE123C);
+  --vt-bg:               var(--color-background, #F8FAFC);
+  --vt-surface:          var(--color-surface, #FFFFFF);
+  --vt-border:           var(--color-border, #E2E8F0);
 
   /* Global Radii */
   --radius-sm:           8px;
@@ -329,15 +326,15 @@ html[data-theme] .nav-link-custom.active .nav-icon {
   left: 0.85rem !important;
 }
 
-/* Quick Action Button (MS Travel Hub Logo Gradient) */
+/* Quick Action Button & Primary Buttons (Dynamic Theme Harmonized) */
 .topbar-quick-action-btn,
 .btn-primary {
-  background: var(--gradient-ruby-gem) !important;
+  background: var(--gradient-primary, var(--gradient-ruby-gem)) !important;
   border: none !important;
   color: #FFFFFF !important;
   border-radius: var(--radius-pill) !important;
   font-weight: 600 !important;
-  box-shadow: 0 3px 12px rgba(225, 29, 72, 0.35) !important;
+  box-shadow: 0 3px 12px var(--color-shadow-strong, rgba(225, 29, 72, 0.35)) !important;
   transition: all 0.2s ease !important;
 }
 
@@ -350,7 +347,8 @@ html[data-theme] .nav-link-custom.active .nav-icon {
 .topbar-quick-action-btn:hover,
 .btn-primary:hover {
   transform: translateY(-1px) !important;
-  box-shadow: 0 6px 18px rgba(225, 29, 72, 0.45) !important;
+  box-shadow: 0 6px 18px var(--color-shadow-strong, rgba(225, 29, 72, 0.45)) !important;
+  background: var(--gradient-secondary, var(--gradient-primary)) !important;
 }
 
 /* Circular action icons & theme button */
@@ -918,12 +916,12 @@ html[data-theme] .dashboard-hero-banner,
 }
 
 .mobile-nav-item:hover, .mobile-nav-item.active {
-  color: var(--brand-ruby) !important;
+  color: var(--color-primary, var(--brand-ruby)) !important;
 }
 
 .mobile-nav-item.active i {
   transform: translateY(-2px);
-  color: var(--brand-ruby) !important;
+  color: var(--color-primary, var(--brand-ruby)) !important;
 }
 
 .mobile-nav-scan-fab {
@@ -933,9 +931,9 @@ html[data-theme] .dashboard-hero-banner,
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: var(--gradient-ruby-gem);
+  background: var(--gradient-primary, var(--gradient-ruby-gem));
   color: #FFFFFF !important;
-  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.4);
+  box-shadow: 0 4px 14px var(--color-shadow-strong, rgba(225, 29, 72, 0.4));
   margin-top: -16px;
   border: 3px solid #FFFFFF;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);

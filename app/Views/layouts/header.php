@@ -32,7 +32,7 @@
 
   <!-- Anti-FOUC: apply stored theme before any render -->
   <script>
-    (function(){try{var m={'ocean-royal':'ms-ruby-prestige','sunset-fusion':'ms-ruby-prestige','emerald-royal':'consular-emerald','violet-aurora':'aviation-sapphire','crimson-midnight':'imperial-gold','dark-mode':'obsidian-dark'};var t=localStorage.getItem('vt_theme')||'ms-ruby-prestige';if(m[t])t=m[t];document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+    (function(){try{var m={'ocean-royal':'aviation-sapphire','sunset-fusion':'sunset-fusion','emerald-royal':'consular-emerald','violet-aurora':'aviation-sapphire','crimson-midnight':'ms-ruby-prestige','imperial-gold':'sunset-fusion','dark-mode':'obsidian-dark'};var t=localStorage.getItem('vt_theme')||'ms-ruby-prestige';if(m[t])t=m[t];document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
   </script>
 
   <?php

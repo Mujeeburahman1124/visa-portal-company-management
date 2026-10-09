@@ -201,7 +201,7 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
                 <th style="min-width: 180px;">Destination &amp; Visa Type</th>
                 <th style="min-width: 120px;">Visa Number</th>
                 <th style="min-width: 160px;">Current Status / Stage</th>
-                <th style="min-width: 150px;">Staff &amp; Supplier</th>
+                <th style="min-width: 150px;">Assigned Officer</th>
                 <th style="min-width: 75px;">Health</th>
                 <th class="text-end" style="min-width: 160px;">Track Action</th>
               </tr>
@@ -250,8 +250,7 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
                     <div class="small text-muted mt-1 text-nowrap">Status: <?= e($app['status']) ?></div>
                   </td>
                   <td>
-                    <div class="small text-dark fw-medium text-nowrap"><i class="fa-solid fa-user-tie text-secondary me-1"></i><?= e($app['staff_name'] ?? 'Unassigned') ?></div>
-                    <div class="small text-muted text-nowrap"><i class="fa-solid fa-building me-1"></i><?= e($app['supplier_name'] ?? 'In-House') ?></div>
+                    <div class="small text-dark fw-medium text-nowrap"><i class="fa-solid fa-user-tie text-secondary me-1"></i><?= e($app['staff_name'] ?? 'Operations Team') ?></div>
                   </td>
                   <td>
                     <span class="badge <?= $healthClass ?> text-white" title="<?= e($app['health_reason'] ?? 'Good health') ?>">

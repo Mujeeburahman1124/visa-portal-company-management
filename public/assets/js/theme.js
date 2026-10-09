@@ -12,42 +12,43 @@
   const THEMES = [
     {
       id: 'ms-ruby-prestige',
-      name: 'MS Ruby Prestige (Official Brand)',
-      feel: 'Signature Ruby Gem & Obsidian Midnight',
+      name: 'MS Ruby Brand (Official Logo Identity)',
+      feel: 'Diamond Ruby Gem, Obsidian & Cobalt',
       swatches: ['#e11d48', '#0f172a', '#2563eb'],
     },
     {
-      id: 'aviation-sapphire',
-      name: 'Aviation Sapphire & Ruby',
-      feel: 'Global Flight Orbit & Ruby Accent',
-      swatches: ['#1e40af', '#e11d48', '#0284c7'],
+      id: 'sunset-fusion',
+      name: 'Sunset Flight (Logo Coral & Diamond)',
+      feel: 'Warm Coral Orange Facet & Sunset Orbit',
+      swatches: ['#ea580c', '#e11d48', '#1e293b'],
     },
     {
-      id: 'imperial-gold',
-      name: 'Imperial Gold & Diamond',
-      feel: 'VIP Luxury Concierge & Diamond Facets',
-      swatches: ['#d97706', '#be123c', '#1e293b'],
+      id: 'aviation-sapphire',
+      name: 'Aviation Sapphire (Sky Route & Ruby)',
+      feel: 'Flight Route Blue, Ruby Pin & Jet Obsidian',
+      swatches: ['#2563eb', '#e11d48', '#0f172a'],
     },
     {
       id: 'consular-emerald',
-      name: 'Consular Emerald & Crimson',
-      feel: 'Embassy Approval Green & Ruby Seal',
+      name: 'Consular Emerald (Visa Clearances)',
+      feel: 'Embassy Approval Green & Official Ruby Seal',
       swatches: ['#059669', '#e11d48', '#0f172a'],
     },
     {
       id: 'obsidian-dark',
-      name: 'Obsidian Dark (Dark Mode)',
-      feel: 'Executive OLED Dark & Glowing Ruby',
+      name: 'Obsidian Dark (Executive Dark & Glowing Ruby)',
+      feel: 'Executive OLED Dark & Glowing Ruby Monogram',
       swatches: ['#090d16', '#f43f5e', '#38bdf8'],
     },
   ];
 
   const LEGACY_THEME_MAP = {
-    'ocean-royal': 'ms-ruby-prestige',
-    'sunset-fusion': 'ms-ruby-prestige',
+    'ocean-royal': 'aviation-sapphire',
+    'sunset-fusion': 'sunset-fusion',
     'emerald-royal': 'consular-emerald',
     'violet-aurora': 'aviation-sapphire',
-    'crimson-midnight': 'imperial-gold',
+    'crimson-midnight': 'ms-ruby-prestige',
+    'imperial-gold': 'sunset-fusion',
     'dark-mode': 'obsidian-dark',
   };
 

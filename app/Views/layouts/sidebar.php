@@ -30,13 +30,9 @@ $canViewVisaServices = $isAdmin || user_can('visa_services.view') || user_can('v
 $canViewBranches    = $isAdmin || user_can('branches.view') || user_can('branches.manage');
 $canViewStaff       = $isAdmin || user_can('staff.view') || user_can('staff.manage');
 $canViewRoles       = $isAdmin || user_can('roles.view') || user_can('roles.manage');
-$canViewPayroll     = $isAdmin || user_can('payroll.view') || user_can('payroll.manage') || ($roleSlug === 'accounts');
 $canViewAudit       = $isAdmin || user_can('audit.view') || user_can('audit.manage');
 $canViewSettings    = $isAdmin || user_can('settings.view') || user_can('settings.manage') || ($roleSlug === 'branch-manager');
 $canViewNotifAdmin  = $isAdmin || user_has_role(['branch-manager', 'visa-manager']) || user_can('notifications.admin');
-
-// Payroll/Attendance is HR-gated
-$canViewAttendance  = $isAdmin || user_can('payroll.view') || user_can('staff.view') || ($roleSlug === 'accounts') || ($roleSlug === 'branch-manager');
 ?>
 <aside class="app-sidebar" id="appSidebar">
   <!-- Sidebar Brand Header -->
@@ -143,7 +139,7 @@ $canViewAttendance  = $isAdmin || user_can('payroll.view') || user_can('staff.vi
     <?php endif; // end management section ?>
 
     <!-- Section: Administration -->
-    <?php if ($canViewAgents || $canViewCountries || $canViewVisaServices || $canViewBranches || $canViewStaff || $canViewRoles || $canViewPayroll || $canViewAttendance || $canViewAudit || $canViewSettings): ?>
+    <?php if ($canViewAgents || $canViewCountries || $canViewVisaServices || $canViewBranches || $canViewStaff || $canViewRoles || $canViewAudit || $canViewSettings): ?>
     <div class="sidebar-heading mt-2"><span>Administration</span></div>
 
     <?php if ($canViewAgents): ?>

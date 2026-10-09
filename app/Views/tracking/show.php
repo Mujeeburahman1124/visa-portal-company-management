@@ -24,7 +24,7 @@ if ((int)($app['calculated_health'] ?? 100) < 50) $healthColor = 'danger';
 elseif ((int)($app['calculated_health'] ?? 100) < 80) $healthColor = 'warning';
 ?>
 
-<div class="<?= $isStaff ? 'content-body' : 'container py-4' ?>" style="font-family: 'Times New Roman', Times, serif;">
+<div class="<?= $isStaff ? 'content-body' : 'container py-4' ?>">
 
   <?php if ($flash): ?>
     <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'info')) ?> alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
