@@ -289,10 +289,13 @@ $activePreset = $preset ?? 'custom';
           <input type="date" name="date_to" class="form-control form-control-sm" value="<?= e($dateTo) ?>">
         </div>
 
-        <div class="col-12 col-md-2">
-          <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold shadow-sm">
+        <div class="col-12 col-md-2 d-flex gap-1">
+          <button type="submit" class="btn btn-primary btn-sm flex-grow-1 fw-bold shadow-sm" title="Generate Report">
             <i class="fa-solid fa-magnifying-glass me-1"></i> Generate
           </button>
+          <a href="/reports" class="btn btn-light btn-sm border" title="Reset Filters">
+            <i class="fa-solid fa-rotate-left"></i>
+          </a>
         </div>
       </form>
     </div>

@@ -96,9 +96,7 @@ $currentView = $_GET['view'] ?? 'table';
         </div>
         <div class="col-md-3 col-lg-2 d-flex gap-2">
           <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="fa-solid fa-filter me-1"></i> Filter</button>
-          <?php if (!empty($_GET['search'])): ?>
-            <a href="/agents" class="btn btn-outline-secondary btn-sm" title="Clear Filters"><i class="fa-solid fa-xmark"></i></a>
-          <?php endif; ?>
+          <a href="/agents" class="btn btn-outline-secondary btn-sm" title="Clear Filters"><i class="fa-solid fa-rotate-left"></i></a>
         </div>
       </form>
     </div>

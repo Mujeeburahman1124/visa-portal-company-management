@@ -169,17 +169,6 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           </select>
         </div>
         <div class="col-6 col-sm-4 col-md-3 col-xl-2">
-          <label class="form-label small text-muted mb-1 fw-semibold">Supplier Channel</label>
-          <select name="supplier_id" class="form-select form-select-sm">
-            <option value="">-- All Suppliers --</option>
-            <?php foreach ($suppliersList as $sup): ?>
-              <option value="<?= $sup['id'] ?>" <?= ((int)($_GET['supplier_id'] ?? 0)) === (int)$sup['id'] ? 'selected' : '' ?>>
-                <?= e($sup['company_name']) ?>
-              </option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-        <div class="col-6 col-sm-4 col-md-3 col-xl-2">
           <label class="form-label small text-muted mb-1 fw-semibold">Destination Country</label>
           <select name="country_id" class="form-select form-select-sm">
             <option value="">-- All Countries --</option>
@@ -231,7 +220,6 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <th style="min-width: 140px;" class="text-nowrap">Receipt / Invoice #</th>
             <th style="min-width: 180px;" class="text-nowrap">Applicant &amp; Passport</th>
             <th style="min-width: 210px;" class="text-nowrap">Destination &amp; Visa Type</th>
-            <th style="min-width: 140px;" class="text-nowrap">Supplier</th>
             <th style="min-width: 140px;" class="text-nowrap">Date &amp; Method</th>
             <th style="min-width: 140px;" class="text-nowrap">Transaction Ref</th>
             <th style="min-width: 110px;" class="text-nowrap">Amount Paid</th>
@@ -241,7 +229,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         </thead>
         <tbody>
           <?php if (empty($payments)): ?>
-            <tr><td colspan="9" class="text-center py-5 text-muted">No payment transactions match the filter criteria.</td></tr>
+            <tr><td colspan="8" class="text-center py-5 text-muted">No payment transactions match the filter criteria.</td></tr>
           <?php else: ?>
             <?php foreach ($payments as $p): ?>
               <tr>
@@ -256,9 +244,6 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 <td class="text-nowrap">
                   <div class="fw-semibold text-dark text-truncate" style="max-width: 210px;"><?= $p['flag_emoji'] ?? '✈️' ?> <?= e($p['country_name'] ?? 'General') ?></div>
                   <div class="small text-muted text-truncate" style="max-width: 210px;" title="<?= e($p['service_name'] ?? 'Visa Service') ?>"><?= e($p['service_name'] ?? 'Visa Service') ?></div>
-                </td>
-                <td class="text-nowrap">
-                  <span class="badge bg-light text-secondary border text-truncate" style="max-width: 140px;" title="<?= e($p['supplier_name'] ?: 'In-House / Direct') ?>"><?= e($p['supplier_name'] ?: 'In-House / Direct') ?></span>
                 </td>
                 <td class="text-nowrap">
                   <div class="fw-semibold"><?= format_date($p['payment_date']) ?></div>
