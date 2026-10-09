@@ -2,6 +2,14 @@
 $pageTitle = 'Visa Services & Packages — MS TRAVEL HUB';
 $flash = get_flash();
 $activeTab = $activeTab ?? 'packages';
+$buildPageUrl = function(int $pageNum) {
+    $params = $_GET;
+    $params['page'] = $pageNum;
+    if (empty($params['tab'])) {
+        $params['tab'] = 'packages';
+    }
+    return '/visa-packages?' . http_build_query($params);
+};
 require_once dirname(__DIR__) . '/layouts/header.php';
 require_once dirname(__DIR__) . '/layouts/sidebar.php';
 require_once dirname(__DIR__) . '/layouts/topbar.php';
@@ -152,7 +160,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     <!-- View Switcher & Counter -->
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
       <div class="text-muted small">
-        Showing <span class="fw-bold text-dark"><?= count($packages) ?></span> visa packages
+        Showing <span class="fw-bold text-dark"><?= count($packages) ?></span> of <span class="fw-bold text-dark"><?= $totalPackages ?></span> visa packages<?php if (($totalPages ?? 1) > 1): ?> &bull; <span class="badge bg-light text-dark border">Page <?= (int)($currentPage ?? 1) ?> of <?= (int)$totalPages ?></span><?php endif; ?>
       </div>
       <div class="d-flex align-items-center gap-2">
         <div class="btn-group btn-group-sm p-1 bg-white rounded-pill border shadow-xs" role="group" aria-label="View Mode">
@@ -417,6 +425,46 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         </table>
       </div>
     </div>
+
+    <!-- Visa Packages Pagination Controls (Previous, 1, 2, 3..., Next) -->
+    <?php if (($totalPages ?? 1) > 1): ?>
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mt-3 mb-4 p-3 bg-white rounded-4 border shadow-xs">
+        <div class="text-muted small">
+          Showing <span class="fw-bold text-dark"><?= ($offset + 1) ?></span> &ndash; <span class="fw-bold text-dark"><?= min($offset + $perPage, $totalPackages) ?></span> of <span class="fw-bold text-dark"><?= $totalPackages ?></span> packages
+        </div>
+
+        <nav aria-label="Visa Packages Page Navigation">
+          <ul class="pagination pagination-sm mb-0 gap-1 align-items-center">
+            <!-- Previous Button -->
+            <li class="page-item <?= ($currentPage <= 1) ? 'disabled' : '' ?>">
+              <a class="page-link rounded-pill px-3 py-1.5 fw-semibold <?= ($currentPage <= 1) ? 'text-muted bg-light border-0' : 'text-dark border shadow-xs' ?>" 
+                 href="<?= ($currentPage > 1) ? $buildPageUrl($currentPage - 1) : 'javascript:void(0)' ?>">
+                <i class="fa-solid fa-chevron-left me-1 small"></i> Prev
+              </a>
+            </li>
+
+            <!-- Page Number Buttons (1, 2, 3...) -->
+            <?php for ($p = 1; $p <= $totalPages; $p++): ?>
+              <li class="page-item <?= ($p === $currentPage) ? 'active' : '' ?>">
+                <a class="page-link rounded-pill text-center fw-bold <?= ($p === $currentPage) ? 'text-white shadow-xs' : 'text-dark border' ?>" 
+                   style="<?= ($p === $currentPage) ? 'background: var(--bento-primary); border-color: var(--bento-primary);' : '' ?> min-width: 34px; padding: 0.35rem 0.65rem;" 
+                   href="<?= $buildPageUrl($p) ?>">
+                  <?= $p ?>
+                </a>
+              </li>
+            <?php endfor; ?>
+
+            <!-- Next Button -->
+            <li class="page-item <?= ($currentPage >= $totalPages) ? 'disabled' : '' ?>">
+              <a class="page-link rounded-pill px-3 py-1.5 fw-semibold <?= ($currentPage >= $totalPages) ? 'text-muted bg-light border-0' : 'text-dark border shadow-xs' ?>" 
+                 href="<?= ($currentPage < $totalPages) ? $buildPageUrl($currentPage + 1) : 'javascript:void(0)' ?>">
+                Next <i class="fa-solid fa-chevron-right ms-1 small"></i>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    <?php endif; ?>
 
   <?php elseif ($activeTab === 'categories'): ?>
     <!-- Visa Categories Header & Controls -->

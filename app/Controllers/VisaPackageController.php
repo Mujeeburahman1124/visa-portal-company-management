@@ -229,11 +229,22 @@ class VisaPackageController
 
         $staffUsers = $pdo->query("SELECT id, name FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-        // Financial KPIs
-        $totalPackages = count($packages);
-        $activePackages = count(array_filter($packages, fn($p) => !empty($p['is_active'])));
+        // Financial KPIs & Full Dataset
+        $allPackages = $packages;
+        $totalPackages = count($allPackages);
+        $activePackages = count(array_filter($allPackages, fn($p) => !empty($p['is_active'])));
         $totalCountries = (int)$pdo->query("SELECT COUNT(DISTINCT country_id) FROM visa_services")->fetchColumn();
         $totalCategories = count($categories);
+
+        // Pagination for Visa Packages (6 packages per page)
+        $perPage = 6;
+        $currentPage = max(1, (int)($_GET['page'] ?? 1));
+        $totalPages = max(1, (int)ceil($totalPackages / $perPage));
+        if ($currentPage > $totalPages) {
+            $currentPage = $totalPages;
+        }
+        $offset = ($currentPage - 1) * $perPage;
+        $packages = array_slice($allPackages, $offset, $perPage);
 
         require_once dirname(__DIR__) . '/Views/visa_packages/index.php';
     }
