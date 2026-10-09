@@ -737,55 +737,18 @@ switch ($uri) {
         redirect('/dashboard', 'The Attendance & Payroll modules have been decommissioned.', 'info');
         break;
 
-    // Administration: Inventory & Stock Management (Protected: Super-Admin / Admin / Accounts / Branch-Manager)
+    // Administration: Inventory & Stock Management (Decommissioned)
     case '/inventory':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
-        (new App\Controllers\InventoryController())->index();
-        break;
-
     case '/inventory/store':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
-        (new App\Controllers\InventoryController())->store();
-        break;
-
     case '/inventory/update':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
-        (new App\Controllers\InventoryController())->update();
-        break;
-
     case '/inventory/stock-in':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
-        (new App\Controllers\InventoryController())->stockIn();
-        break;
-
     case '/inventory/stock-out':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
-        (new App\Controllers\InventoryController())->stockOut();
-        break;
-
     case '/inventory/adjust':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
-        (new App\Controllers\InventoryController())->adjust();
-        break;
-
     case '/inventory/transfer':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
-        (new App\Controllers\InventoryController())->transfer();
-        break;
-
     case '/inventory/purchase':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts']);
-        (new App\Controllers\InventoryController())->purchase();
-        break;
-
     case '/inventory/history':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'accounts', 'branch-manager']);
-        (new App\Controllers\InventoryController())->history();
-        break;
-
     case '/inventory/delete':
-        RoleMiddleware::authorize(['super-admin', 'admin']);
-        (new App\Controllers\InventoryController())->delete();
+        redirect('/dashboard', 'The Inventory module has been decommissioned.', 'info');
         break;
 
     // Administration: Agents & Partners (Protected)
@@ -1051,8 +1014,7 @@ switch ($uri) {
         break;
 
     case '/visa-packages/inventory/adjust':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
-        (new App\Controllers\VisaPackageController())->adjustInventory();
+        redirect('/visa-packages');
         break;
 
     case '/countries':

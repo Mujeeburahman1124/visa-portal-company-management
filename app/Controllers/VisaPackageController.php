@@ -20,8 +20,8 @@ class VisaPackageController
         $supplierId = !empty($_GET['supplier_id']) ? (int)$_GET['supplier_id'] : 0;
         $search = trim($_GET['search'] ?? '');
         $activeTab = trim($_GET['tab'] ?? 'packages');
-        if ($activeTab === 'history') {
-            $activeTab = 'inventory';
+        if (!in_array($activeTab, ['packages', 'categories', 'types'], true)) {
+            $activeTab = 'packages';
         }
 
         // Fetch Packages with Supplier Info

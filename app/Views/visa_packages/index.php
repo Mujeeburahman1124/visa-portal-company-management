@@ -18,13 +18,10 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   <!-- Header -->
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
     <div>
-      <h3 class="fw-bold brand-font text-dark mb-0">Visa Services &amp; Package Inventory</h3>
-      <p class="text-muted small mb-0">Manage global visa packages, destination country rules, categories, supplier costs, service fees, currencies &amp; immutable price audit history.</p>
+      <h3 class="fw-bold brand-font text-dark mb-0">Visa Services &amp; Packages</h3>
+      <p class="text-muted small mb-0">Manage global visa packages, destination country rules, categories, supplier costs, service fees, currencies &amp; pricing.</p>
     </div>
     <div class="d-flex gap-2">
-      <button type="button" class="btn btn-outline-warning px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#adjustInventoryModal">
-        <i class="fa-solid fa-boxes-packing me-1"></i> Adjust Inventory
-      </button>
       <button type="button" class="btn btn-outline-primary px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
         <i class="fa-solid fa-layer-group me-1"></i> Add Category
       </button>
@@ -87,11 +84,6 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     <li class="nav-item" role="presentation">
       <a class="nav-link <?= $activeTab === 'packages' ? 'active fw-bold' : '' ?>" href="/visa-packages?tab=packages">
         <i class="fa-solid fa-passport me-1.5 text-primary"></i> Visa Packages (<?= $totalPackages ?>)
-      </a>
-    </li>
-    <li class="nav-item" role="presentation">
-      <a class="nav-link <?= $activeTab === 'inventory' ? 'active fw-bold' : '' ?>" href="/visa-packages?tab=inventory">
-        <i class="fa-solid fa-clock-rotate-left me-1.5 text-warning"></i> Inventory &amp; Price History
       </a>
     </li>
     <li class="nav-item" role="presentation">
@@ -229,9 +221,6 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                       <button type="button" class="btn btn-outline-info py-1 px-2" title="View Price History" onclick="viewPriceHistory(<?= $pkg['id'] ?>, '<?= e(addslashes($pkg['name'])) ?>')">
                         <i class="fa-solid fa-clock-rotate-left"></i>
                       </button>
-                      <button type="button" class="btn btn-outline-warning py-1 px-2" title="Adjust Inventory / Log Transaction" onclick="openAdjustInventoryModal(<?= $pkg['id'] ?>, '<?= e(addslashes($pkg['name'])) ?>')">
-                        <i class="fa-solid fa-boxes-packing"></i>
-                      </button>
                       <button type="button" class="btn btn-outline-primary py-1 px-2" title="Edit Package" onclick="openEditPackageModal(<?= htmlspecialchars(json_encode($pkg), ENT_QUOTES, 'UTF-8') ?>)">
                         <i class="fa-solid fa-pen-to-square"></i>
                       </button>
@@ -249,241 +238,6 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                           <i class="fa-solid fa-trash-can"></i>
                         </button>
                       </form>
-                    </div>
-                  </td>
-                </tr>
-              <?php endforeach; ?>
-            <?php endif; ?>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  <?php elseif ($activeTab === 'inventory'): ?>
-    <!-- Inventory & Price History Tab with Combinable Filter Bar -->
-    <div class="card card-enterprise mb-4 shadow-sm border">
-      <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
-        <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-sliders text-warning me-2"></i> Inventory &amp; Transaction Filters</h6>
-        <span class="text-muted small">Filter changes by date presets, supplier, country, currency, or application reference</span>
-      </div>
-      <div class="card-body p-3">
-        <form action="/visa-packages" method="GET" class="row g-2 align-items-end">
-          <input type="hidden" name="tab" value="inventory">
-          
-          <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Date Preset</label>
-            <select name="inv_date_preset" class="form-select form-select-sm" onchange="if(this.value){document.getElementById('invDateFrom').value='';document.getElementById('invDateTo').value='';}">
-              <option value="">-- Custom Range --</option>
-              <option value="today" <?= ($_GET['inv_date_preset'] ?? '') === 'today' ? 'selected' : '' ?>>Today</option>
-              <option value="yesterday" <?= ($_GET['inv_date_preset'] ?? '') === 'yesterday' ? 'selected' : '' ?>>Yesterday</option>
-              <option value="this_week" <?= ($_GET['inv_date_preset'] ?? '') === 'this_week' ? 'selected' : '' ?>>This Week</option>
-              <option value="this_month" <?= ($_GET['inv_date_preset'] ?? '') === 'this_month' ? 'selected' : '' ?>>This Month</option>
-            </select>
-          </div>
-          
-          <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Date From</label>
-            <input type="date" name="inv_date_from" id="invDateFrom" class="form-control form-control-sm" value="<?= e($_GET['inv_date_from'] ?? '') ?>">
-          </div>
-          
-          <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Date To</label>
-            <input type="date" name="inv_date_to" id="invDateTo" class="form-control form-control-sm" value="<?= e($_GET['inv_date_to'] ?? '') ?>">
-          </div>
-          
-          <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Supplier</label>
-            <select name="inv_supplier" class="form-select form-select-sm">
-              <option value="">-- All Suppliers --</option>
-              <?php foreach ($suppliers as $s): ?>
-                <option value="<?= $s['id'] ?>" <?= ((int)($_GET['inv_supplier'] ?? 0) === (int)$s['id']) ? 'selected' : '' ?>>
-                  <?= e($s['name']) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          
-          <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Destination Country</label>
-            <select name="inv_country" class="form-select form-select-sm">
-              <option value="">-- All Countries --</option>
-              <?php foreach ($countries as $c): ?>
-                <option value="<?= $c['id'] ?>" <?= ((int)($_GET['inv_country'] ?? 0) === (int)$c['id']) ? 'selected' : '' ?>>
-                  <?= $c['flag_emoji'] ?> <?= e($c['name']) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          
-          <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Visa Package</label>
-            <select name="inv_package" class="form-select form-select-sm">
-              <option value="">-- All Packages --</option>
-              <?php foreach ($packages as $p): ?>
-                <option value="<?= $p['id'] ?>" <?= ((int)($_GET['inv_package'] ?? 0) === (int)$p['id']) ? 'selected' : '' ?>>
-                  <?= e($p['name']) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-
-          <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Currency</label>
-            <select name="inv_currency" class="form-select form-select-sm">
-              <option value="">-- All Currencies --</option>
-              <?php foreach (['USD', 'AED', 'LKR', 'EUR', 'GBP', 'SAR', 'QAR', 'INR', 'CAD', 'AUD'] as $cur): ?>
-                <option value="<?= $cur ?>" <?= (($_GET['inv_currency'] ?? '') === $cur) ? 'selected' : '' ?>><?= $cur ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-
-          <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Staff / User</label>
-            <select name="inv_user" class="form-select form-select-sm">
-              <option value="">-- All Users --</option>
-              <?php foreach ($staffUsers as $u): ?>
-                <option value="<?= $u['id'] ?>" <?= ((int)($_GET['inv_user'] ?? 0) === (int)$u['id']) ? 'selected' : '' ?>><?= e($u['name']) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-
-          <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Application Ref</label>
-            <input type="text" name="inv_app_ref" class="form-control form-control-sm" placeholder="e.g. APP-2026" value="<?= e($_GET['inv_app_ref'] ?? '') ?>">
-          </div>
-
-          <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Customer / Applicant</label>
-            <input type="text" name="inv_customer" class="form-control form-control-sm" placeholder="Name or code..." value="<?= e($_GET['inv_customer'] ?? '') ?>">
-          </div>
-
-          <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Entry Type</label>
-            <select name="inv_entry_type" class="form-select form-select-sm">
-              <option value="">-- All Entry Types --</option>
-              <option value="Single Entry" <?= ($_GET['inv_entry_type'] ?? '') === 'Single Entry' ? 'selected' : '' ?>>Single Entry</option>
-              <option value="Multiple Entry" <?= ($_GET['inv_entry_type'] ?? '') === 'Multiple Entry' ? 'selected' : '' ?>>Multiple Entry</option>
-            </select>
-          </div>
-
-          <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Processing Type</label>
-            <select name="inv_processing_type" class="form-select form-select-sm">
-              <option value="">-- All Types --</option>
-              <option value="Normal" <?= ($_GET['inv_processing_type'] ?? '') === 'Normal' ? 'selected' : '' ?>>Normal</option>
-              <option value="Express" <?= ($_GET['inv_processing_type'] ?? '') === 'Express' ? 'selected' : '' ?>>Express</option>
-              <option value="Super Express" <?= ($_GET['inv_processing_type'] ?? '') === 'Super Express' ? 'selected' : '' ?>>Super Express</option>
-            </select>
-          </div>
-
-          <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Duration</label>
-            <input type="text" name="inv_duration" class="form-control form-control-sm" placeholder="e.g. 30 Days" value="<?= e($_GET['inv_duration'] ?? '') ?>">
-          </div>
-
-          <div class="col-md-2">
-            <label class="form-label small fw-semibold mb-1">Price Range</label>
-            <div class="input-group input-group-sm">
-              <input type="number" step="0.01" name="inv_price_min" class="form-control" placeholder="Min" value="<?= e($_GET['inv_price_min'] ?? '') ?>">
-              <span class="input-group-text p-1">-</span>
-              <input type="number" step="0.01" name="inv_price_max" class="form-control" placeholder="Max" value="<?= e($_GET['inv_price_max'] ?? '') ?>">
-            </div>
-          </div>
-
-          <div class="col-md-4 ms-auto d-flex gap-2 pt-2">
-            <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="fa-solid fa-filter me-1"></i> Apply Filters</button>
-            <a href="/visa-packages?tab=inventory" class="btn btn-light border btn-sm" title="Reset Filters"><i class="fa-solid fa-rotate-left"></i> Reset</a>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Inventory Transactions Table -->
-    <div class="card card-enterprise shadow-sm border">
-      <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
-        <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-clock-rotate-left text-primary me-2"></i> Audit Ledger &amp; Inventory History (<?= count($inventoryTransactions) ?> Records)</h6>
-        <span class="badge bg-light text-muted border">Immutable Historical Records</span>
-      </div>
-      <div class="table-responsive">
-        <table class="table table-enterprise table-hover mb-0 align-middle font-sm" style="font-size: 0.85rem;">
-          <thead>
-            <tr>
-              <th>Date &amp; Time</th>
-              <th>Action Type</th>
-              <th>Visa Package</th>
-              <th>Supplier</th>
-              <th>Previous Pricing</th>
-              <th>New Pricing</th>
-              <th>Effective Date</th>
-              <th>Modified By</th>
-              <th>Notes / Context</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php if (empty($inventoryTransactions)): ?>
-              <tr>
-                <td colspan="9" class="text-center py-5 text-muted">
-                  <i class="fa-solid fa-folder-open fs-3 d-block mb-2 text-secondary opacity-50"></i>
-                  No inventory or price change transactions found matching filters.
-                </td>
-              </tr>
-            <?php else: ?>
-              <?php foreach ($inventoryTransactions as $it): ?>
-                <?php $tCurr = $it['currency'] ?? 'USD'; ?>
-                <tr>
-                  <td>
-                    <div class="fw-bold text-dark"><?= date('d M Y', strtotime($it['created_at'])) ?></div>
-                    <div class="text-muted small"><?= date('H:i A', strtotime($it['created_at'])) ?></div>
-                  </td>
-                  <td>
-                    <?php if ($it['action_type'] === 'Created'): ?>
-                      <span class="badge bg-success-subtle text-success border">Created</span>
-                    <?php elseif ($it['action_type'] === 'Price Updated'): ?>
-                      <span class="badge bg-warning-subtle text-warning border">Price Updated</span>
-                    <?php elseif ($it['action_type'] === 'Archived'): ?>
-                      <span class="badge bg-danger-subtle text-danger border">Archived</span>
-                    <?php else: ?>
-                      <span class="badge bg-info-subtle text-info border"><?= e($it['action_type']) ?></span>
-                    <?php endif; ?>
-                  </td>
-                  <td>
-                    <div class="fw-bold text-dark"><?= e($it['package_name']) ?></div>
-                    <div class="text-muted small"><?= e($it['country_name'] ?? 'Global') ?></div>
-                  </td>
-                  <td>
-                    <?= !empty($it['supplier_name_ref']) ? '<span class="badge bg-light text-dark border">' . e($it['supplier_name_ref']) . '</span>' : '<span class="text-muted">—</span>' ?>
-                  </td>
-                  <td>
-                    <?php if ($it['prev_price'] !== null): ?>
-                      <div class="text-muted small">Cost: <?= e($tCurr) ?> <?= number_format((float)$it['prev_cost'], 2) ?></div>
-                      <div class="text-muted small">Price: <?= e($tCurr) ?> <?= number_format((float)$it['prev_price'], 2) ?></div>
-                    <?php else: ?>
-                      <span class="text-muted">—</span>
-                    <?php endif; ?>
-                  </td>
-                  <td>
-                    <?php if ($it['new_price'] !== null): ?>
-                      <div class="fw-semibold text-dark small">Cost: <?= e($tCurr) ?> <?= number_format((float)$it['new_cost'], 2) ?></div>
-                      <div class="fw-bold text-primary small">Price: <?= e($tCurr) ?> <?= number_format((float)$it['new_price'], 2) ?></div>
-                    <?php else: ?>
-                      <span class="text-muted">—</span>
-                    <?php endif; ?>
-                  </td>
-                  <td>
-                    <span class="badge bg-light text-dark border"><?= e($it['effective_date'] ?: date('Y-m-d', strtotime($it['created_at']))) ?></span>
-                  </td>
-                  <td>
-                    <div class="fw-semibold text-dark small"><?= e($it['user_name'] ?? 'System') ?></div>
-                  </td>
-                  <td style="max-width: 250px;">
-                    <div class="text-muted small text-truncate" title="<?= e($it['notes']) ?>">
-                      <?= e($it['notes'] ?: '—') ?>
-                      <?php if (!empty($it['application_number'])): ?>
-                        <span class="badge bg-light text-primary border ms-1">App: <?= e($it['application_number']) ?></span>
-                      <?php endif; ?>
-                      <?php if (!empty($it['customer_name'])): ?>
-                        <span class="badge bg-light text-secondary border ms-1"><i class="fa-solid fa-user me-1"></i><?= e($it['customer_name']) ?></span>
-                      <?php endif; ?>
                     </div>
                   </td>
                 </tr>
@@ -978,65 +732,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   </div>
 </div>
 
-<!-- Modal: Adjust Inventory / Log Transaction -->
-<div class="modal fade" id="adjustInventoryModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-light border-bottom">
-        <h5 class="modal-title fw-bold"><i class="fa-solid fa-boxes-packing text-warning me-2"></i> Adjust Visa Package Inventory</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form action="/visa-packages/inventory/adjust" method="POST">
-        <?= csrf_field() ?>
-        <div class="modal-body p-4">
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Visa Package <span class="text-danger">*</span></label>
-            <select name="visa_service_id" id="adjPkgId" class="form-select" required>
-              <option value="">-- Select Visa Package --</option>
-              <?php foreach ($packages as $p): ?>
-                <option value="<?= $p['id'] ?>">
-                  <?= e($p['country_name'] ?? '') ?> — <?= e($p['name']) ?> (<?= e($p['currency'] ?? 'USD') ?> <?= number_format((float)$p['selling_price'], 2) ?>)
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Action / Transaction Type <span class="text-danger">*</span></label>
-            <select name="action_type" class="form-select" required>
-              <option value="Stock Allocation">Stock Allocation (Supplier Slots Added)</option>
-              <option value="Stock Reduction">Stock Reduction (Quota Reduced)</option>
-              <option value="Manual Adjustment">Manual Audit Adjustment</option>
-              <option value="Cancellation Return">Application Cancellation Return</option>
-              <option value="Supplier Rate Revision">Supplier Rate Revision</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Effective Date</label>
-            <input type="date" name="effective_date" class="form-control" value="<?= date('Y-m-d') ?>">
-          </div>
-          <div class="mb-0">
-            <label class="form-label small fw-semibold">Audit Notes / Reason <span class="text-danger">*</span></label>
-            <textarea name="notes" class="form-control" rows="3" placeholder="Reason for inventory transaction or allocation..." required></textarea>
-          </div>
-        </div>
-        <div class="modal-footer bg-light border-top">
-          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-warning px-4 fw-semibold"><i class="fa-solid fa-check me-1"></i> Save Transaction</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
 <script>
-function openAdjustInventoryModal(pkgId, pkgName) {
-  if (pkgId && document.getElementById('adjPkgId')) {
-    document.getElementById('adjPkgId').value = pkgId;
-  }
-  const modal = new bootstrap.Modal(document.getElementById('adjustInventoryModal'));
-  modal.show();
-}
-
 function calcSellingPrice(mode) {
   const pfx = mode === 'create' ? 'pkg' : 'editPkg';
   const cost = parseFloat(document.getElementById(pfx + 'SupplierCost').value) || 0;

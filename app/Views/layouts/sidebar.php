@@ -19,7 +19,6 @@ $canViewCustomers   = $isAdmin || user_can('customers.view') || user_can('applic
 $canViewDocuments   = $isAdmin || user_can('documents.view') || user_can('documents.manage') || user_can('customers.view') || user_can('applications.view');
 $canViewPayments    = $isAdmin || user_can('payments.view') || user_can('finance.view') || user_can('payments.manage');
 $canViewWallets     = $isAdmin || user_can('wallets.view') || user_can('payments.view') || user_can('finance.view') || ($roleSlug === 'accounts');
-$canViewInventory   = $isAdmin || user_can('inventory.view') || user_can('inventory.manage') || ($roleSlug === 'branch-manager');
 $canViewAppointments = $isAdmin || user_can('appointments.view') || user_can('appointments.manage') || user_can('applications.view');
 $canViewTasks       = $isAdmin || user_can('tasks.view') || user_can('tasks.manage') || user_can('tasks.view_all') || user_can('tasks.*');
 $canViewReports     = $isAdmin || user_can('reports.view') || user_can('reports.manage');
@@ -90,7 +89,7 @@ $canViewAttendance  = $isAdmin || user_can('payroll.view') || user_can('staff.vi
     <?php endif; ?>
 
     <!-- Section: Management & Workflow -->
-    <?php if ($canViewCustomers || $canViewDocuments || $canViewPayments || $canViewWallets || $canViewInventory || $canViewAppointments || $canViewTasks || $canViewReports): ?>
+    <?php if ($canViewCustomers || $canViewDocuments || $canViewPayments || $canViewWallets || $canViewAppointments || $canViewTasks || $canViewReports): ?>
     <div class="sidebar-heading mt-2"><span>Management &amp; Workflow</span></div>
 
     <?php if ($canViewCustomers): ?>
@@ -118,13 +117,6 @@ $canViewAttendance  = $isAdmin || user_can('payroll.view') || user_can('staff.vi
     <a href="/payments/wallets" class="nav-link-custom <?= str_starts_with($currentUri, '/payments/wallets') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Customer, Supplier & Agent Digital Wallets">
       <i class="fa-solid fa-wallet nav-icon text-success"></i>
       <span class="nav-label">Wallets &amp; Ledgers</span>
-    </a>
-    <?php endif; ?>
-
-    <?php if ($canViewInventory): ?>
-    <a href="/inventory" class="nav-link-custom <?= str_starts_with($currentUri, '/inventory') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Office Inventory, Supplies & Stock Control">
-      <i class="fa-solid fa-boxes-stacked nav-icon text-warning"></i>
-      <span class="nav-label">Inventory &amp; Stock</span>
     </a>
     <?php endif; ?>
 

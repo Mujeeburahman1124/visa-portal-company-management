@@ -33,8 +33,8 @@ $flash = get_flash();
       <div class="d-inline-flex align-items-center justify-content-center text-white rounded-3 shadow-sm mb-2" style="width: 44px; height: 44px; font-size: 1.25rem; background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);">
         <i class="fa-solid fa-plane-departure"></i>
       </div>
-      <h3 class="fw-bold brand-font text-dark mb-0" style="font-size: 1.45rem; letter-spacing: -0.01em;">VISA TRACK</h3>
-      <div class="text-muted small" style="font-size: 0.78rem;">Track your visa application securely.</div>
+      <h3 class="fw-bold brand-font text-dark mb-0" style="font-size: 1.45rem; letter-spacing: -0.01em;">MS TRAVEL HUB</h3>
+      <div class="text-muted small" style="font-size: 0.78rem;">Global Visa Management &bull; Applicant Portal</div>
     </div>
 
     <div class="text-center mb-3">
@@ -97,7 +97,7 @@ $flash = get_flash();
   </div>
 
   <div class="text-center text-muted small mt-3" style="font-size: 0.75rem;">
-    &copy; <?= date('Y') ?> VISA TRACK &bull; Applicant Self-Service
+    &copy; <?= date('Y') ?> MS TRAVEL HUB &bull; Applicant Self-Service
   </div>
 </div>
 
