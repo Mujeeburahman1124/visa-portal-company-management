@@ -493,7 +493,7 @@ $flash = get_flash();
               name="email" 
               id="userEmail" 
               class="form-control-pro" 
-              placeholder="name@company.com" 
+              placeholder="staff@company.com" 
               required 
               autocomplete="username" 
               autofocus

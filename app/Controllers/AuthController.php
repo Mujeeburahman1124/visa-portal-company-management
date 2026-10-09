@@ -32,7 +32,7 @@ class AuthController
         try {
             $pdo = Database::getConnection();
 
-            // 1. Direct match on submitted email
+            // 1. Direct match on submitted email for staff users
             $stmt = $pdo->prepare("SELECT u.*, r.name as role_name, r.slug as role_slug, b.name as branch_name 
                 FROM users u 
                 LEFT JOIN roles r ON u.role_id = r.id 
@@ -42,18 +42,13 @@ class AuthController
             $stmt->execute([$normalizedEmail]);
             $user = $stmt->fetch();
 
-            // 2. If not found and logging in as admin alias, fallback to any Super Admin user
-            if (!$user && in_array($normalizedEmail, ['admin@system.com', 'admin@admin.com'], true)) {
-                $userStmt = $pdo->query("SELECT u.*, r.name as role_name, r.slug as role_slug, b.name as branch_name 
-                    FROM users u 
-                    LEFT JOIN roles r ON u.role_id = r.id 
-                    LEFT JOIN branches b ON u.branch_id = b.id 
-                    WHERE r.slug = 'super-admin' OR u.role_id = 1 
-                    ORDER BY u.id ASC LIMIT 1");
-                $user = $userStmt ? $userStmt->fetch() : false;
-            }
-
             if ($user) {
+                // STRICT PORTAL ISOLATION: Super Admin cannot log in from Staff Portal!
+                $isSuperAdmin = (($user['role_slug'] ?? '') === 'super-admin' || (int)($user['role_id'] ?? 0) === 1);
+                if ($isSuperAdmin) {
+                    redirect('/auth/login', 'Access Restricted: Super Administrators must sign in through the dedicated Super Admin Console at /admin/login.', 'danger');
+                }
+
                 // Ensure inactive accounts cannot log in
                 if ((int)($user['is_active'] ?? 1) !== 1) {
                     redirect('/auth/login', 'Your account has been deactivated. Please contact your system administrator.', 'danger');
@@ -84,29 +79,14 @@ class AuthController
                 }
             }
 
-            // Check if an Agent account is logging in from the main portal login
+            // Check if an Agent account is attempting to log in from Staff portal
             try {
                 $agentStmt = $pdo->prepare("SELECT * FROM agents WHERE LOWER(email) = LOWER(?) AND is_active = 1 LIMIT 1");
                 $agentStmt->execute([$email]);
                 $agent = $agentStmt->fetch(PDO::FETCH_ASSOC);
 
-                if ($agent) {
-                    if (!empty($agent['password_hash']) && password_verify($password, (string)$agent['password_hash'])) {
-                        if (session_status() === PHP_SESSION_ACTIVE) {
-                            session_regenerate_id(true);
-                        }
-                        $_SESSION['agent_auth'] = [
-                            'id'             => $agent['id'],
-                            'agent_code'     => $agent['agent_code'],
-                            'company_name'   => $agent['company_name'],
-                            'contact_person' => $agent['contact_person'],
-                            'email'          => $agent['email'],
-                        ];
-                        try {
-                            $pdo->prepare("UPDATE agents SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?")->execute([$agent['id']]);
-                        } catch (\Throwable $e) {}
-                        redirect('/agent/dashboard', "Welcome to the Partner Agent Portal, {$agent['contact_person']}!", 'success');
-                    }
+                if ($agent && !empty($agent['password_hash']) && password_verify($password, (string)$agent['password_hash'])) {
+                    redirect('/auth/login', 'Access Restricted: Partner Agent accounts must sign in through the Partner Agent Portal at /agent/login.', 'danger');
                 }
             } catch (\Throwable $e) {}
 
@@ -116,7 +96,7 @@ class AuthController
                 $custStmt->execute([$normalizedEmail]);
                 $customer = $custStmt->fetch(PDO::FETCH_ASSOC);
                 if ($customer && !empty($customer['password_hash']) && password_verify($password, (string)$customer['password_hash'])) {
-                    redirect('/portal/login', 'This password matches your Applicant Portal account. Please sign in via the Applicant Portal.', 'info');
+                    redirect('/auth/login', 'Access Restricted: Applicant and customer accounts must sign in through the Applicant Portal at /portal/login.', 'danger');
                 }
             } catch (\Throwable $e) {}
 
@@ -125,7 +105,7 @@ class AuthController
             redirect('/auth/login', 'Login error: ' . $e->getMessage(), 'danger');
         }
 
-        redirect('/auth/login', 'Invalid email or password. Please verify your credentials and try again.', 'danger');
+        redirect('/auth/login', 'Invalid staff credentials. Please verify your email and password and try again.', 'danger');
     }
 
     public function showAdminLogin(): void

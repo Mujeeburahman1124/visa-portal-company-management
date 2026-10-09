@@ -63,9 +63,6 @@
     <div class="text-center mt-2 small">
       <a href="/agent/forgot-password" class="text-success text-decoration-none"><i class="fa-solid fa-key me-1"></i>Forgot your password?</a>
     </div>
-    <div class="text-center mt-3 small text-muted">
-      <a href="/auth/login" class="text-decoration-none text-secondary"><i class="fa-solid fa-arrow-left me-1"></i>Staff Login</a>
-    </div>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

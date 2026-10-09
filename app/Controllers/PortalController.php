@@ -41,13 +41,13 @@ class PortalController
             redirect('/portal/dashboard', "Welcome back, {$customer['full_name']}!", 'success');
         }
 
-        // Check if user is registered as a Staff member with this email
+        // Check if user is registered as a Staff member or Admin with this email
         try {
             $userStmt = $pdo->prepare("SELECT * FROM users WHERE LOWER(email) = LOWER(?) AND is_active = 1 LIMIT 1");
             $userStmt->execute([$email]);
             $staffUser = $userStmt->fetch(PDO::FETCH_ASSOC);
             if ($staffUser && !empty($staffUser['password_hash']) && password_verify($password, (string)$staffUser['password_hash'])) {
-                redirect('/auth/login', 'This password matches your Staff / Operations account. Please sign in via the Staff Portal.', 'info');
+                redirect('/portal/login', 'Access Restricted: This portal is exclusively for visa applicants and customers. Staff and administrators must use their designated portal.', 'danger');
             }
         } catch (\Throwable $e) {}
 

@@ -171,10 +171,9 @@ $flash = get_flash();
     </button>
   </form>
 
-  <!-- Navigation Links -->
-  <div class="text-center mt-3 pt-2.5 border-top border-secondary border-opacity-25 small">
-    <span class="text-secondary" style="font-size: 0.78rem;">Regular Staff Member?</span>
-    <a href="/auth/login" class="text-white fw-bold text-decoration-none ms-1" style="font-size: 0.78rem;">Staff Login &rarr;</a>
+  <!-- Security Verification Footer -->
+  <div class="text-center mt-3 pt-2.5 border-top border-secondary border-opacity-25 small text-secondary" style="font-size: 0.72rem;">
+    <i class="fa-solid fa-lock text-danger me-1"></i> Restricted Executive Portal &bull; Hardware/IP Verification Enforced
   </div>
 </div>
 

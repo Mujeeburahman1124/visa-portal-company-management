@@ -91,9 +91,6 @@ $flash = get_flash();
       </a>
     </div>
 
-    <div class="text-center small text-muted" style="font-size: 0.78rem;">
-      Staff Member? <a href="/auth/login" class="text-primary fw-semibold text-decoration-none">Staff Operations Login &rarr;</a>
-    </div>
   </div>
 
   <div class="text-center text-muted small mt-3" style="font-size: 0.75rem;">
