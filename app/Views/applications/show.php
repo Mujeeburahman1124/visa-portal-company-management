@@ -276,6 +276,11 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
       <button class="master-nav-tab-btn" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments-pane" type="button" role="tab">
         <i class="fa-solid fa-credit-card text-success"></i> Payments (<?= count($appPayments) ?>)
       </button>
+      <?php if (!empty($supplierDetails) || !empty($app['selling_price']) || user_can('finance.manage') || user_can('suppliers.view')): ?>
+      <button class="master-nav-tab-btn" id="supplier-tab" data-bs-toggle="tab" data-bs-target="#supplier-pane" type="button" role="tab">
+        <i class="fa-solid fa-building-flag text-primary"></i> Supplier &amp; Costs
+      </button>
+      <?php endif; ?>
       <button class="master-nav-tab-btn" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks-pane" type="button" role="tab">
         <i class="fa-solid fa-list-check text-warning"></i> Tasks (<?= count($tasks) ?>)
       </button>
@@ -319,42 +324,60 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
                   </span>
                 </div>
 
-                <div class="master-spec-list">
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Application Number:</span>
-                    <span class="master-spec-val font-monospace text-primary fw-bold"><?= e($app['application_number']) ?></span>
+                <div class="row g-2.5">
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Application Number</span>
+                      <span class="master-data-val font-monospace text-primary fw-bold"><?= e($app['application_number']) ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Visa Service:</span>
-                    <span class="master-spec-val text-dark"><?= e($app['service_name']) ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Visa Service</span>
+                      <span class="master-data-val text-dark"><?= e($app['service_name']) ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Destination Country:</span>
-                    <span class="master-spec-val"><?= $app['flag_emoji'] ?> <?= e($app['country_name']) ?> (<?= e($app['country_code']) ?>)</span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Destination Country</span>
+                      <span class="master-data-val"><?= $app['flag_emoji'] ?> <?= e($app['country_name']) ?> (<?= e($app['country_code']) ?>)</span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Entry &amp; Processing Type:</span>
-                    <span class="master-spec-val"><?= e($app['entry_type']) ?> &bull; <?= e($app['processing_type']) ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Entry &amp; Processing</span>
+                      <span class="master-data-val"><?= e($app['entry_type']) ?> &bull; <?= e($app['processing_type']) ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Application Date:</span>
-                    <span class="master-spec-val"><?= format_date($app['application_date'] ?? $app['created_at']) ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Application Date</span>
+                      <span class="master-data-val"><?= format_date($app['application_date'] ?? $app['created_at']) ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Expected Completion:</span>
-                    <span class="master-spec-val <?= e($deadlineClass) ?>"><?= format_date($app['expected_completion_date']) ?> (<?= e($deadlineStatus) ?>)</span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Expected Completion</span>
+                      <span class="master-data-val <?= e($deadlineClass) ?>"><?= format_date($app['expected_completion_date']) ?> (<?= e($deadlineStatus) ?>)</span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Travel &amp; Return Dates:</span>
-                    <span class="master-spec-val"><?= format_date($app['travel_date']) ?> &rarr; <?= format_date($app['return_date']) ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Travel &amp; Return Dates</span>
+                      <span class="master-data-val"><?= format_date($app['travel_date']) ?> &rarr; <?= format_date($app['return_date']) ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Processing Branch:</span>
-                    <span class="master-spec-val"><?= e($app['branch_name'] ?? 'Dubai Head Office') ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Processing Branch</span>
+                      <span class="master-data-val"><?= e($app['branch_name'] ?? 'Dubai Head Office') ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Created By:</span>
-                    <span class="master-spec-val text-muted small"><?= e($app['created_by_name'] ?? 'Super Admin') ?> on <?= format_datetime($app['created_at']) ?></span>
+                  <div class="col-12">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Created By</span>
+                      <span class="master-data-val text-muted small"><?= e($app['created_by_name'] ?? 'Super Admin') ?> on <?= format_datetime($app['created_at']) ?></span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -375,50 +398,66 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
                   </a>
                 </div>
 
-                <div class="master-spec-list">
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Full Legal Name:</span>
-                    <span class="master-spec-val text-dark fw-bold"><?= e($app['customer_name']) ?></span>
-                  </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Customer Code:</span>
-                    <span class="master-spec-val font-monospace"><span class="badge bg-light text-dark border">@<?= e($app['customer_code']) ?></span></span>
-                  </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Primary Passport:</span>
-                    <span class="master-spec-val font-monospace text-primary fw-bold"><i class="fa-solid fa-passport me-1 text-muted"></i><?= e($app['passport_number'] ?: $app['current_passport'] ?: '—') ?></span>
-                  </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Passport Expiry:</span>
-                    <span class="master-spec-val font-monospace"><?= format_date($app['passport_expiry'] ?? $app['passport_expiry_date'] ?? null) ?></span>
-                  </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Nationality &amp; Gender:</span>
-                    <span class="master-spec-val"><?= e($app['customer_nationality']) ?> &bull; <?= e($app['customer_gender'] ?? '—') ?></span>
-                  </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Date of Birth:</span>
-                    <span class="master-spec-val"><?= format_date($app['customer_dob']) ?></span>
-                  </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Mobile / WhatsApp:</span>
-                    <div class="master-spec-val d-flex align-items-center justify-content-end gap-2 flex-wrap">
-                      <a href="tel:<?= e($app['customer_mobile']) ?>" class="fw-semibold text-dark text-decoration-none font-monospace small"><?= e($app['customer_mobile']) ?></a>
-                      <?php 
-                        $cleanCustPhone = preg_replace('/[^0-9]/', '', $app['customer_whatsapp'] ?: $app['customer_mobile'] ?: '');
-                        if ($cleanCustPhone && user_can('whatsapp.send')): 
-                          $waApplicantMsg = "Hello " . ($app['customer_name'] ?? 'Applicant') . ", regarding your visa application " . ($app['application_number'] ?? '') . " with MS Travel Hub:";
-                      ?>
-                        <a href="https://api.whatsapp.com/send?phone=<?= $cleanCustPhone ?>&text=<?= urlencode($waApplicantMsg) ?>" 
-                           target="_blank" class="badge rounded-pill bg-success-subtle text-success border border-success-subtle py-1 px-2.5 text-decoration-none fw-semibold" title="Chat directly on WhatsApp">
-                          <i class="fa-brands fa-whatsapp me-1"></i> Chat on WhatsApp
-                        </a>
-                      <?php endif; ?>
+                <div class="row g-2.5">
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Full Legal Name</span>
+                      <span class="master-data-val text-dark fw-bold"><?= e($app['customer_name']) ?></span>
                     </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Email Address:</span>
-                    <span class="master-spec-val"><a href="mailto:<?= e($app['customer_email']) ?>" class="text-danger text-decoration-none small"><?= e($app['customer_email']) ?></a></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Customer Code</span>
+                      <span class="master-data-val font-monospace"><span class="badge bg-light text-dark border">@<?= e($app['customer_code']) ?></span></span>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Primary Passport</span>
+                      <span class="master-data-val font-monospace text-primary fw-bold"><i class="fa-solid fa-passport me-1 text-muted"></i><?= e($app['passport_number'] ?: $app['current_passport'] ?: '—') ?></span>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Passport Expiry</span>
+                      <span class="master-data-val font-monospace"><?= format_date($app['passport_expiry'] ?? $app['passport_expiry_date'] ?? null) ?></span>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Nationality &amp; Gender</span>
+                      <span class="master-data-val"><?= e($app['customer_nationality']) ?> &bull; <?= e($app['customer_gender'] ?? '—') ?></span>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Date of Birth</span>
+                      <span class="master-data-val"><?= format_date($app['customer_dob']) ?></span>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Mobile &amp; WhatsApp</span>
+                      <div class="d-flex align-items-center gap-1.5 flex-wrap mt-0.5">
+                        <a href="tel:<?= e($app['customer_mobile']) ?>" class="fw-semibold text-dark text-decoration-none font-monospace small"><?= e($app['customer_mobile']) ?></a>
+                        <?php 
+                          $cleanCustPhone = preg_replace('/[^0-9]/', '', $app['customer_whatsapp'] ?: $app['customer_mobile'] ?: '');
+                          if ($cleanCustPhone && user_can('whatsapp.send')): 
+                            $waApplicantMsg = "Hello " . ($app['customer_name'] ?? 'Applicant') . ", regarding your visa application " . ($app['application_number'] ?? '') . " with MS Travel Hub:";
+                        ?>
+                          <a href="https://api.whatsapp.com/send?phone=<?= $cleanCustPhone ?>&text=<?= urlencode($waApplicantMsg) ?>" 
+                             target="_blank" class="badge rounded-pill bg-success-subtle text-success border border-success-subtle py-1 px-2.5 text-decoration-none fw-semibold" title="Chat directly on WhatsApp">
+                            <i class="fa-brands fa-whatsapp me-1"></i> WhatsApp
+                          </a>
+                        <?php endif; ?>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Email Address</span>
+                      <span class="master-data-val"><a href="mailto:<?= e($app['customer_email']) ?>" class="text-danger text-decoration-none small"><?= e($app['customer_email']) ?></a></span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -441,46 +480,66 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
                   </div>
                 </div>
 
-                <div class="master-spec-list">
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Father's Full Name:</span>
-                    <span class="master-spec-val text-dark fw-semibold"><?= e($customerFamily['father_name'] ?? 'Not Recorded') ?></span>
+                <div class="row g-2.5">
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Father's Full Name</span>
+                      <span class="master-data-val text-dark fw-semibold"><?= e($customerFamily['father_name'] ?? 'Not Recorded') ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Father's DOB:</span>
-                    <span class="master-spec-val"><?= format_date($customerFamily['father_dob'] ?? null) ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Father's Date of Birth</span>
+                      <span class="master-data-val"><?= format_date($customerFamily['father_dob'] ?? null) ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Father's Birth Country:</span>
-                    <span class="master-spec-val"><?= e($customerFamily['father_country_of_birth'] ?? '—') ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Father's Birth Country</span>
+                      <span class="master-data-val"><?= e($customerFamily['father_country_of_birth'] ?? '—') ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Father's Nationality:</span>
-                    <span class="master-spec-val"><?= e($customerFamily['father_nationality'] ?? '—') ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Father's Nationality</span>
+                      <span class="master-data-val"><?= e($customerFamily['father_nationality'] ?? '—') ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Father's Religion:</span>
-                    <span class="master-spec-val"><?= e($customerFamily['father_religion'] ?? '—') ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Father's Religion</span>
+                      <span class="master-data-val"><?= e($customerFamily['father_religion'] ?? '—') ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Mother's Full Name:</span>
-                    <span class="master-spec-val text-dark fw-semibold"><?= e($customerFamily['mother_name'] ?? 'Not Recorded') ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Mother's Full Name</span>
+                      <span class="master-data-val text-dark fw-semibold"><?= e($customerFamily['mother_name'] ?? 'Not Recorded') ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Mother's DOB:</span>
-                    <span class="master-spec-val"><?= format_date($customerFamily['mother_dob'] ?? null) ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Mother's Date of Birth</span>
+                      <span class="master-data-val"><?= format_date($customerFamily['mother_dob'] ?? null) ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Mother's Birth Country:</span>
-                    <span class="master-spec-val"><?= e($customerFamily['mother_country_of_birth'] ?? '—') ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Mother's Birth Country</span>
+                      <span class="master-data-val"><?= e($customerFamily['mother_country_of_birth'] ?? '—') ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Mother's Nationality:</span>
-                    <span class="master-spec-val"><?= e($customerFamily['mother_nationality'] ?? '—') ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Mother's Nationality</span>
+                      <span class="master-data-val"><?= e($customerFamily['mother_nationality'] ?? '—') ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Mother's Mobile:</span>
-                    <span class="master-spec-val font-monospace"><?= e($customerFamily['mother_mobile'] ?? '—') ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Mother's Mobile</span>
+                      <span class="master-data-val font-monospace"><?= e($customerFamily['mother_mobile'] ?? '—') ?></span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -501,30 +560,42 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
                   </a>
                 </div>
 
-                <div class="master-spec-list">
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Residence Country:</span>
-                    <span class="master-spec-val text-dark fw-bold"><?= e($customerResidence['residence_country'] ?? $app['customer_nationality']) ?></span>
+                <div class="row g-2.5">
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Residence Country</span>
+                      <span class="master-data-val text-dark fw-bold"><?= e($customerResidence['residence_country'] ?? $app['customer_nationality']) ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Permit / Residency #:</span>
-                    <span class="master-spec-val font-monospace fw-semibold text-primary"><?= e($customerResidence['permit_number'] ?? 'Not Applicable') ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Permit / Residency #</span>
+                      <span class="master-data-val font-monospace fw-semibold text-primary"><?= e($customerResidence['permit_number'] ?? 'Not Applicable') ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Permit Expiry Date:</span>
-                    <span class="master-spec-val font-monospace"><?= format_date($customerResidence['expiry_date'] ?? null) ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Permit Expiry Date</span>
+                      <span class="master-data-val font-monospace"><?= format_date($customerResidence['expiry_date'] ?? null) ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Current Employer / Sponsor:</span>
-                    <span class="master-spec-val text-dark"><?= e($customerResidence['employer'] ?? '—') ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Employer / Sponsor</span>
+                      <span class="master-data-val text-dark"><?= e($customerResidence['employer'] ?? '—') ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Job Title / Designation:</span>
-                    <span class="master-spec-val text-dark"><?= e($customerResidence['job_title'] ?? '—') ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Job Title / Designation</span>
+                      <span class="master-data-val text-dark"><?= e($customerResidence['job_title'] ?? '—') ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Customer Address:</span>
-                    <span class="master-spec-val text-muted small"><?= e($app['customer_address'] ?? '—') ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Customer Address</span>
+                      <span class="master-data-val text-muted small"><?= e($app['customer_address'] ?? '—') ?></span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -547,30 +618,42 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
                   </div>
                 </div>
 
-                <div class="master-spec-list">
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Destination Country:</span>
-                    <span class="master-spec-val fw-bold text-dark"><?= $app['flag_emoji'] ?> <?= e($app['country_name']) ?> (<?= e($app['country_code']) ?>)</span>
+                <div class="row g-2.5">
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Destination Country</span>
+                      <span class="master-data-val fw-bold text-dark"><?= $app['flag_emoji'] ?> <?= e($app['country_name']) ?> (<?= e($app['country_code']) ?>)</span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Service Tier:</span>
-                    <span class="master-spec-val text-primary fw-bold"><?= e($app['service_name']) ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Service Tier</span>
+                      <span class="master-data-val text-primary fw-bold"><?= e($app['service_name']) ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Entry Type:</span>
-                    <span class="master-spec-val"><?= e($app['entry_type']) ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Entry Type</span>
+                      <span class="master-data-val"><?= e($app['entry_type']) ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Processing Type:</span>
-                    <span class="master-spec-val"><?= e($app['processing_type']) ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Processing Type</span>
+                      <span class="master-data-val"><?= e($app['processing_type']) ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Duration / Validity:</span>
-                    <span class="master-spec-val"><?= e($app['duration'] ?? '30 Days') ?> (Max Stay: <?= e($app['max_stay'] ?? '30 Days') ?>)</span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Duration / Validity</span>
+                      <span class="master-data-val"><?= e($app['duration'] ?? '30 Days') ?> (Max Stay: <?= e($app['max_stay'] ?? '30 Days') ?>)</span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Estimated SLA:</span>
-                    <span class="master-spec-val font-monospace fw-bold"><?= (int)($app['estimated_days'] ?? 7) ?> Working Days</span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Estimated SLA</span>
+                      <span class="master-data-val font-monospace fw-bold"><?= (int)($app['estimated_days'] ?? 7) ?> Working Days</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -588,26 +671,36 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
                   </div>
                 </div>
 
-                <div class="master-spec-list">
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Intended Travel Date:</span>
-                    <span class="master-spec-val fw-semibold text-dark"><?= format_date($app['travel_date']) ?></span>
+                <div class="row g-2.5">
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Intended Travel Date</span>
+                      <span class="master-data-val fw-semibold text-dark"><?= format_date($app['travel_date']) ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Expected Return Date:</span>
-                    <span class="master-spec-val fw-semibold text-dark"><?= format_date($app['return_date']) ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Expected Return Date</span>
+                      <span class="master-data-val fw-semibold text-dark"><?= format_date($app['return_date']) ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Submission Date:</span>
-                    <span class="master-spec-val"><?= format_date($app['application_date'] ?? $app['created_at']) ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Submission Date</span>
+                      <span class="master-data-val"><?= format_date($app['application_date'] ?? $app['created_at']) ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Consular Reference:</span>
-                    <span class="master-spec-val font-monospace fw-bold text-primary"><?= e($app['embassy_reference'] ?? 'Pending Submission') ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Consular Reference</span>
+                      <span class="master-data-val font-monospace fw-bold text-primary"><?= e($app['embassy_reference'] ?? 'Pending Submission') ?></span>
+                    </div>
                   </div>
-                  <div class="master-spec-row">
-                    <span class="master-spec-label">Processing Branch:</span>
-                    <span class="master-spec-val"><?= e($app['branch_name'] ?? 'Dubai Head Office') ?></span>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Processing Branch</span>
+                      <span class="master-data-val"><?= e($app['branch_name'] ?? 'Dubai Head Office') ?></span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -615,304 +708,492 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
           </div>
         </div>
 
-        <!-- TAB 2: Documents Checklist -->
+        <!-- TAB 4: Documents Checklist -->
         <div class="tab-pane fade" id="docs-pane" role="tabpanel">
-          <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 pb-3 border-bottom">
-            <div>
-              <div class="d-flex align-items-center gap-2">
-                <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-file-circle-check text-success me-1"></i> Visa Document Checklist</h6>
-                <span class="badge bg-primary-subtle text-primary fw-semibold"><?= $checklistData['total_verified'] ?> / <?= $checklistData['total_required'] ?> Verified</span>
+          <div class="master-data-card">
+            <!-- Documents Header Strip -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 pb-3 border-bottom">
+              <div>
+                <div class="d-flex align-items-center gap-2">
+                  <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(16, 185, 129, 0.1); color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                    <i class="fa-solid fa-file-circle-check"></i>
+                  </div>
+                  <div>
+                    <div class="d-flex align-items-center gap-2">
+                      <h6 class="fw-bold mb-0 text-dark">Visa Document Checklist</h6>
+                      <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-0.5 fw-bold" style="font-size: 0.72rem;">
+                        <?= $checklistData['total_verified'] ?> / <?= $checklistData['total_required'] ?> Verified
+                      </span>
+                    </div>
+                    <div class="text-muted small mt-0.5" style="font-size: 0.76rem;">Checklist automatically generated from visa service category requirements.</div>
+                  </div>
+                </div>
               </div>
-              <div class="text-muted small mt-1">Checklist automatically generated from visa service category requirements.</div>
+
+              <div class="d-flex align-items-center gap-3 flex-wrap">
+                <div style="min-width: 180px;">
+                  <div class="d-flex justify-content-between small mb-1">
+                    <span class="text-muted" style="font-size: 0.75rem;">Verification Progress:</span>
+                    <span class="fw-bold text-dark font-monospace" style="font-size: 0.78rem;"><?= $checklistData['percentage'] ?>%</span>
+                  </div>
+                  <div class="progress rounded-pill" style="height: 7px;">
+                    <div class="progress-bar rounded-pill <?= $checklistData['percentage'] === 100 ? 'bg-success' : 'bg-primary' ?>" role="progressbar" style="width: <?= $checklistData['percentage'] ?>%;" aria-valuenow="<?= $checklistData['percentage'] ?>" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                </div>
+                <a href="/documents" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-2xs">
+                  <i class="fa-solid fa-folder-open me-1 text-warning"></i> Document Hub
+                </a>
+              </div>
             </div>
 
-            <div class="d-flex align-items-center gap-2" style="min-width: 240px;">
-              <div class="flex-grow-1">
-                <div class="d-flex justify-content-between small mb-1">
-                  <span class="text-muted">Verification Progress:</span>
-                  <span class="fw-bold text-dark"><?= $checklistData['percentage'] ?>%</span>
-                </div>
-                <div class="progress" style="height: 8px;">
-                  <div class="progress-bar <?= $checklistData['percentage'] === 100 ? 'bg-success' : 'bg-primary' ?>" role="progressbar" style="width: <?= $checklistData['percentage'] ?>%;" aria-valuenow="<?= $checklistData['percentage'] ?>" aria-valuemin="0" aria-valuemax="100"></div>
-                </div>
+            <?php if (empty($documentChecklist)): ?>
+              <div class="p-5 text-center text-muted bg-light rounded-4 border">
+                <i class="fa-solid fa-folder-open fa-2x mb-2 d-block opacity-25"></i>
+                No specific document requirements configured for this visa service.
               </div>
-              <a href="/documents" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-folder-open me-1"></i> Document Hub</a>
-            </div>
-          </div>
-
-          <?php if (empty($documentChecklist)): ?>
-            <div class="p-4 text-center text-muted bg-light rounded">No specific document requirements configured for this visa service.</div>
-          <?php else: ?>
-            <div class="table-responsive">
-              <table class="table-custom">
-                <thead>
-                  <tr>
-                    <th>Required Document</th>
-                    <th>Category</th>
-                    <th>Requirement Type</th>
-                    <th>Status</th>
-                    <th>Uploaded File &amp; Expiry</th>
-                    <th>Verified By</th>
-                    <th class="text-end">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php foreach ($documentChecklist as $doc): ?>
-                    <?php
-                      $docStatus = $doc['status'];
-                      $statusBadge = 'bg-secondary';
-                      if ($docStatus === 'VERIFIED') $statusBadge = 'bg-success';
-                      elseif ($docStatus === 'UNDER_REVIEW' || $docStatus === 'UPLOADED') $statusBadge = 'bg-warning text-dark';
-                      elseif ($docStatus === 'REJECTED') $statusBadge = 'bg-danger';
-                      elseif ($docStatus === 'EXPIRED') $statusBadge = 'bg-danger text-white fw-bold';
-                      elseif ($docStatus === 'MISSING') $statusBadge = 'bg-secondary-subtle text-secondary border';
-                    ?>
+            <?php else: ?>
+              <!-- DESKTOP / TABLET VIEW: Sleek Bento Table -->
+              <div class="d-none d-md-block table-responsive" style="-webkit-overflow-scrolling: touch;">
+                <table class="table-documents-bento">
+                  <thead>
                     <tr>
-                      <td>
-                        <div class="fw-semibold text-dark"><?= e($doc['document_name']) ?></div>
-                        <?php if (!empty($doc['condition_notes'])): ?>
-                          <div class="text-muted small" style="font-size: 0.72rem;"><?= e($doc['condition_notes']) ?></div>
-                        <?php endif; ?>
-                        <?php if (!empty($doc['rejection_reason'])): ?>
-                          <div class="text-danger small mt-1" style="font-size: 0.72rem;">
-                            <i class="fa-solid fa-circle-exclamation me-1"></i><strong>Rejected:</strong> <?= e($doc['rejection_reason']) ?>
-                          </div>
-                        <?php endif; ?>
-                      </td>
-                      <td><span class="badge bg-light text-secondary border"><?= e($doc['category']) ?></span></td>
-                      <td>
-                        <?php if ($doc['is_critical']): ?>
-                          <span class="badge bg-danger text-white fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i>Critical</span>
-                        <?php elseif ($doc['is_mandatory']): ?>
-                          <span class="badge bg-danger-subtle text-danger">Mandatory</span>
-                        <?php else: ?>
-                          <span class="badge bg-light text-muted border">Optional</span>
-                        <?php endif; ?>
-                      </td>
-                      <td>
-                        <span class="badge <?= $statusBadge ?> px-2 py-1"><?= e($docStatus) ?></span>
-                      </td>
-                      <td>
-                        <?php if (!empty($doc['file_path'])): ?>
-                          <div>
-                            <a href="/documents/preview?id=<?= $doc['document_id'] ?>" target="_blank" class="text-primary text-decoration-none small fw-semibold">
-                              <i class="fa-solid fa-paperclip me-1"></i><?= e($doc['file_name']) ?>
-                            </a>
-                            <span class="text-muted small"> (v<?= (int)$doc['version'] ?>)</span>
-                          </div>
-                          <?php if (!empty($doc['expiry_date'])): ?>
-                            <div class="mt-1">
-                              <span class="badge <?= $doc['expiry_info']['badge_class'] ?>" style="font-size: 0.7rem;">
-                                <i class="fa-solid fa-clock me-1"></i><?= e($doc['expiry_info']['label']) ?>
-                              </span>
+                      <th>Required Document</th>
+                      <th>Category</th>
+                      <th>Requirement Type</th>
+                      <th>Status</th>
+                      <th>Uploaded File &amp; Expiry</th>
+                      <th>Verified By</th>
+                      <th class="text-end">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php foreach ($documentChecklist as $doc): ?>
+                      <?php
+                        $docStatus = $doc['status'];
+                        $statusBadge = 'bg-secondary';
+                        if ($docStatus === 'VERIFIED') $statusBadge = 'bg-success';
+                        elseif ($docStatus === 'UNDER_REVIEW' || $docStatus === 'UPLOADED') $statusBadge = 'bg-warning text-dark';
+                        elseif ($docStatus === 'REJECTED') $statusBadge = 'bg-danger';
+                        elseif ($docStatus === 'EXPIRED') $statusBadge = 'bg-danger text-white fw-bold';
+                        elseif ($docStatus === 'MISSING') $statusBadge = 'bg-secondary-subtle text-secondary border';
+                      ?>
+                      <tr>
+                        <td>
+                          <div class="fw-bold text-dark"><?= e($doc['document_name']) ?></div>
+                          <?php if (!empty($doc['condition_notes'])): ?>
+                            <div class="text-muted small" style="font-size: 0.72rem;"><?= e($doc['condition_notes']) ?></div>
+                          <?php endif; ?>
+                          <?php if (!empty($doc['rejection_reason'])): ?>
+                            <div class="text-danger small mt-1" style="font-size: 0.72rem;">
+                              <i class="fa-solid fa-circle-exclamation me-1"></i><strong>Rejected:</strong> <?= e($doc['rejection_reason']) ?>
                             </div>
                           <?php endif; ?>
-                        <?php else: ?>
-                          <span class="text-muted small">Not Uploaded</span>
-                        <?php endif; ?>
-                      </td>
-                      <td>
-                        <span class="small text-muted"><?= e($doc['verified_by_name'] ?? '—') ?></span>
-                      </td>
-                      <td class="text-end">
-                        <?php if (!empty($doc['file_path'])): ?>
-                          <div class="btn-group btn-group-sm">
-                            <a href="/documents/preview?id=<?= $doc['document_id'] ?>" target="_blank" class="btn btn-outline-primary" title="Preview">
-                              <i class="fa-solid fa-eye"></i>
-                            </a>
-                            <a href="/documents/download?id=<?= $doc['document_id'] ?>" class="btn btn-outline-secondary" title="Download">
-                              <i class="fa-solid fa-download"></i>
-                            </a>
-                            <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"></button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem;">
-                              <?php if ($doc['status'] !== 'VERIFIED'): ?>
+                        </td>
+                        <td>
+                          <span class="badge bg-light text-secondary border rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                            <?= e($doc['category']) ?>
+                          </span>
+                        </td>
+                        <td>
+                          <?php if ($doc['is_critical']): ?>
+                            <span class="badge bg-danger text-white fw-bold rounded-pill px-2.5 py-1" style="font-size: 0.72rem;"><i class="fa-solid fa-triangle-exclamation me-1"></i>Critical</span>
+                          <?php elseif ($doc['is_mandatory']): ?>
+                            <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1 fw-semibold" style="font-size: 0.72rem;">Mandatory</span>
+                          <?php else: ?>
+                            <span class="badge bg-light text-muted border rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">Optional</span>
+                          <?php endif; ?>
+                        </td>
+                        <td>
+                          <span class="badge <?= $statusBadge ?> px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.72rem; letter-spacing: 0.02em;">
+                            <?= e($docStatus) ?>
+                          </span>
+                        </td>
+                        <td>
+                          <?php if (!empty($doc['file_path'])): ?>
+                            <div>
+                              <a href="/documents/preview?id=<?= $doc['document_id'] ?>" target="_blank" class="text-danger text-decoration-none small fw-semibold">
+                                <i class="fa-solid fa-paperclip me-1 text-danger"></i><?= e($doc['file_name']) ?>
+                              </a>
+                              <span class="text-muted small" style="font-size: 0.7rem;"> (v<?= (int)$doc['version'] ?>)</span>
+                            </div>
+                            <?php if (!empty($doc['expiry_date'])): ?>
+                              <div class="mt-1">
+                                <span class="badge <?= $doc['expiry_info']['badge_class'] ?> rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">
+                                  <i class="fa-solid fa-clock me-1"></i><?= e($doc['expiry_info']['label']) ?>
+                                </span>
+                              </div>
+                            <?php endif; ?>
+                          <?php else: ?>
+                            <span class="text-muted small">Not Uploaded</span>
+                          <?php endif; ?>
+                        </td>
+                        <td>
+                          <span class="small text-muted"><?= e($doc['verified_by_name'] ?? '—') ?></span>
+                        </td>
+                        <td class="text-end">
+                          <?php if (!empty($doc['file_path'])): ?>
+                            <div class="btn-group btn-group-sm">
+                              <a href="/documents/preview?id=<?= $doc['document_id'] ?>" target="_blank" class="btn btn-outline-danger btn-sm rounded-start-pill px-2.5" title="Preview">
+                                <i class="fa-solid fa-eye"></i>
+                              </a>
+                              <a href="/documents/download?id=<?= $doc['document_id'] ?>" class="btn btn-outline-secondary btn-sm px-2.5" title="Download">
+                                <i class="fa-solid fa-download"></i>
+                              </a>
+                              <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle dropdown-toggle-split rounded-end-pill px-2" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                              <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3" style="font-size: 0.85rem; z-index: 1070;">
+                                <?php if ($doc['status'] !== 'VERIFIED'): ?>
+                                  <li>
+                                    <form action="/documents/verify" method="POST" class="d-inline" onsubmit="return confirm('Confirm verification of this document?');">
+                                      <?= csrf_field() ?>
+                                      <input type="hidden" name="document_id" value="<?= $doc['document_id'] ?>">
+                                      <button type="submit" class="dropdown-item py-2 text-success fw-semibold"><i class="fa-solid fa-check-circle me-2"></i> Verify Document</button>
+                                    </form>
+                                  </li>
+                                <?php endif; ?>
+                                <?php if ($doc['status'] !== 'UNDER_REVIEW' && $doc['status'] !== 'PENDING'): ?>
+                                  <li>
+                                    <form action="/documents/under-review" method="POST" class="d-inline" onsubmit="return confirm('Reset document back to Under Review?');">
+                                      <?= csrf_field() ?>
+                                      <input type="hidden" name="document_id" value="<?= $doc['document_id'] ?>">
+                                      <button type="submit" class="dropdown-item py-2 text-warning fw-semibold"><i class="fa-solid fa-clock-rotate-left me-2"></i> Set Under Review</button>
+                                    </form>
+                                  </li>
+                                <?php endif; ?>
+                                <?php if ($doc['status'] !== 'REJECTED'): ?>
+                                  <li>
+                                    <button type="button" class="dropdown-item py-2 text-danger fw-semibold" onclick="openAppDocRejectModal(<?= $doc['document_id'] ?>, '<?= e(addslashes($doc['document_name'])) ?>')">
+                                      <i class="fa-solid fa-times-circle me-2"></i> Reject Document
+                                    </button>
+                                  </li>
+                                <?php endif; ?>
                                 <li>
-                                  <form action="/documents/verify" method="POST" class="d-inline" onsubmit="return confirm('Confirm verification of this document?');">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="document_id" value="<?= $doc['document_id'] ?>">
-                                    <button type="submit" class="dropdown-item py-2 text-success"><i class="fa-solid fa-check-circle me-2"></i> Verify Document</button>
-                                  </form>
-                                </li>
-                              <?php endif; ?>
-                              <?php if ($doc['status'] !== 'UNDER_REVIEW' && $doc['status'] !== 'PENDING'): ?>
-                                <li>
-                                  <form action="/documents/under-review" method="POST" class="d-inline" onsubmit="return confirm('Reset document back to Under Review?');">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="document_id" value="<?= $doc['document_id'] ?>">
-                                    <button type="submit" class="dropdown-item py-2 text-warning"><i class="fa-solid fa-clock-rotate-left me-2"></i> Set Under Review</button>
-                                  </form>
-                                </li>
-                              <?php endif; ?>
-                              <?php if ($doc['status'] !== 'REJECTED'): ?>
-                                <li>
-                                  <button type="button" class="dropdown-item py-2 text-danger" onclick="openAppDocRejectModal(<?= $doc['document_id'] ?>, '<?= e(addslashes($doc['document_name'])) ?>')">
-                                    <i class="fa-solid fa-times-circle me-2"></i> Reject Document
+                                  <button type="button" class="dropdown-item py-2" onclick="openAppDocReplaceModal(<?= $doc['document_id'] ?>, '<?= e(addslashes($doc['document_name'])) ?>')">
+                                    <i class="fa-solid fa-cloud-arrow-up text-primary me-2"></i> Upload Replacement
                                   </button>
                                 </li>
-                              <?php endif; ?>
-                              <li>
-                                <button type="button" class="dropdown-item py-2" onclick="openAppDocReplaceModal(<?= $doc['document_id'] ?>, '<?= e(addslashes($doc['document_name'])) ?>')">
-                                  <i class="fa-solid fa-cloud-arrow-up text-primary me-2"></i> Upload Replacement
-                                </button>
-                              </li>
-                              <li><hr class="dropdown-divider"></li>
-                              <li>
-                                <button type="button" class="dropdown-item py-2 text-danger" onclick="openAppDocDeleteModal(<?= $doc['document_id'] ?>, '<?= e(addslashes($doc['document_name'])) ?>')">
-                                  <i class="fa-solid fa-trash-can me-2"></i> Delete Document
-                                </button>
-                              </li>
-                            </ul>
+                                <li><hr class="dropdown-divider my-1"></li>
+                                <li>
+                                  <button type="button" class="dropdown-item py-2 text-danger" onclick="openAppDocDeleteModal(<?= $doc['document_id'] ?>, '<?= e(addslashes($doc['document_name'])) ?>')">
+                                    <i class="fa-solid fa-trash-can me-2"></i> Delete Document
+                                  </button>
+                                </li>
+                              </ul>
+                            </div>
+                          <?php else: ?>
+                            <button type="button" class="btn btn-danger btn-sm rounded-pill px-3 py-1 shadow-xs" style="background: linear-gradient(135deg, #E11D48, #BE123C); border: none;" onclick="openAppDocUploadModal(<?= $app['id'] ?>, <?= $doc['document_type_id'] ?>, '<?= e(addslashes($doc['document_name'])) ?>')">
+                              <i class="fa-solid fa-upload me-1"></i> Upload
+                            </button>
+                          <?php endif; ?>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- MOBILE VIEW: Individual Document Bento Cards (d-md-none) -->
+              <div class="d-md-none">
+                <?php foreach ($documentChecklist as $doc): ?>
+                  <?php
+                    $docStatus = $doc['status'];
+                    $statusBadge = 'bg-secondary';
+                    if ($docStatus === 'VERIFIED') $statusBadge = 'bg-success';
+                    elseif ($docStatus === 'UNDER_REVIEW' || $docStatus === 'UPLOADED') $statusBadge = 'bg-warning text-dark';
+                    elseif ($docStatus === 'REJECTED') $statusBadge = 'bg-danger';
+                    elseif ($docStatus === 'EXPIRED') $statusBadge = 'bg-danger text-white fw-bold';
+                    elseif ($docStatus === 'MISSING') $statusBadge = 'bg-secondary-subtle text-secondary border';
+                  ?>
+                  <div class="doc-mobile-card doc-status-<?= strtolower($docStatus) ?>">
+                    <div class="doc-mobile-top">
+                      <div>
+                        <div class="doc-mobile-title"><?= e($doc['document_name']) ?></div>
+                        <div class="doc-mobile-meta">
+                          <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5" style="font-size: 0.68rem;"><?= e($doc['category']) ?></span>
+                          <?php if ($doc['is_critical']): ?>
+                            <span class="badge bg-danger text-white rounded-pill px-2 py-0.5 fw-bold" style="font-size: 0.68rem;"><i class="fa-solid fa-triangle-exclamation me-0.5"></i>Critical</span>
+                          <?php elseif ($doc['is_mandatory']): ?>
+                            <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.68rem;">Mandatory</span>
+                          <?php else: ?>
+                            <span class="badge bg-light text-muted border rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">Optional</span>
+                          <?php endif; ?>
+                        </div>
+                      </div>
+                      <span class="badge <?= $statusBadge ?> rounded-pill px-2.5 py-1 fw-bold" style="font-size: 0.7rem;">
+                        <?= e($docStatus) ?>
+                      </span>
+                    </div>
+
+                    <?php if (!empty($doc['condition_notes'])): ?>
+                      <div class="text-muted small mb-2" style="font-size: 0.74rem;"><?= e($doc['condition_notes']) ?></div>
+                    <?php endif; ?>
+                    <?php if (!empty($doc['rejection_reason'])): ?>
+                      <div class="alert alert-danger p-2 mb-2 rounded-3 small" style="font-size: 0.74rem;">
+                        <i class="fa-solid fa-circle-exclamation me-1"></i><strong>Rejected:</strong> <?= e($doc['rejection_reason']) ?>
+                      </div>
+                    <?php endif; ?>
+
+                    <!-- Mobile File Box -->
+                    <div class="doc-mobile-file-box">
+                      <?php if (!empty($doc['file_path'])): ?>
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-1">
+                          <a href="/documents/preview?id=<?= $doc['document_id'] ?>" target="_blank" class="text-danger fw-semibold text-truncate small" style="max-width: 200px;">
+                            <i class="fa-solid fa-paperclip me-1"></i><?= e($doc['file_name']) ?>
+                          </a>
+                          <span class="badge bg-white text-muted border font-monospace" style="font-size: 0.66rem;">v<?= (int)$doc['version'] ?></span>
+                        </div>
+                        <?php if (!empty($doc['expiry_date'])): ?>
+                          <div class="mt-1">
+                            <span class="badge <?= $doc['expiry_info']['badge_class'] ?> rounded-pill px-2 py-0.5" style="font-size: 0.66rem;">
+                              <i class="fa-solid fa-clock me-1"></i><?= e($doc['expiry_info']['label']) ?>
+                            </span>
                           </div>
-                        <?php else: ?>
-                          <button type="button" class="btn btn-primary btn-sm py-1 px-2" onclick="openAppDocUploadModal(<?= $app['id'] ?>, <?= $doc['document_type_id'] ?>, '<?= e(addslashes($doc['document_name'])) ?>')">
-                            <i class="fa-solid fa-upload me-1"></i> Upload
-                          </button>
                         <?php endif; ?>
-                      </td>
-                    </tr>
-                  <?php endforeach; ?>
-                </tbody>
-              </table>
-            </div>
-          <?php endif; ?>
+                      <?php else: ?>
+                        <span class="text-muted small"><i class="fa-solid fa-file-circle-xmark me-1 text-secondary"></i>File not uploaded yet</span>
+                      <?php endif; ?>
+                    </div>
+
+                    <!-- Mobile Actions -->
+                    <div class="doc-mobile-actions">
+                      <?php if (!empty($doc['file_path'])): ?>
+                        <a href="/documents/preview?id=<?= $doc['document_id'] ?>" target="_blank" class="btn btn-outline-danger btn-sm rounded-pill flex-grow-1 text-center py-1">
+                          <i class="fa-solid fa-eye me-1"></i> Preview
+                        </a>
+                        <a href="/documents/download?id=<?= $doc['document_id'] ?>" class="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1 text-center py-1">
+                          <i class="fa-solid fa-download me-1"></i> Download
+                        </a>
+                        <div class="dropdown">
+                          <button class="btn btn-light border btn-sm rounded-pill px-2.5 py-1 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                          </button>
+                          <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3" style="font-size: 0.85rem; z-index: 1070;">
+                            <?php if ($doc['status'] !== 'VERIFIED'): ?>
+                              <li>
+                                <form action="/documents/verify" method="POST" class="d-inline" onsubmit="return confirm('Confirm verification of this document?');">
+                                  <?= csrf_field() ?>
+                                  <input type="hidden" name="document_id" value="<?= $doc['document_id'] ?>">
+                                  <button type="submit" class="dropdown-item py-2 text-success fw-semibold"><i class="fa-solid fa-check-circle me-2"></i> Verify</button>
+                                </form>
+                              </li>
+                            <?php endif; ?>
+                            <li>
+                              <button type="button" class="dropdown-item py-2" onclick="openAppDocReplaceModal(<?= $doc['document_id'] ?>, '<?= e(addslashes($doc['document_name'])) ?>')">
+                                <i class="fa-solid fa-cloud-arrow-up text-primary me-2"></i> Replace File
+                              </button>
+                            </li>
+                            <?php if ($doc['status'] !== 'REJECTED'): ?>
+                              <li>
+                                <button type="button" class="dropdown-item py-2 text-danger" onclick="openAppDocRejectModal(<?= $doc['document_id'] ?>, '<?= e(addslashes($doc['document_name'])) ?>')">
+                                  <i class="fa-solid fa-times-circle me-2"></i> Reject
+                                </button>
+                              </li>
+                            <?php endif; ?>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                              <button type="button" class="dropdown-item py-2 text-danger" onclick="openAppDocDeleteModal(<?= $doc['document_id'] ?>, '<?= e(addslashes($doc['document_name'])) ?>')">
+                                <i class="fa-solid fa-trash-can me-2"></i> Delete
+                              </button>
+                            </li>
+                          </ul>
+                        </div>
+                      <?php else: ?>
+                        <button type="button" class="btn btn-danger btn-sm rounded-pill w-100 py-1.5 shadow-xs fw-semibold" style="background: linear-gradient(135deg, #E11D48, #BE123C); border: none;" onclick="openAppDocUploadModal(<?= $app['id'] ?>, <?= $doc['document_type_id'] ?>, '<?= e(addslashes($doc['document_name'])) ?>')">
+                          <i class="fa-solid fa-upload me-1"></i> Upload Document
+                        </button>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+          </div>
         </div>
 
-        <!-- TAB 2B: Document Requests -->
+        <!-- TAB 5: Document Requests -->
         <div class="tab-pane fade" id="doc-req-pane" role="tabpanel">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-file-circle-question text-warning me-2"></i> Additional Documents Requested from Applicant</h6>
-            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#requestDocModal">
-              <i class="fa-solid fa-plus me-1"></i> Request Document
-            </button>
-          </div>
+          <div class="master-data-card">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(245, 158, 11, 0.1); color: #F59E0B; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                  <i class="fa-solid fa-file-circle-question"></i>
+                </div>
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark">Additional Documents Requested</h6>
+                  <div class="text-muted small" style="font-size: 0.76rem;">Specialized requirements issued to applicant</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-warning btn-sm rounded-pill text-dark fw-bold px-3 shadow-2xs" data-bs-toggle="modal" data-bs-target="#requestDocModal">
+                <i class="fa-solid fa-plus me-1"></i> Request Document
+              </button>
+            </div>
 
-          <?php if (empty($documentRequests)): ?>
-            <div class="p-4 text-center text-muted bg-light rounded border">
-              <i class="fa-solid fa-file-circle-check fa-2x mb-2 d-block opacity-25"></i>
-              No additional documents requested for this applicant.
-            </div>
-          <?php else: ?>
-            <div class="table-responsive">
-              <table class="table table-hover align-middle mb-0 small border rounded">
-                <thead class="table-light">
-                  <tr>
-                    <th>Document Type</th>
-                    <th>Due Date</th>
-                    <th>Status</th>
-                    <th>Instructions / Notes</th>
-                    <th>Requested By</th>
-                    <th>Date Requested</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php foreach ($documentRequests as $dr): ?>
+            <?php if (empty($documentRequests)): ?>
+              <div class="p-5 text-center text-muted bg-light rounded-4 border">
+                <i class="fa-solid fa-file-circle-check fa-2x mb-2 d-block opacity-25"></i>
+                No additional documents requested for this applicant.
+              </div>
+            <?php else: ?>
+              <div class="table-responsive">
+                <table class="table-documents-bento">
+                  <thead>
                     <tr>
-                      <td class="fw-semibold text-primary"><?= e($dr['document_name'] ?? 'Custom Document') ?></td>
-                      <td class="fw-semibold <?= strtotime($dr['due_date']) < time() && $dr['status'] === 'PENDING' ? 'text-danger' : 'text-dark' ?>">
-                        <?= format_date($dr['due_date']) ?>
-                      </td>
-                      <td>
-                        <span class="badge <?= $dr['status'] === 'SUBMITTED' ? 'bg-success' : ($dr['status'] === 'PENDING' ? 'bg-warning text-dark' : 'bg-secondary') ?>">
-                          <?= e($dr['status']) ?>
-                        </span>
-                      </td>
-                      <td><?= e($dr['notes'] ?: '—') ?></td>
-                      <td><?= e($dr['requested_by_name'] ?? 'Staff') ?></td>
-                      <td class="text-muted"><?= format_datetime($dr['created_at']) ?></td>
+                      <th>Document Type</th>
+                      <th>Due Date</th>
+                      <th>Status</th>
+                      <th>Instructions / Notes</th>
+                      <th>Requested By</th>
+                      <th>Date Requested</th>
                     </tr>
-                  <?php endforeach; ?>
-                </tbody>
-              </table>
-            </div>
-          <?php endif; ?>
+                  </thead>
+                  <tbody>
+                    <?php foreach ($documentRequests as $dr): ?>
+                      <tr>
+                        <td class="fw-bold text-dark"><?= e($dr['document_name'] ?? 'Custom Document') ?></td>
+                        <td class="fw-semibold <?= strtotime($dr['due_date']) < time() && $dr['status'] === 'PENDING' ? 'text-danger' : 'text-dark' ?>">
+                          <?= format_date($dr['due_date']) ?>
+                        </td>
+                        <td>
+                          <span class="badge rounded-pill px-2.5 py-1 fw-bold <?= $dr['status'] === 'SUBMITTED' ? 'bg-success' : ($dr['status'] === 'PENDING' ? 'bg-warning text-dark' : 'bg-secondary') ?>">
+                            <?= e($dr['status']) ?>
+                          </span>
+                        </td>
+                        <td class="text-muted small"><?= e($dr['notes'] ?: '—') ?></td>
+                        <td><span class="small fw-semibold"><?= e($dr['requested_by_name'] ?? 'Staff') ?></span></td>
+                        <td class="text-muted small"><?= format_datetime($dr['created_at']) ?></td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+            <?php endif; ?>
+          </div>
         </div>
 
-        <!-- TAB 3: Tasks -->
+        <!-- TAB 6: Tasks -->
         <div class="tab-pane fade" id="tasks-pane" role="tabpanel">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-list-check text-warning me-2"></i> Operational Tasks &amp; Milestones</h6>
-            <a href="/tasks" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-plus me-1"></i> Create Task</a>
-          </div>
-
-          <?php if (empty($tasks)): ?>
-            <div class="p-4 text-center text-muted bg-light rounded">No linked tasks for this visa application.</div>
-          <?php else: ?>
-            <div class="table-responsive">
-              <table class="table-custom">
-                <thead>
-                  <tr>
-                    <th>Task Title</th>
-                    <th>Assigned To</th>
-                    <th>Due Date</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php foreach ($tasks as $tsk): ?>
-                    <tr>
-                      <td class="fw-semibold text-dark"><?= e($tsk['task_title'] ?? $tsk['title'] ?? 'Task') ?></td>
-                      <td><?= e($tsk['assigned_to_name'] ?? 'Unassigned') ?></td>
-                      <td><?= format_date($tsk['due_date']) ?></td>
-                      <td><span class="badge badge-priority-<?= strtolower($tsk['priority']) ?>"><?= e($tsk['priority']) ?></span></td>
-                      <td><span class="badge bg-<?= $tsk['status'] === 'Completed' ? 'success' : 'warning text-dark' ?>"><?= e($tsk['status']) ?></span></td>
-                    </tr>
-                  <?php endforeach; ?>
-                </tbody>
-              </table>
+          <div class="master-data-card">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(245, 158, 11, 0.1); color: #F59E0B; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                  <i class="fa-solid fa-list-check"></i>
+                </div>
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark">Operational Tasks &amp; Milestones</h6>
+                  <div class="text-muted small" style="font-size: 0.76rem;">Internal case worker task checklist</div>
+                </div>
+              </div>
+              <a href="/tasks" class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-2xs">
+                <i class="fa-solid fa-plus me-1"></i> Create Task
+              </a>
             </div>
-          <?php endif; ?>
+
+            <?php if (empty($tasks)): ?>
+              <div class="p-5 text-center text-muted bg-light rounded-4 border">
+                <i class="fa-solid fa-list-check fa-2x mb-2 d-block opacity-25"></i>
+                No linked tasks for this visa application.
+              </div>
+            <?php else: ?>
+              <div class="table-responsive">
+                <table class="table-documents-bento">
+                  <thead>
+                    <tr>
+                      <th>Task Title</th>
+                      <th>Assigned To</th>
+                      <th>Due Date</th>
+                      <th>Priority</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php foreach ($tasks as $tsk): ?>
+                      <tr>
+                        <td class="fw-bold text-dark"><?= e($tsk['task_title'] ?? $tsk['title'] ?? 'Task') ?></td>
+                        <td><span class="small fw-semibold"><?= e($tsk['assigned_to_name'] ?? 'Unassigned') ?></span></td>
+                        <td><?= format_date($tsk['due_date']) ?></td>
+                        <td><span class="badge rounded-pill px-2.5 py-1 fw-bold badge-priority-<?= strtolower($tsk['priority']) ?>"><?= e($tsk['priority']) ?></span></td>
+                        <td><span class="badge rounded-pill px-2.5 py-1 fw-bold bg-<?= $tsk['status'] === 'Completed' ? 'success' : 'warning text-dark' ?>"><?= e($tsk['status']) ?></span></td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+            <?php endif; ?>
+          </div>
         </div>
 
-        <!-- TAB 4: Appointments -->
+        <!-- TAB 7: Appointments -->
         <div class="tab-pane fade" id="appointments-pane" role="tabpanel">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-calendar-check text-danger me-2"></i> Scheduled Appointments</h6>
-            <a href="/appointments" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-calendar-plus me-1"></i> Schedule Appointment</a>
-          </div>
-
-          <?php if (empty($appointments)): ?>
-            <div class="p-4 text-center text-muted bg-light rounded">No appointments scheduled for this application.</div>
-          <?php else: ?>
-            <div class="table-responsive">
-              <table class="table-custom">
-                <thead>
-                  <tr>
-                    <th>Type</th>
-                    <th>Center / Location</th>
-                    <th>Date &amp; Time</th>
-                    <th>Reference</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php foreach ($appointments as $apt): ?>
-                    <tr>
-                      <td class="fw-semibold text-dark"><?= e($apt['appointment_type']) ?></td>
-                      <td><?= e($apt['center_name']) ?></td>
-                      <td><?= format_date($apt['appointment_date']) ?> at <?= e($apt['appointment_time']) ?></td>
-                      <td><code><?= e($apt['reference_number'] ?? '—') ?></code></td>
-                      <td><span class="badge bg-info text-dark"><?= e($apt['status']) ?></span></td>
-                    </tr>
-                  <?php endforeach; ?>
-                </tbody>
-              </table>
+          <div class="master-data-card">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(37, 99, 235, 0.1); color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                  <i class="fa-solid fa-calendar-check"></i>
+                </div>
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark">Scheduled Appointments</h6>
+                  <div class="text-muted small" style="font-size: 0.76rem;">Embassy, biometric, and medical interview bookings</div>
+                </div>
+              </div>
+              <a href="/appointments" class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-2xs">
+                <i class="fa-solid fa-calendar-plus me-1"></i> Schedule Appointment
+              </a>
             </div>
-          <?php endif; ?>
+
+            <?php if (empty($appointments)): ?>
+              <div class="p-5 text-center text-muted bg-light rounded-4 border">
+                <i class="fa-solid fa-calendar-check fa-2x mb-2 d-block opacity-25"></i>
+                No appointments scheduled for this application.
+              </div>
+            <?php else: ?>
+              <div class="table-responsive">
+                <table class="table-documents-bento">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Center / Location</th>
+                      <th>Date &amp; Time</th>
+                      <th>Reference</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php foreach ($appointments as $apt): ?>
+                      <tr>
+                        <td class="fw-bold text-dark"><?= e($apt['appointment_type']) ?></td>
+                        <td><?= e($apt['center_name']) ?></td>
+                        <td><?= format_date($apt['appointment_date']) ?> at <?= e($apt['appointment_time']) ?></td>
+                        <td><code class="text-primary font-monospace"><?= e($apt['reference_number'] ?? '—') ?></code></td>
+                        <td><span class="badge rounded-pill px-2.5 py-1 bg-info text-dark fw-bold"><?= e($apt['status']) ?></span></td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+            <?php endif; ?>
+          </div>
         </div>
 
-
-        <!-- TAB 6: Internal Notes -->
+        <!-- TAB 8: Internal Notes -->
         <div class="tab-pane fade" id="notes-pane" role="tabpanel">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-note-sticky text-secondary me-2"></i> Confidential Internal Staff Notes</h6>
-            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addNoteModal">
-              <i class="fa-solid fa-plus me-1"></i> Add Note
-            </button>
-          </div>
+          <div class="master-data-card">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(100, 116, 139, 0.1); color: #64748B; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                  <i class="fa-solid fa-note-sticky"></i>
+                </div>
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark">Confidential Internal Staff Notes</h6>
+                  <div class="text-muted small" style="font-size: 0.76rem;">Private case worker commentary (not visible to applicant)</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-2xs" data-bs-toggle="modal" data-bs-target="#addNoteModal">
+                <i class="fa-solid fa-plus me-1"></i> Add Note
+              </button>
+            </div>
 
-          <div class="bg-light p-3 rounded border" style="white-space: pre-wrap; font-family: inherit; font-size: 0.85rem; max-height: 400px; overflow-y: auto;">
-            <?= e($app['internal_notes'] ?: 'No internal notes recorded for this application yet.') ?>
+            <div class="bg-light p-3.5 rounded-4 border font-monospace text-dark" style="white-space: pre-wrap; font-size: 0.88rem; max-height: 400px; overflow-y: auto;">
+              <?= e($app['internal_notes'] ?: 'No internal notes recorded for this application yet.') ?>
+            </div>
           </div>
         </div>
 
@@ -1152,18 +1433,29 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
             </div>
           </div>
 
-          <!-- Payment History Table -->
-          <div class="mb-4">
-            <h6 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="fa-solid fa-receipt text-success me-2"></i>Payment History</h6>
+          <!-- Payment History Table (Bento Style) -->
+          <div class="master-data-card mb-4">
+            <div class="master-data-card-header">
+              <div class="d-flex align-items-center gap-2">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(16, 185, 129, 0.1); color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                  <i class="fa-solid fa-receipt"></i>
+                </div>
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark">Payment History &amp; Receipts</h6>
+                  <div class="text-muted small" style="font-size: 0.76rem;">Verified transaction settlements for this visa application</div>
+                </div>
+              </div>
+            </div>
+
             <?php if (empty($appPayments)): ?>
-              <div class="text-center py-4 text-muted bg-light rounded border">
+              <div class="p-5 text-center text-muted bg-light rounded-4 border">
                 <i class="fa-solid fa-money-bill-wave fa-2x mb-2 d-block opacity-25"></i>
                 No payments recorded yet for this application.
               </div>
             <?php else: ?>
               <div class="table-responsive">
-                <table class="table table-sm table-hover align-middle mb-0">
-                  <thead class="table-light">
+                <table class="table-documents-bento">
+                  <thead>
                     <tr>
                       <th>Receipt #</th>
                       <th>Date</th>
@@ -1178,23 +1470,23 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
                   <tbody>
                     <?php foreach ($appPayments as $pay): ?>
                       <tr>
-                        <td class="fw-semibold text-primary"><?= e($pay['payment_number']) ?></td>
-                        <td><?= e($pay['payment_date']) ?></td>
-                        <td class="fw-bold text-success"><?= format_currency($pay['amount']) ?></td>
-                        <td><span class="badge bg-light text-dark border"><?= e($pay['payment_method']) ?></span></td>
-                        <td class="text-muted small"><?= e($pay['transaction_reference'] ?: '—') ?></td>
-                        <td><?= e($pay['received_by_name'] ?? '—') ?></td>
-                        <td><span class="badge bg-success-subtle text-success border border-success"><?= e($pay['status']) ?></span></td>
+                        <td class="fw-bold font-monospace text-primary"><?= e($pay['payment_number']) ?></td>
+                        <td><?= format_date($pay['payment_date']) ?></td>
+                        <td class="fw-bold text-success font-monospace"><?= format_currency($pay['amount']) ?></td>
+                        <td><span class="badge bg-light text-dark border rounded-pill px-2.5 py-1"><?= e($pay['payment_method']) ?></span></td>
+                        <td class="text-muted small font-monospace"><?= e($pay['transaction_reference'] ?: '—') ?></td>
+                        <td><span class="small fw-semibold"><?= e($pay['received_by_name'] ?? '—') ?></span></td>
+                        <td><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 fw-bold"><?= e($pay['status']) ?></span></td>
                         <td class="text-end text-nowrap">
-                          <a href="/payments/receipt?id=<?= $pay['id'] ?>" target="_blank" class="btn btn-outline-primary btn-sm" title="View Receipt">
-                            <i class="fa-solid fa-receipt me-1"></i>Receipt
+                          <a href="/payments/receipt?id=<?= $pay['id'] ?>" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill px-2.5 shadow-2xs" title="View Receipt">
+                            <i class="fa-solid fa-receipt me-1"></i> Receipt
                           </a>
                           <?php if (($currentUser['role_slug'] ?? '') === 'super-admin' || (int)($currentUser['role_id'] ?? 0) === 1 || user_can('payments.delete') || user_can('payments.manage') || user_can('finance.manage')): ?>
                             <form action="/payments/delete" method="POST" class="d-inline ms-1" onsubmit="return confirm('Are you sure you want to permanently delete payment <?= e($pay['payment_number']) ?> of <?= format_currency($pay['amount']) ?>? This action cannot be undone and will restore the balance on this application.');">
                               <?= csrf_field() ?>
                               <input type="hidden" name="payment_id" value="<?= (int)$pay['id'] ?>">
-                              <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete Payment Record">
-                                <i class="fa-solid fa-trash-can me-1"></i>Delete
+                              <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-2.5 shadow-2xs" title="Delete Payment Record">
+                                <i class="fa-solid fa-trash-can"></i>
                               </button>
                             </form>
                           <?php endif; ?>
@@ -1202,11 +1494,11 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
                       </tr>
                     <?php endforeach; ?>
                   </tbody>
-                  <tfoot class="table-light fw-bold">
+                  <tfoot>
                     <tr>
-                      <td colspan="2" class="text-end text-muted">Total Collected:</td>
-                      <td class="text-success"><?= format_currency(array_sum(array_column($appPayments, 'amount'))) ?></td>
-                      <td colspan="5"></td>
+                      <td colspan="2" class="text-end text-muted fw-bold border-top" style="border-left: none; border-bottom: none;">Total Collected:</td>
+                      <td class="text-success fw-bold font-monospace fs-6 border-top" style="border-bottom: none;"><?= format_currency(array_sum(array_column($appPayments, 'amount'))) ?></td>
+                      <td colspan="5" class="border-top" style="border-right: none; border-bottom: none;"></td>
                     </tr>
                   </tfoot>
                 </table>
@@ -1214,32 +1506,43 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
             <?php endif; ?>
           </div>
 
-          <!-- Refund Section -->
+          <!-- Refund Section (Bento Style) -->
           <?php if (!empty($appPayments)): ?>
-          <div>
-            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-              <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-rotate-left text-warning me-2"></i>Refunds</h6>
-              <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#refundModal">
-                <i class="fa-solid fa-plus me-1"></i>Process Refund
+          <div class="master-data-card mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(245, 158, 11, 0.1); color: #F59E0B; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                  <i class="fa-solid fa-rotate-left"></i>
+                </div>
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark">Refund Transactions</h6>
+                  <div class="text-muted small" style="font-size: 0.76rem;">Reversals and disbursed client refunds</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-outline-warning btn-sm rounded-pill px-3 shadow-2xs fw-bold" data-bs-toggle="modal" data-bs-target="#refundModal">
+                <i class="fa-solid fa-plus me-1"></i> Process Refund
               </button>
             </div>
+
             <?php if (empty($appRefunds)): ?>
-              <p class="text-muted small">No refunds processed for this application.</p>
+              <div class="p-4 text-center text-muted bg-light rounded-4 border">
+                No refunds processed for this application.
+              </div>
             <?php else: ?>
               <div class="table-responsive">
-                <table class="table table-sm align-middle">
-                  <thead class="table-light">
+                <table class="table-documents-bento">
+                  <thead>
                     <tr><th>Refund #</th><th>Date</th><th>Amount</th><th>Method</th><th>Reason</th><th>Processed By</th></tr>
                   </thead>
                   <tbody>
                     <?php foreach ($appRefunds as $ref): ?>
                       <tr>
-                        <td class="fw-semibold text-warning"><?= e($ref['refund_number']) ?></td>
-                        <td><?= e(date('Y-m-d', strtotime($ref['created_at']))) ?></td>
-                        <td class="fw-bold text-warning"><?= format_currency($ref['amount']) ?></td>
-                        <td><?= e($ref['payment_method']) ?></td>
+                        <td class="fw-bold font-monospace text-warning"><?= e($ref['refund_number']) ?></td>
+                        <td><?= format_date($ref['created_at']) ?></td>
+                        <td class="fw-bold text-warning font-monospace"><?= format_currency($ref['amount']) ?></td>
+                        <td><span class="badge bg-light text-dark border rounded-pill px-2.5 py-1"><?= e($ref['payment_method']) ?></span></td>
                         <td class="text-muted small"><?= e($ref['reason']) ?></td>
-                        <td><?= e($ref['processed_by_name'] ?? '—') ?></td>
+                        <td><span class="small fw-semibold"><?= e($ref['processed_by_name'] ?? '—') ?></span></td>
                       </tr>
                     <?php endforeach; ?>
                   </tbody>
@@ -1254,54 +1557,109 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
         <!-- TAB 8: Supplier Details & Finance -->
         <div class="tab-pane fade" id="supplier-pane" role="tabpanel">
           <div class="row g-4 mb-4">
-            <div class="col-lg-6">
-              <h6 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="fa-solid fa-building-flag text-primary me-2"></i> Processing Supplier &amp; Clearing Agent</h6>
-              <?php if (!empty($supplierDetails)): ?>
-                <div class="row g-2 small">
-                  <div class="col-sm-5 text-muted">Supplier / Vendor:</div>
-                  <div class="col-sm-7 fw-bold text-dark"><?= e($supplierDetails['company_name'] ?? ($supplierDetails['name'] ?? '—')) ?></div>
-
-                  <div class="col-sm-5 text-muted">Supplier Code:</div>
-                  <div class="col-sm-7"><span class="badge bg-light text-dark border"><?= e($supplierDetails['supplier_code'] ?? ($supplierDetails['code'] ?? '—')) ?></span></div>
-
-                  <div class="col-sm-5 text-muted">Country &amp; City:</div>
-                  <div class="col-sm-7"><?= e($supplierDetails['country'] ?? '—') ?>, <?= e($supplierDetails['city'] ?? '—') ?></div>
-
-                  <div class="col-sm-5 text-muted">Contact Person:</div>
-                  <div class="col-sm-7"><?= e($supplierDetails['contact_person'] ?? '—') ?></div>
-
-                  <div class="col-sm-5 text-muted">Supplier Reference #:</div>
-                  <div class="col-sm-7 font-monospace fw-bold text-primary"><?= e($app['supplier_reference'] ?? 'Not Assigned') ?></div>
-
-                  <div class="col-sm-5 text-muted">Embassy / Gov Ref #:</div>
-                  <div class="col-sm-7 font-monospace fw-bold text-secondary"><?= e($app['embassy_reference'] ?? '—') ?></div>
+            <div class="col-12 col-lg-6">
+              <div class="master-data-card">
+                <div class="master-data-card-header">
+                  <div class="d-flex align-items-center gap-2">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(37, 99, 235, 0.1); color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                      <i class="fa-solid fa-building-flag"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0 text-dark">Processing Supplier &amp; Clearing Agent</h6>
+                  </div>
                 </div>
-              <?php else: ?>
-                <div class="p-3 bg-light rounded text-muted small">No external supplier assigned. Processed via in-house consular team.</div>
-              <?php endif; ?>
+
+                <?php if (!empty($supplierDetails)): ?>
+                  <div class="row g-2.5">
+                    <div class="col-12 col-sm-6">
+                      <div class="master-data-item">
+                        <span class="master-data-label">Supplier / Vendor</span>
+                        <span class="master-data-val text-dark fw-bold"><?= e($supplierDetails['company_name'] ?? ($supplierDetails['name'] ?? '—')) ?></span>
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <div class="master-data-item">
+                        <span class="master-data-label">Supplier Code</span>
+                        <span class="master-data-val font-monospace"><span class="badge bg-light text-dark border">@<?= e($supplierDetails['supplier_code'] ?? ($supplierDetails['code'] ?? '—')) ?></span></span>
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <div class="master-data-item">
+                        <span class="master-data-label">Country &amp; City</span>
+                        <span class="master-data-val"><?= e($supplierDetails['country'] ?? '—') ?>, <?= e($supplierDetails['city'] ?? '—') ?></span>
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <div class="master-data-item">
+                        <span class="master-data-label">Contact Person</span>
+                        <span class="master-data-val"><?= e($supplierDetails['contact_person'] ?? '—') ?></span>
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <div class="master-data-item">
+                        <span class="master-data-label">Supplier Reference #</span>
+                        <span class="master-data-val font-monospace fw-bold text-primary"><?= e($app['supplier_reference'] ?? 'Not Assigned') ?></span>
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <div class="master-data-item">
+                        <span class="master-data-label">Embassy / Gov Ref #</span>
+                        <span class="master-data-val font-monospace fw-bold text-secondary"><?= e($app['embassy_reference'] ?? '—') ?></span>
+                      </div>
+                    </div>
+                  </div>
+                <?php else: ?>
+                  <div class="p-4 bg-light rounded-4 text-center text-muted small">
+                    <i class="fa-solid fa-handshake-slash fa-2x mb-2 d-block opacity-25"></i>
+                    No external supplier assigned. Processed via in-house consular team.
+                  </div>
+                <?php endif; ?>
+              </div>
             </div>
 
-            <div class="col-lg-6">
-              <h6 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="fa-solid fa-calculator text-success me-2"></i> Commercial Margins &amp; Costs</h6>
-              <div class="row g-2 small">
-                <div class="col-sm-5 text-muted">Selling Price (Client):</div>
-                <div class="col-sm-7 fw-bold text-dark"><?= format_currency($app['selling_price'] ?? $app['total_amount'] ?? 0) ?></div>
-
-                <div class="col-sm-5 text-muted">Supplier Net Cost:</div>
-                <div class="col-sm-7 fw-bold text-danger"><?= format_currency($app['cost_price'] ?? $app['supplier_cost'] ?? 0) ?></div>
-
-                <div class="col-sm-5 text-muted">Estimated Profit:</div>
-                <div class="col-sm-7 fw-bold text-success">
-                  <?= format_currency(max(0, (float)($app['selling_price'] ?? $app['total_amount'] ?? 0) - (float)($app['cost_price'] ?? $app['supplier_cost'] ?? 0))) ?>
+            <div class="col-12 col-lg-6">
+              <div class="master-data-card">
+                <div class="master-data-card-header">
+                  <div class="d-flex align-items-center gap-2">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(16, 185, 129, 0.1); color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                      <i class="fa-solid fa-calculator"></i>
+                    </div>
+                    <h6 class="fw-bold mb-0 text-dark">Commercial Margins &amp; Costs</h6>
+                  </div>
                 </div>
 
-                <div class="col-sm-5 text-muted">Profit Margin %:</div>
-                <div class="col-sm-7 fw-bold text-primary">
-                  <?php
-                    $sp = (float)($app['selling_price'] ?? $app['total_amount'] ?? 0);
-                    $cp = (float)($app['cost_price'] ?? $app['supplier_cost'] ?? 0);
-                    echo $sp > 0 ? number_format((($sp - $cp) / $sp) * 100, 1) . '%' : '0.0%';
-                  ?>
+                <div class="row g-2.5">
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Selling Price (Client)</span>
+                      <span class="master-data-val text-dark fw-bold"><?= format_currency($app['selling_price'] ?? $app['total_amount'] ?? 0) ?></span>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Supplier Net Cost</span>
+                      <span class="master-data-val text-danger fw-bold"><?= format_currency($app['cost_price'] ?? $app['supplier_cost'] ?? 0) ?></span>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Estimated Profit</span>
+                      <span class="master-data-val text-success fw-bold">
+                        <?= format_currency(max(0, (float)($app['selling_price'] ?? $app['total_amount'] ?? 0) - (float)($app['cost_price'] ?? $app['supplier_cost'] ?? 0))) ?>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Profit Margin %</span>
+                      <span class="master-data-val text-primary fw-bold">
+                        <?php
+                          $sp = (float)($app['selling_price'] ?? $app['total_amount'] ?? 0);
+                          $cp = (float)($app['cost_price'] ?? $app['supplier_cost'] ?? 0);
+                          echo $sp > 0 ? number_format((($sp - $cp) / $sp) * 100, 1) . '%' : '0.0%';
+                        ?>
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1309,235 +1667,331 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
 
           <!-- Supplier Disbursements -->
           <?php if (!empty($supplierPayments)): ?>
-            <h6 class="fw-bold mb-2 text-dark border-bottom pb-2"><i class="fa-solid fa-money-bill-transfer text-primary me-2"></i> Supplier Disbursements &amp; Settlements</h6>
-            <div class="table-responsive">
-              <table class="table table-sm align-middle small mb-0">
-                <thead class="table-light">
-                  <tr><th>Payment Ref</th><th>Date</th><th>Amount</th><th>Method</th><th>Notes</th></tr>
-                </thead>
-                <tbody>
-                  <?php foreach ($supplierPayments as $sp): ?>
-                    <tr>
-                      <td class="fw-bold font-monospace"><?= e($sp['payment_reference']) ?></td>
-                      <td><?= e($sp['payment_date']) ?></td>
-                      <td class="fw-bold text-danger"><?= format_currency($sp['amount']) ?></td>
-                      <td><?= e($sp['payment_method']) ?></td>
-                      <td><?= e($sp['notes'] ?? '—') ?></td>
-                    </tr>
-                  <?php endforeach; ?>
-                </tbody>
-              </table>
+            <div class="master-data-card mt-3">
+              <div class="master-data-card-header">
+                <div class="d-flex align-items-center gap-2">
+                  <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(37, 99, 235, 0.1); color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                    <i class="fa-solid fa-money-bill-transfer"></i>
+                  </div>
+                  <h6 class="fw-bold mb-0 text-dark">Supplier Disbursements &amp; Settlements</h6>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="table-documents-bento">
+                  <thead>
+                    <tr><th>Payment Ref</th><th>Date</th><th>Amount</th><th>Method</th><th>Notes</th></tr>
+                  </thead>
+                  <tbody>
+                    <?php foreach ($supplierPayments as $sp): ?>
+                      <tr>
+                        <td class="fw-bold font-monospace text-primary"><?= e($sp['payment_reference']) ?></td>
+                        <td><?= format_date($sp['payment_date']) ?></td>
+                        <td class="fw-bold text-danger font-monospace"><?= format_currency($sp['amount']) ?></td>
+                        <td><span class="badge bg-light text-dark border rounded-pill px-2.5 py-1"><?= e($sp['payment_method']) ?></span></td>
+                        <td class="text-muted small"><?= e($sp['notes'] ?? '—') ?></td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
             </div>
           <?php endif; ?>
         </div>
 
         <!-- TAB 9: Client Communications Log -->
         <div class="tab-pane fade" id="comm-pane" role="tabpanel">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-comments text-info me-2"></i> Client Touchpoints &amp; Communications</h6>
-            <button type="button" class="btn btn-info btn-sm text-dark fw-semibold" data-bs-toggle="modal" data-bs-target="#addCommModal">
-              <i class="fa-solid fa-plus me-1"></i> Log Communication
-            </button>
-          </div>
-
-          <?php if (empty($communications)): ?>
-            <div class="p-4 text-center text-muted bg-light rounded border">
-              <i class="fa-solid fa-phone-volume fa-2x mb-2 d-block opacity-25"></i>
-              No communications logged for this application yet.
-            </div>
-          <?php else: ?>
-            <div class="activity-timeline">
-              <?php foreach ($communications as $comm): ?>
-                <div class="p-3 border rounded bg-light mb-3">
-                  <div class="d-flex justify-content-between align-items-start mb-2">
-                    <div>
-                      <span class="badge bg-primary me-1"><i class="fa-solid fa-phone me-1"></i><?= e($comm['channel']) ?></span>
-                      <span class="badge <?= $comm['direction'] === 'Inbound' ? 'bg-success' : 'bg-secondary' ?>"><?= e($comm['direction']) ?></span>
-                      <strong class="text-dark ms-2"><?= e($comm['subject'] ?? 'Client Touchpoint') ?></strong>
-                    </div>
-                    <span class="text-muted small"><?= format_datetime($comm['created_at']) ?></span>
-                  </div>
-                  <p class="mb-1 text-dark small" style="white-space: pre-wrap;"><?= e($comm['message']) ?></p>
-                  <div class="text-muted" style="font-size: 0.72rem;">
-                    Contact Person: <strong><?= e($comm['contact_person'] ?? 'Applicant') ?></strong> &bull; Logged by: <strong><?= e($comm['staff_name'] ?? 'Staff Officer') ?></strong>
-                  </div>
+          <div class="master-data-card">
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(6, 182, 212, 0.1); color: #0891B2; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                  <i class="fa-solid fa-comments"></i>
                 </div>
-              <?php endforeach; ?>
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark">Client Touchpoints &amp; Communications</h6>
+                  <div class="text-muted small" style="font-size: 0.76rem;">Logs of all phone, email, and WhatsApp interactions</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-info btn-sm rounded-pill text-dark fw-bold px-3 shadow-2xs" data-bs-toggle="modal" data-bs-target="#addCommModal">
+                <i class="fa-solid fa-plus me-1"></i> Log Communication
+              </button>
             </div>
-          <?php endif; ?>
+
+            <?php if (empty($communications)): ?>
+              <div class="p-5 text-center text-muted bg-light rounded-4 border">
+                <i class="fa-solid fa-phone-volume fa-2x mb-2 d-block opacity-25"></i>
+                No communications logged for this application yet.
+              </div>
+            <?php else: ?>
+              <div class="activity-timeline">
+                <?php foreach ($communications as $comm): ?>
+                  <div class="p-3.5 border rounded-4 bg-light mb-3 shadow-2xs">
+                    <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-1">
+                      <div>
+                        <span class="badge bg-primary rounded-pill px-2.5 py-1 me-1"><i class="fa-solid fa-phone me-1"></i><?= e($comm['channel']) ?></span>
+                        <span class="badge rounded-pill px-2.5 py-1 <?= $comm['direction'] === 'Inbound' ? 'bg-success' : 'bg-secondary' ?>"><?= e($comm['direction']) ?></span>
+                        <strong class="text-dark ms-2"><?= e($comm['subject'] ?? 'Client Touchpoint') ?></strong>
+                      </div>
+                      <span class="text-muted small"><?= format_datetime($comm['created_at']) ?></span>
+                    </div>
+                    <p class="mb-2 text-dark small" style="white-space: pre-wrap; font-size: 0.86rem;"><?= e($comm['message']) ?></p>
+                    <div class="text-muted" style="font-size: 0.75rem;">
+                      Contact Person: <strong><?= e($comm['contact_person'] ?? 'Applicant') ?></strong> &bull; Logged by: <strong><?= e($comm['staff_name'] ?? 'Staff Officer') ?></strong>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+          </div>
         </div>
 
         <!-- TAB 10: Decision, Visa Grant & Downloads -->
         <div class="tab-pane fade" id="decision-pane" role="tabpanel">
-          <h6 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="fa-solid fa-gavel text-dark me-2"></i> Official Visa Decisions &amp; Documents</h6>
-
-          <?php if ($visaApproval): ?>
-            <div class="card border-success shadow-sm mb-4">
-              <div class="card-header bg-success text-white py-2.5 d-flex justify-content-between align-items-center">
-                <span class="fw-bold"><i class="fa-solid fa-circle-check me-2"></i> OFFICIAL VISA APPROVED &amp; ISSUED</span>
-                <span class="badge bg-white text-success fw-bold">Visa # <?= e($visaApproval['visa_number']) ?></span>
+          <div class="master-data-card">
+            <div class="master-data-card-header">
+              <div class="d-flex align-items-center gap-2">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(15, 23, 42, 0.1); color: #0F172A; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                  <i class="fa-solid fa-gavel"></i>
+                </div>
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark">Official Visa Decisions &amp; Documents</h6>
+                  <div class="text-muted small" style="font-size: 0.76rem;">Consular decision records, approval certificates and receipts</div>
+                </div>
               </div>
-              <div class="card-body p-3">
-                <div class="row g-3 small">
-                  <div class="col-md-3"><strong>Issue Date:</strong> <?= format_date($visaApproval['issue_date']) ?></div>
-                  <div class="col-md-3"><strong>Expiry Date:</strong> <span class="text-danger fw-bold"><?= format_date($visaApproval['expiry_date']) ?></span></div>
-                  <div class="col-md-3"><strong>Max Stay:</strong> <?= e($visaApproval['maximum_stay'] ?? '30 Days') ?></div>
-                  <div class="col-md-3"><strong>Validity:</strong> <?= e($visaApproval['validity'] ?? '60 Days') ?></div>
-                  <div class="col-12 text-muted"><strong>Guidelines:</strong> <?= e($visaApproval['approval_notes'] ?? 'Carry copy while traveling.') ?></div>
-                  <?php if (!empty($visaApproval['approved_visa_file'])): ?>
-                    <div class="col-12 mt-2">
-                      <a href="/storage/uploads/<?= e($visaApproval['approved_visa_file']) ?>" target="_blank" class="btn btn-success btn-sm fw-bold">
-                        <i class="fa-solid fa-download me-1"></i> Download Official Approved Visa PDF
-                      </a>
+            </div>
+
+            <?php if ($visaApproval): ?>
+              <div class="card border-success shadow-2xs rounded-4 mb-4 overflow-hidden">
+                <div class="card-header bg-success text-white py-3 px-3 px-md-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                  <span class="fw-bold"><i class="fa-solid fa-circle-check me-2"></i> OFFICIAL VISA APPROVED &amp; ISSUED</span>
+                  <span class="badge bg-white text-success fw-bold font-monospace px-3 py-1.5 rounded-pill">Visa # <?= e($visaApproval['visa_number']) ?></span>
+                </div>
+                <div class="card-body p-3 p-md-4">
+                  <div class="row g-2.5">
+                    <div class="col-6 col-md-3">
+                      <div class="master-data-item">
+                        <span class="master-data-label">Issue Date</span>
+                        <span class="master-data-val"><?= format_date($visaApproval['issue_date']) ?></span>
+                      </div>
                     </div>
-                  <?php endif; ?>
+                    <div class="col-6 col-md-3">
+                      <div class="master-data-item">
+                        <span class="master-data-label">Expiry Date</span>
+                        <span class="master-data-val text-danger fw-bold"><?= format_date($visaApproval['expiry_date']) ?></span>
+                      </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <div class="master-data-item">
+                        <span class="master-data-label">Max Stay</span>
+                        <span class="master-data-val"><?= e($visaApproval['maximum_stay'] ?? '30 Days') ?></span>
+                      </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <div class="master-data-item">
+                        <span class="master-data-label">Validity</span>
+                        <span class="master-data-val"><?= e($visaApproval['validity'] ?? '60 Days') ?></span>
+                      </div>
+                    </div>
+                    <div class="col-12">
+                      <div class="master-data-item">
+                        <span class="master-data-label">Consular Guidelines</span>
+                        <span class="master-data-val text-muted small"><?= e($visaApproval['approval_notes'] ?? 'Carry copy while traveling.') ?></span>
+                      </div>
+                    </div>
+                    <?php if (!empty($visaApproval['approved_visa_file'])): ?>
+                      <div class="col-12 mt-2">
+                        <a href="/storage/uploads/<?= e($visaApproval['approved_visa_file']) ?>" target="_blank" class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-xs">
+                          <i class="fa-solid fa-download me-2"></i> Download Official Approved Visa PDF
+                        </a>
+                      </div>
+                    <?php endif; ?>
+                  </div>
                 </div>
               </div>
-            </div>
-          <?php endif; ?>
+            <?php endif; ?>
 
-          <?php if ($visaRejection): ?>
-            <div class="card border-danger shadow-sm mb-4">
-              <div class="card-header bg-danger text-white py-2.5">
-                <span class="fw-bold"><i class="fa-solid fa-circle-xmark me-2"></i> VISA APPLICATION REJECTED</span>
-              </div>
-              <div class="card-body p-3 small">
-                <div class="text-danger fw-bold mb-1">Customer Reason:</div>
-                <p class="mb-2"><?= e($visaRejection['customer_reason']) ?></p>
-                <div class="text-muted">Reapplication Eligibility: <strong><?= e($visaRejection['reapplication_eligibility']) ?></strong></div>
-              </div>
-            </div>
-          <?php endif; ?>
-
-          <?php if (!empty($applicationReturns)): ?>
-            <h6 class="fw-bold mb-2 text-dark"><i class="fa-solid fa-rotate-left text-warning me-2"></i> Modification Return History</h6>
-            <?php foreach ($applicationReturns as $ret): ?>
-              <div class="p-3 border rounded bg-warning bg-opacity-10 mb-2 small">
-                <div class="d-flex justify-content-between mb-1">
-                  <strong class="text-dark"><?= e($ret['return_reason']) ?></strong>
-                  <span class="text-muted"><?= format_datetime($ret['created_at']) ?></span>
+            <?php if ($visaRejection): ?>
+              <div class="card border-danger shadow-2xs rounded-4 mb-4 overflow-hidden">
+                <div class="card-header bg-danger text-white py-3 px-3 px-md-4">
+                  <span class="fw-bold"><i class="fa-solid fa-circle-xmark me-2"></i> VISA APPLICATION REJECTED</span>
                 </div>
-                <div>Required Changes: <?= e($ret['required_changes'] ?? '—') ?></div>
-                <div class="text-danger fw-bold mt-1">Deadline: <?= format_date($ret['deadline'] ?? null) ?></div>
+                <div class="card-body p-3 p-md-4">
+                  <div class="master-data-item mb-2">
+                    <span class="master-data-label text-danger">Rejection Reason</span>
+                    <span class="master-data-val text-dark"><?= e($visaRejection['customer_reason']) ?></span>
+                  </div>
+                  <div class="text-muted small mt-2">Reapplication Eligibility: <strong><?= e($visaRejection['reapplication_eligibility']) ?></strong></div>
+                </div>
               </div>
-            <?php endforeach; ?>
-          <?php endif; ?>
+            <?php endif; ?>
 
-          <!-- Downloadable Financial Documents -->
-          <div class="mt-4 pt-3 border-top">
-            <h6 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-download text-primary me-2"></i> Export &amp; Downloadable Receipts</h6>
-            <div class="d-flex flex-wrap gap-2">
-              <a href="/payments/invoice?app_id=<?= $app['id'] ?>" target="_blank" class="btn btn-outline-dark btn-sm">
-                <i class="fa-solid fa-file-invoice text-success me-1"></i> Official Tax Invoice
-              </a>
-              <?php if (!empty($appPayments)): ?>
-                <a href="/payments/receipt?id=<?= $appPayments[0]['id'] ?>" target="_blank" class="btn btn-outline-primary btn-sm">
-                  <i class="fa-solid fa-receipt text-primary me-1"></i> Latest Payment Receipt
+            <?php if (!empty($applicationReturns)): ?>
+              <h6 class="fw-bold mb-2.5 text-dark"><i class="fa-solid fa-rotate-left text-warning me-2"></i> Modification Return History</h6>
+              <?php foreach ($applicationReturns as $ret): ?>
+                <div class="p-3 border rounded-4 bg-warning bg-opacity-10 mb-2.5 small">
+                  <div class="d-flex justify-content-between mb-1">
+                    <strong class="text-dark"><?= e($ret['return_reason']) ?></strong>
+                    <span class="text-muted"><?= format_datetime($ret['created_at']) ?></span>
+                  </div>
+                  <div>Required Changes: <?= e($ret['required_changes'] ?? '—') ?></div>
+                  <div class="text-danger fw-bold mt-1">Deadline: <?= format_date($ret['deadline'] ?? null) ?></div>
+                </div>
+              <?php endforeach; ?>
+            <?php endif; ?>
+
+            <!-- Downloadable Financial Documents -->
+            <div class="mt-4 pt-3 border-top">
+              <h6 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-download text-primary me-2"></i> Export &amp; Downloadable Receipts</h6>
+              <div class="d-flex flex-wrap gap-2">
+                <a href="/payments/invoice?app_id=<?= $app['id'] ?>" target="_blank" class="btn btn-outline-dark btn-sm rounded-pill px-3 shadow-2xs">
+                  <i class="fa-solid fa-file-invoice text-success me-1"></i> Official Tax Invoice
                 </a>
-              <?php endif; ?>
+                <?php if (!empty($appPayments)): ?>
+                  <a href="/payments/receipt?id=<?= $appPayments[0]['id'] ?>" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-2xs">
+                    <i class="fa-solid fa-receipt text-primary me-1"></i> Latest Payment Receipt
+                  </a>
+                <?php endif; ?>
+              </div>
             </div>
           </div>
         </div>
 
-
-        <!-- TAB 10: Status History -->
+        <!-- TAB 11: Status History -->
         <div class="tab-pane fade" id="history-pane" role="tabpanel">
-          <h6 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="fa-solid fa-clock-rotate-left text-info me-2"></i> Immutable Lifecycle Stage Transition Audit</h6>
-          <?php if (empty($stageHistory)): ?>
-            <div class="p-4 text-center text-muted bg-light rounded border">No stage transitions logged yet.</div>
-          <?php else: ?>
-            <div class="table-responsive">
-              <table class="table table-sm table-hover align-middle small mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th>From Stage</th>
-                    <th>To Stage</th>
-                    <th>Status</th>
-                    <th>Comments / Notes</th>
-                    <th>Changed By</th>
-                    <th>Timestamp</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php foreach ($stageHistory as $sh): ?>
-                    <tr>
-                      <td class="text-muted"><?= e($sh['from_stage'] ?: 'Application Registered') ?></td>
-                      <td class="fw-bold text-primary"><?= e($sh['to_stage']) ?></td>
-                      <td><span class="badge bg-light text-dark border"><?= e($sh['status'] ?? '—') ?></span></td>
-                      <td class="text-muted"><?= e($sh['comments'] ?? '—') ?></td>
-                      <td><?= e($sh['changed_by_name'] ?? 'System') ?></td>
-                      <td class="text-muted"><?= format_datetime($sh['created_at']) ?></td>
-                    </tr>
-                  <?php endforeach; ?>
-                </tbody>
-              </table>
+          <div class="master-data-card">
+            <div class="master-data-card-header">
+              <div class="d-flex align-items-center gap-2">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(6, 182, 212, 0.1); color: #0891B2; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                  <i class="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark">Immutable Lifecycle Stage Transition Audit</h6>
+                  <div class="text-muted small" style="font-size: 0.76rem;">Historical log of every workflow state change</div>
+                </div>
+              </div>
             </div>
-          <?php endif; ?>
 
-          <?php if (!empty($assignmentHistory)): ?>
-            <h6 class="fw-bold mt-4 mb-3 text-dark border-bottom pb-2"><i class="fa-solid fa-users-gear text-primary me-2"></i> Case Officer Assignment History</h6>
-            <div class="table-responsive">
-              <table class="table table-sm align-middle small mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th>Officer</th>
-                    <th>Assigned By</th>
-                    <th>Notes</th>
-                    <th>Assigned At</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php foreach ($assignmentHistory as $ah): ?>
+            <?php if (empty($stageHistory)): ?>
+              <div class="p-5 text-center text-muted bg-light rounded-4 border">
+                <i class="fa-solid fa-clock-rotate-left fa-2x mb-2 d-block opacity-25"></i>
+                No stage transitions logged yet.
+              </div>
+            <?php else: ?>
+              <div class="table-responsive">
+                <table class="table-documents-bento">
+                  <thead>
                     <tr>
-                      <td class="fw-bold text-dark"><?= e($ah['staff_name']) ?> <span class="badge bg-light text-secondary"><?= e($ah['staff_role'] ?? 'Officer') ?></span></td>
-                      <td><?= e($ah['assigned_by_name'] ?? 'System') ?></td>
-                      <td><?= e($ah['notes'] ?? '—') ?></td>
-                      <td><?= format_datetime($ah['assigned_at']) ?></td>
-                      <td>
-                        <span class="badge <?= $ah['is_current'] ? 'bg-success' : 'bg-secondary' ?>">
-                          <?= $ah['is_current'] ? 'Active Assignee' : 'Past Assignee' ?>
-                        </span>
-                      </td>
+                      <th>From Stage</th>
+                      <th>To Stage</th>
+                      <th>Status</th>
+                      <th>Comments / Notes</th>
+                      <th>Changed By</th>
+                      <th>Timestamp</th>
                     </tr>
-                  <?php endforeach; ?>
-                </tbody>
-              </table>
-            </div>
-          <?php endif; ?>
+                  </thead>
+                  <tbody>
+                    <?php foreach ($stageHistory as $sh): ?>
+                      <tr>
+                        <td class="text-muted"><?= e($sh['from_stage'] ?: 'Application Registered') ?></td>
+                        <td class="fw-bold text-primary"><?= e($sh['to_stage']) ?></td>
+                        <td><span class="badge bg-light text-dark border rounded-pill px-2.5 py-1"><?= e($sh['status'] ?? '—') ?></span></td>
+                        <td class="text-muted small"><?= e($sh['comments'] ?? '—') ?></td>
+                        <td><span class="small fw-semibold"><?= e($sh['changed_by_name'] ?? 'System') ?></span></td>
+                        <td class="text-muted small"><?= format_datetime($sh['created_at']) ?></td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+            <?php endif; ?>
+
+            <?php if (!empty($assignmentHistory)): ?>
+              <div class="mt-4 pt-3 border-top">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                  <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(37, 99, 235, 0.1); color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
+                    <i class="fa-solid fa-users-gear"></i>
+                  </div>
+                  <h6 class="fw-bold mb-0 text-dark">Case Officer Assignment History</h6>
+                </div>
+                <div class="table-responsive">
+                  <table class="table-documents-bento">
+                    <thead>
+                      <tr>
+                        <th>Officer</th>
+                        <th>Assigned By</th>
+                        <th>Notes</th>
+                        <th>Assigned At</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <?php foreach ($assignmentHistory as $ah): ?>
+                        <tr>
+                          <td class="fw-bold text-dark"><?= e($ah['staff_name']) ?> <span class="badge bg-light text-secondary rounded-pill px-2 py-0.5 border ms-1"><?= e($ah['staff_role'] ?? 'Officer') ?></span></td>
+                          <td><?= e($ah['assigned_by_name'] ?? 'System') ?></td>
+                          <td class="text-muted small"><?= e($ah['notes'] ?? '—') ?></td>
+                          <td class="text-muted small"><?= format_datetime($ah['assigned_at']) ?></td>
+                          <td>
+                            <span class="badge rounded-pill px-2.5 py-1 fw-bold <?= $ah['is_current'] ? 'bg-success' : 'bg-secondary' ?>">
+                              <?= $ah['is_current'] ? 'Active Assignee' : 'Past Assignee' ?>
+                            </span>
+                          </td>
+                        </tr>
+                      <?php endforeach; ?>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            <?php endif; ?>
+          </div>
         </div>
 
         <!-- TAB 12: Activity Log -->
         <div class="tab-pane fade" id="activity-pane" role="tabpanel">
-          <h6 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="fa-solid fa-shield-halved text-danger me-2"></i> System Activity &amp; Audit Trail</h6>
-          <?php if (empty($activityLogs)): ?>
-            <div class="p-4 text-center text-muted bg-light rounded border">No audit logs recorded for this record.</div>
-          <?php else: ?>
-            <div class="table-responsive">
-              <table class="table table-sm table-hover align-middle small mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th>Action</th>
-                    <th>Module</th>
-                    <th>Description</th>
-                    <th>User</th>
-                    <th>Timestamp</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php foreach ($activityLogs as $al): ?>
-                    <tr>
-                      <td><span class="badge bg-dark"><?= e($al['action']) ?></span></td>
-                      <td class="fw-semibold text-primary"><?= e($al['module']) ?></td>
-                      <td><?= e($al['description']) ?></td>
-                      <td><?= e($al['user_name'] ?? 'System') ?></td>
-                      <td class="text-muted"><?= format_datetime($al['created_at']) ?></td>
-                    </tr>
-                  <?php endforeach; ?>
-                </tbody>
-              </table>
+          <div class="master-data-card">
+            <div class="master-data-card-header">
+              <div class="d-flex align-items-center gap-2">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(225, 29, 72, 0.1); color: #E11D48; display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                  <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark">System Activity &amp; Audit Trail</h6>
+                  <div class="text-muted small" style="font-size: 0.76rem;">Cryptographically verified system and user event log</div>
+                </div>
+              </div>
             </div>
-          <?php endif; ?>
+
+            <?php if (empty($activityLogs)): ?>
+              <div class="p-5 text-center text-muted bg-light rounded-4 border">
+                <i class="fa-solid fa-shield-halved fa-2x mb-2 d-block opacity-25"></i>
+                No audit logs recorded for this record.
+              </div>
+            <?php else: ?>
+              <div class="table-responsive">
+                <table class="table-documents-bento">
+                  <thead>
+                    <tr>
+                      <th>Action</th>
+                      <th>Module</th>
+                      <th>Description</th>
+                      <th>User</th>
+                      <th>Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php foreach ($activityLogs as $al): ?>
+                      <tr>
+                        <td><span class="badge bg-dark rounded-pill px-2.5 py-1 font-monospace"><?= e($al['action']) ?></span></td>
+                        <td class="fw-semibold text-primary"><?= e($al['module']) ?></td>
+                        <td class="text-dark small"><?= e($al['description']) ?></td>
+                        <td><span class="small fw-semibold"><?= e($al['user_name'] ?? 'System') ?></span></td>
+                        <td class="text-muted small"><?= format_datetime($al['created_at']) ?></td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
+            <?php endif; ?>
+          </div>
         </div>
       </div>
     </div>

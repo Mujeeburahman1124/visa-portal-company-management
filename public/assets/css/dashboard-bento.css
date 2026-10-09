@@ -2952,6 +2952,162 @@
   word-break: break-word;
 }
 
+/* Master Data Item Tile Grid (Bento Tiles) */
+.master-data-item {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 0.95rem;
+  background: #F8FAFC;
+  border: 1px solid #F1F5F9;
+  border-radius: 14px;
+  height: 100%;
+  transition: all 0.18s ease;
+}
+
+.master-data-item:hover {
+  background: #F1F5F9;
+  border-color: #E2E8F0;
+  transform: translateY(-1px);
+}
+
+.master-data-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748B;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.3rem;
+}
+
+.master-data-val {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #0F172A;
+  line-height: 1.35;
+}
+
+/* Documents Bento Table (Desktop / Tablet) */
+.table-documents-bento {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  margin-bottom: 0;
+}
+
+.table-documents-bento thead th {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748B;
+  padding: 0.6rem 1rem;
+  border: none;
+  background: transparent;
+  white-space: nowrap;
+}
+
+.table-documents-bento tbody tr {
+  background: #FFFFFF;
+  transition: all 0.15s ease;
+}
+
+.table-documents-bento tbody tr:hover {
+  background: #F8FAFC;
+}
+
+.table-documents-bento tbody td {
+  padding: 0.9rem 1rem;
+  vertical-align: middle;
+  border-top: 1px solid #F1F5F9;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.table-documents-bento tbody td:first-child {
+  border-left: 1px solid #F1F5F9;
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
+}
+
+.table-documents-bento tbody td:last-child {
+  border-right: 1px solid #F1F5F9;
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+}
+
+/* Mobile Document Cards (d-md-none) */
+.doc-mobile-card {
+  background: #FFFFFF;
+  border: 1.5px solid #F1F5F9;
+  border-radius: 16px;
+  padding: 1.1rem 1.15rem;
+  margin-bottom: 0.85rem;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.03);
+  transition: all 0.2s ease;
+}
+
+.doc-mobile-card:hover {
+  border-color: #E2E8F0;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.doc-mobile-card.doc-status-verified {
+  border-left: 4px solid #10B981;
+}
+
+.doc-mobile-card.doc-status-missing {
+  border-left: 4px solid #94A3B8;
+}
+
+.doc-mobile-card.doc-status-under_review,
+.doc-mobile-card.doc-status-uploaded {
+  border-left: 4px solid #F59E0B;
+}
+
+.doc-mobile-card.doc-status-rejected,
+.doc-mobile-card.doc-status-expired {
+  border-left: 4px solid #E11D48;
+}
+
+.doc-mobile-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.doc-mobile-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin-bottom: 0.2rem;
+}
+
+.doc-mobile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.65rem;
+}
+
+.doc-mobile-file-box {
+  background: #F8FAFC;
+  border: 1px solid #F1F5F9;
+  border-radius: 12px;
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.doc-mobile-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  border-top: 1px solid #F1F5F9;
+  padding-top: 0.65rem;
+}
+
 /* Responsive Master Workspace Breakpoints */
 @media (max-width: 768px) {
   .master-workspace-header {
@@ -2960,13 +3116,36 @@
   }
   .master-action-btn-group {
     width: 100%;
+    gap: 0.4rem;
   }
   .master-action-btn-group .btn {
-    flex: 1 1 auto;
+    flex: 1 1 calc(50% - 0.4rem);
+    text-align: center;
+    justify-content: center;
   }
   .master-data-card {
-    padding: 1.15rem;
+    padding: 1.1rem 1rem;
     border-radius: 16px;
+  }
+  .master-banner-card {
+    padding: 1.1rem 1rem;
+    border-radius: 16px;
+  }
+  .master-timeline-card {
+    padding: 1.1rem 1rem;
+    border-radius: 16px;
+  }
+  .master-timeline-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .master-nav-tabs {
+    padding: 0.4rem 0.5rem;
+  }
+  .master-nav-tab-btn {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.8rem;
   }
 }
 
@@ -2988,6 +3167,10 @@
     width: 100%;
     font-size: 0.88rem;
   }
+  .master-action-btn-group .btn {
+    flex: 1 1 100%;
+  }
 }
+
 
 
