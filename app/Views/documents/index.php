@@ -12,7 +12,8 @@ $buildDocUrl = function(array $params = []): string {
 };
 ?>
 
-<link rel="stylesheet" href="/assets/css/pages/documents.css?v=2.0">
+<link rel="stylesheet" href="/assets/css/dashboard-bento.css?v=2.3">
+<link rel="stylesheet" href="/assets/css/pages/documents.css?v=2.3">
 
 <div class="content-body">
   <div class="bento-dashboard-wrap">

@@ -19,72 +19,40 @@ $canVerifyDocs = user_can('documents.verify') || $canManageDocs;
 $canDeleteDocs = user_can('documents.delete') || user_has_role(['super-admin', 'admin']);
 ?>
 
-<link rel="stylesheet" href="/assets/css/pages/documents.css?v=1.0">
+<link rel="stylesheet" href="/assets/css/dashboard-bento.css?v=2.4">
+<link rel="stylesheet" href="/assets/css/pages/documents.css?v=2.4">
 
 <div class="content-body">
   <?php if ($flash): ?>
-    <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'warning')) ?> alert-dismissible fade show mb-4 shadow-sm" role="alert">
+    <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'warning')) ?> alert-dismissible fade show mb-4 rounded-4 shadow-xs" role="alert">
       <div class="d-flex align-items-center gap-2">
-        <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation' : ($flash['type'] === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation') ?>"></i>
-        <span><?= e($flash['message']) ?></span>
+        <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation text-danger' : ($flash['type'] === 'success' ? 'fa-circle-check text-success' : 'fa-triangle-exclamation text-warning') ?>"></i>
+        <span class="fw-medium"><?= e($flash['message']) ?></span>
       </div>
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
   <?php endif; ?>
 
-  <!-- 1. Header with Breadcrumb, Navigation, and Application Details -->
-  <div class="workspace-header">
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-      <div class="d-flex align-items-center gap-3">
-        <a href="/documents" class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm bg-white" title="Return to Document Directory">
-          <i class="fa-solid fa-arrow-left me-1"></i> Documents
-        </a>
-        <div>
-          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-            <h3 class="workspace-title mb-0"><?= e($app['customer_name']) ?></h3>
-            <span class="workspace-app-badge"><?= e($app['application_number']) ?></span>
-            
-            <?php
-              $statusBadge = 'bg-secondary';
-              if ($app['status'] === 'Approved') $statusBadge = 'bg-success';
-              elseif ($app['status'] === 'Pending') $statusBadge = 'bg-warning text-dark';
-              elseif ($app['status'] === 'Rejected') $statusBadge = 'bg-danger';
-              elseif ($app['status'] === 'In Process') $statusBadge = 'bg-primary';
-              elseif ($app['status'] === 'Draft') $statusBadge = 'bg-info text-dark';
-            ?>
-            <span class="badge <?= $statusBadge ?> px-2.5 py-1.5 fw-bold"><?= strtoupper(e($app['status'])) ?></span>
-            
-            <span class="badge bg-light text-dark border px-2.5 py-1.5 fw-semibold">
-              <i class="fa-solid fa-timeline text-primary me-1"></i><?= e($app['current_stage']) ?>
-            </span>
-          </div>
-          <div class="text-muted small d-flex flex-wrap align-items-center gap-3">
-            <span><i class="fa-solid fa-passport text-secondary me-1"></i><strong>Visa Service:</strong> <?= e($app['service_name'] ?: 'Standard Visa') ?></span>
-            <span><i class="fa-solid fa-globe text-secondary me-1"></i><strong>Destination:</strong> <?= e($app['flag_emoji'] ?? '🌐') ?> <?= e($app['destination_country_name'] ?? $app['destination_country'] ?? 'United Arab Emirates') ?></span>
-            <span><i class="fa-solid fa-code-branch text-secondary me-1"></i><strong>Branch:</strong> <?= e($app['branch_name'] ?? 'Head Office') ?></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Top Quick Header Actions -->
-      <div class="d-flex align-items-center gap-2 flex-wrap">
-        <a href="/documents/download-all?application_id=<?= (int)$app['id'] ?>" class="btn btn-outline-primary btn-sm px-3 shadow-sm" title="Download all documents in organized ZIP bundle">
-          <i class="fa-solid fa-file-zipper me-1"></i> Download All (ZIP)
-        </a>
-        <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
-          <i class="fa-solid fa-cloud-arrow-up me-1"></i> + Upload Document
-        </button>
-      </div>
+  <!-- ─── 1. TOP BREADCRUMB & MULTI-APP SWITCHER BAR ────────────────────── -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <a href="/documents" class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-xs bg-white" title="Return to Document Directory">
+        <i class="fa-solid fa-arrow-left me-1.5"></i> Back to Documents
+      </a>
+      <span class="text-muted small">/</span>
+      <span class="badge bg-light text-dark border rounded-pill px-2.5 py-1 font-monospace">
+        <?= e($app['application_number']) ?>
+      </span>
     </div>
 
-    <!-- Multi-Application Switcher Tabs (Requirement 42) -->
+    <!-- Multi-Application Switcher Chips (Requirement 42) -->
     <?php if (count($customerApplications) > 1): ?>
-      <div class="app-switcher-bar">
-        <span class="text-muted small fw-bold me-1"><i class="fa-solid fa-folder-tree me-1"></i>Customer Applications:</span>
+      <div class="d-flex align-items-center gap-1.5 flex-wrap">
+        <span class="text-muted small fw-bold me-1"><i class="fa-solid fa-folder-tree me-1 text-primary"></i>Customer Applications:</span>
         <?php foreach ($customerApplications as $otherApp): ?>
           <a href="/documents/profile?application_id=<?= (int)$otherApp['id'] ?>" 
-             class="app-switch-chip <?= ((int)$otherApp['id'] === (int)$app['id']) ? 'active' : '' ?>">
-            <i class="fa-solid fa-file-invoice"></i>
+             class="btn btn-xs rounded-pill px-2.5 py-1 text-decoration-none <?= ((int)$otherApp['id'] === (int)$app['id']) ? 'btn-primary text-white' : 'btn-light border text-muted' ?>">
+            <i class="fa-solid fa-file-invoice me-1"></i>
             <span><?= e($otherApp['application_number']) ?></span>
             <span class="opacity-75">(<?= e($otherApp['status']) ?>)</span>
           </a>
@@ -93,593 +61,699 @@ $canDeleteDocs = user_can('documents.delete') || user_has_role(['super-admin', '
     <?php endif; ?>
   </div>
 
-  <!-- 2. Responsive 3-Column Layout: Left (Profile), Center (Details & Docs), Right (Quick Access & Actions) -->
-  <div class="row g-3 g-xl-4">
+  <?php
+    $statusBadge = 'bg-secondary';
+    if ($app['status'] === 'Approved') $statusBadge = 'bg-success';
+    elseif ($app['status'] === 'Pending') $statusBadge = 'bg-warning text-dark';
+    elseif ($app['status'] === 'Rejected') $statusBadge = 'bg-danger';
+    elseif ($app['status'] === 'In Process') $statusBadge = 'bg-primary';
+    elseif ($app['status'] === 'Draft') $statusBadge = 'bg-info text-dark';
 
-    <!-- ================================================================
-         LEFT COLUMN: HERO APPLICANT PROFILE CARD (Matching Screenshot)
-         ================================================================ -->
-    <div class="col-12 col-lg-4 col-xl-3">
-      
-      <!-- Luxury Hero Profile Card Inspired by Mobile Reference -->
-      <div class="hero-profile-card">
-        
-        <!-- Header: Title, Customer Code, and Floating Edit/Camera Circle Button -->
-        <div class="hero-profile-header">
-          <div class="min-w-0 flex-grow-1 pe-2">
-            <h4 class="hero-profile-title mb-1 text-truncate" title="<?= e($app['customer_name']) ?>"><?= e($app['customer_name']) ?></h4>
-            <div class="d-flex align-items-center gap-1.5 flex-wrap">
-              <span class="hero-code-badge font-monospace"><?= e($app['customer_code'] ?? 'MSC-000000') ?></span>
-              <span class="badge <?= $statusBadge ?> px-2 py-0.5" style="font-size:0.68rem;"><?= e($app['status']) ?></span>
+    $nameParts = explode(' ', trim((string)($app['customer_name'] ?? '')));
+    $firstInitial = !empty($nameParts[0]) ? mb_substr($nameParts[0], 0, 1) : 'A';
+    $lastInitial = count($nameParts) > 1 ? mb_substr(end($nameParts), 0, 1) : '';
+    $initials = strtoupper($firstInitial . $lastInitial) ?: 'AP';
+  ?>
+
+  <!-- ─── 2. INSTAGRAM / TIKTOK EXECUTIVE SOCIAL PROFILE CARD ─────────────── -->
+  <div class="social-profile-card">
+    <!-- Profile Cover Canvas with MS Travel Hub Brand Gradient -->
+    <div class="social-profile-cover">
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge rounded-pill px-3 py-1.5 text-white fw-bold shadow-xs" style="background: rgba(255, 255, 255, 0.18); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.25);">
+          <i class="fa-solid fa-passport me-1.5 text-warning"></i> <?= e($app['service_name'] ?: 'Visa Service') ?>
+        </span>
+        <span class="badge rounded-pill px-2.5 py-1.5 text-white" style="background: rgba(0, 0, 0, 0.25); backdrop-filter: blur(6px);">
+          <?= e($app['flag_emoji'] ?? '🌐') ?> <?= e($app['destination_country_name'] ?? $app['destination_country'] ?? 'UAE') ?>
+        </span>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge <?= $statusBadge ?> px-3 py-1.5 rounded-pill fw-bold shadow-xs">
+          <?= strtoupper(e($app['status'])) ?>
+        </span>
+        <a href="/documents/download-all?application_id=<?= (int)$app['id'] ?>" class="btn btn-sm btn-light rounded-pill px-3 shadow-xs" title="Download all documents in organized ZIP bundle">
+          <i class="fa-solid fa-file-zipper me-1 text-primary"></i> ZIP
+        </a>
+      </div>
+    </div>
+
+    <!-- Profile Inner Header & Social Identity -->
+    <div class="social-profile-header">
+      <!-- Avatar Row with Instagram/TikTok Story Gradient Ring & Actions -->
+      <div class="social-avatar-row">
+        <!-- Avatar Wrapper -->
+        <div class="social-avatar-wrapper">
+          <div class="social-avatar-ring">
+            <div class="social-avatar-inner">
+              <?php if (!empty($quickDocs['photo']['id'])): ?>
+                <img src="/documents/preview?id=<?= (int)$quickDocs['photo']['id'] ?>" 
+                     alt="<?= e($app['customer_name']) ?>" 
+                     id="applicantProfilePhotoImg"
+                     loading="lazy"
+                     onerror="this.style.display='none'; document.getElementById('applicantPhotoFallbackAvatar').style.display='flex';">
+                <div id="applicantPhotoFallbackAvatar" style="display:none; width: 100%; height: 100%; align-items: center; justify-content: center; background: #0F172A; color: #FFFFFF;">
+                  <?= e($initials) ?>
+                </div>
+              <?php else: ?>
+                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #0F172A; color: #FFFFFF;">
+                  <?= e($initials) ?>
+                </div>
+              <?php endif; ?>
             </div>
           </div>
-          <button type="button" class="hero-action-circle shadow-sm" data-bs-toggle="modal" data-bs-target="#changePhotoModal" title="Upload or Change Photograph">
-            <i class="fa-solid fa-pen"></i>
+          <!-- Verified Checkmark Badge -->
+          <div class="social-verified-badge" title="Verified Applicant Profile">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <!-- Camera / Edit Profile Photo Circle Button -->
+          <button type="button" class="btn btn-sm btn-dark position-absolute bottom-0 end-0 rounded-circle shadow-sm" 
+                  style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; border: 2.5px solid #FFFFFF; z-index: 5;" 
+                  data-bs-toggle="modal" data-bs-target="#changePhotoModal" title="Upload or Change Photograph">
+            <i class="fa-solid fa-camera" style="font-size: 0.75rem;"></i>
           </button>
         </div>
 
-        <!-- Center: Arched / Domed Avatar Cutout with Radial Background Aura -->
-        <div class="hero-avatar-arch-container">
-          <div class="hero-avatar-arch">
-            <?php
-              $nameParts = explode(' ', trim((string)($app['customer_name'] ?? '')));
-              $firstInitial = !empty($nameParts[0]) ? mb_substr($nameParts[0], 0, 1) : 'A';
-              $lastInitial = count($nameParts) > 1 ? mb_substr(end($nameParts), 0, 1) : '';
-              $initials = strtoupper($firstInitial . $lastInitial);
+        <!-- Social Action Buttons Bar (Instagram-style Contact / Action Strip) -->
+        <div class="social-actions-bar">
+          <?php if (!empty($app['whatsapp'])): ?>
+            <?php 
+              $waClean = preg_replace('/[^0-9]/', '', (string)$app['whatsapp']); 
+              $waMsg = urlencode("Hello " . $app['customer_name'] . ", regarding your visa application " . $app['application_number'] . " at MS Travel Hub Global Visa Management:");
             ?>
-            <?php if (!empty($quickDocs['photo']['id'])): ?>
-              <img src="/documents/preview?id=<?= (int)$quickDocs['photo']['id'] ?>" 
-                   alt="<?= e($app['customer_name']) ?>" 
-                   id="applicantProfilePhotoImg"
-                   loading="lazy"
-                   onerror="this.style.display='none'; document.getElementById('applicantPhotoFallbackAvatar').style.display='flex';">
-              <div id="applicantPhotoFallbackAvatar" class="hero-avatar-arch-initials" style="display:none;">
-                <div class="initials-letters"><?= e($initials) ?></div>
-                <span class="initials-caption">Photo not uploaded</span>
+            <a href="https://wa.me/<?= e($waClean) ?>?text=<?= $waMsg ?>" target="_blank" 
+               class="btn btn-sm btn-outline-success rounded-pill px-3 shadow-xs fw-semibold" title="Direct WhatsApp Chat">
+              <i class="fa-brands fa-whatsapp me-1.5 fs-6"></i> WhatsApp
+            </a>
+          <?php endif; ?>
+
+          <?php if (!empty($app['mobile'])): ?>
+            <a href="tel:<?= e($app['mobile']) ?>" 
+               class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-xs fw-semibold" title="Direct Phone Call">
+              <i class="fa-solid fa-phone me-1.5"></i> Call
+            </a>
+          <?php endif; ?>
+
+          <button type="button" class="btn btn-sm text-white rounded-pill px-3.5 shadow-xs fw-semibold" 
+                  style="background: var(--bento-primary, #E11D48); border: none;" 
+                  data-bs-toggle="modal" data-bs-target="#uploadDocModal">
+            <i class="fa-solid fa-cloud-arrow-up me-1.5"></i> + Upload Document
+          </button>
+
+          <a href="/customers/show?id=<?= (int)$app['customer_id'] ?>" 
+             class="btn btn-sm btn-light border rounded-pill px-3 shadow-xs text-secondary fw-semibold" title="Customer CRM Master Case">
+            <i class="fa-solid fa-user-gear me-1.5"></i> CRM Profile
+          </a>
+        </div>
+      </div>
+
+      <!-- Identity Typography & Social Bio -->
+      <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+          <h2 class="social-name mb-0"><?= e($app['customer_name']) ?></h2>
+          <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1" style="font-size: 0.72rem;">
+            <i class="fa-solid fa-certificate me-1"></i> Verified Applicant
+          </span>
+        </div>
+
+        <div class="social-handle mb-2">
+          <span class="badge bg-light text-dark border font-monospace px-2 py-0.5">@<?= e($app['customer_code'] ?? 'MSC-000000') ?></span>
+          <span class="badge bg-light text-muted border font-monospace px-2 py-0.5"><i class="fa-solid fa-hashtag me-0.5"></i><?= e($app['application_number']) ?></span>
+          <span class="badge bg-light text-primary border px-2 py-0.5"><i class="fa-solid fa-timeline me-1"></i><?= e($app['current_stage']) ?></span>
+          <span class="badge bg-light text-secondary border px-2 py-0.5"><i class="fa-solid fa-building me-1"></i><?= e($app['branch_name'] ?? 'Main Branch') ?></span>
+          <?php if (!empty($app['assigned_staff_name'])): ?>
+            <span class="badge bg-light text-dark border px-2 py-0.5"><i class="fa-solid fa-user-tie text-secondary me-1"></i><?= e($app['assigned_staff_name']) ?></span>
+          <?php endif; ?>
+        </div>
+
+        <!-- Social Bio Description Box -->
+        <div class="social-bio-text">
+          <span>💼 <strong><?= e($app['occupation'] ?: 'Applicant') ?></strong></span>
+          <span class="text-muted mx-1.5">&bull;</span>
+          <span>✈️ Service: <strong><?= e($app['service_name'] ?: 'Standard Visa') ?></strong> (<?= e($app['flag_emoji'] ?? '🌐') ?> <?= e($app['destination_country_name'] ?? 'UAE') ?>)</span>
+          <span class="text-muted mx-1.5">&bull;</span>
+          <span>🛂 Passport: <strong class="font-monospace text-primary"><?= e($app['passport_number'] ?: '—') ?></strong> (<?= e($passportValidity['label']) ?>)</span>
+          <span class="text-muted mx-1.5">&bull;</span>
+          <span>🎂 Age: <strong><?= $age !== null ? $age . ' yrs' : '—' ?></strong> (<?= e($app['nationality'] ?: 'National') ?>)</span>
+          <?php if (!empty($app['current_country'])): ?>
+            <span class="text-muted mx-1.5">&bull;</span>
+            <span>📍 Residing in: <strong><?= e($app['current_country']) ?></strong></span>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- Social Media Stats Strip (Posts / Followers / Following Style adapted to Visa Portal) -->
+      <div class="social-stats-strip">
+        <div class="social-stat-item">
+          <span class="social-stat-num text-primary"><?= count($applicationDocuments) ?></span>
+          <span class="social-stat-label">Documents Vault</span>
+        </div>
+        <div class="social-stat-item">
+          <span class="social-stat-num text-success"><?= (int)$checklist['percentage'] ?>%</span>
+          <span class="social-stat-label">KYC Readiness</span>
+        </div>
+        <div class="social-stat-item">
+          <span class="social-stat-num text-success"><?= (int)$checklist['total_verified'] ?></span>
+          <span class="social-stat-label">Verified &amp; Stamped</span>
+        </div>
+        <div class="social-stat-item">
+          <span class="social-stat-num <?= (int)$checklist['total_missing'] + (int)$checklist['total_rejected'] > 0 ? 'text-danger' : 'text-muted' ?>">
+            <?= (int)$checklist['total_missing'] + (int)$checklist['total_rejected'] ?>
+          </span>
+          <span class="social-stat-label">Action Required</span>
+        </div>
+        <div class="social-stat-item">
+          <span class="social-stat-num" style="color: #D97706;">
+            <?= !empty($passportValidity['days_remaining']) && $passportValidity['days_remaining'] > 0 ? round($passportValidity['days_remaining'] / 365, 1) . ' Yrs' : e($passportValidity['label']) ?>
+          </span>
+          <span class="social-stat-label">Passport Validity</span>
+        </div>
+      </div>
+
+      <!-- Instagram / TikTok Social Tabs Navigation Bar -->
+      <div class="social-tabs-nav" role="tablist">
+        <button type="button" class="social-tab-btn active" data-tab="tab-docs">
+          <i class="fa-solid fa-folder-open"></i> Documents Vault 
+          <span class="badge bg-light text-dark border rounded-pill ms-1"><?= count($applicationDocuments) ?></span>
+        </button>
+        <button type="button" class="social-tab-btn" data-tab="tab-personal">
+          <i class="fa-solid fa-address-card"></i> Personal &amp; Passport
+        </button>
+        <button type="button" class="social-tab-btn" data-tab="tab-visa">
+          <i class="fa-solid fa-plane-departure"></i> Visa Application
+        </button>
+        <button type="button" class="social-tab-btn" data-tab="tab-checklist">
+          <i class="fa-solid fa-clipboard-check"></i> Requirements Checklist
+          <?php if ((int)$checklist['total_missing'] + (int)$checklist['total_rejected'] > 0): ?>
+            <span class="badge bg-danger text-white rounded-pill ms-1"><?= (int)$checklist['total_missing'] + (int)$checklist['total_rejected'] ?></span>
+          <?php endif; ?>
+        </button>
+        <button type="button" class="social-tab-btn" data-tab="tab-activity">
+          <i class="fa-solid fa-clock-rotate-left"></i> Activity Timeline
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 3. TABBED DASHBOARD BENTO PANES ─────────────────────────────────── -->
+
+  <!-- ======================================================================
+       TAB PANE 1: DOCUMENTS VAULT (MAIN VAULT & QUICK ACCESS CARDS)
+       ====================================================================== -->
+  <div id="tab-docs" class="profile-tab-pane">
+    <!-- Pinned Quick Access Bento Cards (5 Columns) -->
+    <div class="row g-3 mb-4">
+      <?php
+        $renderQuickBentoCard = function($title, $iconClass, $doc, $typeId, $keyword, $colorHex) use ($app) {
+          $isUploaded = !empty($doc);
+          $status = $doc['status'] ?? 'PENDING';
+          $stBadge = 'bg-secondary';
+          if ($status === 'VERIFIED') $stBadge = 'bg-success';
+          elseif ($status === 'UNDER_REVIEW') $stBadge = 'bg-warning text-dark';
+          elseif ($status === 'REJECTED') $stBadge = 'bg-danger';
+
+          $ext = $isUploaded ? strtolower(pathinfo($doc['file_name'] ?? '', PATHINFO_EXTENSION)) : '';
+          ?>
+          <div class="col-6 col-md-4 col-xl">
+            <div class="bento-card h-100 p-3 bg-white" style="border-top: 3px solid <?= $colorHex ?>;">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <div style="width: 34px; height: 34px; border-radius: 10px; background: <?= $colorHex ?>15; color: <?= $colorHex ?>; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                    <i class="fa-solid <?= $iconClass ?>"></i>
+                  </div>
+                  <span class="fw-bold small text-dark"><?= e($title) ?></span>
+                </div>
               </div>
-            <?php else: ?>
-              <div class="hero-avatar-arch-initials">
-                <div class="initials-letters"><?= e($initials) ?></div>
-                <span class="initials-caption">Photo not uploaded</span>
+
+              <div class="mb-3">
+                <?php if ($isUploaded): ?>
+                  <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                    <span class="badge <?= $stBadge ?> px-2 py-0.5" style="font-size: 0.68rem;"><?= e($status) ?></span>
+                    <span class="badge bg-light text-muted border px-1.5 py-0.5 font-monospace" style="font-size: 0.65rem;">v<?= (int)($doc['version'] ?? 1) ?></span>
+                  </div>
+                  <div class="text-truncate text-muted small mt-1 font-monospace" style="font-size: 0.72rem;" title="<?= e($doc['file_name']) ?>">
+                    <?= e($doc['file_name']) ?>
+                  </div>
+                <?php else: ?>
+                  <span class="badge bg-light text-muted border px-2 py-0.5" style="font-size: 0.68rem;">Not Uploaded</span>
+                  <div class="text-muted small mt-1" style="font-size: 0.72rem;">File required for visa filing</div>
+                <?php endif; ?>
+              </div>
+
+              <div class="mt-auto pt-2 border-top d-flex gap-1">
+                <?php if ($isUploaded): ?>
+                  <button type="button" class="btn btn-sm btn-outline-primary w-100 py-1" style="font-size: 0.75rem;" 
+                          onclick="openDocumentPreview(<?= (int)$doc['id'] ?>, '<?= e(addslashes($title)) ?>', '<?= e($ext) ?>', '<?= e($status) ?>', <?= (int)$doc['version'] ?>)">
+                    <i class="fa-solid fa-eye me-1"></i> View
+                  </button>
+                  <a href="/documents/download?id=<?= (int)$doc['id'] ?>" class="btn btn-sm btn-light border py-1 px-2" title="Download">
+                    <i class="fa-solid fa-download"></i>
+                  </a>
+                <?php else: ?>
+                  <?php if ($typeId > 0): ?>
+                    <button type="button" class="btn btn-sm btn-primary w-100 py-1" style="font-size: 0.75rem;" onclick="openUploadModalWithType(<?= (int)$typeId ?>)">
+                      <i class="fa-solid fa-cloud-arrow-up me-1"></i> Upload
+                    </button>
+                  <?php else: ?>
+                    <button type="button" class="btn btn-sm btn-primary w-100 py-1" style="font-size: 0.75rem;" onclick="openUploadModalWithKeyword('<?= e($keyword) ?>')">
+                      <i class="fa-solid fa-cloud-arrow-up me-1"></i> Upload
+                    </button>
+                  <?php endif; ?>
+                <?php endif; ?>
+              </div>
+            </div>
+          </div>
+          <?php
+        };
+
+        $renderQuickBentoCard('Passport Bio', 'fa-passport', $quickDocs['passport'], 1, 'passport', '#E11D48');
+        $renderQuickBentoCard('Photograph', 'fa-camera', $quickDocs['photo'], 2, 'photo', '#D97706');
+        $renderQuickBentoCard('CV / Resume', 'fa-file-lines', $quickDocs['cv'], 0, 'cv', '#0284C7');
+        $renderQuickBentoCard('Visa / Entry', 'fa-stamp', $quickDocs['visa'], 0, 'visa', '#059669');
+        $renderQuickBentoCard('National ID', 'fa-id-card', $quickDocs['national_id'], 4, 'id', '#7C3AED');
+      ?>
+    </div>
+
+    <!-- All Application Documents by Category -->
+    <div class="bento-card p-4 bg-white mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+          <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+            <i class="fa-solid fa-folder-tree text-primary"></i> Application Documents Vault
+          </h5>
+          <span class="text-muted small">Total of <?= count($applicationDocuments) ?> documents organized by category</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <a href="/documents/download-all?application_id=<?= (int)$app['id'] ?>" class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-xs">
+            <i class="fa-solid fa-file-zipper me-1 text-primary"></i> Download All ZIP
+          </a>
+          <button type="button" class="btn btn-sm text-white rounded-pill px-3 shadow-xs" style="background: var(--bento-primary, #E11D48);" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
+            <i class="fa-solid fa-plus me-1"></i> Upload New Document
+          </button>
+        </div>
+      </div>
+
+      <?php if (empty($applicationDocuments)): ?>
+        <div class="text-center py-5">
+          <div style="font-size: 3rem; color: #CBD5E1;" class="mb-3">
+            <i class="fa-solid fa-folder-open"></i>
+          </div>
+          <h6 class="fw-bold text-dark mb-1">No Documents Uploaded Yet</h6>
+          <p class="text-muted small mb-3">Begin by uploading the applicant's passport, photo, or visa forms.</p>
+          <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
+            <i class="fa-solid fa-cloud-arrow-up me-1"></i> Upload First Document
+          </button>
+        </div>
+      <?php else: ?>
+        <?php foreach ($categorizedDocs as $catName => $catDocs): ?>
+          <?php if (!empty($catDocs)): ?>
+            <div class="mb-4">
+              <div class="d-flex align-items-center justify-content-between pb-2 mb-3 border-bottom">
+                <span class="fw-bold text-dark small text-uppercase">
+                  <i class="fa-solid fa-folder me-1.5" style="color: #F59E0B;"></i> <?= e($catName) ?>
+                </span>
+                <span class="badge bg-light text-muted border rounded-pill px-2.5 py-1">
+                  <?= count($catDocs) ?> <?= count($catDocs) === 1 ? 'file' : 'files' ?>
+                </span>
+              </div>
+
+              <!-- Grid of Instagram-style document cards -->
+              <div class="row g-3">
+                <?php foreach ($catDocs as $docItem): ?>
+                  <?php
+                    $ext = strtolower(pathinfo($docItem['file_name'] ?? '', PATHINFO_EXTENSION));
+                    $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true);
+                    $isPdf = ($ext === 'pdf');
+
+                    $stBadge = 'bg-secondary';
+                    if ($docItem['status'] === 'VERIFIED') $stBadge = 'bg-success';
+                    elseif ($docItem['status'] === 'REJECTED') $stBadge = 'bg-danger';
+                    elseif ($docItem['status'] === 'UNDER_REVIEW') $stBadge = 'bg-warning text-dark';
+                  ?>
+                  <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+                    <div class="social-doc-card h-100">
+                      <!-- Document Preview Box -->
+                      <div class="social-doc-preview-thumb">
+                        <?php if ($isImage): ?>
+                          <img src="/documents/preview?id=<?= (int)$docItem['id'] ?>" alt="<?= e($docItem['document_title'] ?: $docItem['doc_type_name']) ?>" loading="lazy">
+                        <?php elseif ($isPdf): ?>
+                          <div class="d-flex flex-column align-items-center justify-content-center text-danger">
+                            <i class="fa-solid fa-file-pdf fs-1 mb-1"></i>
+                            <span class="badge bg-danger-subtle text-danger font-monospace px-2 py-0.5">PDF DOCUMENT</span>
+                          </div>
+                        <?php else: ?>
+                          <div class="d-flex flex-column align-items-center justify-content-center text-primary">
+                            <i class="fa-solid fa-file-lines fs-1 mb-1"></i>
+                            <span class="badge bg-primary-subtle text-primary font-monospace px-2 py-0.5"><?= strtoupper(e($ext ?: 'DOC')) ?></span>
+                          </div>
+                        <?php endif; ?>
+
+                        <!-- Floating Status Pill on Thumbnail -->
+                        <span class="position-absolute top-0 start-0 m-2 badge <?= $stBadge ?> shadow-xs" style="font-size: 0.65rem;">
+                          <?= e($docItem['status']) ?>
+                        </span>
+                        <span class="position-absolute top-0 end-0 m-2 badge bg-dark text-white font-monospace shadow-xs" style="font-size: 0.65rem;">
+                          v<?= (int)$docItem['version'] ?>
+                        </span>
+                      </div>
+
+                      <!-- Document Card Body -->
+                      <div class="p-3 d-flex flex-column flex-grow-1">
+                        <div class="fw-bold text-dark small text-truncate" title="<?= e($docItem['document_title'] ?: $docItem['doc_type_name']) ?>">
+                          <?= e($docItem['document_title'] ?: $docItem['doc_type_name']) ?>
+                        </div>
+                        <div class="text-muted mt-0.5" style="font-size: 0.72rem;">
+                          <span><?= e($docItem['doc_type_name']) ?></span>
+                        </div>
+
+                        <?php if (!empty($docItem['expiry_date'])): ?>
+                          <?php
+                            $expD = (int)round((strtotime($docItem['expiry_date']) - time()) / 86400);
+                            $expClass = ($expD < 0) ? 'text-danger' : (($expD <= 30) ? 'text-warning' : 'text-muted');
+                          ?>
+                          <div class="mt-1 <?= $expClass ?>" style="font-size: 0.7rem;">
+                            <i class="fa-regular fa-clock me-1"></i>Exp: <?= e($docItem['expiry_date']) ?>
+                          </div>
+                        <?php endif; ?>
+
+                        <!-- Actions Bar -->
+                        <div class="mt-auto pt-2.5 border-top d-flex align-items-center justify-content-between gap-1">
+                          <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2.5 flex-grow-1" style="font-size: 0.75rem;"
+                                  onclick="openDocumentPreview(<?= (int)$docItem['id'] ?>, '<?= e(addslashes($docItem['document_title'] ?: $docItem['doc_type_name'])) ?>', '<?= e($ext) ?>', '<?= e($docItem['status']) ?>', <?= (int)$docItem['version'] ?>)">
+                            <i class="fa-solid fa-eye me-1"></i> Preview
+                          </button>
+                          
+                          <a href="/documents/download?id=<?= (int)$docItem['id'] ?>" class="btn btn-sm btn-light border py-1 px-2" title="Download File">
+                            <i class="fa-solid fa-download"></i>
+                          </a>
+
+                          <?php if ($canVerifyDocs && $docItem['status'] !== 'VERIFIED'): ?>
+                            <form action="/documents/verify" method="POST" class="d-inline" onsubmit="return confirm('Verify this document as compliant?');">
+                              <?= csrf_field() ?>
+                              <input type="hidden" name="document_id" value="<?= (int)$docItem['id'] ?>">
+                              <button type="submit" class="btn btn-sm btn-outline-success py-1 px-2" title="Verify Document">
+                                <i class="fa-solid fa-check"></i>
+                              </button>
+                            </form>
+                          <?php endif; ?>
+
+                          <?php if ($canVerifyDocs && $docItem['status'] !== 'REJECTED'): ?>
+                            <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" title="Reject Document" onclick="openRejectModal(<?= (int)$docItem['id'] ?>)">
+                              <i class="fa-solid fa-xmark"></i>
+                            </button>
+                          <?php endif; ?>
+
+                          <button type="button" class="btn btn-sm btn-light border py-1 px-2" title="Version History" onclick="openHistoryModal(<?= (int)$docItem['id'] ?>)">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+            </div>
+          <?php endif; ?>
+        <?php endforeach; ?>
+      <?php endif; ?>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       TAB PANE 2: PERSONAL & PASSPORT (DASHBOARD BENTO CARDS)
+       ====================================================================== -->
+  <div id="tab-personal" class="profile-tab-pane d-none">
+    <div class="row g-4 mb-4">
+      <!-- Bento Card: Passport Credentials -->
+      <div class="col-12 col-lg-6">
+        <div class="bento-card p-4 bg-white h-100">
+          <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+            <span class="fw-bold text-dark d-flex align-items-center gap-2">
+              <i class="fa-solid fa-passport text-primary fs-5"></i> PASSPORT CREDENTIALS
+            </span>
+            <span class="badge <?= e($passportValidity['badge_class']) ?> px-2.5 py-1 fw-bold rounded-pill">
+              <?= strtoupper(e($passportValidity['label'])) ?>
+            </span>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-6">
+              <span class="text-muted small">PASSPORT NUMBER</span>
+              <div class="font-monospace text-primary fw-bold fs-6 mt-0.5"><?= e($app['passport_number'] ?: '—') ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">NATIONALITY</span>
+              <div class="fw-bold text-dark mt-0.5"><?= e($app['nationality'] ?: '—') ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">ISSUING COUNTRY</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= e($app['passport_issuing_country'] ?: ($app['nationality'] ?: '—')) ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">DATE OF BIRTH</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= e($app['dob'] ? date('d M Y', strtotime($app['dob'])) : '—') ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">ISSUE DATE</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= e($app['passport_issue_date'] ? date('d M Y', strtotime($app['passport_issue_date'])) : '—') ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">EXPIRY DATE</span>
+              <div class="fw-bold font-monospace text-dark mt-0.5"><?= e($app['passport_expiry_date'] ? date('d M Y', strtotime($app['passport_expiry_date'])) : '—') ?></div>
+            </div>
+          </div>
+
+          <!-- Direct Passport Document Strip -->
+          <div class="mt-4 p-3 bg-light rounded-4 border d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+              <div class="fw-bold small text-dark"><i class="fa-solid fa-file-contract text-primary me-1"></i> Passport Bio Document</div>
+              <div class="text-muted" style="font-size: 0.72rem;">
+                <?= !empty($quickDocs['passport']) ? e($quickDocs['passport']['file_name']) : 'No digital bio page attached' ?>
+              </div>
+            </div>
+            <div class="d-flex gap-1.5">
+              <?php if (!empty($quickDocs['passport'])): ?>
+                <?php $pExt = strtolower(pathinfo($quickDocs['passport']['file_name'] ?? 'doc.pdf', PATHINFO_EXTENSION)) ?: 'pdf'; ?>
+                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" onclick="openDocumentPreview(<?= (int)$quickDocs['passport']['id'] ?>, 'Passport Bio Page', '<?= e($pExt) ?>', '<?= e($quickDocs['passport']['status']) ?>', <?= (int)$quickDocs['passport']['version'] ?>)">
+                  <i class="fa-solid fa-eye me-1"></i> View Scan
+                </button>
+              <?php else: ?>
+                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" onclick="openUploadModalWithType(1)">
+                  <i class="fa-solid fa-cloud-arrow-up me-1"></i> Upload Scan
+                </button>
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bento Card: Demographics & Bio -->
+      <div class="col-12 col-lg-6">
+        <div class="bento-card p-4 bg-white h-100">
+          <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+            <span class="fw-bold text-dark d-flex align-items-center gap-2">
+              <i class="fa-solid fa-user text-primary fs-5"></i> PERSONAL DEMOGRAPHICS
+            </span>
+            <a href="/customers/edit?id=<?= (int)$app['customer_id'] ?>" class="btn btn-sm btn-link text-primary p-0 fw-semibold">
+              <i class="fa-solid fa-pen-to-square me-1"></i> Edit CRM
+            </a>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-12">
+              <span class="text-muted small">FULL NAME</span>
+              <div class="fw-bold text-dark fs-6 mt-0.5"><?= e($app['customer_name'] ?: '—') ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">GENDER</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= e($app['gender'] ?: '—') ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">AGE</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= $age !== null ? $age . ' years' : '—' ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">MARITAL STATUS</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= e($app['marital_status'] ?: '—') ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">RELIGION</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= e($app['religion'] ?: '—') ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">PLACE OF BIRTH</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= e($app['place_of_birth'] ?: '—') ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">OCCUPATION / DESIGNATION</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= e($app['occupation'] ?: '—') ?></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bento Card: Contact Channels & Residence -->
+      <div class="col-12 col-lg-6">
+        <div class="bento-card p-4 bg-white h-100">
+          <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+            <span class="fw-bold text-dark d-flex align-items-center gap-2">
+              <i class="fa-solid fa-address-book text-primary fs-5"></i> CONTACT &amp; RESIDENCE
+            </span>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-6">
+              <span class="text-muted small">MOBILE PHONE</span>
+              <div class="fw-bold font-monospace text-dark mt-0.5">
+                <?php if (!empty($app['mobile'])): ?>
+                  <a href="tel:<?= e($app['mobile']) ?>" class="text-decoration-none text-dark"><?= e($app['mobile']) ?></a>
+                <?php else: ?>—<?php endif; ?>
+              </div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">WHATSAPP</span>
+              <div class="fw-bold font-monospace text-success mt-0.5">
+                <?php if (!empty($app['whatsapp'])): ?>
+                  <a href="https://wa.me/<?= preg_replace('/[^0-9]/', '', (string)$app['whatsapp']) ?>" target="_blank" class="text-decoration-none text-success"><?= e($app['whatsapp']) ?></a>
+                <?php else: ?>—<?php endif; ?>
+              </div>
+            </div>
+            <div class="col-12">
+              <span class="text-muted small">EMAIL ADDRESS</span>
+              <div class="fw-semibold text-dark mt-0.5">
+                <?php if (!empty($app['email'])): ?>
+                  <a href="mailto:<?= e($app['email']) ?>" class="text-decoration-none text-dark"><?= e($app['email']) ?></a>
+                <?php else: ?>—<?php endif; ?>
+              </div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">COUNTRY OF RESIDENCE</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= e($app['current_country'] ?: '—') ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">PHYSICAL ADDRESS</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= e($app['address'] ?: '—') ?></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bento Card: Identifications & System Records -->
+      <div class="col-12 col-lg-6">
+        <div class="bento-card p-4 bg-white h-100">
+          <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+            <span class="fw-bold text-dark d-flex align-items-center gap-2">
+              <i class="fa-solid fa-id-card text-primary fs-5"></i> IDENTIFICATION &amp; METADATA
+            </span>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-6">
+              <span class="text-muted small">CUSTOMER CODE</span>
+              <div class="fw-bold font-monospace text-primary mt-0.5"><?= e($app['customer_code'] ?: '—') ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">NATIONAL / EMIRATES ID</span>
+              <div class="fw-bold font-monospace text-dark mt-0.5"><?= e($app['national_id_number'] ?: '—') ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">PROFILE CREATED</span>
+              <div class="text-muted small mt-0.5"><?= !empty($app['customer_created_at']) ? date('d M Y, h:i A', strtotime($app['customer_created_at'])) : '—' ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">LAST UPDATED</span>
+              <div class="text-muted small mt-0.5"><?= !empty($app['customer_updated_at']) ? date('d M Y, h:i A', strtotime($app['customer_updated_at'])) : '—' ?></div>
+            </div>
+            <?php if (!empty($app['customer_notes'])): ?>
+              <div class="col-12">
+                <span class="text-muted small">PROFILE NOTES</span>
+                <div class="p-2 bg-light rounded small text-secondary mt-1"><?= nl2br(e($app['customer_notes'])) ?></div>
               </div>
             <?php endif; ?>
           </div>
         </div>
-
-        <!-- Lower Frosted Details Panel (Matching Screenshot) -->
-        <div class="hero-frosted-details">
-          <div class="hero-info-list">
-            <div class="hero-info-row">
-              <span class="hero-info-label">Age :</span>
-              <span class="hero-info-value">
-                <?= $age !== null ? $age . ' years' : '—' ?>
-                <?php if (!empty($app['dob'])): ?>
-                  <span class="text-muted fw-normal" style="font-size:0.75rem;">(<?= date('d M Y', strtotime($app['dob'])) ?>)</span>
-                <?php endif; ?>
-              </span>
-            </div>
-            <div class="hero-info-row">
-              <span class="hero-info-label">Email :</span>
-              <span class="hero-info-value">
-                <?php if (!empty($app['email'])): ?>
-                  <a href="mailto:<?= e($app['email']) ?>" class="text-dark text-decoration-none"><?= e($app['email']) ?></a>
-                <?php else: ?>
-                  —
-                <?php endif; ?>
-              </span>
-            </div>
-            <div class="hero-info-row">
-              <span class="hero-info-label">Phone number :</span>
-              <span class="hero-info-value">
-                <?php if (!empty($app['mobile'])): ?>
-                  <a href="tel:<?= e($app['mobile']) ?>" class="text-dark text-decoration-none font-monospace"><?= e($app['mobile']) ?></a>
-                <?php else: ?>
-                  —
-                <?php endif; ?>
-              </span>
-            </div>
-          </div>
-
-          <!-- 3 Pill Mini-Cards (ID, Passport, Residence) -->
-          <div class="hero-pills-row">
-            <div class="hero-pill-stat">
-              <span class="hero-pill-lbl">ID</span>
-              <span class="hero-pill-val font-monospace" title="<?= e($app['national_id_number'] ?: 'N/A') ?>">
-                <?= e($app['national_id_number'] ?: '—') ?>
-              </span>
-            </div>
-            <div class="hero-pill-stat">
-              <span class="hero-pill-lbl">Passport</span>
-              <span class="hero-pill-val font-monospace text-primary" title="<?= e($app['passport_number'] ?: 'N/A') ?>">
-                <?= e($app['passport_number'] ?: '—') ?>
-              </span>
-            </div>
-            <div class="hero-pill-stat">
-              <span class="hero-pill-lbl">Residence</span>
-              <span class="hero-pill-val text-truncate" title="<?= e($app['current_country'] ?: ($app['nationality'] ?: 'N/A')) ?>">
-                <?= e($app['current_country'] ?: ($app['nationality'] ?: '—')) ?>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Direct Contact Actions Bar -->
-        <div class="d-flex align-items-center justify-content-center gap-2 mt-3 pt-1">
-          <?php if (!empty($app['whatsapp'])): ?>
-            <?php $waClean = preg_replace('/[^0-9]/', '', (string)$app['whatsapp']); ?>
-            <a href="https://wa.me/<?= e($waClean) ?>" target="_blank" class="btn btn-sm btn-outline-success py-1 px-2.5 rounded-pill shadow-2xs font-monospace" title="WhatsApp Chat" style="font-size:0.75rem;">
-              <i class="fa-brands fa-whatsapp me-1"></i> WhatsApp
-            </a>
-          <?php endif; ?>
-          <?php if (!empty($app['mobile'])): ?>
-            <a href="tel:<?= e($app['mobile']) ?>" class="btn btn-sm btn-outline-primary py-1 px-2.5 rounded-pill shadow-2xs" title="Call Applicant" style="font-size:0.75rem;">
-              <i class="fa-solid fa-phone me-1"></i> Call
-            </a>
-          <?php endif; ?>
-          <a href="/customers/show?id=<?= (int)$app['customer_id'] ?>" class="btn btn-sm btn-light border py-1 px-2.5 rounded-pill shadow-2xs text-secondary" title="Full Customer Profile" style="font-size:0.75rem;">
-            <i class="fa-solid fa-user-gear me-1"></i> CRM
-          </a>
-        </div>
-
-        <!-- Operations Assignment Strip -->
-        <div class="w-100 p-2.5 mt-3 bg-white border rounded-3 text-start small shadow-2xs">
-          <div class="text-muted" style="font-size: 0.68rem; text-transform: uppercase; font-weight: 700;">Operations Assignment</div>
-          <div class="fw-bold text-dark mt-0.5"><i class="fa-solid fa-user-tie text-secondary me-1"></i><?= e($app['assigned_staff_name'] ?: 'Unassigned Staff') ?></div>
-          <div class="text-muted small mt-0.5"><i class="fa-solid fa-building text-secondary me-1"></i><?= e($app['branch_name'] ?: 'Main Branch') ?></div>
-        </div>
-
       </div>
-
     </div>
+  </div>
 
-    <!-- ================================================================
-         CENTER COLUMN: BENTO GRID & COMPLETE WORKSPACE
-         ================================================================ -->
-    <div class="col-12 col-lg-8 col-xl-6">
+  <!-- ======================================================================
+       TAB PANE 3: VISA APPLICATION (DASHBOARD BENTO CARDS)
+       ====================================================================== -->
+  <div id="tab-visa" class="profile-tab-pane d-none">
+    <div class="row g-4 mb-4">
+      <!-- Bento Card: Visa Service Package -->
+      <div class="col-12 col-lg-6">
+        <div class="bento-card p-4 bg-white h-100">
+          <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+            <span class="fw-bold text-dark d-flex align-items-center gap-2">
+              <i class="fa-solid fa-plane-departure text-primary fs-5"></i> VISA SERVICE PACKAGE
+            </span>
+            <span class="badge bg-light text-dark border rounded-pill px-2.5 py-1">
+              <?= e($app['visa_category'] ?? $app['category_name'] ?? 'General') ?>
+            </span>
+          </div>
 
-      <!-- Luxury Bento Grid (Matching 4 Bento Tiles in Screenshot) -->
-      <div class="bento-grid">
-        <!-- Bento Card 1: Documents Vault -->
-        <div class="bento-card bento-card-info">
-          <div class="bento-header">
-            <span class="bento-title"><i class="fa-solid fa-folder-open text-primary me-1"></i> Documents</span>
-            <a href="#allDocsSection" class="bento-arrow-btn" title="View All Uploaded Documents"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
-          </div>
-          <div class="bento-metric">
-            <span class="bento-metric-num"><?= count($applicationDocuments) ?></span>
-            <span class="bento-metric-lbl">Total Files</span>
-          </div>
-        </div>
-
-        <!-- Bento Card 2: Requirements Action Required -->
-        <div class="bento-card <?= (int)$checklist['total_missing'] > 0 ? 'bento-card-warning' : 'bento-card-primary' ?>">
-          <div class="bento-header">
-            <span class="bento-title"><i class="fa-solid fa-triangle-exclamation <?= (int)$checklist['total_missing'] > 0 ? 'text-warning' : 'text-success' ?> me-1"></i> Action Req</span>
-            <a href="#actionRequiredSection" class="bento-arrow-btn" title="View Pending Actions"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
-          </div>
-          <div class="bento-metric">
-            <span class="bento-metric-num"><?= (int)$checklist['total_missing'] + (int)$checklist['total_rejected'] ?></span>
-            <span class="bento-metric-lbl"><?= (int)$checklist['total_missing'] > 0 ? 'Pending' : 'Compliant' ?></span>
-          </div>
-        </div>
-
-        <!-- Bento Card 3: Completion Readiness -->
-        <div class="bento-card bento-card-primary">
-          <div class="bento-header">
-            <span class="bento-title"><i class="fa-solid fa-circle-check text-success me-1"></i> Readiness</span>
-            <a href="#readinessSection" class="bento-arrow-btn" title="View Verification Readiness"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
-          </div>
-          <div class="bento-metric">
-            <span class="bento-metric-num"><?= (int)$checklist['percentage'] ?><span style="font-size:1.3rem;">%</span></span>
-            <span class="bento-metric-lbl"><?= (int)$checklist['total_verified'] ?>/<?= (int)$checklist['total_required'] ?> Verified</span>
-          </div>
-        </div>
-
-        <!-- Bento Card 4: Passport Validity -->
-        <div class="bento-card bento-card-accent">
-          <div class="bento-header">
-            <span class="bento-title"><i class="fa-solid fa-passport text-secondary me-1"></i> Passport</span>
-            <a href="#passportSection" class="bento-arrow-btn" title="View Passport Credentials"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
-          </div>
-          <div class="bento-metric">
-            <span class="bento-metric-num" style="font-size:1.45rem;"><?= e($passportValidity['label']) ?></span>
-            <span class="bento-metric-lbl"><?= !empty($passportValidity['days_remaining']) && $passportValidity['days_remaining'] > 0 ? round($passportValidity['days_remaining'] / 365, 1) . ' Yrs' : 'Status' ?></span>
+          <div class="row g-3">
+            <div class="col-12">
+              <span class="text-muted small">PACKAGE NAME</span>
+              <div class="fw-bold text-dark fs-6 mt-0.5"><?= e($app['service_name'] ?: 'Standard Visa') ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">DESTINATION</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= e($app['flag_emoji'] ?? '🌐') ?> <?= e($app['destination_country_name'] ?? $app['destination_country'] ?? 'United Arab Emirates') ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">VISA DURATION</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= e($app['visa_duration'] ?: ($app['service_duration'] ?? '30 Days')) ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">ENTRY TYPE</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= e($app['entry_type'] ?: ($app['service_entry_type'] ?? 'Single Entry')) ?></div>
+            </div>
+            <div class="col-6">
+              <span class="text-muted small">PROCESSING SPEED</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= e($app['processing_type'] ?: ($app['service_processing_type'] ?? 'Normal')) ?></div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 1. Document Completion & Checklist Progress (Requirement 24) -->
-      <div class="workspace-card" id="readinessSection">
-        <div class="workspace-card-header">
-          <h6 class="workspace-card-title">
-            <i class="fa-solid fa-list-check text-primary"></i> Document Completion &amp; Requirements
-          </h6>
-          <span class="badge <?= (int)$checklist['percentage'] === 100 ? 'bg-success' : 'bg-primary' ?> px-2.5 py-1 fw-bold"><?= (int)$checklist['percentage'] ?>% Complete</span>
-        </div>
-        <div class="workspace-card-body">
-          <div class="completion-banner">
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="small fw-bold text-dark">Overall File Readiness</span>
-              <span class="small fw-bold text-primary font-monospace"><?= (int)$checklist['total_verified'] ?> of <?= (int)$checklist['total_required'] ?> Verified</span>
-            </div>
-            <div class="completion-progress-bar">
-              <div class="completion-progress-fill" style="width: <?= (int)$checklist['percentage'] ?>%;"></div>
-            </div>
-            <div class="d-flex flex-wrap gap-2 pt-1 small">
-              <span class="badge bg-white text-secondary border"><i class="fa-solid fa-asterisk text-primary me-1"></i>Required: <?= (int)$checklist['total_required'] ?></span>
-              <span class="badge bg-white text-success border"><i class="fa-solid fa-check-circle text-success me-1"></i>Verified: <?= (int)$checklist['total_verified'] ?></span>
-              <span class="badge bg-white text-warning text-dark border"><i class="fa-solid fa-clock text-warning me-1"></i>Pending: <?= (int)$checklist['total_pending'] ?></span>
-              <?php if ((int)$checklist['total_missing'] > 0): ?>
-                <span class="badge bg-danger text-white"><i class="fa-solid fa-circle-exclamation me-1"></i>Missing: <?= (int)$checklist['total_missing'] ?></span>
-              <?php endif; ?>
-              <?php if ((int)$checklist['total_rejected'] > 0): ?>
-                <span class="badge bg-danger-subtle text-danger border border-danger-subtle"><i class="fa-solid fa-ban me-1"></i>Rejected: <?= (int)$checklist['total_rejected'] ?></span>
-              <?php endif; ?>
-              <?php if ((int)$checklist['total_expired'] > 0): ?>
-                <span class="badge bg-dark text-white"><i class="fa-solid fa-calendar-xmark me-1"></i>Expired: <?= (int)$checklist['total_expired'] ?></span>
-              <?php endif; ?>
-              <?php if ((int)($checklist['total_optional'] ?? 0) > 0): ?>
-                <span class="badge bg-light text-muted border"><i class="fa-solid fa-plus me-1"></i>Optional: <?= (int)$checklist['total_optional'] ?></span>
-              <?php endif; ?>
-            </div>
+      <!-- Bento Card: Workflow & Dates -->
+      <div class="col-12 col-lg-6">
+        <div class="bento-card p-4 bg-white h-100">
+          <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+            <span class="fw-bold text-dark d-flex align-items-center gap-2">
+              <i class="fa-solid fa-timeline text-primary fs-5"></i> WORKFLOW &amp; TIMELINE
+            </span>
+            <a href="/applications/show?id=<?= (int)$app['id'] ?>" class="btn btn-sm btn-link text-primary p-0 fw-semibold">
+              <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Full Application
+            </a>
           </div>
 
-          <!-- Missing Documents Alert Box (Part 19) -->
-          <div id="actionRequiredSection"></div>
-          <?php
-            $missingMandatory = array_filter($checklist['mandatory_items'] ?? [], function($item) {
-                return $item['status'] === 'MISSING';
-            });
-            $rejectedMandatory = array_filter($checklist['mandatory_items'] ?? [], function($item) {
-                return $item['status'] === 'REJECTED';
-            });
-            $expiredMandatory = array_filter($checklist['mandatory_items'] ?? [], function($item) {
-                return $item['status'] === 'EXPIRED';
-            });
-          ?>
-          <?php if (!empty($missingMandatory)): ?>
-            <div class="mt-3 p-3 bg-warning-subtle border border-warning rounded-3">
-              <div class="fw-bold text-dark small mb-2 d-flex align-items-center gap-1.5">
-                <i class="fa-solid fa-triangle-exclamation text-warning"></i>
-                <span>Action Required: <?= count($missingMandatory) ?> Mandatory Document(s) Missing</span>
-              </div>
-              <div class="d-flex flex-column gap-2">
-                <?php foreach ($missingMandatory as $mItem): ?>
-                  <div class="d-flex flex-wrap align-items-center justify-content-between p-2 bg-white rounded border border-warning-subtle gap-2">
-                    <div class="d-flex align-items-center gap-2">
-                      <i class="fa-solid fa-file-circle-exclamation text-danger fs-6"></i>
-                      <div>
-                        <div class="fw-bold text-dark small"><?= e($mItem['document_name']) ?></div>
-                        <div class="text-muted" style="font-size: 0.72rem;"><?= e($mItem['condition_notes'] ?: ($mItem['instructions'] ?: 'Standard requirement for visa filing.')) ?></div>
-                      </div>
-                    </div>
-                    <div class="d-flex align-items-center gap-1.5">
-                      <button type="button" class="btn btn-outline-warning text-dark btn-sm py-0.5 px-2 font-monospace" style="font-size: 0.72rem;" onclick="openRequestDocModal(<?= (int)$mItem['document_type_id'] ?>, '<?= e(addslashes($mItem['document_name'])) ?>')">
-                        <i class="fa-solid fa-paper-plane me-1"></i>Request
-                      </button>
-                      <button type="button" class="btn btn-primary btn-sm py-0.5 px-2 font-monospace" style="font-size: 0.72rem;" onclick="openUploadModalWithType(<?= (int)$mItem['document_type_id'] ?>)">
-                        <i class="fa-solid fa-upload me-1"></i>Upload
-                      </button>
-                    </div>
-                  </div>
-                <?php endforeach; ?>
-              </div>
+          <div class="row g-3">
+            <div class="col-6">
+              <span class="text-muted small">APPLICATION NUMBER</span>
+              <div class="fw-bold font-monospace text-primary mt-0.5"><?= e($app['application_number']) ?></div>
             </div>
-          <?php endif; ?>
-
-          <?php if (!empty($rejectedMandatory)): ?>
-            <div class="mt-3 p-3 bg-danger-subtle border border-danger-subtle rounded-3">
-              <div class="fw-bold text-danger small mb-2 d-flex align-items-center gap-1.5">
-                <i class="fa-solid fa-ban text-danger"></i>
-                <span>Action Required: <?= count($rejectedMandatory) ?> Mandatory Document(s) Rejected</span>
-              </div>
-              <div class="d-flex flex-column gap-2">
-                <?php foreach ($rejectedMandatory as $rItem): ?>
-                  <div class="d-flex flex-wrap align-items-center justify-content-between p-2 bg-white rounded border border-danger-subtle gap-2">
-                    <div>
-                      <div class="fw-bold text-dark small"><?= e($rItem['document_name']) ?></div>
-                      <div class="text-danger small" style="font-size: 0.72rem;"><strong>Rejection Reason:</strong> <?= e($rItem['rejection_reason'] ?: 'Document does not meet compliance standards.') ?></div>
-                    </div>
-                    <button type="button" class="btn btn-danger btn-sm py-0.5 px-2 font-monospace" style="font-size: 0.72rem;" onclick="openUploadModalWithType(<?= (int)$rItem['document_type_id'] ?>)">
-                      <i class="fa-solid fa-upload me-1"></i>Re-upload
-                    </button>
-                  </div>
-                <?php endforeach; ?>
-              </div>
+            <div class="col-6">
+              <span class="text-muted small">CURRENT STAGE</span>
+              <div class="mt-0.5"><span class="badge bg-light text-primary border"><?= e($app['current_stage']) ?></span></div>
             </div>
-          <?php endif; ?>
-
-          <?php if (!empty($expiredMandatory)): ?>
-            <div class="mt-3 p-3 bg-dark-subtle border border-dark-subtle rounded-3">
-              <div class="fw-bold text-dark small mb-2 d-flex align-items-center gap-1.5">
-                <i class="fa-solid fa-calendar-xmark text-danger"></i>
-                <span>Action Required: <?= count($expiredMandatory) ?> Mandatory Document(s) Expired</span>
-              </div>
-              <div class="d-flex flex-column gap-2">
-                <?php foreach ($expiredMandatory as $exItem): ?>
-                  <div class="d-flex flex-wrap align-items-center justify-content-between p-2 bg-white rounded border border-dark-subtle gap-2">
-                    <div>
-                      <div class="fw-bold text-dark small"><?= e($exItem['document_name']) ?></div>
-                      <div class="text-danger small" style="font-size: 0.72rem;">Expired on <?= e($exItem['expiry_date']) ?>. A valid renewed document is required.</div>
-                    </div>
-                    <button type="button" class="btn btn-primary btn-sm py-0.5 px-2 font-monospace" style="font-size: 0.72rem;" onclick="openUploadModalWithType(<?= (int)$exItem['document_type_id'] ?>)">
-                      <i class="fa-solid fa-upload me-1"></i>Upload Valid
-                    </button>
-                  </div>
-                <?php endforeach; ?>
-              </div>
+            <div class="col-6">
+              <span class="text-muted small">APPLICATION FILING DATE</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= !empty($app['application_date']) ? date('d M Y', strtotime($app['application_date'])) : '—' ?></div>
             </div>
-          <?php endif; ?>
-
-          <!-- Unique Document Requirements Checklist Matrix (Part 7, 8, 9, 10) -->
-          <?php if (!empty($checklist['items'])): ?>
-            <div class="mt-4" id="requirementsSection">
-              <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="fw-bold text-dark small"><i class="fa-solid fa-clipboard-check text-primary me-1"></i> Visa Service Document Requirements</span>
-                <span class="text-muted" style="font-size: 0.72rem;"><?= count($checklist['items']) ?> Unique Requirements</span>
-              </div>
-              <div class="d-flex flex-column gap-2">
-                <?php foreach ($checklist['items'] as $cItem): ?>
-                  <?php
-                    $cStatus = $cItem['status'];
-                    $cBadge = 'bg-secondary';
-                    $cIcon = 'fa-circle-minus';
-                    if ($cStatus === 'VERIFIED') {
-                        $cBadge = 'bg-success';
-                        $cIcon = 'fa-check';
-                    } elseif ($cStatus === 'UNDER_REVIEW') {
-                        $cBadge = 'bg-warning text-dark';
-                        $cIcon = 'fa-clock';
-                    } elseif ($cStatus === 'REJECTED') {
-                        $cBadge = 'bg-danger';
-                        $cIcon = 'fa-xmark';
-                    } elseif ($cStatus === 'EXPIRED') {
-                        $cBadge = 'bg-dark text-white';
-                        $cIcon = 'fa-calendar-xmark';
-                    } elseif ($cStatus === 'MISSING') {
-                        $cBadge = 'bg-secondary-subtle text-secondary border';
-                        $cIcon = 'fa-circle-exclamation';
-                    }
-                  ?>
-                  <div class="p-2.5 bg-white rounded border d-flex flex-wrap align-items-center justify-content-between gap-2 shadow-2xs">
-                    <div class="d-flex align-items-start gap-2 flex-grow-1 min-w-0">
-                      <div class="mt-0.5">
-                        <span class="badge <?= $cBadge ?> rounded-circle p-1.5 d-inline-flex align-items-center justify-content-center" style="width: 22px; height: 22px;">
-                          <i class="fa-solid <?= $cIcon ?>" style="font-size: 0.7rem;"></i>
-                        </span>
-                      </div>
-                      <div class="min-w-0">
-                        <div class="d-flex align-items-center gap-1.5 flex-wrap">
-                          <span class="fw-bold text-dark small"><?= e($cItem['document_name']) ?></span>
-                          <?php if ($cItem['is_critical']): ?>
-                            <span class="badge bg-danger text-white py-0.5 px-1.5" style="font-size: 0.65rem;">Critical</span>
-                          <?php elseif ($cItem['is_mandatory']): ?>
-                            <span class="badge bg-danger-subtle text-danger py-0.5 px-1.5" style="font-size: 0.65rem;">Mandatory</span>
-                          <?php else: ?>
-                            <span class="badge bg-light text-muted border py-0.5 px-1.5" style="font-size: 0.65rem;">Optional</span>
-                          <?php endif; ?>
-                          <span class="badge <?= $cBadge ?> py-0.5 px-1.5 font-monospace" style="font-size: 0.68rem;"><?= e($cStatus) ?></span>
-                          <?php if (!empty($cItem['version'])): ?>
-                            <span class="badge bg-light text-secondary border py-0.5 px-1.5 font-monospace" style="font-size: 0.65rem;">v<?= (int)$cItem['version'] ?></span>
-                          <?php endif; ?>
-                        </div>
-                        <?php if (!empty($cItem['condition_notes']) || !empty($cItem['instructions'])): ?>
-                          <div class="text-muted small mt-0.5" style="font-size: 0.72rem;">
-                            <?= e($cItem['condition_notes'] ?: $cItem['instructions']) ?>
-                          </div>
-                        <?php endif; ?>
-                        <?php if (!empty($cItem['rejection_reason'])): ?>
-                          <div class="text-danger small mt-0.5" style="font-size: 0.72rem;">
-                            <i class="fa-solid fa-triangle-exclamation me-1"></i>Rejected: <?= e($cItem['rejection_reason']) ?>
-                          </div>
-                        <?php endif; ?>
-                      </div>
-                    </div>
-                    <div class="d-flex align-items-center gap-1">
-                      <?php if (!empty($cItem['document_id'])): ?>
-                        <?php $ext = strtolower(pathinfo($cItem['file_name'] ?? '', PATHINFO_EXTENSION)); ?>
-                        <button type="button" class="btn btn-outline-primary btn-sm py-0.5 px-2 font-monospace" style="font-size: 0.72rem;" onclick="openDocumentPreview(<?= (int)$cItem['document_id'] ?>, '<?= e(addslashes($cItem['document_name'])) ?>', '<?= e($ext) ?>', '<?= e($cItem['status']) ?>', <?= (int)$cItem['version'] ?>)">
-                          <i class="fa-solid fa-eye me-1"></i>View
-                        </button>
-                      <?php else: ?>
-                        <button type="button" class="btn btn-outline-warning text-dark btn-sm py-0.5 px-2 font-monospace" style="font-size: 0.72rem;" onclick="openRequestDocModal(<?= (int)$cItem['document_type_id'] ?>, '<?= e(addslashes($cItem['document_name'])) ?>')">
-                          <i class="fa-solid fa-paper-plane me-1"></i>Request
-                        </button>
-                        <button type="button" class="btn btn-primary btn-sm py-0.5 px-2 font-monospace" style="font-size: 0.72rem;" onclick="openUploadModalWithType(<?= (int)$cItem['document_type_id'] ?>)">
-                          <i class="fa-solid fa-upload me-1"></i>Upload
-                        </button>
-                      <?php endif; ?>
-                    </div>
-                  </div>
-                <?php endforeach; ?>
-              </div>
+            <div class="col-6">
+              <span class="text-muted small">EXPECTED COMPLETION</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= !empty($app['expected_completion_date']) ? date('d M Y', strtotime($app['expected_completion_date'])) : '—' ?></div>
             </div>
-          <?php endif; ?>
-
-          <!-- Expiring Documents Alert Box (Requirement 26) -->
-          <?php if (!empty($expiringDocs)): ?>
-            <div class="mt-3 p-3 bg-danger-subtle border border-danger-subtle rounded-3">
-              <div class="fw-bold text-danger small mb-2 d-flex align-items-center gap-1.5">
-                <i class="fa-solid fa-calendar-xmark text-danger"></i>
-                <span>Notice: <?= count($expiringDocs) ?> Uploaded Document(s) Expiring Within 30 Days</span>
-              </div>
-              <div class="d-flex flex-column gap-2">
-                <?php foreach ($expiringDocs as $expDoc): ?>
-                  <?php $expDays = (int)round((strtotime($expDoc['expiry_date']) - time()) / 86400); ?>
-                  <div class="d-flex align-items-center justify-content-between p-2 bg-white rounded border gap-2 small">
-                    <span class="fw-bold text-dark"><?= e($expDoc['document_title'] ?: $expDoc['doc_type_name']) ?></span>
-                    <span class="badge bg-warning text-dark font-monospace">Expires in <?= max(0, $expDays) ?> days (<?= e($expDoc['expiry_date']) ?>)</span>
-                  </div>
-                <?php endforeach; ?>
-              </div>
+            <div class="col-6">
+              <span class="text-muted small">PLANNED TRAVEL</span>
+              <div class="fw-semibold text-dark mt-0.5"><?= !empty($app['travel_date']) ? date('d M Y', strtotime($app['travel_date'])) : '—' ?></div>
             </div>
-          <?php endif; ?>
-        </div>
-      </div>
-
-      <!-- 2. Basic Information (All Database Customer Fields - Requirement 11) -->
-      <div class="workspace-card">
-        <div class="workspace-card-header">
-          <h6 class="workspace-card-title">
-            <i class="fa-solid fa-address-card text-primary"></i> Basic Personal Information
-          </h6>
-          <a href="/customers/edit?id=<?= (int)$app['customer_id'] ?>" class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold text-primary" style="font-size: 0.78rem;">
-            <i class="fa-solid fa-user-pen me-1"></i>Edit
-          </a>
-        </div>
-        <div class="workspace-card-body">
-          <div class="detail-grid">
-            <div class="detail-item">
-              <span class="detail-label">Full Name</span>
-              <span class="detail-value"><?= e($app['customer_name'] ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">First / Middle / Last Name</span>
-              <span class="detail-value"><?= e(trim(($app['first_name'] ?? '') . ' ' . ($app['middle_name'] ?? '') . ' ' . ($app['last_name'] ?? '')) ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Customer Code</span>
-              <span class="detail-value font-monospace"><?= e($app['customer_code'] ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Gender</span>
-              <span class="detail-value"><?= e($app['gender'] ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Date of Birth &amp; Age</span>
-              <span class="detail-value">
-                <?= e($app['dob'] ? date('d M Y', strtotime($app['dob'])) : '—') ?>
-                <?php if ($age !== null): ?>
-                  <span class="text-muted fw-normal">(<?= $age ?> yrs)</span>
-                <?php endif; ?>
-              </span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Nationality</span>
-              <span class="detail-value"><?= e($app['nationality'] ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Place of Birth</span>
-              <span class="detail-value"><?= e($app['place_of_birth'] ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Marital Status</span>
-              <span class="detail-value"><?= e($app['marital_status'] ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Religion</span>
-              <span class="detail-value"><?= e($app['religion'] ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Occupation</span>
-              <span class="detail-value"><?= e($app['occupation'] ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Mobile Number</span>
-              <span class="detail-value"><?= e($app['mobile'] ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">WhatsApp Number</span>
-              <span class="detail-value"><?= e($app['whatsapp'] ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Email Address</span>
-              <span class="detail-value"><?= e($app['email'] ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Country of Residence</span>
-              <span class="detail-value"><?= e($app['current_country'] ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Address</span>
-              <span class="detail-value"><?= e($app['address'] ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">National / Emirates ID</span>
-              <span class="detail-value font-monospace">
-                <?= e($app['national_id_number'] ?: '—') ?>
-                <?php if (!empty($app['national_id_expiry'])): ?>
-                  <small class="text-muted">(Exp: <?= e($app['national_id_expiry']) ?>)</small>
-                <?php endif; ?>
-              </span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Profile Created</span>
-              <span class="detail-value text-muted" style="font-size: 0.8rem;"><?= e($app['customer_created_at'] ? date('d M Y, h:i A', strtotime($app['customer_created_at'])) : '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Last Profile Update</span>
-              <span class="detail-value text-muted" style="font-size: 0.8rem;"><?= e($app['customer_updated_at'] ? date('d M Y, h:i A', strtotime($app['customer_updated_at'])) : '—') ?></span>
-            </div>
-          </div>
-          <?php if (!empty($app['customer_notes'])): ?>
-            <div class="mt-3 p-2.5 bg-light rounded border small">
-              <span class="text-muted fw-bold d-block mb-1" style="font-size: 0.72rem; text-transform: uppercase;">Customer Profile Notes:</span>
-              <span class="text-secondary"><?= nl2br(e($app['customer_notes'])) ?></span>
-            </div>
-          <?php endif; ?>
-        </div>
-      </div>
-
-      <!-- 3. Application Information (Requirement 12) -->
-      <div class="workspace-card">
-        <div class="workspace-card-header">
-          <h6 class="workspace-card-title">
-            <i class="fa-solid fa-file-invoice text-primary"></i> Application Details &amp; Processing Workflow
-          </h6>
-          <a href="/applications/show?id=<?= (int)$app['id'] ?>" class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold text-primary" style="font-size: 0.78rem;">
-            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>View Application
-          </a>
-        </div>
-        <div class="workspace-card-body">
-          <div class="detail-grid">
-            <div class="detail-item">
-              <span class="detail-label">Application Number</span>
-              <span class="detail-value font-monospace text-primary"><?= e($app['application_number']) ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Visa Service Package</span>
-              <span class="detail-value"><?= e($app['service_name'] ?: 'Standard Visa') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Visa Category</span>
-              <span class="detail-value"><?= e($app['visa_category'] ?? $app['category_name'] ?? 'General') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Destination Country</span>
-              <span class="detail-value"><?= e($app['flag_emoji'] ?? '🌐') ?> <?= e($app['destination_country_name'] ?? $app['destination_country'] ?? 'United Arab Emirates') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Visa Duration</span>
-              <span class="detail-value"><?= e($app['visa_duration'] ?: ($app['service_duration'] ?? '30 Days')) ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Entry Type</span>
-              <span class="detail-value"><?= e($app['entry_type'] ?: ($app['service_entry_type'] ?? 'Single Entry')) ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Processing Type</span>
-              <span class="detail-value"><?= e($app['processing_type'] ?: ($app['service_processing_type'] ?? 'Normal')) ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Application Filing Date</span>
-              <span class="detail-value"><?= e($app['application_date'] ? date('d M Y', strtotime($app['application_date'])) : '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Expected Completion Date</span>
-              <span class="detail-value"><?= e($app['expected_completion_date'] ? date('d M Y', strtotime($app['expected_completion_date'])) : '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Current Stage</span>
-              <span class="detail-value"><span class="badge bg-light text-primary border"><?= e($app['current_stage']) ?></span></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Application Status</span>
-              <span class="detail-value"><span class="badge <?= $statusBadge ?>"><?= e($app['status']) ?></span></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Priority Level</span>
-              <span class="detail-value">
+            <div class="col-6">
+              <span class="text-muted small">PRIORITY LEVEL</span>
+              <div class="mt-0.5">
                 <?php
                   $pClass = 'bg-secondary';
                   if ($app['priority'] === 'Urgent') $pClass = 'bg-warning text-dark';
@@ -687,525 +761,293 @@ $canDeleteDocs = user_can('documents.delete') || user_has_role(['super-admin', '
                   elseif ($app['priority'] === 'High') $pClass = 'bg-primary text-white';
                 ?>
                 <span class="badge <?= $pClass ?>"><?= e($app['priority'] ?? 'Normal') ?></span>
-              </span>
+              </div>
             </div>
-            <div class="detail-item">
-              <span class="detail-label">Processing Branch</span>
-              <span class="detail-value"><?= e($app['branch_name'] ?: 'Main Branch') ?></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bento Card: Financials & Ledger -->
+      <div class="col-12 col-lg-6">
+        <div class="bento-card p-4 bg-white h-100">
+          <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+            <span class="fw-bold text-dark d-flex align-items-center gap-2">
+              <i class="fa-solid fa-receipt text-success fs-5"></i> FINANCIAL BREAKDOWN
+            </span>
+            <span class="badge <?= ($app['payment_status'] ?? '') === 'Paid' ? 'bg-success' : 'bg-warning text-dark' ?> px-2.5 py-1 rounded-pill fw-bold">
+              <?= e($app['payment_status'] ?? 'Pending') ?>
+            </span>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-4">
+              <span class="text-muted small">TOTAL COST</span>
+              <div class="fw-bold font-monospace fs-5 text-dark mt-0.5">AED <?= number_format((float)($app['total_amount'] ?? $app['selling_price'] ?? 0), 2) ?></div>
             </div>
-            <div class="detail-item">
-              <span class="detail-label">Assigned Operations Staff</span>
-              <span class="detail-value"><?= e($app['assigned_staff_name'] ?: 'Unassigned') ?></span>
+            <div class="col-4">
+              <span class="text-muted small">AMOUNT PAID</span>
+              <div class="fw-bold font-monospace fs-5 text-success mt-0.5">AED <?= number_format((float)($app['paid_amount'] ?? 0), 2) ?></div>
             </div>
-            <div class="detail-item">
-              <span class="detail-label">Submission Date</span>
-              <span class="detail-value"><?= !empty($app['submission_date']) ? date('d M Y', strtotime($app['submission_date'])) : '—' ?></span>
+            <div class="col-4">
+              <span class="text-muted small">REMAINING BALANCE</span>
+              <div class="fw-bold font-monospace fs-5 <?= (float)($app['balance_amount'] ?? 0) > 0 ? 'text-danger' : 'text-muted' ?> mt-0.5">AED <?= number_format((float)($app['balance_amount'] ?? 0), 2) ?></div>
             </div>
-            <div class="detail-item">
-              <span class="detail-label">Planned Travel Dates</span>
-              <span class="detail-value">
-                <?= !empty($app['travel_date']) ? date('d M Y', strtotime($app['travel_date'])) : '—' ?>
-                <?php if (!empty($app['return_date'])): ?>
-                  <span class="text-muted small">to</span> <?= date('d M Y', strtotime($app['return_date'])) ?>
-                <?php endif; ?>
-              </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bento Card: Operations Staff Assignment -->
+      <div class="col-12 col-lg-6">
+        <div class="bento-card p-4 bg-white h-100">
+          <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+            <span class="fw-bold text-dark d-flex align-items-center gap-2">
+              <i class="fa-solid fa-user-tie text-primary fs-5"></i> OPERATIONS DESK
+            </span>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-6">
+              <span class="text-muted small">ASSIGNED OFFICER</span>
+              <div class="fw-bold text-dark mt-0.5"><i class="fa-solid fa-user-check text-secondary me-1"></i><?= e($app['assigned_staff_name'] ?: 'Unassigned') ?></div>
             </div>
-            <div class="detail-item">
-              <span class="detail-label">Package &amp; Financials</span>
-              <span class="detail-value">
-                <span class="fw-bold font-monospace">AED <?= number_format((float)($app['total_amount'] ?? $app['selling_price'] ?? 0), 2) ?></span>
-                <span class="badge <?= ($app['payment_status'] ?? '') === 'Paid' ? 'bg-success' : 'bg-warning text-dark' ?> ms-1" style="font-size:0.68rem;"><?= e($app['payment_status'] ?? 'Pending') ?></span>
-                <div class="text-muted" style="font-size:0.72rem;">Paid: AED <?= number_format((float)($app['paid_amount'] ?? 0), 2) ?> • Bal: AED <?= number_format((float)($app['balance_amount'] ?? 0), 2) ?></div>
-              </span>
+            <div class="col-6">
+              <span class="text-muted small">OPERATING BRANCH</span>
+              <div class="fw-semibold text-dark mt-0.5"><i class="fa-solid fa-building text-secondary me-1"></i><?= e($app['branch_name'] ?: 'Main Branch') ?></div>
             </div>
-            <div class="detail-item">
-              <span class="detail-label">Next Action / Follow-up</span>
-              <span class="detail-value">
-                <?= e($app['next_action'] ?: 'Standard file review') ?>
+            <div class="col-12">
+              <span class="text-muted small">NEXT STEP / ACTION</span>
+              <div class="fw-semibold text-dark mt-0.5">
+                <?= e($app['next_action'] ?: 'Standard compliance review') ?>
                 <?php if (!empty($app['next_action_due_date'])): ?>
-                  <small class="text-muted">(Due: <?= date('d M Y', strtotime($app['next_action_due_date'])) ?>)</small>
+                  <span class="badge bg-light text-danger border ms-1 font-monospace">Due: <?= date('d M Y', strtotime($app['next_action_due_date'])) ?></span>
                 <?php endif; ?>
-              </span>
+              </div>
             </div>
-            <?php if (!empty($app['visa_number'])): ?>
-              <div class="detail-item">
-                <span class="detail-label">Issued Visa Number</span>
-                <span class="detail-value font-monospace text-success fw-bold">
-                  <?= e($app['visa_number']) ?>
-                  <?php if (!empty($app['visa_expiry_date'])): ?>
-                    <span class="text-muted fw-normal small">(Valid till <?= e($app['visa_expiry_date']) ?>)</span>
-                  <?php endif; ?>
-                </span>
+            <?php if (!empty($app['internal_notes'])): ?>
+              <div class="col-12">
+                <span class="text-muted small">INTERNAL NOTES</span>
+                <div class="p-2 bg-light rounded small text-secondary mt-1"><?= nl2br(e($app['internal_notes'])) ?></div>
               </div>
             <?php endif; ?>
           </div>
-          <?php if (!empty($app['internal_notes']) || !empty($app['customer_notes'])): ?>
-            <div class="mt-3 p-2.5 bg-light rounded border small">
-              <?php if (!empty($app['internal_notes'])): ?>
-                <div class="mb-1">
-                  <span class="text-muted fw-bold" style="font-size: 0.72rem; text-transform: uppercase;">Internal Operations Notes:</span>
-                  <div class="text-secondary"><?= nl2br(e($app['internal_notes'])) ?></div>
-                </div>
-              <?php endif; ?>
-              <?php if (!empty($app['customer_notes'])): ?>
-                <div>
-                  <span class="text-muted fw-bold" style="font-size: 0.72rem; text-transform: uppercase;">Application Notes for Applicant:</span>
-                  <div class="text-secondary"><?= nl2br(e($app['customer_notes'])) ?></div>
-                </div>
-              <?php endif; ?>
-            </div>
-          <?php endif; ?>
         </div>
       </div>
+    </div>
+  </div>
 
-      <!-- 4. Passport Information & Document Actions (Requirement 18 & 19) -->
-      <div class="workspace-card" id="passportSection">
-        <div class="workspace-card-header">
-          <h6 class="workspace-card-title">
-            <i class="fa-solid fa-passport text-primary"></i> PASSPORT INFORMATION
-          </h6>
-          <span class="badge <?= e($passportValidity['badge_class']) ?> px-2.5 py-1 fw-bold">
-            <?= strtoupper(e($passportValidity['label'])) ?>
-          </span>
-        </div>
-        <div class="workspace-card-body">
-          <div class="detail-grid mb-3">
-            <div class="detail-item">
-              <span class="detail-label">Passport Number</span>
-              <span class="detail-value font-monospace text-primary fs-6 fw-bold"><?= e($app['passport_number'] ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Nationality</span>
-              <span class="detail-value"><?= e($app['nationality'] ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Issuing Country</span>
-              <span class="detail-value"><?= e($app['passport_issuing_country'] ?: ($app['nationality'] ?: '—')) ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Date of Birth</span>
-              <span class="detail-value"><?= e($app['dob'] ? date('d/m/Y', strtotime($app['dob'])) : '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Gender</span>
-              <span class="detail-value"><?= e($app['gender'] ?: '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Date of Issue</span>
-              <span class="detail-value"><?= e($app['passport_issue_date'] ? date('d/m/Y', strtotime($app['passport_issue_date'])) : '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Date of Expiry</span>
-              <span class="detail-value font-monospace fw-semibold"><?= e($app['passport_expiry_date'] ? date('d/m/Y', strtotime($app['passport_expiry_date'])) : '—') ?></span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Status</span>
-              <span class="detail-value fw-bold <?= strpos($passportValidity['badge_class'], 'danger') !== false ? 'text-danger' : 'text-success' ?>">
-                <?= !empty($passportValidity['label']) && $passportValidity['label'] === 'Valid' ? 'VALID' : strtoupper(e($passportValidity['label'] ?? 'VALID')) ?>
-              </span>
-            </div>
-          </div>
-
-          <!-- Direct Passport Document Actions -->
-          <div class="p-3 bg-light rounded border">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-              <div class="d-flex align-items-center gap-2">
-                <i class="fa-solid fa-file-contract text-primary fs-5"></i>
-                <div>
-                  <div class="fw-bold small text-dark">PASSPORT DOCUMENT</div>
-                  <div class="text-muted" style="font-size:0.75rem;">
-                    <?php if (!empty($quickDocs['passport'])): ?>
-                      <?= e($quickDocs['passport']['file_name'] ?: 'Passport Bio Page') ?> &bull; 
-                      <span class="text-success fw-semibold"><i class="fa-solid fa-check"></i> Verified</span>
-                    <?php else: ?>
-                      No passport bio document attached
-                    <?php endif; ?>
-                  </div>
-                </div>
-              </div>
-
-              <div class="d-flex gap-2 flex-wrap">
-                <?php if (!empty($quickDocs['passport'])): ?>
-                  <?php $pExt = strtolower(pathinfo($quickDocs['passport']['file_name'] ?? 'doc.pdf', PATHINFO_EXTENSION)) ?: 'pdf'; ?>
-                  <button type="button" class="btn btn-primary btn-sm px-3" onclick="openDocumentPreview(<?= (int)$quickDocs['passport']['id'] ?>, 'Passport Bio Page', '<?= e($pExt) ?>', '<?= e($quickDocs['passport']['status']) ?>', <?= (int)$quickDocs['passport']['version'] ?>)">
-                    <i class="fa-solid fa-eye me-1"></i> View Passport
-                  </button>
-                  <a href="/documents/download?id=<?= (int)$quickDocs['passport']['id'] ?>" class="btn btn-outline-secondary btn-sm px-3">
-                    <i class="fa-solid fa-download me-1"></i> Download
-                  </a>
-                  <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#replaceDocModal" onclick="prepareReplaceModal(<?= (int)$quickDocs['passport']['id'] ?>, 'Passport Bio Page')">
-                    <i class="fa-solid fa-arrows-rotate me-1"></i> Replace
-                  </button>
-                  <a href="/documents/history?id=<?= (int)$quickDocs['passport']['id'] ?>" class="btn btn-outline-secondary btn-sm px-3">
-                    <i class="fa-solid fa-clock-rotate-left me-1"></i> History
-                  </a>
-                <?php else: ?>
-                  <button type="button" class="btn btn-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#uploadDocModal" onclick="openUploadModalWithType(1)">
-                    <i class="fa-solid fa-cloud-arrow-up me-1"></i> Upload Passport
-                  </button>
-                <?php endif; ?>
-              </div>
-            </div>
-          </div>
-        </div>
+  <!-- ======================================================================
+       TAB PANE 4: REQUIREMENTS CHECKLIST & COMPLIANCE
+       ====================================================================== -->
+  <div id="tab-checklist" class="profile-tab-pane d-none">
+    <!-- Readiness Banner -->
+    <div class="bento-card p-4 bg-white mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+          <i class="fa-solid fa-list-check text-primary"></i> Overall File Readiness
+        </h6>
+        <span class="badge <?= (int)$checklist['percentage'] === 100 ? 'bg-success' : 'bg-primary' ?> px-3 py-1.5 rounded-pill fw-bold fs-6">
+          <?= (int)$checklist['percentage'] ?>% Complete
+        </span>
       </div>
 
-      <!-- 5. All Uploaded Documents Grouped by Category (Requirement 16 & 17) -->
-      <div class="workspace-card" id="allDocsSection">
-        <div class="workspace-card-header">
-          <h6 class="workspace-card-title">
-            <i class="fa-solid fa-folder-open text-primary"></i> All Application Documents (<?= count($applicationDocuments) ?>)
-          </h6>
-          <button type="button" class="btn btn-outline-primary btn-sm py-1 px-2.5 fw-semibold" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
-            <i class="fa-solid fa-plus me-1"></i> Add Document
-          </button>
-        </div>
-        <div class="workspace-card-body">
-          <?php if (empty($applicationDocuments)): ?>
-            <div class="text-center py-4 text-muted">
-              <i class="fa-solid fa-folder-open fs-2 mb-2 text-secondary opacity-50"></i>
-              <div class="fw-semibold">No documents uploaded for this application yet.</div>
-              <p class="small mb-3">Upload required passport, photo, or supporting visa documentation.</p>
-              <button type="button" class="btn btn-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
-                <i class="fa-solid fa-cloud-arrow-up me-1"></i> Upload First Document
-              </button>
-            </div>
-          <?php else: ?>
-            <?php foreach ($categorizedDocs as $catName => $catDocs): ?>
-              <?php if (!empty($catDocs)): ?>
-                <div class="doc-category-section">
-                  <div class="doc-category-header">
-                    <span><i class="fa-solid fa-folder me-1 text-primary"></i> <?= e($catName) ?></span>
-                    <span class="badge bg-light text-muted border"><?= count($catDocs) ?> files</span>
-                  </div>
-                  <div class="doc-card-grid">
-                    <?php foreach ($catDocs as $docItem): ?>
-                      <?php
-                        $ext = strtolower(pathinfo($docItem['file_name'] ?? '', PATHINFO_EXTENSION));
-                        $dIcon = 'fa-file text-secondary';
-                        if ($ext === 'pdf') $dIcon = 'fa-file-pdf text-danger';
-                        elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) $dIcon = 'fa-file-image text-primary';
-                        elseif (in_array($ext, ['doc', 'docx'], true)) $dIcon = 'fa-file-word text-info';
-
-                        $stBadge = 'bg-secondary';
-                        if ($docItem['status'] === 'VERIFIED') $stBadge = 'bg-success';
-                        elseif ($docItem['status'] === 'REJECTED') $stBadge = 'bg-danger';
-                        elseif ($docItem['status'] === 'UNDER_REVIEW') $stBadge = 'bg-warning text-dark';
-                      ?>
-                      <div class="doc-item-card">
-                        <div class="doc-item-top">
-                          <i class="fa-solid <?= $dIcon ?> doc-type-icon"></i>
-                          <div class="flex-grow-1 min-w-0">
-                            <div class="doc-title-text" title="<?= e($docItem['document_title'] ?: $docItem['doc_type_name']) ?>">
-                              <?= e($docItem['document_title'] ?: $docItem['doc_type_name']) ?>
-                            </div>
-                            <div class="text-muted" style="font-size: 0.72rem;">
-                              <span><?= e($docItem['doc_type_name']) ?></span>
-                            </div>
-                            <div class="d-flex align-items-center gap-1.5 mt-1">
-                              <span class="badge <?= $stBadge ?> py-0.5 px-1.5" style="font-size: 0.68rem;">
-                                <?= e($docItem['status']) ?>
-                              </span>
-                              <span class="badge bg-light text-muted border py-0.5 px-1.5 font-monospace" style="font-size: 0.68rem;">
-                                v<?= (int)$docItem['version'] ?>
-                              </span>
-                              <?php if (!empty($docItem['expiry_date'])): ?>
-                                <?php
-                                  $expD = (int)round((strtotime($docItem['expiry_date']) - time()) / 86400);
-                                  $expClass = ($expD < 0) ? 'text-danger' : (($expD <= 30) ? 'text-warning' : 'text-muted');
-                                ?>
-                                <span class="<?= $expClass ?>" style="font-size: 0.68rem;" title="Expiry Date: <?= e($docItem['expiry_date']) ?>">
-                                  <i class="fa-regular fa-clock me-0.5"></i><?= e($docItem['expiry_date']) ?>
-                                </span>
-                              <?php endif; ?>
-                            </div>
-                          </div>
-                        </div>
-
-                        <!-- Action Bar (Requirements 18, 43, 44) -->
-                        <div class="doc-item-actions">
-                          <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold" style="font-size: 0.72rem;" onclick="openDocumentPreview(<?= (int)$docItem['id'] ?>, '<?= e(addslashes($docItem['document_title'] ?: $docItem['doc_type_name'])) ?>', '<?= e($ext) ?>', '<?= e($docItem['status']) ?>', <?= (int)$docItem['version'] ?>)">
-                            <i class="fa-solid fa-eye me-1"></i> Preview
-                          </button>
-                          <a href="/documents/download?id=<?= (int)$docItem['id'] ?>" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.72rem;" title="Download File">
-                            <i class="fa-solid fa-download"></i>
-                          </a>
-                          
-                          <?php if ($canVerifyDocs && $docItem['status'] !== 'VERIFIED'): ?>
-                            <form action="/documents/verify" method="POST" class="d-inline" onsubmit="return confirm('Verify this document as compliant?');">
-                              <?= csrf_field() ?>
-                              <input type="hidden" name="document_id" value="<?= (int)$docItem['id'] ?>">
-                              <button type="submit" class="btn btn-sm btn-outline-success py-0 px-2" style="font-size: 0.72rem;" title="Verify Document">
-                                <i class="fa-solid fa-check"></i>
-                              </button>
-                            </form>
-                          <?php endif; ?>
-
-                          <?php if ($canVerifyDocs && $docItem['status'] !== 'REJECTED'): ?>
-                            <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size: 0.72rem;" title="Reject Document" onclick="openRejectModal(<?= (int)$docItem['id'] ?>)">
-                              <i class="fa-solid fa-xmark"></i>
-                            </button>
-                          <?php endif; ?>
-
-                          <button type="button" class="btn btn-sm btn-light border py-0 px-2" style="font-size: 0.72rem;" title="Version History" onclick="openHistoryModal(<?= (int)$docItem['id'] ?>)">
-                            <i class="fa-solid fa-clock-rotate-left"></i>
-                          </button>
-                        </div>
-                      </div>
-                    <?php endforeach; ?>
-                  </div>
-                </div>
-              <?php endif; ?>
-            <?php endforeach; ?>
-          <?php endif; ?>
-        </div>
+      <div class="progress my-3" style="height: 10px; border-radius: 9999px;">
+        <div class="progress-bar progress-bar-striped progress-bar-animated <?= (int)$checklist['percentage'] === 100 ? 'bg-success' : 'bg-primary' ?>" 
+             role="progressbar" style="width: <?= (int)$checklist['percentage'] ?>%;"></div>
       </div>
 
-      <!-- 6. Recent Activity Log (Requirement 48) -->
-      <?php if (!empty($recentActivity)): ?>
-        <div class="workspace-card">
-          <div class="workspace-card-header">
-            <h6 class="workspace-card-title">
-              <i class="fa-solid fa-clock-rotate-left text-primary"></i> Recent Document Activity
-            </h6>
+      <div class="d-flex flex-wrap gap-2 pt-1 small">
+        <span class="badge bg-white text-secondary border rounded-pill px-2.5 py-1"><i class="fa-solid fa-asterisk text-primary me-1"></i>Required: <?= (int)$checklist['total_required'] ?></span>
+        <span class="badge bg-white text-success border rounded-pill px-2.5 py-1"><i class="fa-solid fa-circle-check text-success me-1"></i>Verified: <?= (int)$checklist['total_verified'] ?></span>
+        <span class="badge bg-white text-warning text-dark border rounded-pill px-2.5 py-1"><i class="fa-solid fa-clock text-warning me-1"></i>Pending: <?= (int)$checklist['total_pending'] ?></span>
+        <?php if ((int)$checklist['total_missing'] > 0): ?>
+          <span class="badge bg-danger text-white rounded-pill px-2.5 py-1"><i class="fa-solid fa-circle-exclamation me-1"></i>Missing: <?= (int)$checklist['total_missing'] ?></span>
+        <?php endif; ?>
+        <?php if ((int)$checklist['total_rejected'] > 0): ?>
+          <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2.5 py-1"><i class="fa-solid fa-ban me-1"></i>Rejected: <?= (int)$checklist['total_rejected'] ?></span>
+        <?php endif; ?>
+        <?php if ((int)$checklist['total_expired'] > 0): ?>
+          <span class="badge bg-dark text-white rounded-pill px-2.5 py-1"><i class="fa-solid fa-calendar-xmark me-1"></i>Expired: <?= (int)$checklist['total_expired'] ?></span>
+        <?php endif; ?>
+      </div>
+
+      <!-- Action Required Missing Items -->
+      <?php
+        $missingMandatory = array_filter($checklist['mandatory_items'] ?? [], function($item) {
+            return $item['status'] === 'MISSING';
+        });
+        $rejectedMandatory = array_filter($checklist['mandatory_items'] ?? [], function($item) {
+            return $item['status'] === 'REJECTED';
+        });
+      ?>
+
+      <?php if (!empty($missingMandatory)): ?>
+        <div class="mt-4 p-3 bg-warning-subtle border border-warning rounded-4">
+          <div class="fw-bold text-dark small mb-2 d-flex align-items-center gap-1.5">
+            <i class="fa-solid fa-triangle-exclamation text-warning"></i>
+            <span>Action Required: <?= count($missingMandatory) ?> Mandatory Document(s) Missing</span>
           </div>
-          <div class="workspace-card-body p-0">
-            <div class="list-group list-group-flush small">
-              <?php foreach ($recentActivity as $act): ?>
-                <div class="list-group-item d-flex align-items-center justify-content-between p-3">
+          <div class="d-flex flex-column gap-2">
+            <?php foreach ($missingMandatory as $mItem): ?>
+              <div class="d-flex flex-wrap align-items-center justify-content-between p-2.5 bg-white rounded-3 border border-warning-subtle gap-2">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="fa-solid fa-file-circle-exclamation text-danger fs-5"></i>
                   <div>
-                    <span class="badge bg-light text-dark border me-1 font-monospace"><?= e($act['action']) ?></span>
-                    <span class="fw-semibold text-dark"><?= e($act['description'] ?: $act['action']) ?></span>
-                    <div class="text-muted" style="font-size: 0.72rem;">By <?= e($act['user_name'] ?: 'System') ?></div>
+                    <div class="fw-bold text-dark small"><?= e($mItem['document_name']) ?></div>
+                    <div class="text-muted" style="font-size: 0.72rem;"><?= e($mItem['condition_notes'] ?: ($mItem['instructions'] ?: 'Standard requirement for visa filing.')) ?></div>
                   </div>
-                  <span class="text-muted" style="font-size: 0.75rem; white-space: nowrap;"><?= date('d M, h:i A', strtotime($act['created_at'])) ?></span>
                 </div>
-              <?php endforeach; ?>
-            </div>
+                <div class="d-flex align-items-center gap-1.5">
+                  <button type="button" class="btn btn-outline-warning text-dark btn-sm rounded-pill px-2.5 py-1" onclick="openRequestDocModal(<?= (int)$mItem['document_type_id'] ?>, '<?= e(addslashes($mItem['document_name'])) ?>')">
+                    <i class="fa-solid fa-paper-plane me-1"></i> Request
+                  </button>
+                  <button type="button" class="btn btn-primary btn-sm rounded-pill px-2.5 py-1" onclick="openUploadModalWithType(<?= (int)$mItem['document_type_id'] ?>)">
+                    <i class="fa-solid fa-upload me-1"></i> Upload
+                  </button>
+                </div>
+              </div>
+            <?php endforeach; ?>
           </div>
         </div>
       <?php endif; ?>
 
+      <?php if (!empty($rejectedMandatory)): ?>
+        <div class="mt-3 p-3 bg-danger-subtle border border-danger-subtle rounded-4">
+          <div class="fw-bold text-danger small mb-2 d-flex align-items-center gap-1.5">
+            <i class="fa-solid fa-ban text-danger"></i>
+            <span>Action Required: <?= count($rejectedMandatory) ?> Mandatory Document(s) Rejected</span>
+          </div>
+          <div class="d-flex flex-column gap-2">
+            <?php foreach ($rejectedMandatory as $rItem): ?>
+              <div class="d-flex flex-wrap align-items-center justify-content-between p-2.5 bg-white rounded-3 border border-danger-subtle gap-2">
+                <div>
+                  <div class="fw-bold text-dark small"><?= e($rItem['document_name']) ?></div>
+                  <div class="text-danger small" style="font-size: 0.72rem;"><strong>Rejection Reason:</strong> <?= e($rItem['rejection_reason'] ?: 'Document does not meet embassy standards.') ?></div>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm rounded-pill px-3 py-1" onclick="openUploadModalWithType(<?= (int)$rItem['document_type_id'] ?>)">
+                  <i class="fa-solid fa-upload me-1"></i> Re-upload
+                </button>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      <?php endif; ?>
     </div>
 
-    <!-- ================================================================
-         RIGHT COLUMN: DOCUMENT QUICK-ACCESS & ACTIONS PANEL
-         ================================================================ -->
-    <div class="col-12 col-xl-3">
+    <!-- Full Requirements Matrix -->
+    <div class="bento-card p-4 bg-white mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+        <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+          <i class="fa-solid fa-clipboard-check text-primary"></i> Service Requirements Matrix
+        </h6>
+        <span class="text-muted small"><?= count($checklist['items']) ?> Requirements</span>
+      </div>
 
-      <!-- 1. Document Quick Access Panel (Requirement 14 & 15) -->
-      <div class="workspace-card mb-3">
-        <div class="workspace-card-header">
-          <h6 class="workspace-card-title">
-            <i class="fa-solid fa-bolt text-warning"></i> Quick Access Documents
-          </h6>
-        </div>
-        <div class="workspace-card-body p-3">
+      <div class="d-flex flex-column gap-2">
+        <?php foreach ($checklist['items'] as $cItem): ?>
           <?php
-            $renderQuickStatus = function($doc, $defaultLabel) {
-                if (empty($doc)) {
-                    return '<div class="quick-doc-sub text-muted">○ ' . e($defaultLabel) . '</div>';
-                }
-                $st = $doc['status'] ?? 'UPLOADED';
-                $badgeClass = 'bg-info-subtle text-dark';
-                $badgeText = '⏳ ' . e($st);
-                if ($st === 'VERIFIED') {
-                    $badgeClass = 'bg-success-subtle text-success';
-                    $badgeText = '✓ Verified';
-                } elseif ($st === 'UNDER_REVIEW') {
-                    $badgeClass = 'bg-warning-subtle text-dark';
-                    $badgeText = '⏳ Under Review';
-                } elseif ($st === 'REJECTED') {
-                    $badgeClass = 'bg-danger-subtle text-danger';
-                    $badgeText = '⚠ Rejected';
-                } elseif ($st === 'EXPIRED') {
-                    $badgeClass = 'bg-dark-subtle text-dark';
-                    $badgeText = '⚠ Expired';
-                }
-                return '<div class="quick-doc-sub"><span class="badge ' . $badgeClass . ' py-0.5">' . $badgeText . '</span> &bull; <span class="font-monospace">v' . (int)($doc['version'] ?? 1) . '</span></div>';
-            };
+            $cStatus = $cItem['status'];
+            $cBadge = 'bg-secondary';
+            $cIcon = 'fa-circle-minus';
+            if ($cStatus === 'VERIFIED') {
+                $cBadge = 'bg-success';
+                $cIcon = 'fa-check';
+            } elseif ($cStatus === 'UNDER_REVIEW') {
+                $cBadge = 'bg-warning text-dark';
+                $cIcon = 'fa-clock';
+            } elseif ($cStatus === 'REJECTED') {
+                $cBadge = 'bg-danger';
+                $cIcon = 'fa-xmark';
+            } elseif ($cStatus === 'EXPIRED') {
+                $cBadge = 'bg-dark text-white';
+                $cIcon = 'fa-calendar-xmark';
+            } elseif ($cStatus === 'MISSING') {
+                $cBadge = 'bg-secondary-subtle text-secondary border';
+                $cIcon = 'fa-circle-exclamation';
+            }
           ?>
-          
-          <!-- Quick Card: Photo -->
-          <div class="quick-doc-card">
-            <div class="quick-doc-icon-box text-primary">
-              <i class="fa-solid fa-camera"></i>
+          <div class="p-3 bg-white rounded-3 border d-flex flex-wrap align-items-center justify-content-between gap-2 shadow-2xs">
+            <div class="d-flex align-items-start gap-2.5 flex-grow-1 min-w-0">
+              <div class="mt-0.5">
+                <span class="badge <?= $cBadge ?> rounded-circle p-1.5 d-inline-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
+                  <i class="fa-solid <?= $cIcon ?>" style="font-size: 0.72rem;"></i>
+                </span>
+              </div>
+              <div class="min-w-0">
+                <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                  <span class="fw-bold text-dark small"><?= e($cItem['document_name']) ?></span>
+                  <?php if ($cItem['is_critical']): ?>
+                    <span class="badge bg-danger text-white rounded-pill py-0.5 px-2" style="font-size: 0.65rem;">Critical</span>
+                  <?php elseif ($cItem['is_mandatory']): ?>
+                    <span class="badge bg-danger-subtle text-danger rounded-pill py-0.5 px-2" style="font-size: 0.65rem;">Mandatory</span>
+                  <?php else: ?>
+                    <span class="badge bg-light text-muted border rounded-pill py-0.5 px-2" style="font-size: 0.65rem;">Optional</span>
+                  <?php endif; ?>
+                  <span class="badge <?= $cBadge ?> rounded-pill py-0.5 px-2 font-monospace" style="font-size: 0.68rem;"><?= e($cStatus) ?></span>
+                </div>
+                <?php if (!empty($cItem['condition_notes']) || !empty($cItem['instructions'])): ?>
+                  <div class="text-muted small mt-0.5" style="font-size: 0.72rem;">
+                    <?= e($cItem['condition_notes'] ?: $cItem['instructions']) ?>
+                  </div>
+                <?php endif; ?>
+              </div>
             </div>
-            <div class="quick-doc-details">
-              <div class="quick-doc-name">Applicant Photograph</div>
-              <?= $renderQuickStatus($quickDocs['photo'], 'Photo Not Uploaded') ?>
-            </div>
-            <div>
-              <?php if (!empty($quickDocs['photo'])): ?>
-                <?php $pExt = strtolower(pathinfo($quickDocs['photo']['file_name'] ?? 'photo.jpg', PATHINFO_EXTENSION)) ?: 'png'; ?>
-                <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" onclick="openDocumentPreview(<?= (int)$quickDocs['photo']['id'] ?>, 'Applicant Photograph', '<?= e($pExt) ?>', '<?= e($quickDocs['photo']['status']) ?>', <?= (int)$quickDocs['photo']['version'] ?>)" title="Preview Photo">
-                  <i class="fa-solid fa-eye"></i>
+
+            <div class="d-flex align-items-center gap-1.5">
+              <?php if (!empty($cItem['document_id'])): ?>
+                <?php $ext = strtolower(pathinfo($cItem['file_name'] ?? '', PATHINFO_EXTENSION)); ?>
+                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1" style="font-size: 0.75rem;" onclick="openDocumentPreview(<?= (int)$cItem['document_id'] ?>, '<?= e(addslashes($cItem['document_name'])) ?>', '<?= e($ext) ?>', '<?= e($cItem['status']) ?>', <?= (int)$cItem['version'] ?>)">
+                  <i class="fa-solid fa-eye me-1"></i> View Scan
                 </button>
               <?php else: ?>
-                <button type="button" class="btn btn-sm btn-primary py-1 px-2" data-bs-toggle="modal" data-bs-target="#changePhotoModal" title="Upload Photo">
-                  <i class="fa-solid fa-plus"></i>
+                <button type="button" class="btn btn-outline-warning text-dark btn-sm rounded-pill px-2.5 py-1" style="font-size: 0.75rem;" onclick="openRequestDocModal(<?= (int)$cItem['document_type_id'] ?>, '<?= e(addslashes($cItem['document_name'])) ?>')">
+                  <i class="fa-solid fa-paper-plane me-1"></i> Request
+                </button>
+                <button type="button" class="btn btn-primary btn-sm rounded-pill px-2.5 py-1" style="font-size: 0.75rem;" onclick="openUploadModalWithType(<?= (int)$cItem['document_type_id'] ?>)">
+                  <i class="fa-solid fa-upload me-1"></i> Upload
                 </button>
               <?php endif; ?>
             </div>
           </div>
-
-          <!-- Quick Card: Passport -->
-          <div class="quick-doc-card">
-            <div class="quick-doc-icon-box text-danger">
-              <i class="fa-solid fa-passport"></i>
-            </div>
-            <div class="quick-doc-details">
-              <div class="quick-doc-name">Passport Bio Page</div>
-              <?= $renderQuickStatus($quickDocs['passport'], 'Passport Not Uploaded') ?>
-            </div>
-            <div>
-              <?php if (!empty($quickDocs['passport'])): ?>
-                <?php $passExt = strtolower(pathinfo($quickDocs['passport']['file_name'] ?? 'doc.pdf', PATHINFO_EXTENSION)) ?: 'pdf'; ?>
-                <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" onclick="openDocumentPreview(<?= (int)$quickDocs['passport']['id'] ?>, 'Passport Bio Page', '<?= e($passExt) ?>', '<?= e($quickDocs['passport']['status']) ?>', <?= (int)$quickDocs['passport']['version'] ?>)" title="Preview Passport">
-                  <i class="fa-solid fa-eye"></i>
-                </button>
-              <?php else: ?>
-                <button type="button" class="btn btn-sm btn-primary py-1 px-2" onclick="openUploadModalWithType(1)" title="Upload Passport">
-                  <i class="fa-solid fa-plus"></i>
-                </button>
-              <?php endif; ?>
-            </div>
-          </div>
-
-          <!-- Quick Card: CV -->
-          <div class="quick-doc-card">
-            <div class="quick-doc-icon-box text-info">
-              <i class="fa-solid fa-file-lines"></i>
-            </div>
-            <div class="quick-doc-details">
-              <div class="quick-doc-name">Curriculum Vitae (CV)</div>
-              <?= $renderQuickStatus($quickDocs['cv'], 'CV Not Uploaded') ?>
-            </div>
-            <div>
-              <?php if (!empty($quickDocs['cv'])): ?>
-                <?php $cvExt = strtolower(pathinfo($quickDocs['cv']['file_name'] ?? 'cv.pdf', PATHINFO_EXTENSION)) ?: 'pdf'; ?>
-                <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" onclick="openDocumentPreview(<?= (int)$quickDocs['cv']['id'] ?>, 'Curriculum Vitae', '<?= e($cvExt) ?>', '<?= e($quickDocs['cv']['status']) ?>', <?= (int)$quickDocs['cv']['version'] ?>)" title="Preview CV">
-                  <i class="fa-solid fa-eye"></i>
-                </button>
-              <?php else: ?>
-                <button type="button" class="btn btn-sm btn-light border py-1 px-2" onclick="openUploadModalWithKeyword('cv')" title="Upload CV">
-                  <i class="fa-solid fa-plus"></i>
-                </button>
-              <?php endif; ?>
-            </div>
-          </div>
-
-          <!-- Quick Card: Visa Copy -->
-          <div class="quick-doc-card">
-            <div class="quick-doc-icon-box text-success">
-              <i class="fa-solid fa-stamp"></i>
-            </div>
-            <div class="quick-doc-details">
-              <div class="quick-doc-name">Visa / Entry Permit Copy</div>
-              <?= $renderQuickStatus($quickDocs['visa'], 'Visa Document Pending') ?>
-            </div>
-            <div>
-              <?php if (!empty($quickDocs['visa'])): ?>
-                <?php $vExt = strtolower(pathinfo($quickDocs['visa']['file_name'] ?? 'visa.pdf', PATHINFO_EXTENSION)) ?: 'pdf'; ?>
-                <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" onclick="openDocumentPreview(<?= (int)$quickDocs['visa']['id'] ?>, 'Visa Copy', '<?= e($vExt) ?>', '<?= e($quickDocs['visa']['status']) ?>', <?= (int)$quickDocs['visa']['version'] ?>)" title="Preview Visa">
-                  <i class="fa-solid fa-eye"></i>
-                </button>
-              <?php else: ?>
-                <button type="button" class="btn btn-sm btn-light border py-1 px-2" onclick="openUploadModalWithKeyword('visa')" title="Upload Visa">
-                  <i class="fa-solid fa-plus"></i>
-                </button>
-              <?php endif; ?>
-            </div>
-          </div>
-
-          <!-- Quick Card: National ID -->
-          <div class="quick-doc-card">
-            <div class="quick-doc-icon-box text-secondary">
-              <i class="fa-solid fa-id-card"></i>
-            </div>
-            <div class="quick-doc-details">
-              <div class="quick-doc-name">National ID / Emirates ID</div>
-              <?= $renderQuickStatus($quickDocs['national_id'], 'ID Document Pending') ?>
-            </div>
-            <div>
-              <?php if (!empty($quickDocs['national_id'])): ?>
-                <?php $nidExt = strtolower(pathinfo($quickDocs['national_id']['file_name'] ?? 'id.pdf', PATHINFO_EXTENSION)) ?: 'pdf'; ?>
-                <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" onclick="openDocumentPreview(<?= (int)$quickDocs['national_id']['id'] ?>, 'National ID', '<?= e($nidExt) ?>', '<?= e($quickDocs['national_id']['status']) ?>', <?= (int)$quickDocs['national_id']['version'] ?>)" title="Preview ID">
-                  <i class="fa-solid fa-eye"></i>
-                </button>
-              <?php else: ?>
-                <button type="button" class="btn btn-sm btn-light border py-1 px-2" onclick="openUploadModalWithType(4)" title="Upload National ID">
-                  <i class="fa-solid fa-plus"></i>
-                </button>
-              <?php endif; ?>
-            </div>
-          </div>
-
-        </div>
+        <?php endforeach; ?>
       </div>
-
-      <!-- 2. Quick Actions Panel (Requirement 27) -->
-      <div class="workspace-card mb-3">
-        <div class="workspace-card-header">
-          <h6 class="workspace-card-title">
-            <i class="fa-solid fa-gear text-primary"></i> Workspace Actions
-          </h6>
-        </div>
-        <div class="workspace-card-body p-3">
-          <button type="button" class="action-panel-btn btn-primary-action shadow-sm" data-bs-toggle="modal" data-bs-target="#uploadDocModal">
-            <i class="fa-solid fa-cloud-arrow-up"></i>
-            <span>+ Upload Document</span>
-          </button>
-
-          <button type="button" class="action-panel-btn" data-bs-toggle="modal" data-bs-target="#requestDocModal">
-            <i class="fa-solid fa-paper-plane text-warning"></i>
-            <span>Request Document</span>
-          </button>
-
-          <a href="/documents/download-all?application_id=<?= (int)$app['id'] ?>" class="action-panel-btn">
-            <i class="fa-solid fa-file-zipper text-primary"></i>
-            <span>Download All Documents (ZIP)</span>
-          </a>
-
-          <a href="/customers/show?id=<?= (int)$app['customer_id'] ?>" class="action-panel-btn">
-            <i class="fa-solid fa-user-circle text-secondary"></i>
-            <span>Full Customer Profile</span>
-          </a>
-
-          <a href="/applications/show?id=<?= (int)$app['id'] ?>" class="action-panel-btn">
-            <i class="fa-solid fa-file-lines text-secondary"></i>
-            <span>View Application</span>
-          </a>
-
-          <a href="/applications/edit?id=<?= (int)$app['id'] ?>" class="action-panel-btn">
-            <i class="fa-solid fa-pen-to-square text-secondary"></i>
-            <span>Edit Application Details</span>
-          </a>
-
-          <?php if (!empty($app['whatsapp'])): ?>
-            <?php
-              $waClean = preg_replace('/[^0-9]/', '', (string)$app['whatsapp']);
-              $waMsg = urlencode("Hello " . $app['customer_name'] . ", regarding your visa application " . $app['application_number'] . " at " . \App\Config\App::COMPANY_NAME . ":");
-            ?>
-            <a href="https://wa.me/<?= e($waClean) ?>?text=<?= $waMsg ?>" target="_blank" class="action-panel-btn btn-whatsapp-action shadow-sm">
-              <i class="fa-brands fa-whatsapp"></i>
-              <span>WhatsApp Message</span>
-            </a>
-          <?php endif; ?>
-
-          <?php if (!empty($app['email'])): ?>
-            <a href="mailto:<?= e($app['email']) ?>?subject=<?= urlencode('Visa Application ' . $app['application_number'] . ' — ' . \App\Config\App::COMPANY_NAME) ?>" class="action-panel-btn">
-              <i class="fa-solid fa-envelope text-info"></i>
-              <span>Send Email</span>
-            </a>
-          <?php endif; ?>
-        </div>
-      </div>
-
     </div>
-
   </div>
+
+  <!-- ======================================================================
+       TAB PANE 5: ACTIVITY TIMELINE
+       ====================================================================== -->
+  <div id="tab-activity" class="profile-tab-pane d-none">
+    <div class="bento-card p-4 bg-white mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+        <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left text-primary"></i> Document &amp; Case Audit Trail
+        </h6>
+        <span class="text-muted small">Live Activity Records</span>
+      </div>
+
+      <?php if (empty($recentActivity)): ?>
+        <div class="text-center py-4 text-muted small">
+          No audit entries recorded for this application yet.
+        </div>
+      <?php else: ?>
+        <div class="list-group list-group-flush small">
+          <?php foreach ($recentActivity as $act): ?>
+            <div class="list-group-item d-flex align-items-center justify-content-between p-3 border-bottom">
+              <div>
+                <span class="badge bg-light text-dark border me-1.5 font-monospace"><?= e($act['action']) ?></span>
+                <span class="fw-semibold text-dark"><?= e($act['description'] ?: $act['action']) ?></span>
+                <div class="text-muted mt-0.5" style="font-size: 0.72rem;">By <?= e($act['user_name'] ?: 'System') ?></div>
+              </div>
+              <span class="text-muted small" style="white-space: nowrap;"><?= date('d M Y, h:i A', strtotime($act['created_at'])) ?></span>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+    </div>
+  </div>
+
 </div>
+
 
 <!-- ========================================================================
      MODALS SECTION
@@ -1673,6 +1515,37 @@ function openHistoryModal(docId) {
     tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-3">Failed to load history archive.</td></tr>';
   });
 }
+
+// Instagram & TikTok Social Profile Tab Switcher
+document.addEventListener('DOMContentLoaded', function() {
+  const tabBtns = document.querySelectorAll('.social-tab-btn');
+  const panes = document.querySelectorAll('.profile-tab-pane');
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const tabTarget = this.getAttribute('data-tab');
+      tabBtns.forEach(b => b.classList.remove('active'));
+      panes.forEach(p => p.classList.add('d-none'));
+      this.classList.add('active');
+      const targetPane = document.getElementById(tabTarget);
+      if (targetPane) {
+        targetPane.classList.remove('d-none');
+      }
+      if (history.replaceState) {
+        history.replaceState(null, null, '#' + tabTarget);
+      }
+    });
+  });
+
+  if (window.location.hash) {
+    const hash = window.location.hash.substring(1);
+    const activeBtn = document.querySelector(`.social-tab-btn[data-tab="${hash}"]`);
+    if (activeBtn) {
+      activeBtn.click();
+    }
+  }
+});
 </script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

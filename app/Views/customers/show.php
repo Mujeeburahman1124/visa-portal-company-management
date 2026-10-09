@@ -6,52 +6,155 @@ require_once dirname(__DIR__) . '/layouts/sidebar.php';
 require_once dirname(__DIR__) . '/layouts/topbar.php';
 ?>
 
+<link rel="stylesheet" href="/assets/css/dashboard-bento.css?v=2.4">
+<link rel="stylesheet" href="/assets/css/pages/documents.css?v=2.4">
+
 <div class="content-body">
   <?php if ($flash): ?>
-    <div class="alert alert-<?= e($flash['type']) ?> alert-dismissible fade show mb-4" role="alert">
+    <div class="alert alert-<?= e($flash['type']) ?> alert-dismissible fade show mb-4 rounded-4 shadow-xs" role="alert">
       <?= e($flash['message']) ?>
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
   <?php endif; ?>
 
-  <div class="d-flex align-items-center justify-content-between mb-4">
-    <div class="d-flex align-items-center gap-3">
-      <a href="/customers" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left"></i></a>
-      <div>
-        <div class="d-flex align-items-center gap-2">
-          <h4 class="fw-bold brand-font mb-0"><?= e($customer['full_name']) ?></h4>
-          <span class="badge bg-primary"><?= e($customer['customer_code']) ?></span>
-        </div>
-        <div class="text-muted small"><?= e($customer['nationality']) ?> &bull; Resident of <?= e($customer['current_country']) ?></div>
+  <!-- Top Breadcrumb / Return Navigation -->
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <a href="/customers" class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-xs bg-white">
+        <i class="fa-solid fa-arrow-left me-1.5"></i> Back to Customers
+      </a>
+      <span class="text-muted small">/</span>
+      <span class="badge bg-light text-dark border rounded-pill px-2.5 py-1 font-monospace">
+        <?= e($customer['customer_code']) ?>
+      </span>
+    </div>
+  </div>
+
+  <?php
+    $cNameParts = explode(' ', trim((string)($customer['full_name'] ?? '')));
+    $cFirstInitial = !empty($cNameParts[0]) ? mb_substr($cNameParts[0], 0, 1) : 'C';
+    $cLastInitial = count($cNameParts) > 1 ? mb_substr(end($cNameParts), 0, 1) : '';
+    $cInitials = strtoupper($cFirstInitial . $cLastInitial) ?: 'CU';
+
+    $activeAppsCount = count(array_filter($applications, function($a) {
+      return in_array($a['status'] ?? '', ['Pending', 'In Process', 'Submitted', 'Under Review'], true);
+    }));
+  ?>
+
+  <!-- Instagram / TikTok Executive Social Profile Card -->
+  <div class="social-profile-card">
+    <div class="social-profile-cover">
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge rounded-pill px-3 py-1.5 text-white fw-bold shadow-xs" style="background: rgba(255, 255, 255, 0.18); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.25);">
+          <i class="fa-solid fa-user me-1.5 text-warning"></i> Customer CRM Profile
+        </span>
+        <span class="badge rounded-pill px-2.5 py-1.5 text-white" style="background: rgba(0, 0, 0, 0.25); backdrop-filter: blur(6px);">
+          <?= e($customer['nationality'] ?? 'Global') ?> &bull; Resident of <?= e($customer['current_country'] ?? 'UAE') ?>
+        </span>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <a href="/applications/create?customer_id=<?= $customer['id'] ?>" class="btn btn-sm text-white rounded-pill px-3 shadow-xs" style="background: var(--bento-primary, #E11D48);">
+          <i class="fa-solid fa-plus me-1.5"></i> New Visa Application
+        </a>
       </div>
     </div>
 
-    <div class="d-flex gap-2">
-      <?php if (!empty($customer['email'])): ?>
-      <form action="/customers/send-activation" method="POST" class="d-inline" onsubmit="return confirm('Send portal account activation email to <?= e($customer['email']) ?>?');">
-        <?= csrf_field() ?>
-        <input type="hidden" name="customer_id" value="<?= $customer['id'] ?>">
-        <button type="submit" class="btn btn-outline-info btn-sm px-3 shadow-sm">
-          <i class="fa-solid fa-paper-plane me-1"></i> Send Activation Link
-        </button>
-      </form>
-      <?php endif; ?>
-      <button type="button" class="btn btn-outline-warning btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#resetCustomerPasswordModal">
-        <i class="fa-solid fa-key me-1"></i> Reset Portal Password
-      </button>
-      <a href="/customers/edit?id=<?= $customer['id'] ?>" class="btn btn-outline-secondary btn-sm px-3 shadow-sm">
-        <i class="fa-solid fa-pen-to-square me-1"></i> Edit Profile
-      </a>
-      <form action="/customers/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to permanently delete this customer (<?= e($customer['customer_code']) ?>) and all linked applications and documents?');">
-        <?= csrf_field() ?>
-        <input type="hidden" name="customer_id" value="<?= $customer['id'] ?>">
-        <button type="submit" class="btn btn-outline-danger btn-sm px-3 shadow-sm">
-          <i class="fa-solid fa-trash-can me-1"></i> Delete
-        </button>
-      </form>
-      <a href="/applications/create?customer_id=<?= $customer['id'] ?>" class="btn btn-primary btn-sm px-3 shadow-sm">
-        <i class="fa-solid fa-plus me-1"></i> New Visa Application
-      </a>
+    <div class="social-profile-header">
+      <div class="social-avatar-row">
+        <div class="social-avatar-wrapper">
+          <div class="social-avatar-ring">
+            <div class="social-avatar-inner">
+              <?= e($cInitials) ?>
+            </div>
+          </div>
+          <div class="social-verified-badge" title="Verified Customer Record">
+            <i class="fa-solid fa-check"></i>
+          </div>
+        </div>
+
+        <!-- Social Action Buttons -->
+        <div class="social-actions-bar">
+          <?php if (!empty($customer['whatsapp']) || !empty($customer['mobile'])): ?>
+            <?php $waNum = preg_replace('/[^0-9]/', '', $customer['whatsapp'] ?: $customer['mobile']); ?>
+            <a href="https://wa.me/<?= e($waNum) ?>" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3 shadow-xs fw-semibold">
+              <i class="fa-brands fa-whatsapp me-1.5"></i> WhatsApp
+            </a>
+          <?php endif; ?>
+
+          <?php if (!empty($customer['mobile'])): ?>
+            <a href="tel:<?= e($customer['mobile']) ?>" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-xs fw-semibold">
+              <i class="fa-solid fa-phone me-1.5"></i> Call
+            </a>
+          <?php endif; ?>
+
+          <?php if (!empty($customer['email'])): ?>
+            <form action="/customers/send-activation" method="POST" class="d-inline" onsubmit="return confirm('Send portal account activation email to <?= e($customer['email']) ?>?');">
+              <?= csrf_field() ?>
+              <input type="hidden" name="customer_id" value="<?= $customer['id'] ?>">
+              <button type="submit" class="btn btn-sm btn-outline-info rounded-pill px-3 shadow-xs fw-semibold">
+                <i class="fa-solid fa-paper-plane me-1"></i> Activation Link
+              </button>
+            </form>
+          <?php endif; ?>
+
+          <button type="button" class="btn btn-sm btn-outline-warning text-dark rounded-pill px-3 shadow-xs fw-semibold" data-bs-toggle="modal" data-bs-target="#resetCustomerPasswordModal">
+            <i class="fa-solid fa-key me-1"></i> Reset Password
+          </button>
+
+          <a href="/customers/edit?id=<?= $customer['id'] ?>" class="btn btn-sm btn-light border rounded-pill px-3 shadow-xs text-secondary fw-semibold">
+            <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+          </a>
+        </div>
+      </div>
+
+      <!-- Identity Typography & Bio -->
+      <div>
+        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+          <h2 class="social-name mb-0"><?= e($customer['full_name']) ?></h2>
+          <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1" style="font-size: 0.72rem;">
+            <i class="fa-solid fa-shield-check me-1"></i> Active Customer
+          </span>
+        </div>
+
+        <div class="social-handle mb-2">
+          <span class="badge bg-light text-dark border font-monospace px-2 py-0.5">@<?= e($customer['customer_code']) ?></span>
+          <span class="badge bg-light text-secondary border px-2 py-0.5"><i class="fa-solid fa-globe me-1"></i><?= e($customer['nationality']) ?></span>
+          <span class="badge bg-light text-primary border px-2 py-0.5"><i class="fa-solid fa-location-dot me-1"></i><?= e($customer['current_country']) ?></span>
+        </div>
+
+        <div class="social-bio-text">
+          <span>💼 <strong><?= e($customer['occupation'] ?: 'Customer') ?></strong></span>
+          <span class="text-muted mx-1.5">&bull;</span>
+          <span>📱 Mobile: <strong class="font-monospace"><?= e($customer['mobile'] ?: '—') ?></strong></span>
+          <span class="text-muted mx-1.5">&bull;</span>
+          <span>📧 Email: <strong><?= e($customer['email'] ?: '—') ?></strong></span>
+          <?php if (!empty($customer['dob'])): ?>
+            <span class="text-muted mx-1.5">&bull;</span>
+            <span>🎂 Born: <strong><?= format_date($customer['dob']) ?></strong></span>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- Social Media Stats Strip -->
+      <div class="social-stats-strip">
+        <div class="social-stat-item">
+          <span class="social-stat-num text-primary"><?= count($applications) ?></span>
+          <span class="social-stat-label">Total Applications</span>
+        </div>
+        <div class="social-stat-item">
+          <span class="social-stat-num text-success"><?= $activeAppsCount ?></span>
+          <span class="social-stat-label">In Process Cases</span>
+        </div>
+        <div class="social-stat-item">
+          <span class="social-stat-num" style="color: #D97706;"><?= count($passports) ?></span>
+          <span class="social-stat-label">Passports Recorded</span>
+        </div>
+        <div class="social-stat-item">
+          <span class="social-stat-num text-info"><?= count($nationalIds) ?></span>
+          <span class="social-stat-label">IDs Registered</span>
+        </div>
+      </div>
     </div>
   </div>
 
