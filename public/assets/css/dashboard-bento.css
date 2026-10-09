@@ -2064,4 +2064,203 @@
   word-break: break-word;
 }
 
+/* ==========================================================================
+   VISA TRACKING JOURNEY CARDS & STEPPER (BENTO REDESIGN)
+   ========================================================================== */
+.bento-tracking-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1.25rem;
+}
+
+.bento-tracking-card {
+  background: #FFFFFF;
+  border: 1.5px solid var(--bento-card-border);
+  border-radius: 20px;
+  padding: 1.35rem;
+  box-shadow: var(--bento-shadow-card);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.bento-tracking-card:hover {
+  border-color: var(--bento-card-border-hover);
+  box-shadow: var(--bento-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.bento-tracking-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.bento-tracking-applicant {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.bento-tracking-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--bento-primary-soft);
+  color: var(--bento-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+  border: 1px solid var(--bento-primary-border);
+}
+
+.bento-tracking-dest-banner {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem;
+  margin-bottom: 1rem;
+}
+
+/* 4-Stage Visual Journey Stepper */
+.bento-journey-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  margin: 1.15rem 0 1.25rem 0;
+  padding: 0 0.5rem;
+}
+
+.bento-journey-stepper::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 1rem;
+  right: 1rem;
+  height: 3px;
+  background: #E2E8F0;
+  z-index: 1;
+}
+
+.bento-step-item {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.bento-step-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 2px solid #CBD5E1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: #64748B;
+  transition: all 0.2s ease;
+}
+
+.bento-step-item.completed .bento-step-dot {
+  background: #10B981;
+  border-color: #10B981;
+  color: #FFFFFF;
+}
+
+.bento-step-item.active .bento-step-dot {
+  background: var(--bento-primary);
+  border-color: var(--bento-primary);
+  color: #FFFFFF;
+  box-shadow: 0 0 0 4px var(--bento-primary-soft);
+}
+
+.bento-step-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #64748B;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.bento-step-item.active .bento-step-label {
+  color: var(--bento-primary);
+  font-weight: 700;
+}
+
+.bento-step-item.completed .bento-step-label {
+  color: #0F172A;
+}
+
+/* Tracking Metadata 2x2 Grid */
+.bento-tracking-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.65rem;
+  margin-bottom: 1.15rem;
+}
+
+.bento-tracking-meta-cell {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 0.65rem 0.75rem;
+}
+
+.bento-tracking-meta-label {
+  font-size: 0.68rem;
+  color: #64748B;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  margin-bottom: 2px;
+}
+
+.bento-tracking-meta-val {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0F172A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bento-tracking-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #F1F5F9;
+}
+
+@media (max-width: 768px) {
+  .bento-tracking-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem !important;
+  }
+  .bento-tracking-card {
+    padding: 1.1rem 1rem !important;
+    border-radius: 16px !important;
+  }
+  .bento-step-label {
+    font-size: 0.62rem !important;
+  }
+}
+
+
 

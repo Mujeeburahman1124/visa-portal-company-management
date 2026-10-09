@@ -1,123 +1,200 @@
 <?php
-$pageTitle = 'Visa Tracking & Journey Center — VISA TRACK';
+$pageTitle = 'Visa Tracking & Journey Center — MS TRAVEL HUB';
 $flash = get_flash();
 require_once dirname(__DIR__) . '/layouts/header.php';
 require_once dirname(__DIR__) . '/layouts/sidebar.php';
 require_once dirname(__DIR__) . '/layouts/topbar.php';
 
-$activeStage = $_GET['stage'] ?? '';
-$viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
+$viewMode = $_GET['view'] ?? 'cards';
+if ($viewMode === 'grid') {
+    $viewMode = 'cards';
+}
+
+$buildTrackingUrl = function(array $paramsToMerge = []) {
+    $current = $_GET;
+    foreach ($paramsToMerge as $k => $v) {
+        if ($v === null) {
+            unset($current[$k]);
+        } else {
+            $current[$k] = $v;
+        }
+    }
+    return '/tracking?' . http_build_query($current);
+};
+
+// Calculate journey stage step (1 to 4) for visual stepper
+$getStageStep = function(string $stage, string $status): int {
+    $s = strtolower($stage);
+    $st = strtolower($status);
+    if ($st === 'approved' || $st === 'completed' || str_contains($s, 'approved') || str_contains($s, 'issued') || str_contains($s, 'collected')) {
+        return 4;
+    }
+    if (str_contains($s, 'submitted') || str_contains($s, 'posted') || str_contains($s, 'process') || str_contains($s, 'embassy') || str_contains($s, 'security')) {
+        return 3;
+    }
+    if (str_contains($s, 'doc') || str_contains($s, 'review') || str_contains($s, 'ready')) {
+        return 2;
+    }
+    return 1;
+};
 ?>
 
-<div class="content-body">
-  <?php if ($flash): ?>
-    <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'info')) ?> alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
-      <div class="d-flex align-items-center gap-2">
-        <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation' : ($flash['type'] === 'success' ? 'fa-circle-check' : 'fa-circle-info') ?>"></i>
-        <span><?= e($flash['message']) ?></span>
-      </div>
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-  <?php endif; ?>
+<!-- Load Bento Design System CSS for Unified MS Travel Hub Aesthetic -->
+<link rel="stylesheet" href="/assets/css/dashboard-bento.css?v=<?= time() ?>">
 
-  <!-- Header -->
-  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
-    <div>
-      <h3 class="fw-bold brand-font text-dark mb-0">Visa Tracking &amp; Lifecycle Center</h3>
-      <p class="text-muted small mb-0">Live tracking by date, applicant name, passport, phone, email, visa number, and destination.</p>
-    </div>
-    <div class="d-flex align-items-center gap-2">
-      <!-- 3 View Options Switcher (Responsive) -->
-      <div class="btn-group btn-group-sm bg-white shadow-sm border rounded-pill p-1 view-switcher-pill-group" role="group" aria-label="View Mode">
-        <a href="?<?= http_build_query(array_merge($_GET, ['view' => 'table'])) ?>" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold <?= $viewMode === 'table' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" title="Table View">
-          <i class="fa-solid fa-table-list me-1"></i> <span class="d-none d-sm-inline">Table</span>
-        </a>
-        <a href="?<?= http_build_query(array_merge($_GET, ['view' => 'grid'])) ?>" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold <?= $viewMode === 'grid' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" title="Cards Grid View">
-          <i class="fa-solid fa-grip me-1"></i> <span class="d-none d-sm-inline">Cards</span>
-        </a>
-        <a href="?<?= http_build_query(array_merge($_GET, ['view' => 'timeline'])) ?>" class="btn btn-sm rounded-pill px-2.5 px-sm-3 fw-semibold <?= $viewMode === 'timeline' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" title="Timeline View">
-          <i class="fa-solid fa-timeline me-1"></i> <span class="d-none d-sm-inline">Timeline</span>
+<div class="content-body p-0">
+  <div class="bento-dashboard-wrap">
+
+    <?php if ($flash): ?>
+      <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'info')) ?> alert-dismissible fade show mb-4 border-0 shadow-sm rounded-4" role="alert">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation' : ($flash['type'] === 'success' ? 'fa-circle-check' : 'fa-circle-info') ?>"></i>
+          <span><?= e($flash['message']) ?></span>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    <?php endif; ?>
+
+    <!-- ─── HEADER & VIEW SWITCHER ────────────────────────────────────────── -->
+    <header class="bento-header mb-4">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <h1 class="bento-header-title mb-0">Visa Tracking Center</h1>
+          <span class="badge rounded-pill text-white fw-bold px-2.5 py-1" style="background: var(--bento-primary); font-size: 0.72rem;">
+            <i class="fa-solid fa-route me-1"></i> Live Hub
+          </span>
+        </div>
+        <p class="bento-header-subtitle">
+          Real-time lifecycle monitoring, consular submission stages, and applicant journey milestones.
+        </p>
+      </div>
+
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <!-- View Switcher (Cards vs Table) -->
+        <div class="btn-group btn-group-sm bg-white shadow-xs border rounded-pill p-1" role="group" aria-label="View Switcher">
+          <a href="<?= $buildTrackingUrl(['view' => 'cards']) ?>" 
+             class="btn btn-sm rounded-pill px-3 fw-bold <?= $viewMode === 'cards' ? 'text-white' : 'text-dark border-0 bg-transparent' ?>" 
+             style="<?= $viewMode === 'cards' ? 'background: var(--bento-primary);' : '' ?>">
+            <i class="fa-solid fa-grip me-1.5"></i> Cards
+          </a>
+          <a href="<?= $buildTrackingUrl(['view' => 'table']) ?>" 
+             class="btn btn-sm rounded-pill px-3 fw-bold <?= $viewMode === 'table' ? 'text-white' : 'text-dark border-0 bg-transparent' ?>" 
+             style="<?= $viewMode === 'table' ? 'background: var(--bento-primary);' : '' ?>">
+            <i class="fa-solid fa-table-list me-1.5"></i> Table
+          </a>
+        </div>
+
+        <a href="/applications/create" class="bento-btn-primary" style="padding: 0.5rem 1.15rem; font-size: 0.82rem;">
+          <i class="fa-solid fa-plus"></i> New Application
         </a>
       </div>
-    </div>
-  </div>
+    </header>
 
-  <!-- Quick Track Search Bar (High Visibility) -->
-  <div class="card card-enterprise mb-4 border-0 shadow-sm bg-light">
-    <div class="card-body p-3">
+    <!-- ─── EXECUTIVE TRACKING KPI METRIC STRIP ───────────────────────────── -->
+    <div class="row g-2 g-md-3 mb-4 bento-stat-grid">
+      <div class="col-6 col-lg-3">
+        <div class="bento-stat-card featured-card" style="min-height: 120px; padding: 1.1rem 1rem;">
+          <div class="bento-stat-top">
+            <span class="bento-stat-title text-white opacity-90">Total In Network</span>
+            <div class="bento-arrow-circle" style="width: 26px; height: 26px;"><i class="fa-solid fa-folder-open"></i></div>
+          </div>
+          <div class="bento-stat-value text-white my-1" style="font-size: 1.85rem;"><?= (int)($trackingKpis['total'] ?? 0) ?></div>
+          <div class="bento-stat-badge text-white opacity-90" style="font-size: 0.7rem;">
+            <span>All active applications</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-lg-3">
+        <div class="bento-stat-card" style="min-height: 120px; padding: 1.1rem 1rem;">
+          <div class="bento-stat-top">
+            <span class="bento-stat-title">In Process</span>
+            <div class="bento-arrow-circle" style="width: 26px; height: 26px;"><i class="fa-solid fa-arrows-rotate text-primary"></i></div>
+          </div>
+          <div class="bento-stat-value my-1 text-dark" style="font-size: 1.85rem;"><?= (int)($trackingKpis['active'] ?? 0) ?></div>
+          <div class="bento-stat-badge text-muted" style="font-size: 0.7rem;">
+            <span>Consular pipeline active</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-lg-3">
+        <div class="bento-stat-card" style="min-height: 120px; padding: 1.1rem 1rem;">
+          <div class="bento-stat-top">
+            <span class="bento-stat-title">Visas Approved</span>
+            <div class="bento-arrow-circle" style="width: 26px; height: 26px;"><i class="fa-solid fa-circle-check text-success"></i></div>
+          </div>
+          <div class="bento-stat-value my-1 text-success" style="font-size: 1.85rem;"><?= (int)($trackingKpis['approved'] ?? 0) ?></div>
+          <div class="bento-stat-badge text-muted" style="font-size: 0.7rem;">
+            <span>Issued &amp; completed</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-lg-3">
+        <div class="bento-stat-card" style="min-height: 120px; padding: 1.1rem 1rem;">
+          <div class="bento-stat-top">
+            <span class="bento-stat-title">Bottlenecks / Urgent</span>
+            <div class="bento-arrow-circle" style="width: 26px; height: 26px;"><i class="fa-solid fa-bolt text-danger"></i></div>
+          </div>
+          <div class="bento-stat-value my-1 text-danger" style="font-size: 1.85rem;"><?= (int)($trackingKpis['urgent'] ?? 0) ?></div>
+          <div class="bento-stat-badge text-muted" style="font-size: 0.7rem;">
+            <span>Priority attention required</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── QUICK TRACK SEARCH BAR (HIGH IMPACT BRAND ACCENT) ─────────────── -->
+    <div class="bento-card mb-4 p-3 p-md-3.5">
       <form action="/tracking" method="GET" class="row g-2 align-items-center">
         <div class="col-12 col-md-auto">
-          <label class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
-            <i class="fa-solid fa-magnifying-glass-location text-primary fs-5"></i>
-            <span>Quick Track Visa:</span>
-          </label>
+          <span class="fw-bold text-dark d-flex align-items-center gap-2 small">
+            <i class="fa-solid fa-magnifying-glass-location text-danger fs-5"></i>
+            <span>Quick Passport / Visa Finder:</span>
+          </span>
         </div>
         <div class="col-12 col-md-6 col-lg-5">
           <div class="input-group input-group-sm">
-            <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-search text-muted"></i></span>
-            <input type="text" name="quick_track" class="form-control border-start-0 font-monospace" placeholder="Enter App Ref (e.g. MSV-2026-000001), Passport #, Visa #, or Customer Mobile..." value="<?= htmlspecialchars($_GET['quick_track'] ?? '') ?>" required>
+            <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-search"></i></span>
+            <input type="text" name="quick_track" class="form-control border-start-0 font-monospace bg-light" 
+                   placeholder="Enter App # (e.g. MSV-2026-000001), Passport, Visa #, or Mobile..." 
+                   value="<?= e($_GET['quick_track'] ?? '') ?>" required>
           </div>
         </div>
         <div class="col-12 col-md-auto d-flex gap-2">
-          <button type="submit" class="btn btn-primary btn-sm px-3 fw-bold">
-            <i class="fa-solid fa-route me-1"></i> Track Visa
+          <button type="submit" class="bento-btn-primary" style="padding: 0.45rem 1.15rem; font-size: 0.82rem;">
+            <i class="fa-solid fa-route me-1"></i> Track Now
           </button>
           <?php if (!empty($_GET['quick_track'])): ?>
-            <a href="/tracking" class="btn btn-outline-secondary btn-sm">Clear</a>
+            <a href="/tracking" class="btn btn-sm btn-light border rounded-pill px-3">Clear</a>
           <?php endif; ?>
-        </div>
-        <div class="col-12 text-muted small mt-1">
-          Quickly track any applicant's complete visa journey, live lifecycle status, and verification progress.
         </div>
       </form>
     </div>
-  </div>
 
-  <!-- Multi-Criteria Advanced Filter Panel (100% Responsive) -->
-  <div class="card card-enterprise mb-4 border-0 shadow-sm">
-    <div class="card-body p-3">
+    <!-- ─── MULTI-CRITERIA ADVANCED FILTER PANEL ───────────────────────────── -->
+    <div class="bento-card mb-4 p-3 p-md-3.5">
       <form action="/tracking" method="GET" class="row g-2 align-items-end">
-        <input type="hidden" name="view" value="<?= htmlspecialchars($viewMode) ?>">
+        <input type="hidden" name="view" value="<?= e($viewMode) ?>">
 
-        <!-- Row 1: Key Identifiers -->
         <div class="col-12 col-sm-6 col-md-4 col-xl-3">
-          <label class="form-label small fw-semibold text-secondary mb-1">Customer / Applicant Name</label>
-          <input type="text" name="name" class="form-control form-control-sm bg-light" placeholder="Search name..." value="<?= htmlspecialchars($_GET['name'] ?? '') ?>">
+          <label class="form-label small fw-semibold text-secondary mb-1">Applicant Name</label>
+          <input type="text" name="name" class="form-control form-control-sm bg-light" placeholder="Search applicant..." value="<?= e($_GET['name'] ?? '') ?>">
         </div>
 
         <div class="col-6 col-sm-6 col-md-4 col-xl-2">
           <label class="form-label small fw-semibold text-secondary mb-1">Passport Number</label>
-          <input type="text" name="passport" class="form-control form-control-sm bg-light font-monospace" placeholder="Passport #..." value="<?= htmlspecialchars($_GET['passport'] ?? '') ?>">
+          <input type="text" name="passport" class="form-control form-control-sm bg-light font-monospace" placeholder="Passport #..." value="<?= e($_GET['passport'] ?? '') ?>">
         </div>
 
         <div class="col-6 col-sm-6 col-md-4 col-xl-2">
           <label class="form-label small fw-semibold text-secondary mb-1">Mobile / WhatsApp</label>
-          <input type="text" name="phone" class="form-control form-control-sm bg-light" placeholder="Phone #..." value="<?= htmlspecialchars($_GET['phone'] ?? '') ?>">
-        </div>
-
-        <div class="col-12 col-sm-6 col-md-4 col-xl-3">
-          <label class="form-label small fw-semibold text-secondary mb-1">Email Address</label>
-          <input type="email" name="email" class="form-control form-control-sm bg-light" placeholder="Email..." value="<?= htmlspecialchars($_GET['email'] ?? '') ?>">
-        </div>
-
-        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
-          <label class="form-label small fw-semibold text-secondary mb-1">Visa Number</label>
-          <input type="text" name="visa_number" class="form-control form-control-sm bg-light font-monospace" placeholder="Visa #..." value="<?= htmlspecialchars($_GET['visa_number'] ?? '') ?>">
-        </div>
-
-        <!-- Row 2: Dates, Destination, Stage, Supplier -->
-        <div class="col-6 col-sm-6 col-md-3 col-xl-2">
-          <label class="form-label small fw-semibold text-secondary mb-1">Date From</label>
-          <input type="date" name="date_from" class="form-control form-control-sm bg-light" value="<?= htmlspecialchars($_GET['date_from'] ?? '') ?>">
+          <input type="text" name="phone" class="form-control form-control-sm bg-light" placeholder="Phone #..." value="<?= e($_GET['phone'] ?? '') ?>">
         </div>
 
         <div class="col-6 col-sm-6 col-md-3 col-xl-2">
-          <label class="form-label small fw-semibold text-secondary mb-1">Date To</label>
-          <input type="date" name="date_to" class="form-control form-control-sm bg-light" value="<?= htmlspecialchars($_GET['date_to'] ?? '') ?>">
-        </div>
-
-        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
-          <label class="form-label small fw-semibold text-secondary mb-1">Destination Country</label>
+          <label class="form-label small fw-semibold text-secondary mb-1">Country</label>
           <select name="country_id" class="form-select form-select-sm bg-light">
             <option value="">All Countries</option>
             <?php foreach ($countriesList as $c): ?>
@@ -128,7 +205,7 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
           </select>
         </div>
 
-        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+        <div class="col-6 col-sm-6 col-md-3 col-xl-3">
           <label class="form-label small fw-semibold text-secondary mb-1">Lifecycle Stage</label>
           <select name="stage" class="form-select form-select-sm bg-light">
             <option value="">All Stages</option>
@@ -142,8 +219,8 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
           </select>
         </div>
 
-        <div class="col-6 col-sm-6 col-md-4 col-xl-2">
-          <label class="form-label small fw-semibold text-secondary mb-1">Assigned Staff</label>
+        <div class="col-6 col-sm-6 col-md-3 col-xl-2">
+          <label class="form-label small fw-semibold text-secondary mb-1">Assigned Officer</label>
           <select name="staff_id" class="form-select form-select-sm bg-light">
             <option value="">All Staff</option>
             <?php foreach ($staffList as $u): ?>
@@ -154,255 +231,306 @@ $viewMode = $_GET['view'] ?? 'table'; // 'table' or 'timeline'
           </select>
         </div>
 
-        <!-- Joined Action Buttons (Filter + Clear) -->
-        <div class="col-12 col-md-4 col-xl-auto ms-auto d-flex justify-content-end">
-          <div class="btn-group btn-group-sm w-100 w-md-auto shadow-sm" role="group" aria-label="Filter Controls">
-            <button type="submit" class="btn btn-primary px-3 fw-semibold">
-              <i class="fa-solid fa-filter me-1.5"></i> Filter
-            </button>
-            <a href="/tracking" class="btn btn-primary border-start border-white border-opacity-25 px-2.5" title="Reset Filters">
-              <i class="fa-solid fa-rotate-left"></i>
-            </a>
-          </div>
+        <div class="col-6 col-sm-6 col-md-3 col-xl-2">
+          <label class="form-label small fw-semibold text-secondary mb-1">Date From</label>
+          <input type="date" name="date_from" class="form-control form-control-sm bg-light" value="<?= e($_GET['date_from'] ?? '') ?>">
+        </div>
+
+        <div class="col-6 col-sm-6 col-md-3 col-xl-2">
+          <label class="form-label small fw-semibold text-secondary mb-1">Date To</label>
+          <input type="date" name="date_to" class="form-control form-control-sm bg-light" value="<?= e($_GET['date_to'] ?? '') ?>">
+        </div>
+
+        <div class="col-6 col-sm-6 col-md-3 col-xl-auto ms-auto d-flex gap-2">
+          <button type="submit" class="bento-btn-primary" style="padding: 0.45rem 1.15rem; font-size: 0.82rem;">
+            <i class="fa-solid fa-filter me-1.5"></i> Apply Filter
+          </button>
+          <a href="/tracking" class="btn btn-sm btn-light border rounded-pill px-2.5" title="Reset Filters">
+            <i class="fa-solid fa-rotate-left"></i>
+          </a>
         </div>
       </form>
     </div>
-  </div>
 
-  <!-- Results Count Badge -->
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <div class="small text-muted">
-      Showing <strong><?= count($applications) ?></strong> of <strong><?= $totalRecords ?></strong> tracking cases
-    </div>
-  </div>
-
-  <?php if (empty($applications)): ?>
-    <div class="card card-enterprise border-0 shadow-sm text-center py-5">
-      <div class="card-body">
-        <i class="fa-solid fa-route fs-1 text-muted opacity-50 mb-3"></i>
-        <h5 class="fw-bold text-dark">No tracking records found</h5>
-        <p class="text-muted small">No applications match your specific search and filter criteria.</p>
-        <a href="/tracking" class="btn btn-outline-secondary btn-sm">Clear All Filters</a>
+    <!-- ─── RESULTS COUNTER & SUMMARY ────────────────────────────────────── -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 px-1">
+      <div class="text-muted small">
+        Showing <span class="fw-bold text-dark"><?= count($applications) ?></span> of <span class="fw-bold text-dark"><?= $totalRecords ?></span> tracking cases
+        <?php if ($totalPages > 1): ?> &bull; <span class="badge bg-light text-dark border">Page <?= $page ?> of <?= $totalPages ?></span><?php endif; ?>
       </div>
     </div>
-  <?php else: ?>
 
-    <?php if ($viewMode === 'table'): ?>
-      <!-- TABULAR TRACKING VIEW (100% Responsive) -->
-      <div class="card card-enterprise border-0 shadow-sm mb-4">
-        <div class="table-responsive" style="-webkit-overflow-scrolling: touch;">
-          <table class="table table-custom table-hover align-middle mb-0" style="min-width: 1100px;">
-            <thead class="table-light">
-              <tr class="small text-muted text-uppercase">
-                <th style="min-width: 130px;">App Ref &amp; Date</th>
-                <th style="min-width: 160px;">Customer / Applicant</th>
-                <th style="min-width: 110px;">Passport #</th>
-                <th style="min-width: 170px;">Phone &amp; Email</th>
-                <th style="min-width: 180px;">Destination &amp; Visa Type</th>
-                <th style="min-width: 120px;">Visa Number</th>
-                <th style="min-width: 160px;">Current Status / Stage</th>
-                <th style="min-width: 150px;">Assigned Officer</th>
-                <th style="min-width: 75px;">Health</th>
-                <th class="text-end" style="min-width: 160px;">Track Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php foreach ($applications as $app): 
-                $healthClass = 'bg-success';
-                if ((int)$app['calculated_health'] < 50) $healthClass = 'bg-danger';
-                elseif ((int)$app['calculated_health'] < 80) $healthClass = 'bg-warning';
-              ?>
-                <tr>
-                  <td>
-                    <a href="/tracking/show?id=<?= $app['id'] ?>" class="fw-bold text-primary text-decoration-none text-nowrap">
-                      <?= e($app['application_number']) ?>
-                    </a>
-                    <div class="small text-muted text-nowrap"><?= date('M d, Y', strtotime($app['application_date'] ?? $app['created_at'])) ?></div>
-                  </td>
-                  <td>
-                    <div class="fw-semibold text-dark"><?= e($app['customer_name']) ?></div>
-                    <div class="small text-muted"><?= e($app['customer_code']) ?></div>
-                  </td>
-                  <td>
-                    <span class="badge bg-light text-dark font-monospace border"><?= e($app['passport_number'] ?: '—') ?></span>
-                  </td>
-                  <td>
-                    <div class="small text-nowrap"><i class="fa-solid fa-phone text-muted me-1"></i><?= e($app['customer_mobile'] ?: '—') ?></div>
-                    <div class="small text-muted text-truncate" style="max-width: 160px;" title="<?= e($app['customer_email']) ?>"><i class="fa-solid fa-envelope me-1"></i><?= e($app['customer_email'] ?: '—') ?></div>
-                  </td>
-                  <td>
-                    <div><?= $app['flag_emoji'] ?> <strong><?= e($app['country_name']) ?></strong></div>
-                    <div class="small text-muted"><?= e($app['service_name']) ?> (<?= e($app['duration'] ?? 'Standard') ?>)</div>
-                  </td>
-                  <td>
-                    <?php if (!empty($app['visa_number'])): ?>
-                      <span class="badge bg-success-subtle text-success border border-success font-monospace text-nowrap">
-                        <i class="fa-solid fa-stamp me-1"></i><?= e($app['visa_number']) ?>
-                      </span>
-                    <?php else: ?>
-                      <span class="text-muted small">Pending</span>
-                    <?php endif; ?>
-                  </td>
-                  <td>
-                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 text-nowrap">
-                      <?= e($app['current_stage']) ?>
-                    </span>
-                    <div class="small text-muted mt-1 text-nowrap">Status: <?= e($app['status']) ?></div>
-                  </td>
-                  <td>
-                    <div class="small text-dark fw-medium text-nowrap"><i class="fa-solid fa-user-tie text-secondary me-1"></i><?= e($app['staff_name'] ?? 'Operations Team') ?></div>
-                  </td>
-                  <td>
-                    <span class="badge <?= $healthClass ?> text-white" title="<?= e($app['health_reason'] ?? 'Good health') ?>">
-                      <?= (int)$app['calculated_health'] ?>%
-                    </span>
-                  </td>
-                  <td class="text-end">
-                    <div class="d-flex align-items-center justify-content-end gap-1">
-                      <a href="/tracking/show?id=<?= $app['id'] ?>" class="btn btn-sm btn-primary fw-semibold px-2.5 py-1 text-nowrap shadow-sm" title="Track Visa Complete Journey">
-                        <i class="fa-solid fa-magnifying-glass-location me-1"></i> Track Visa
-                      </a>
-                      <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-sm btn-outline-secondary px-2 py-1" title="Open Workspace">
-                        <i class="fa-solid fa-folder-open"></i>
-                      </a>
-                    </div>
-                  </td>
-                </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
-        </div>
+    <?php if (empty($applications)): ?>
+      <div class="bento-card text-center py-5">
+        <i class="fa-solid fa-route fs-1 text-muted opacity-50 mb-3 d-block"></i>
+        <h5 class="fw-bold text-dark mb-1">No tracking cases found</h5>
+        <p class="text-muted small mb-3">No applications match your active search and filter criteria.</p>
+        <a href="/tracking" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Clear All Filters</a>
       </div>
-
-    <?php elseif ($viewMode === 'grid'): ?>
-
-      <!-- CARDS GRID VIEW -->
-      <div class="row g-3 mb-4">
-        <?php foreach ($applications as $app): ?>
-          <?php
-            $healthClass = ((int)$app['calculated_health'] < 50) ? 'bg-danger' : (((int)$app['calculated_health'] < 80) ? 'bg-warning text-dark' : 'bg-success');
-          ?>
-          <div class="col-12 col-md-6 col-xl-4">
-            <div class="card card-enterprise h-100 shadow-sm border">
-              <div class="card-body p-3.5 d-flex flex-column justify-content-between">
-                <div>
-                  <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="badge bg-primary-subtle text-primary fw-bold border"><?= e($app['application_number']) ?></span>
-                    <span class="badge <?= $healthClass ?> text-white" title="<?= e($app['health_reason'] ?? 'Health') ?>">
-                      <?= (int)$app['calculated_health'] ?>% Health
-                    </span>
-                  </div>
-                  <h6 class="fw-bold text-dark mb-1 d-flex align-items-center gap-1">
-                    <span><?= $app['flag_emoji'] ?></span>
-                    <span class="text-truncate"><?= e($app['customer_name']) ?></span>
-                  </h6>
-                  <div class="text-muted small mb-3">
-                    <span class="font-monospace"><?= e($app['passport_number']) ?></span> &bull; <?= e($app['country_name']) ?> (<?= e($app['service_name']) ?>)
-                  </div>
-                  <div class="p-2.5 bg-light rounded border mb-3 small">
-                    <div class="d-flex justify-content-between mb-1">
-                      <span class="text-muted">Stage:</span>
-                      <strong class="text-primary text-truncate ms-2"><?= e($app['current_stage']) ?></strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-1">
-                      <span class="text-muted">Officer:</span>
-                      <span class="text-dark"><?= e($app['staff_name'] ?? 'Unassigned') ?></span>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                      <span class="text-muted">Target SLA:</span>
-                      <span class="text-muted"><?= e($app['expected_completion_date'] ?? 'N/A') ?></span>
-                    </div>
-                  </div>
-                </div>
-                <div class="d-flex gap-2 pt-2 border-top">
-                  <a href="/tracking/show?id=<?= $app['id'] ?>" class="btn btn-primary btn-sm flex-grow-1 fw-semibold">
-                    <i class="fa-solid fa-route me-1"></i> Track Visa
-                  </a>
-                  <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-outline-secondary btn-sm" title="Workspace">
-                    <i class="fa-solid fa-folder-open"></i>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        <?php endforeach; ?>
-      </div>
-
     <?php else: ?>
 
-      <!-- VISUAL TIMELINE CARDS VIEW -->
-      <?php foreach ($applications as $app): ?>
-        <?php
-          $isAppApproved = ($app['status'] === 'Approved' || $app['status'] === 'Completed');
-          $isAppReturned = ($app['status'] === 'Action Required' || str_contains(strtolower($app['current_stage']), 'returned'));
-          $healthBadge = ((int)$app['calculated_health'] < 50) ? 'health-critical' : (((int)$app['calculated_health'] < 80) ? 'health-at-risk' : 'health-healthy');
-        ?>
-        <div class="card card-enterprise mb-4 border-0 shadow-sm">
-          <div class="card-header bg-white d-flex flex-wrap align-items-center justify-content-between gap-3 py-3 border-bottom">
-            <div class="d-flex align-items-center gap-3">
-              <a href="/tracking/show?id=<?= $app['id'] ?>" class="fw-bold fs-6 text-primary text-decoration-none">
-                <?= e($app['application_number']) ?>
-              </a>
-              <span class="fs-5"><?= $app['flag_emoji'] ?></span>
-              <span class="fw-semibold text-dark"><?= e($app['customer_name']) ?></span>
-              <span class="badge bg-light text-secondary border font-monospace"><?= e($app['passport_number']) ?></span>
+      <?php if ($viewMode === 'cards'): ?>
+        <!-- ─── CARDS GRID VIEW (RESPONSIVE BENTO CARDS) ───────────────────── -->
+        <div class="bento-tracking-grid mb-4">
+          <?php foreach ($applications as $app): 
+            $healthVal = (int)($app['calculated_health'] ?? 100);
+            $healthClass = ($healthVal < 50) ? 'bg-danger text-white' : (($healthVal < 80) ? 'bg-warning text-dark' : 'bg-success text-white');
+            $prio = strtolower($app['priority'] ?? 'normal');
+            $isCrit = ($prio === 'critical' || $prio === 'urgent');
+            $curStep = $getStageStep($app['current_stage'] ?? '', $app['status'] ?? '');
+            $appDate = !empty($app['application_date']) ? format_date($app['application_date']) : (!empty($app['created_at']) ? format_date($app['created_at']) : '—');
+          ?>
+            <div class="bento-tracking-card">
+              <div>
+                <!-- Top Row: App Ref, Priority & Live Health Badge -->
+                <div class="bento-tracking-top">
+                  <a href="/tracking/show?id=<?= $app['id'] ?>" class="badge bg-light text-dark border fw-bold text-decoration-none px-2.5 py-1.5" style="border-radius: var(--bento-radius-pill);">
+                    <?= e($app['application_number']) ?>
+                  </a>
+                  <div class="d-flex align-items-center gap-1.5">
+                    <?php if ($isCrit): ?>
+                      <span class="badge bg-danger text-white px-2 py-1" style="border-radius: var(--bento-radius-pill);">
+                        <i class="fa-solid fa-bolt me-1"></i><?= e($app['priority']) ?>
+                      </span>
+                    <?php endif; ?>
+                    <span class="badge <?= $healthClass ?> px-2 py-1" style="border-radius: var(--bento-radius-pill);" title="<?= e($app['health_reason'] ?? 'Health Status') ?>">
+                      <?= $healthVal ?>% Health
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Applicant Hero Block -->
+                <div class="bento-tracking-applicant">
+                  <div class="bento-tracking-avatar">
+                    <?= strtoupper(substr(trim($app['customer_name'] ?? 'A'), 0, 1)) ?>
+                  </div>
+                  <div style="min-width: 0;">
+                    <h5 class="fw-bold text-dark mb-0.5 text-truncate" style="font-size: 0.98rem;">
+                      <?= e($app['customer_name']) ?>
+                    </h5>
+                    <div class="d-flex align-items-center gap-2 text-muted" style="font-size: 0.74rem;">
+                      <span class="font-monospace fw-semibold"><i class="fa-regular fa-id-card me-1"></i><?= e($app['passport_number'] ?: '—') ?></span>
+                      <?php if (!empty($app['customer_code'])): ?>
+                        <span>&bull; <?= e($app['customer_code']) ?></span>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Destination & Service Banner -->
+                <div class="bento-tracking-dest-banner">
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="fs-4"><?= $app['flag_emoji'] ?></span>
+                      <div>
+                        <div class="fw-bold text-dark small"><?= e($app['country_name']) ?></div>
+                        <div class="text-muted" style="font-size: 0.72rem;"><?= e($app['service_name']) ?></div>
+                      </div>
+                    </div>
+                    <?php if (!empty($app['service_duration'])): ?>
+                      <span class="badge bg-white text-secondary border rounded-pill px-2 py-1" style="font-size: 0.68rem;">
+                        <?= e($app['service_duration']) ?>
+                      </span>
+                    <?php endif; ?>
+                  </div>
+                </div>
+
+                <!-- 4-Stage Visual Journey Stepper -->
+                <div class="bento-journey-stepper">
+                  <div class="bento-step-item <?= $curStep >= 1 ? ($curStep > 1 ? 'completed' : 'active') : '' ?>">
+                    <div class="bento-step-dot">
+                      <?php if ($curStep > 1): ?><i class="fa-solid fa-check"></i><?php else: ?>1<?php endif; ?>
+                    </div>
+                    <span class="bento-step-label">Registered</span>
+                  </div>
+                  <div class="bento-step-item <?= $curStep >= 2 ? ($curStep > 2 ? 'completed' : 'active') : '' ?>">
+                    <div class="bento-step-dot">
+                      <?php if ($curStep > 2): ?><i class="fa-solid fa-check"></i><?php else: ?>2<?php endif; ?>
+                    </div>
+                    <span class="bento-step-label">Documents</span>
+                  </div>
+                  <div class="bento-step-item <?= $curStep >= 3 ? ($curStep > 3 ? 'completed' : 'active') : '' ?>">
+                    <div class="bento-step-dot">
+                      <?php if ($curStep > 3): ?><i class="fa-solid fa-check"></i><?php else: ?>3<?php endif; ?>
+                    </div>
+                    <span class="bento-step-label">Embassy</span>
+                  </div>
+                  <div class="bento-step-item <?= $curStep >= 4 ? 'completed active' : '' ?>">
+                    <div class="bento-step-dot">
+                      <?php if ($curStep >= 4): ?><i class="fa-solid fa-check"></i><?php else: ?>4<?php endif; ?>
+                    </div>
+                    <span class="bento-step-label">Approved</span>
+                  </div>
+                </div>
+
+                <!-- Metadata 2x2 Grid -->
+                <div class="bento-tracking-meta-grid">
+                  <div class="bento-tracking-meta-cell">
+                    <div class="bento-tracking-meta-label">Current Stage</div>
+                    <div class="bento-tracking-meta-val" title="<?= e($app['current_stage']) ?>">
+                      <?= e($app['current_stage']) ?>
+                    </div>
+                  </div>
+
+                  <div class="bento-tracking-meta-cell">
+                    <div class="bento-tracking-meta-label">Assigned Officer</div>
+                    <div class="bento-tracking-meta-val" title="<?= e($app['staff_name'] ?? 'Operations') ?>">
+                      <i class="fa-regular fa-user me-1 text-muted"></i><?= e($app['staff_name'] ?? 'Operations') ?>
+                    </div>
+                  </div>
+
+                  <div class="bento-tracking-meta-cell">
+                    <div class="bento-tracking-meta-label">Submission Date</div>
+                    <div class="bento-tracking-meta-val text-muted">
+                      <?= $appDate ?>
+                    </div>
+                  </div>
+
+                  <div class="bento-tracking-meta-cell">
+                    <div class="bento-tracking-meta-label">Visa Number</div>
+                    <div class="bento-tracking-meta-val">
+                      <?php if (!empty($app['visa_number'])): ?>
+                        <span class="text-success fw-bold font-monospace"><i class="fa-solid fa-stamp me-1"></i><?= e($app['visa_number']) ?></span>
+                      <?php else: ?>
+                        <span class="text-muted fw-normal">In Progress</span>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card Action Footer -->
+              <div class="bento-tracking-actions">
+                <a href="/tracking/show?id=<?= $app['id'] ?>" class="bento-btn-primary flex-grow-1 text-center justify-content-center" style="padding: 0.5rem 1rem; font-size: 0.82rem;">
+                  <i class="fa-solid fa-magnifying-glass-location me-1.5"></i> Track Journey &rarr;
+                </a>
+                <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-sm btn-light border rounded-pill px-2.5 py-1.5" title="Open Workspace">
+                  <i class="fa-solid fa-folder-open text-muted"></i>
+                </a>
+                <?php 
+                  $mob = preg_replace('/[^0-9]/', '', (string)($app['customer_whatsapp'] ?: $app['customer_mobile']));
+                  if (!empty($mob)):
+                ?>
+                  <a href="https://wa.me/<?= $mob ?>?text=<?= urlencode("Hello " . $app['customer_name'] . ", here is the live tracking update for your visa application (" . $app['application_number'] . "): Status is currently " . $app['current_stage'] . ".") ?>" 
+                     target="_blank" class="btn btn-sm btn-success rounded-pill px-2.5 py-1.5" title="Send WhatsApp Update">
+                    <i class="fa-brands fa-whatsapp"></i>
+                  </a>
+                <?php endif; ?>
+              </div>
             </div>
-            <div class="d-flex align-items-center gap-2">
-              <span class="badge bg-primary bg-opacity-10 text-primary border"><?= e($app['current_stage']) ?></span>
-              <a href="/tracking/show?id=<?= $app['id'] ?>" class="btn btn-sm btn-primary fw-semibold">
-                <i class="fa-solid fa-magnifying-glass-location me-1"></i> Track Visa
-              </a>
-              <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-sm btn-outline-secondary">
-                <i class="fa-solid fa-folder-open me-1"></i> Workspace
-              </a>
-            </div>
-          </div>
-          <div class="card-body p-4">
-            <div class="row g-3">
-              <div class="col-md-3">
-                <div class="small text-muted">Destination &amp; Visa Type</div>
-                <div class="fw-bold text-dark"><?= e($app['country_name']) ?> &bull; <?= e($app['service_name']) ?></div>
-              </div>
-              <div class="col-md-3">
-                <div class="small text-muted">Contact Info</div>
-                <div class="small text-dark"><?= e($app['customer_mobile']) ?> &bull; <?= e($app['customer_email']) ?></div>
-              </div>
-              <div class="col-md-3">
-                <div class="small text-muted">Assigned Team</div>
-                <div class="small text-dark">Staff: <strong><?= e($app['staff_name'] ?? 'Unassigned') ?></strong> &bull; Supplier: <?= e($app['supplier_name'] ?? 'In-House') ?></div>
-              </div>
-              <div class="col-md-3">
-                <div class="small text-muted">Health &amp; SLA Target</div>
-                <div class="small">Score: <strong><?= (int)$app['calculated_health'] ?>%</strong> &bull; Target: <?= e($app['expected_completion_date'] ?? 'N/A') ?></div>
-              </div>
-            </div>
+          <?php endforeach; ?>
+        </div>
+
+      <?php else: ?>
+        <!-- ─── TABULAR TRACKING VIEW ──────────────────────────────────────── -->
+        <div class="bento-card mb-4 p-0 overflow-hidden">
+          <div class="table-responsive" style="-webkit-overflow-scrolling: touch;">
+            <table class="table table-hover align-middle mb-0" style="min-width: 1050px;">
+              <thead class="table-light">
+                <tr class="small text-muted text-uppercase">
+                  <th class="ps-3" style="width: 160px;">App Ref &amp; Date</th>
+                  <th style="width: 200px;">Applicant / Passport</th>
+                  <th style="width: 200px;">Destination &amp; Service</th>
+                  <th style="width: 180px;">Current Stage &amp; Status</th>
+                  <th style="width: 140px;">Assigned Officer</th>
+                  <th style="width: 90px;">Health</th>
+                  <th class="pe-3 text-end" style="width: 170px;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($applications as $app): 
+                  $healthVal = (int)($app['calculated_health'] ?? 100);
+                  $healthClass = ($healthVal < 50) ? 'bg-danger text-white' : (($healthVal < 80) ? 'bg-warning text-dark' : 'bg-success text-white');
+                  $appDate = !empty($app['application_date']) ? format_date($app['application_date']) : (!empty($app['created_at']) ? format_date($app['created_at']) : '—');
+                ?>
+                  <tr>
+                    <td class="ps-3">
+                      <a href="/tracking/show?id=<?= $app['id'] ?>" class="fw-bold text-decoration-none" style="color: var(--bento-primary);">
+                        <?= e($app['application_number']) ?>
+                      </a>
+                      <div class="small text-muted"><?= $appDate ?></div>
+                    </td>
+                    <td>
+                      <div class="fw-bold text-dark small"><?= e($app['customer_name']) ?></div>
+                      <span class="badge bg-light text-dark font-monospace border" style="font-size: 0.68rem;"><?= e($app['passport_number'] ?: '—') ?></span>
+                    </td>
+                    <td>
+                      <div class="small fw-bold text-dark"><?= $app['flag_emoji'] ?> <?= e($app['country_name']) ?></div>
+                      <div class="text-muted" style="font-size: 0.72rem;"><?= e($app['service_name']) ?></div>
+                    </td>
+                    <td>
+                      <span class="badge bg-light text-dark border px-2 py-1 small"><?= e($app['current_stage']) ?></span>
+                      <div class="small text-muted mt-0.5" style="font-size: 0.7rem;">Status: <?= e($app['status']) ?></div>
+                    </td>
+                    <td>
+                      <span class="small text-dark"><i class="fa-regular fa-user text-muted me-1"></i><?= e($app['staff_name'] ?? 'Operations') ?></span>
+                    </td>
+                    <td>
+                      <span class="badge <?= $healthClass ?> px-2 py-1" style="border-radius: var(--bento-radius-pill);">
+                        <?= $healthVal ?>%
+                      </span>
+                    </td>
+                    <td class="pe-3 text-end">
+                      <div class="d-flex align-items-center justify-content-end gap-1">
+                        <a href="/tracking/show?id=<?= $app['id'] ?>" class="bento-btn-primary" style="padding: 0.35rem 0.85rem; font-size: 0.75rem;">
+                          Track &rarr;
+                        </a>
+                        <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-sm btn-light border rounded-pill px-2 py-1" title="Workspace">
+                          <i class="fa-solid fa-folder-open text-muted small"></i>
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
           </div>
         </div>
-      <?php endforeach; ?>
+      <?php endif; ?>
+
+      <!-- ─── PAGINATION CONTROLS (1, 2, 3... BUTTONS) ─────────────────────── -->
+      <?php if ($totalRecords > 0): ?>
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mt-3 mb-4 p-3 bg-white rounded-4 border shadow-xs">
+          <div class="text-muted small">
+            Showing <span class="fw-bold text-dark"><?= ($offset + 1) ?></span> &ndash; <span class="fw-bold text-dark"><?= min($offset + $perPage, $totalRecords) ?></span> of <span class="fw-bold text-dark"><?= $totalRecords ?></span> cases
+          </div>
+
+          <nav aria-label="Tracking Pagination">
+            <ul class="pagination pagination-sm mb-0 gap-1 align-items-center">
+              <!-- Previous Button -->
+              <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
+                <a class="page-link rounded-pill px-3 py-1.5 fw-semibold <?= ($page <= 1) ? 'text-muted bg-light border-0' : 'text-dark border shadow-xs' ?>" 
+                   href="<?= ($page > 1) ? $buildTrackingUrl(['page' => $page - 1]) : 'javascript:void(0)' ?>">
+                  <i class="fa-solid fa-chevron-left me-1 small"></i> Prev
+                </a>
+              </li>
+
+              <!-- Numbered Page Buttons (1, 2, 3...) -->
+              <?php for ($p = 1; $p <= $totalPages; $p++): ?>
+                <li class="page-item <?= ($p === $page) ? 'active' : '' ?>">
+                  <a class="page-link rounded-pill text-center fw-bold <?= ($p === $page) ? 'text-white shadow-xs' : 'text-dark border' ?>" 
+                     style="<?= ($p === $page) ? 'background: var(--bento-primary); border-color: var(--bento-primary);' : '' ?> min-width: 34px; padding: 0.35rem 0.65rem;" 
+                     href="<?= $buildTrackingUrl(['page' => $p]) ?>">
+                    <?= $p ?>
+                  </a>
+                </li>
+              <?php endfor; ?>
+
+              <!-- Next Button -->
+              <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : '' ?>">
+                <a class="page-link rounded-pill px-3 py-1.5 fw-semibold <?= ($page >= $totalPages) ? 'text-muted bg-light border-0' : 'text-dark border shadow-xs' ?>" 
+                   href="<?= ($page < $totalPages) ? $buildTrackingUrl(['page' => $page + 1]) : 'javascript:void(0)' ?>">
+                  Next <i class="fa-solid fa-chevron-right ms-1 small"></i>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      <?php endif; ?>
 
     <?php endif; ?>
 
-    <!-- Pagination Controls -->
-    <?php if ($totalPages > 1): ?>
-      <nav class="d-flex justify-content-center my-4">
-        <ul class="pagination pagination-sm">
-          <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
-            <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>">Previous</a>
-          </li>
-          <?php for ($p = 1; $p <= $totalPages; $p++): ?>
-            <li class="page-item <?= ($p === $page) ? 'active' : '' ?>">
-              <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $p])) ?>"><?= $p ?></a>
-            </li>
-          <?php endfor; ?>
-          <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : '' ?>">
-            <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>">Next</a>
-          </li>
-        </ul>
-      </nav>
-    <?php endif; ?>
-
-  <?php endif; ?>
-
-</div>
+  </div><!-- /bento-dashboard-wrap -->
+</div><!-- /content-body -->
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

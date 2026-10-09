@@ -64,9 +64,9 @@ class TrackingController
         $dateFrom = trim($_GET['date_from'] ?? '');
         $dateTo = trim($_GET['date_to'] ?? '');
 
-        // Pagination
+        // Pagination (8 tracking cases per page as requested)
         $page = max(1, (int)($_GET['page'] ?? 1));
-        $perPage = 25;
+        $perPage = 8;
         $offset = ($page - 1) * $perPage;
 
         $baseFromWhere = " FROM applications a
@@ -162,11 +162,11 @@ class TrackingController
         $countStmt = $pdo->prepare($countSql);
         $countStmt->execute($params);
         $totalRecords = (int)$countStmt->fetchColumn();
-        $totalPages = ceil($totalRecords / $perPage);
+        $totalPages = max(1, (int)ceil($totalRecords / $perPage));
 
         // Fetch data
         $sql = "SELECT a.*, 
-                    c.full_name as customer_name, c.customer_code, c.mobile as customer_mobile, c.email as customer_email,
+                    c.full_name as customer_name, c.customer_code, c.mobile as customer_mobile, c.email as customer_email, c.whatsapp as customer_whatsapp,
                     vs.name as service_name, vs.entry_type as service_entry_type, vs.duration as service_duration,
                     ct.name as country_name, ct.flag_emoji,
                     u.name as staff_name,
@@ -217,6 +217,14 @@ class TrackingController
         $servicesList = $pdo->query("SELECT id, name FROM visa_services WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $staffList = $pdo->query("SELECT id, name FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $suppliersList = $pdo->query("SELECT id, company_name FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+        // Tracking executive KPI overview
+        $trackingKpis = [
+            'total' => (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE is_archived = 0")->fetchColumn(),
+            'active' => (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE is_archived = 0 AND status NOT IN ('Approved', 'Completed', 'Rejected', 'Cancelled')")->fetchColumn(),
+            'approved' => (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE is_archived = 0 AND status IN ('Approved', 'Completed')")->fetchColumn(),
+            'urgent' => (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE is_archived = 0 AND priority IN ('Critical', 'Urgent')")->fetchColumn(),
+        ];
 
         require_once dirname(__DIR__) . '/Views/tracking/index.php';
     }
