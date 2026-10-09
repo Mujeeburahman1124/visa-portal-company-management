@@ -178,8 +178,8 @@ class DocumentController
                              a.visa_service_id, a.branch_id, a.assigned_staff_id, a.created_at as app_created_at,
                              a.priority,
                              c.id as customer_id, c.customer_code, c.full_name as customer_name, c.nationality,
-                             c.current_country, c.mobile, c.whatsapp, c.email, c.gender,
-                             cp.passport_number,
+                             c.current_country, c.mobile, c.whatsapp, c.email, c.gender, c.dob, c.address, c.city, c.occupation,
+                              cp.passport_number, cp.expiry_date as passport_expiry_date, cp.issuing_country as passport_issuing_country,
                              vs.name as service_name, ct.name as country_name, ct.flag_emoji,
                              b.name as branch_name,
                              u.name as assigned_staff_name,
@@ -292,6 +292,16 @@ class DocumentController
                 $f['expired_docs'] = $chk['total_expired'];
                 $f['required_docs_count'] = $chk['total_required'];
                 $f['completion_percent'] = $chk['percentage'];
+
+                // Attach uploaded documents for this applicant folder
+                $docStmt = $pdo->prepare("SELECT d.*, dt.name as doc_type_name, dt.category, dt.requires_expiry, u.name as verified_by_name, uploader.name as uploaded_by_name FROM documents d LEFT JOIN document_types dt ON d.document_type_id = dt.id LEFT JOIN users u ON d.verified_by = u.id LEFT JOIN users uploader ON (d.uploaded_by_type = 'Staff' AND d.uploaded_by_id = uploader.id) WHERE d.application_id = ? OR (d.customer_id = ? AND (d.application_id IS NULL OR d.application_id = 0)) ORDER BY d.created_at DESC");
+                $docStmt->execute([$aId, $cId]);
+                $fDocs = $docStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+                foreach ($fDocs as &$fd) {
+                    $fd['expiry_info'] = DocumentExpiryService::checkExpiry($fd['expiry_date'] ?? null);
+                }
+                unset($fd);
+                $f['uploaded_documents'] = $fDocs;
             }
             unset($f);
         }

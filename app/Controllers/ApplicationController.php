@@ -834,7 +834,7 @@ class ApplicationController
 
         // Fetch application master record
         $stmt = $pdo->prepare("SELECT a.*, 
-            c.id as customer_id, c.customer_code, c.full_name as customer_name, c.mobile as customer_mobile, 
+            c.id as customer_id, c.customer_code, c.full_name as customer_name, c.mobile as customer_mobile, c.whatsapp as customer_whatsapp, 
             c.email as customer_email, c.nationality as customer_nationality, c.dob as customer_dob,
             c.gender as customer_gender, c.current_country as customer_current_country,
             vs.name as service_name, vs.entry_type, vs.processing_type, vs.estimated_days,

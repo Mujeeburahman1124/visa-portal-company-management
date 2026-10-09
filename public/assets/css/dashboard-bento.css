@@ -2262,5 +2262,237 @@
   }
 }
 
+/* ==========================================================================
+   BENTO APPLICANT FOLDER EXPLORER (DOCUMENTS SECTION)
+   ========================================================================== */
+.bento-folder-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Tree / Explorer List View (Matches User Screenshot) */
+.bento-folder-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.bento-folder-tree-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1.15rem;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+}
+
+.bento-folder-tree-item:hover {
+  border-color: #E11D48;
+  background: #FFF8F9;
+  transform: translateX(4px);
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.08);
+}
+
+.bento-folder-tree-main {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.bento-folder-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #FEF3C7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  color: #D97706;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.15);
+  transition: transform 0.2s ease;
+}
+
+.bento-folder-tree-item:hover .bento-folder-icon-box {
+  transform: scale(1.08);
+  background: #FDE68A;
+}
+
+.bento-folder-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0F172A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bento-folder-submeta {
+  font-size: 0.75rem;
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.bento-folder-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.73rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  background: #F1F5F9;
+  color: #334155;
+}
+
+/* Grid Folder Cards View */
+.bento-folder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+.bento-folder-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 18px;
+  padding: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+.bento-folder-card:hover {
+  transform: translateY(-4px);
+  border-color: #E11D48;
+  box-shadow: 0 12px 24px rgba(225, 29, 72, 0.08), 0 4px 8px rgba(15, 23, 42, 0.03);
+}
+
+.bento-folder-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.bento-folder-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #E11D48;
+  letter-spacing: 0.02em;
+}
+
+.bento-folder-card-body {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.bento-folder-avatar-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%);
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 4px 10px rgba(225, 29, 72, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: #E11D48;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.bento-folder-avatar-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bento-folder-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  background: #F8FAFC;
+  border: 1px solid #F1F5F9;
+  border-radius: 12px;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.bento-folder-stat-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.bento-folder-stat-num {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0F172A;
+  line-height: 1.2;
+}
+
+.bento-folder-stat-lbl {
+  font-size: 0.65rem;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+}
+
+/* Interactive Folder Drawer / Modal */
+.bento-drawer-header {
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bento-file-table-row {
+  transition: background 0.15s ease;
+}
+
+.bento-file-table-row:hover {
+  background: #FFF8F9;
+}
+
+@media (max-width: 768px) {
+  .bento-folder-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .bento-folder-tree-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .bento-folder-submeta {
+    gap: 0.4rem;
+  }
+}
+
+
 
 

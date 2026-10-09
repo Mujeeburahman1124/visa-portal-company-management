@@ -404,8 +404,11 @@ $getStageStep = function(string $stage, string $status): int {
                 <a href="/tracking/show?id=<?= $app['id'] ?>" class="bento-btn-primary flex-grow-1 text-center justify-content-center" style="padding: 0.5rem 1rem; font-size: 0.82rem;">
                   <i class="fa-solid fa-magnifying-glass-location me-1.5"></i> Track Journey &rarr;
                 </a>
-                <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-sm btn-light border rounded-pill px-2.5 py-1.5" title="Open Workspace">
-                  <i class="fa-solid fa-folder-open text-muted"></i>
+                <a href="/documents/profile?application_id=<?= $app['id'] ?>" class="btn btn-sm btn-light border rounded-pill px-2.5 py-1.5" title="Applicant Documents & Profile">
+                  <i class="fa-solid fa-folder-closed" style="color: #F59E0B;"></i>
+                </a>
+                <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-sm btn-light border rounded-pill px-2.5 py-1.5" title="Master Workspace">
+                  <i class="fa-solid fa-briefcase text-muted"></i>
                 </a>
                 <?php 
                   $mob = preg_replace('/[^0-9]/', '', (string)($app['customer_whatsapp'] ?: $app['customer_mobile']));
@@ -475,8 +478,11 @@ $getStageStep = function(string $stage, string $status): int {
                         <a href="/tracking/show?id=<?= $app['id'] ?>" class="bento-btn-primary" style="padding: 0.35rem 0.85rem; font-size: 0.75rem;">
                           Track &rarr;
                         </a>
-                        <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-sm btn-light border rounded-pill px-2 py-1" title="Workspace">
-                          <i class="fa-solid fa-folder-open text-muted small"></i>
+                        <a href="/documents/profile?application_id=<?= $app['id'] ?>" class="btn btn-sm btn-light border rounded-pill px-2 py-1" title="Applicant Documents & Profile">
+                          <i class="fa-solid fa-folder-closed small" style="color: #F59E0B;"></i>
+                        </a>
+                        <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-sm btn-light border rounded-pill px-2 py-1" title="Master Workspace">
+                          <i class="fa-solid fa-briefcase text-muted small"></i>
                         </a>
                       </div>
                     </td>
