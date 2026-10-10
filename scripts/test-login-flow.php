@@ -12,7 +12,7 @@ require_once dirname(__DIR__) . '/app/autoload.php';
 
 use App\Controllers\AuthController;
 
-$_POST['email'] = 'admin@system.com';
+$_POST['email'] = 'admin@visatrack.com';
 $_POST['password'] = 'password';
 
 $ctrl = new AuthController();
@@ -40,6 +40,8 @@ $ctrl = new AuthController();
 ob_start();
 $ctrl->login();
 $out = ob_get_clean();
+
+
 
 if (!empty($_SESSION['agent_auth'])) {
     echo "SUCCESS: Agent login verified! Agent: " . $_SESSION['agent_auth']['contact_person'] . " (" . $_SESSION['agent_auth']['company_name'] . ")\n";

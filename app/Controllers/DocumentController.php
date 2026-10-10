@@ -174,11 +174,35 @@ class DocumentController
         // ==============================================================
         // 1. APPLICANT FOLDER DIRECTORY QUERY (PRIMARY PRESENTATION)
         // ==============================================================
+        static $hasCustomerCity = null;
+        if ($hasCustomerCity === null) {
+            try {
+                $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                if ($driver === 'sqlite') {
+                    $cols = array_column($pdo->query("PRAGMA table_info(customers)")->fetchAll(PDO::FETCH_ASSOC), 'name');
+                    $hasCustomerCity = in_array('city', $cols, true);
+                } else {
+                    $hasCustomerCity = (bool)$pdo->query("SHOW COLUMNS FROM customers LIKE 'city'")->fetch();
+                }
+            } catch (\Throwable $e) {
+                $hasCustomerCity = false;
+            }
+            if (!$hasCustomerCity) {
+                try {
+                    $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                    $colType = ($driver === 'mysql') ? 'VARCHAR(100) NULL' : 'TEXT NULL';
+                    $pdo->exec("ALTER TABLE customers ADD COLUMN city {$colType}");
+                    $hasCustomerCity = true;
+                } catch (\Throwable $e) {}
+            }
+        }
+        $citySelect = $hasCustomerCity ? 'c.city' : "'' as city";
+
         $folderSql = "SELECT a.id as application_id, a.application_number, a.status as application_status, a.current_stage,
                              a.visa_service_id, a.branch_id, a.assigned_staff_id, a.created_at as app_created_at,
                              a.priority,
                              c.id as customer_id, c.customer_code, c.full_name as customer_name, c.nationality,
-                             c.current_country, c.mobile, c.whatsapp, c.email, c.gender, c.dob, c.address, c.city, c.occupation,
+                             c.current_country, c.mobile, c.whatsapp, c.email, c.gender, c.dob, c.address, {$citySelect}, c.occupation,
                               cp.passport_number, cp.expiry_date as passport_expiry_date, cp.issuing_country as passport_issuing_country,
                              vs.name as service_name, ct.name as country_name, ct.flag_emoji,
                              b.name as branch_name,
@@ -344,9 +368,50 @@ class DocumentController
         }
 
         // 1. Fetch Application + Customer + Relational Data
+        static $hasCustomerExtras = null;
+        if ($hasCustomerExtras === null) {
+            try {
+                $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                if ($driver === 'sqlite') {
+                    $cols = array_column($pdo->query("PRAGMA table_info(customers)")->fetchAll(PDO::FETCH_ASSOC), 'name');
+                    $hasCustomerExtras = [
+                        'birth_country' => in_array('birth_country', $cols, true),
+                        'city'          => in_array('city', $cols, true),
+                        'education'     => in_array('education', $cols, true),
+                        'language'      => in_array('language', $cols, true),
+                    ];
+                } else {
+                    $cols = array_column($pdo->query("SHOW COLUMNS FROM customers WHERE Field IN ('birth_country','city','education','language')")->fetchAll(PDO::FETCH_ASSOC), 'Field');
+                    $hasCustomerExtras = [
+                        'birth_country' => in_array('birth_country', $cols, true),
+                        'city'          => in_array('city', $cols, true),
+                        'education'     => in_array('education', $cols, true),
+                        'language'      => in_array('language', $cols, true),
+                    ];
+                }
+            } catch (\Throwable $e) {
+                $hasCustomerExtras = ['birth_country' => false, 'city' => false, 'education' => false, 'language' => false];
+            }
+            // Auto self-heal any missing customer fields
+            foreach (['birth_country', 'city', 'education', 'language'] as $extraCol) {
+                if (empty($hasCustomerExtras[$extraCol])) {
+                    try {
+                        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                        $colType = ($driver === 'mysql') ? 'VARCHAR(100) NULL' : 'TEXT NULL';
+                        $pdo->exec("ALTER TABLE customers ADD COLUMN {$extraCol} {$colType}");
+                        $hasCustomerExtras[$extraCol] = true;
+                    } catch (\Throwable $e) {}
+                }
+            }
+        }
+        $birthCountrySelect = !empty($hasCustomerExtras['birth_country']) ? 'c.birth_country' : "'' as birth_country";
+        $cityProfileSelect  = !empty($hasCustomerExtras['city'])          ? 'c.city'          : "'' as city";
+        $educationSelect    = !empty($hasCustomerExtras['education'])     ? 'c.education'     : "'' as education";
+        $languageSelect     = !empty($hasCustomerExtras['language'])      ? 'c.language'      : "'' as language";
+
         $stmt = $pdo->prepare("SELECT a.*, 
                     c.id as customer_id, c.customer_code, c.first_name, c.middle_name, c.last_name, c.full_name as customer_name,
-                    c.gender, c.dob, c.nationality, c.place_of_birth, c.birth_country, c.city, c.education, c.language, c.marital_status, c.religion, c.occupation,
+                    c.gender, c.dob, c.nationality, c.place_of_birth, {$birthCountrySelect}, {$cityProfileSelect}, {$educationSelect}, {$languageSelect}, c.marital_status, c.religion, c.occupation,
                     c.mobile, c.whatsapp, c.email, c.current_country, c.address, c.notes as customer_notes,
                     c.created_at as customer_created_at, c.updated_at as customer_updated_at,
                     COALESCE(cp.passport_number, a.passport_number) as passport_number,

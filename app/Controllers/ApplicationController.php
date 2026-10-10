@@ -1424,22 +1424,46 @@ class ApplicationController
             $filePath = 'visas/' . $fileName;
         }
 
-        // Upsert into visa_approvals safely
+        // Upsert into visa_approvals safely with resilient column detection & self-healing
         $stmtCheck = $pdo->prepare("SELECT id FROM visa_approvals WHERE application_id = ?");
         $stmtCheck->execute([$appId]);
         $existingApprovalId = $stmtCheck->fetchColumn();
 
+        static $hasApprUpdatedAt = null;
+        if ($hasApprUpdatedAt === null) {
+            try {
+                $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                if ($driver === 'sqlite') {
+                    $cols = array_column($pdo->query("PRAGMA table_info(visa_approvals)")->fetchAll(PDO::FETCH_ASSOC), 'name');
+                    $hasApprUpdatedAt = in_array('updated_at', $cols, true);
+                } else {
+                    $hasApprUpdatedAt = (bool)$pdo->query("SHOW COLUMNS FROM visa_approvals LIKE 'updated_at'")->fetch();
+                }
+            } catch (\Throwable $e) {
+                $hasApprUpdatedAt = false;
+            }
+            if (!$hasApprUpdatedAt) {
+                try {
+                    $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                    $def = ($driver === 'mysql') ? "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" : "DATETIME DEFAULT CURRENT_TIMESTAMP";
+                    $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN updated_at {$def}");
+                    $hasApprUpdatedAt = true;
+                } catch (\Throwable $e) {}
+            }
+        }
+
         if ($existingApprovalId) {
-            $pdo->prepare("UPDATE visa_approvals SET 
-                visa_number = ?, issue_date = ?, expiry_date = ?, entry_before_date = ?, maximum_stay = ?, validity = ?, 
-                approved_visa_file = COALESCE(?, approved_visa_file), approval_notes = ?, approved_by = ?, updated_at = CURRENT_TIMESTAMP 
-                WHERE id = ?")
+            $updateSql = $hasApprUpdatedAt
+                ? "UPDATE visa_approvals SET visa_number = ?, issue_date = ?, expiry_date = ?, entry_before_date = ?, maximum_stay = ?, validity = ?, approved_visa_file = COALESCE(?, approved_visa_file), approval_notes = ?, approved_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+                : "UPDATE visa_approvals SET visa_number = ?, issue_date = ?, expiry_date = ?, entry_before_date = ?, maximum_stay = ?, validity = ?, approved_visa_file = COALESCE(?, approved_visa_file), approval_notes = ?, approved_by = ? WHERE id = ?";
+            $pdo->prepare($updateSql)
                 ->execute([$visaNumber, $issueDate, $expiryDate, $entryBefore, $maxStay, $validity, $filePath, $notes, $user['id'] ?? null, $existingApprovalId]);
         } else {
-            $pdo->prepare("INSERT INTO visa_approvals (
-                application_id, visa_number, issue_date, expiry_date, entry_before_date, maximum_stay, validity, approved_visa_file, approval_notes, approved_by, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
-            ->execute([$appId, $visaNumber, $issueDate, $expiryDate, $entryBefore, $maxStay, $validity, $filePath, $notes, $user['id'] ?? null]);
+            $insertSql = $hasApprUpdatedAt
+                ? "INSERT INTO visa_approvals (application_id, visa_number, issue_date, expiry_date, entry_before_date, maximum_stay, validity, approved_visa_file, approval_notes, approved_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+                : "INSERT INTO visa_approvals (application_id, visa_number, issue_date, expiry_date, entry_before_date, maximum_stay, validity, approved_visa_file, approval_notes, approved_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
+            $pdo->prepare($insertSql)
+                ->execute([$appId, $visaNumber, $issueDate, $expiryDate, $entryBefore, $maxStay, $validity, $filePath, $notes, $user['id'] ?? null]);
         }
 
         // Transition status
@@ -1505,17 +1529,67 @@ class ApplicationController
         $stmtCheck->execute([$appId]);
         $existingRejId = $stmtCheck->fetchColumn();
 
+        static $hasRejCols = null;
+        if ($hasRejCols === null) {
+            try {
+                $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                if ($driver === 'sqlite') {
+                    $cols = array_column($pdo->query("PRAGMA table_info(visa_rejections)")->fetchAll(PDO::FETCH_ASSOC), 'name');
+                    $hasRejCols = [
+                        'updated_at'                => in_array('updated_at', $cols, true),
+                        'internal_reason'           => in_array('internal_reason', $cols, true),
+                        'reapplication_eligibility' => in_array('reapplication_eligibility', $cols, true),
+                        'rejection_document'        => in_array('rejection_document', $cols, true),
+                    ];
+                } else {
+                    $cols = array_column($pdo->query("SHOW COLUMNS FROM visa_rejections WHERE Field IN ('updated_at','internal_reason','reapplication_eligibility','rejection_document')")->fetchAll(PDO::FETCH_ASSOC), 'Field');
+                    $hasRejCols = [
+                        'updated_at'                => in_array('updated_at', $cols, true),
+                        'internal_reason'           => in_array('internal_reason', $cols, true),
+                        'reapplication_eligibility' => in_array('reapplication_eligibility', $cols, true),
+                        'rejection_document'        => in_array('rejection_document', $cols, true),
+                    ];
+                }
+            } catch (\Throwable $e) {
+                $hasRejCols = ['updated_at' => false, 'internal_reason' => false, 'reapplication_eligibility' => false, 'rejection_document' => false];
+            }
+            // Auto self-heal any missing rejection columns
+            try {
+                $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                if (empty($hasRejCols['updated_at'])) {
+                    $def = ($driver === 'mysql') ? "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" : "DATETIME DEFAULT CURRENT_TIMESTAMP";
+                    $pdo->exec("ALTER TABLE visa_rejections ADD COLUMN updated_at {$def}");
+                    $hasRejCols['updated_at'] = true;
+                }
+                if (empty($hasRejCols['internal_reason'])) {
+                    $pdo->exec("ALTER TABLE visa_rejections ADD COLUMN internal_reason TEXT NULL");
+                    $hasRejCols['internal_reason'] = true;
+                }
+                if (empty($hasRejCols['reapplication_eligibility'])) {
+                    $def = ($driver === 'mysql') ? "VARCHAR(100) DEFAULT 'Eligible to Reapply'" : "TEXT DEFAULT 'Eligible to Reapply'";
+                    $pdo->exec("ALTER TABLE visa_rejections ADD COLUMN reapplication_eligibility {$def}");
+                    $hasRejCols['reapplication_eligibility'] = true;
+                }
+                if (empty($hasRejCols['rejection_document'])) {
+                    $def = ($driver === 'mysql') ? "VARCHAR(255) NULL" : "TEXT NULL";
+                    $pdo->exec("ALTER TABLE visa_rejections ADD COLUMN rejection_document {$def}");
+                    $hasRejCols['rejection_document'] = true;
+                }
+            } catch (\Throwable $e) {}
+        }
+
         if ($existingRejId) {
-            $pdo->prepare("UPDATE visa_rejections SET 
-                rejection_date = ?, customer_reason = ?, internal_reason = ?, reapplication_eligibility = ?, 
-                rejection_document = COALESCE(?, rejection_document), rejected_by = ?, updated_at = CURRENT_TIMESTAMP 
-                WHERE id = ?")
+            $rejUpdateSql = !empty($hasRejCols['updated_at'])
+                ? "UPDATE visa_rejections SET rejection_date = ?, customer_reason = ?, internal_reason = ?, reapplication_eligibility = ?, rejection_document = COALESCE(?, rejection_document), rejected_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+                : "UPDATE visa_rejections SET rejection_date = ?, customer_reason = ?, internal_reason = ?, reapplication_eligibility = ?, rejection_document = COALESCE(?, rejection_document), rejected_by = ? WHERE id = ?";
+            $pdo->prepare($rejUpdateSql)
                 ->execute([$rejectionDate, $customerReason, $internalReason, $eligibility, $filePath, $user['id'] ?? null, $existingRejId]);
         } else {
-            $pdo->prepare("INSERT INTO visa_rejections (
-                application_id, rejection_date, customer_reason, internal_reason, reapplication_eligibility, rejection_document, rejected_by, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
-            ->execute([$appId, $rejectionDate, $customerReason, $internalReason, $eligibility, $filePath, $user['id'] ?? null]);
+            $rejInsertSql = !empty($hasRejCols['updated_at'])
+                ? "INSERT INTO visa_rejections (application_id, rejection_date, customer_reason, internal_reason, reapplication_eligibility, rejection_document, rejected_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+                : "INSERT INTO visa_rejections (application_id, rejection_date, customer_reason, internal_reason, reapplication_eligibility, rejection_document, rejected_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
+            $pdo->prepare($rejInsertSql)
+                ->execute([$appId, $rejectionDate, $customerReason, $internalReason, $eligibility, $filePath, $user['id'] ?? null]);
         }
 
         StageTransitionService::transition($appId, 'Application Rejected', 'Rejected', "Application rejected: {$customerReason}", (int)($user['id'] ?? 0));

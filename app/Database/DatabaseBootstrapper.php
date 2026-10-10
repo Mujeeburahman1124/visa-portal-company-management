@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 33;
+    private const SCHEMA_VERSION = 34;
 
     public static function init(bool $force = false): void
     {
@@ -988,6 +988,10 @@ class DatabaseBootstrapper
             // Safe ALTER TABLE migrations for customers table
             try { $pdo->exec("ALTER TABLE customers ADD COLUMN religion VARCHAR(100) NULL"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE customers ADD COLUMN password_hash VARCHAR(255) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE customers ADD COLUMN city VARCHAR(100) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE customers ADD COLUMN birth_country VARCHAR(100) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE customers ADD COLUMN education VARCHAR(100) NULL"); } catch (\Throwable $e) {}
+            try { $pdo->exec("ALTER TABLE customers ADD COLUMN language VARCHAR(100) DEFAULT 'English'"); } catch (\Throwable $e) {}
 
             // Safe ALTER TABLE migrations for visa_eligibility_rules table
             try { $pdo->exec("ALTER TABLE visa_eligibility_rules ADD COLUMN destination_country_id INT NULL"); } catch (\Throwable $e) {}
@@ -1807,6 +1811,13 @@ class DatabaseBootstrapper
         try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN notes TEXT NULL"); } catch (\Throwable $e) {}
         try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN validity VARCHAR(100) DEFAULT '60 Days'"); } catch (\Throwable $e) {}
         try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN entry_before_date DATE NULL"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"); } catch (\Throwable $e) {}
+
+        // Safe column migrations for visa_rejections
+        try { $pdo->exec("ALTER TABLE visa_rejections ADD COLUMN internal_reason TEXT NULL"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE visa_rejections ADD COLUMN reapplication_eligibility VARCHAR(100) DEFAULT 'Eligible to Reapply'"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE visa_rejections ADD COLUMN rejection_document VARCHAR(255) NULL"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE visa_rejections ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"); } catch (\Throwable $e) {}
 
         try {
             $pdo->exec("ALTER TABLE visa_requirements ADD COLUMN is_critical TINYINT(1) DEFAULT 0");
@@ -3307,6 +3318,47 @@ class DatabaseBootstrapper
                     } catch (\Throwable $eCol) {}
                 }
             } catch (\Throwable $e) {}
+        }
+
+        // ── MIGRATION 34: Ensure customers applicant profile & visa decision columns ──
+        if ($currentVer < 34) {
+            $custCols = [
+                'city'          => ($driver === 'mysql') ? "VARCHAR(100) NULL" : "TEXT NULL",
+                'birth_country' => ($driver === 'mysql') ? "VARCHAR(100) NULL" : "TEXT NULL",
+                'education'     => ($driver === 'mysql') ? "VARCHAR(100) NULL" : "TEXT NULL",
+                'language'      => ($driver === 'mysql') ? "VARCHAR(100) DEFAULT 'English'" : "TEXT DEFAULT 'English'",
+            ];
+            foreach ($custCols as $col => $def) {
+                try {
+                    $pdo->exec("ALTER TABLE customers ADD COLUMN {$col} {$def}");
+                } catch (\Throwable $eCol) {}
+            }
+
+            $apprCols = [
+                'updated_at'         => ($driver === 'mysql') ? "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" : "DATETIME DEFAULT CURRENT_TIMESTAMP",
+                'maximum_stay'       => ($driver === 'mysql') ? "VARCHAR(100) DEFAULT '30 Days'" : "TEXT DEFAULT '30 Days'",
+                'approved_visa_file' => ($driver === 'mysql') ? "VARCHAR(255) NULL" : "TEXT NULL",
+                'approval_notes'     => ($driver === 'mysql') ? "TEXT NULL" : "TEXT NULL",
+                'validity'           => ($driver === 'mysql') ? "VARCHAR(100) DEFAULT '60 Days'" : "TEXT DEFAULT '60 Days'",
+                'entry_before_date'  => ($driver === 'mysql') ? "DATE NULL" : "TEXT NULL",
+            ];
+            foreach ($apprCols as $col => $def) {
+                try {
+                    $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN {$col} {$def}");
+                } catch (\Throwable $eCol) {}
+            }
+
+            $rejCols = [
+                'updated_at'                => ($driver === 'mysql') ? "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" : "DATETIME DEFAULT CURRENT_TIMESTAMP",
+                'internal_reason'           => ($driver === 'mysql') ? "TEXT NULL" : "TEXT NULL",
+                'reapplication_eligibility' => ($driver === 'mysql') ? "VARCHAR(100) DEFAULT 'Eligible to Reapply'" : "TEXT DEFAULT 'Eligible to Reapply'",
+                'rejection_document'        => ($driver === 'mysql') ? "VARCHAR(255) NULL" : "TEXT NULL",
+            ];
+            foreach ($rejCols as $col => $def) {
+                try {
+                    $pdo->exec("ALTER TABLE visa_rejections ADD COLUMN {$col} {$def}");
+                } catch (\Throwable $eCol) {}
+            }
         }
 
         // ── RECORD SCHEMA VERSION ─────────────────────────────────────────────

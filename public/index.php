@@ -109,13 +109,12 @@ set_error_handler(function (int $errno, string $errstr, string $errfile, int $er
 });
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Run database schema migration only if explicitly enabled via DB_AUTO_MIGRATE (never during production web requests)
-if ((bool)\App\Config\Env::get('DB_AUTO_MIGRATE', false)) {
-    try {
-        DatabaseBootstrapper::init();
-    } catch (\Throwable $e) {
-        error_log('[VISA-TRACK] DatabaseBootstrapper::init() failed: ' . $e->getMessage());
-    }
+// Automatically check schema version & apply pending migrations
+// (DatabaseBootstrapper has an internal fast-path: returns in <1ms if schema version is current)
+try {
+    DatabaseBootstrapper::init();
+} catch (\Throwable $e) {
+    error_log('[VISA-TRACK] DatabaseBootstrapper::init() failed: ' . $e->getMessage());
 }
 
 $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
