@@ -103,6 +103,7 @@ h1, h2, h3, h4, h5, h6,
 .ruby-gem {
   background: var(--gradient-ruby-gem) !important;
   -webkit-background-clip: text !important;
+  background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   font-weight: 800 !important;
 }

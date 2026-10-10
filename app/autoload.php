@@ -229,6 +229,14 @@ function is_super_admin(?array $user = null): bool {
         || ($u['role_name'] ?? '') === 'Super Admin';
 }
 
+function is_admin(?array $user = null): bool {
+    $u = $user ?: auth_user();
+    if (!$u) return false;
+    return ($u['role_slug'] ?? '') === 'admin'
+        || (int)($u['role_id'] ?? 0) === 2
+        || ($u['role_name'] ?? '') === 'Admin';
+}
+
 function get_scoped_branch_id(int $requestedBranchId = 0, ?array $user = null): int {
     $u = $user ?: auth_user();
     if (!$u) return 0;

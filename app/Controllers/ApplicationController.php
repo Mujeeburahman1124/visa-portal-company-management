@@ -554,7 +554,6 @@ class ApplicationController
                         $fSize = filesize($targetPath);
                         $finfo = finfo_open(FILEINFO_MIME_TYPE);
                         $mType = finfo_file($finfo, $targetPath) ?: 'image/jpeg';
-                        if (PHP_VERSION_ID < 80500) { @finfo_close($finfo); }
 
                         $ocrConf = (float)($_POST['ocr_confidence'] ?? 95.0);
                         $ocrProv = trim($_POST['ocr_provider'] ?? 'PassportOcrService');
@@ -593,7 +592,6 @@ class ApplicationController
                 $fileSize = (int)$_FILES['passport_scan']['size'];
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
                 $mimeType = finfo_file($finfo, $tmpName) ?: 'image/jpeg';
-                if (PHP_VERSION_ID < 80500) { @finfo_close($finfo); }
                 $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION)) ?: 'jpg';
                 $savedName = "appdoc_{$appId}_passport_" . time() . '.' . $ext;
                 $targetPath = $docsUploadDir . $savedName;
@@ -629,7 +627,6 @@ class ApplicationController
                 $fileSize = (int)$_FILES['applicant_photo']['size'];
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
                 $mimeType = finfo_file($finfo, $tmpName) ?: 'image/jpeg';
-                if (PHP_VERSION_ID < 80500) { @finfo_close($finfo); }
                 $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION)) ?: 'jpg';
                 $savedName = "appdoc_{$appId}_photo_" . time() . '.' . $ext;
                 $targetPath = $docsUploadDir . $savedName;

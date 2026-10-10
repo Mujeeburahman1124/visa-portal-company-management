@@ -696,7 +696,7 @@ class DocumentController
     /**
      * Resolve applicant profile photograph using PHOTO_WHITE_BG preference rule (Requirement 6 & PART 2, 36)
      */
-    public static function resolveApplicantPhoto(array $docs, int $customerId, \PDO $pdo, int $applicationId = 0): ?array
+    public static function resolveApplicantPhoto(array $docs, int $customerId, PDO $pdo, int $applicationId = 0): ?array
     {
         if ($applicationId <= 0 && !empty($docs[0]['application_id'])) {
             $applicationId = (int)$docs[0]['application_id'];
