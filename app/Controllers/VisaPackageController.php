@@ -30,8 +30,8 @@ class VisaPackageController
                 (SELECT COUNT(*) FROM applications a WHERE a.visa_service_id = vs.id) as total_applications,
                 (SELECT COUNT(*) FROM visa_package_price_history vph WHERE vph.visa_service_id = vs.id) as price_changes_count
                 FROM visa_services vs
-                JOIN countries c ON c.id = vs.country_id
-                JOIN visa_categories vc ON vc.id = vs.category_id
+                LEFT JOIN countries c ON c.id = vs.country_id
+                LEFT JOIN visa_categories vc ON vc.id = vs.category_id
                 LEFT JOIN suppliers s ON vs.supplier_id = s.id
                 WHERE 1=1";
         $params = [];

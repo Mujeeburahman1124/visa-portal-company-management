@@ -1,0 +1,362 @@
+/* ==========================================================================
+   OPERATIONAL TASK BOARD — BENTO REDESIGN & RESPONSIVE SYSTEM
+   Referencing Dashboard & Action Center Tokens
+   ========================================================================== */
+
+.tasks-page .bento-dashboard-wrap {
+  padding: 1.5rem 1.75rem 3.5rem;
+  max-width: 1720px;
+  margin: 0 auto;
+}
+
+.tasks-page .bento-header-title {
+  font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.25rem);
+}
+
+.task-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* ── Segmented View Switcher ─────────────────────────────────────────── */
+.task-segmented {
+  display: inline-flex;
+  background: #FFFFFF;
+  border: 1px solid var(--bento-card-border-hover, #E2E8F0);
+  border-radius: var(--bento-radius-pill, 9999px);
+  padding: 4px;
+  box-shadow: var(--bento-shadow-card, 0 4px 20px -4px rgba(15, 23, 42, 0.05));
+}
+
+.task-segmented button {
+  border: 0;
+  background: transparent;
+  color: var(--bento-text-muted, #64748B);
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.95rem;
+  border-radius: var(--bento-radius-pill, 9999px);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.task-segmented button:hover {
+  color: var(--bento-text-main, #0F172A);
+}
+
+.task-segmented button.active {
+  background: var(--bento-primary, #E11D48);
+  color: #FFFFFF !important;
+  box-shadow: 0 3px 10px var(--bento-primary-glow, rgba(225, 29, 72, 0.16));
+}
+
+/* ── 4 KPI Metric Cards ──────────────────────────────────────────────── */
+.task-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.95rem;
+  margin-bottom: 1.35rem;
+}
+
+.task-kpi-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding: 1rem 1.15rem;
+  background: #FFFFFF;
+  border: 1.5px solid var(--bento-card-border, #F1F5F9);
+  border-radius: 18px;
+  box-shadow: var(--bento-shadow-card, 0 4px 20px -4px rgba(15, 23, 42, 0.05));
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--bento-text-main, #0F172A);
+  text-decoration: none !important;
+}
+
+.task-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--bento-shadow-hover, 0 12px 30px -6px rgba(15, 23, 42, 0.10));
+  border-color: var(--bento-card-border-hover, #E2E8F0);
+}
+
+.task-kpi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.task-kpi-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bento-text-muted, #64748B);
+}
+
+.task-kpi-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  background: var(--bento-bg, #F8FAFC);
+  color: var(--bento-text-muted, #64748B);
+  flex-shrink: 0;
+}
+
+.task-kpi-val {
+  font-size: 1.85rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-family: 'Outfit', sans-serif;
+}
+
+.task-kpi-sub {
+  font-size: 0.72rem;
+  color: var(--bento-text-muted, #64748B);
+}
+
+.task-kpi-card.tone-primary .task-kpi-icon { background: var(--bento-primary-soft, #FFF1F3); color: var(--bento-primary, #E11D48); }
+.task-kpi-card.tone-primary .task-kpi-val { color: var(--bento-primary, #E11D48); }
+
+.task-kpi-card.tone-warning .task-kpi-icon { background: var(--bento-warning-soft, #FFFBEB); color: var(--bento-warning, #D97706); }
+.task-kpi-card.tone-warning .task-kpi-val { color: var(--bento-warning, #D97706); }
+
+.task-kpi-card.tone-danger .task-kpi-icon { background: var(--bento-danger-soft, #FEF2F2); color: var(--bento-danger, #DC2626); }
+.task-kpi-card.tone-danger .task-kpi-val { color: var(--bento-danger, #DC2626); }
+
+.task-kpi-card.tone-success .task-kpi-icon { background: var(--bento-success-soft, #ECFDF5); color: var(--bento-success, #059669); }
+.task-kpi-card.tone-success .task-kpi-val { color: var(--bento-success, #059669); }
+
+/* ── Filter Toolbar ──────────────────────────────────────────────────── */
+.task-filter-card {
+  background: #FFFFFF;
+  border: 1px solid var(--bento-card-border, #F1F5F9);
+  border-radius: 20px;
+  box-shadow: var(--bento-shadow-card, 0 4px 20px -4px rgba(15, 23, 42, 0.05));
+  padding: 1.15rem 1.35rem;
+  margin-bottom: 1.5rem;
+}
+
+.task-filter-card .form-control,
+.task-filter-card .form-select {
+  background-color: var(--bento-bg, #F8FAFC);
+  border: 1px solid var(--bento-card-border-hover, #E2E8F0);
+  border-radius: 12px;
+  font-size: 0.82rem;
+  padding-top: 0.48rem;
+  padding-bottom: 0.48rem;
+}
+
+.task-filter-card .form-control:focus,
+.task-filter-card .form-select:focus {
+  border-color: var(--bento-primary-light, #FB7185);
+  box-shadow: 0 0 0 3px var(--bento-primary-glow, rgba(225, 29, 72, 0.16));
+  background: #FFFFFF;
+}
+
+/* ── 1. Table View ───────────────────────────────────────────────────── */
+.task-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.task-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.task-table thead th {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bento-text-muted, #64748B);
+  padding: 0.85rem 1.15rem;
+  background: var(--bento-bg, #F8FAFC);
+  border-bottom: 1px solid var(--bento-card-border-hover, #E2E8F0);
+  border-top: none;
+  white-space: nowrap;
+}
+
+.task-table tbody tr {
+  background: #FFFFFF;
+  transition: all 0.15s ease;
+}
+
+.task-table tbody tr:hover {
+  background: var(--bento-bg, #F8FAFC);
+}
+
+.task-table tbody td {
+  padding: 0.95rem 1.15rem;
+  font-size: 0.85rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--bento-card-border, #F1F5F9);
+}
+
+/* ── 2. Grid Cards View ──────────────────────────────────────────────── */
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 1.15rem;
+}
+
+.task-card {
+  background: #FFFFFF;
+  border: 1.5px solid var(--bento-card-border, #F1F5F9);
+  border-radius: 20px;
+  padding: 1.25rem;
+  box-shadow: var(--bento-shadow-card, 0 4px 20px -4px rgba(15, 23, 42, 0.05));
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.task-card:hover {
+  border-color: var(--bento-card-border-hover, #E2E8F0);
+  box-shadow: var(--bento-shadow-hover, 0 12px 30px -6px rgba(15, 23, 42, 0.10));
+  transform: translateY(-2px);
+}
+
+/* ── 3. Compact List View ────────────────────────────────────────────── */
+.task-compact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.task-compact-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.8fr) minmax(140px, 1.2fr) minmax(110px, 0.9fr) minmax(110px, 0.9fr) minmax(110px, 0.9fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1.25rem;
+  background: #FFFFFF;
+  border: 1.5px solid var(--bento-card-border, #F1F5F9);
+  border-radius: 16px;
+  box-shadow: var(--bento-shadow-card, 0 4px 20px -4px rgba(15, 23, 42, 0.05));
+  transition: all 0.2s ease;
+}
+
+.task-compact-row:hover {
+  border-color: var(--bento-card-border-hover, #E2E8F0);
+  transform: translateX(3px);
+  background: #FDFEFE;
+}
+
+/* Responsive Table to Cards */
+@media (max-width: 991.98px) {
+  .task-compact-row {
+    grid-template-columns: 1fr auto;
+    row-gap: 0.5rem;
+  }
+  .task-compact-row .tc-meta {
+    display: none;
+  }
+
+  .task-table-wrap {
+    overflow: visible;
+  }
+  .task-table, .task-table tbody, .task-table tr, .task-table td {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+  }
+  .task-table thead {
+    display: none;
+  }
+  .task-table tbody tr {
+    margin: 0.85rem 0;
+    padding: 0.45rem 0.25rem;
+    border: 1.5px solid var(--bento-card-border-hover, #E2E8F0);
+    border-radius: 16px;
+    box-shadow: var(--bento-shadow-card, 0 4px 20px -4px rgba(15, 23, 42, 0.05));
+    background: #FFFFFF;
+  }
+  .task-table tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    white-space: normal;
+    border: none;
+    padding: 0.55rem 0.95rem;
+    text-align: right;
+  }
+  .task-table tbody td::before {
+    content: attr(data-label);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--bento-text-muted, #64748B);
+    text-align: left;
+    flex-shrink: 0;
+  }
+  .task-table tbody td.td-actions {
+    justify-content: flex-end;
+    border-top: 1px solid #F1F5F9 !important;
+    margin-top: 0.35rem;
+    padding-top: 0.75rem;
+  }
+  .task-table tbody td.td-actions::before {
+    display: none;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .tasks-page .bento-dashboard-wrap {
+    padding: 1rem 0.75rem 2.5rem;
+  }
+  .task-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+  }
+  .task-kpi-card {
+    padding: 0.85rem 0.95rem;
+  }
+  .task-kpi-val {
+    font-size: 1.5rem;
+  }
+  .task-header-actions {
+    width: 100%;
+  }
+  .task-header-actions button,
+  .task-header-actions a {
+    flex: 1 1 auto;
+    text-align: center;
+    justify-content: center;
+  }
+  .task-segmented {
+    width: 100%;
+  }
+  .task-segmented button {
+    flex: 1;
+    justify-content: center;
+    padding: 0.45rem 0.5rem;
+  }
+  .task-grid {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .task-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}

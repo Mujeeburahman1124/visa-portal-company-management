@@ -1,0 +1,397 @@
+/**
+ * VISA TRACK — Security Roles & Granular Permissions (Bento Design System)
+ * File: public/assets/css/pages/roles-index.css
+ */
+
+:root {
+  --bento-bg: #F8FAFC;
+  --bento-card-bg: #FFFFFF;
+  --bento-border: #E2E8F0;
+  --bento-border-hover: #CBD5E1;
+  --bento-text-main: #0F172A;
+  --bento-text-muted: #64748B;
+  --bento-primary: #E11D48;
+  --bento-primary-subtle: #FFF1F2;
+  --bento-primary-border: #FECDD3;
+  --bento-radius: 18px;
+  --bento-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  --bento-hover-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.12);
+  --bento-transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.roles-dashboard {
+  color: var(--bento-text-main);
+}
+
+/* Bento Hero Header */
+.roles-hero {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  border-radius: var(--bento-radius);
+  padding: 1.75rem 2rem;
+  color: #FFFFFF;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.roles-hero::after {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(225, 29, 72, 0.25) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.roles-hero-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.roles-hero-badge {
+  background: rgba(225, 29, 72, 0.25);
+  color: #FDA4AF;
+  border: 1px solid rgba(225, 29, 72, 0.4);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.roles-hero-desc {
+  color: #94A3B8;
+  font-size: 0.9rem;
+  max-width: 650px;
+  margin: 0;
+}
+
+/* Bento KPI Grid */
+.bento-role-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.bento-role-kpi-card {
+  background: var(--bento-card-bg);
+  border: 1px solid var(--bento-border);
+  border-radius: var(--bento-radius);
+  padding: 1.35rem 1.25rem;
+  box-shadow: var(--bento-shadow);
+  transition: var(--bento-transition);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.bento-role-kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--bento-hover-shadow);
+  border-color: var(--bento-border-hover);
+}
+
+.bento-role-kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--kpi-accent, var(--bento-primary));
+}
+
+.bento-role-kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.bento-role-kpi-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bento-text-muted);
+}
+
+.bento-role-kpi-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  background: var(--kpi-icon-bg, #FFF1F2);
+  color: var(--kpi-icon-color, #E11D48);
+}
+
+.bento-role-kpi-value {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--bento-text-main);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-family: 'Outfit', sans-serif;
+}
+
+.bento-role-kpi-footer {
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+  color: var(--bento-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Bento Role Card */
+.bento-role-card {
+  background: var(--bento-card-bg);
+  border: 1px solid var(--bento-border);
+  border-radius: var(--bento-radius);
+  box-shadow: var(--bento-shadow);
+  transition: var(--bento-transition);
+  padding: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.bento-role-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--bento-hover-shadow);
+  border-color: var(--bento-border-hover);
+}
+
+.role-slug-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  letter-spacing: 0.03em;
+  display: inline-flex;
+  align-items: center;
+}
+
+.role-slug-chip.super-admin {
+  background: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+}
+
+.role-slug-chip.standard {
+  background: #E0E7FF;
+  color: #4338CA;
+  border: 1px solid #C7D2FE;
+}
+
+/* Progress Bar in Role Card */
+.bento-role-progress-card {
+  background: #F8FAFC;
+  border: 1px solid var(--bento-border);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin: 0.85rem 0;
+}
+
+/* Bento Modules Catalog Card */
+.bento-module-card {
+  background: var(--bento-card-bg);
+  border: 1px solid var(--bento-border);
+  border-radius: var(--bento-radius);
+  box-shadow: var(--bento-shadow);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.bento-module-table {
+  width: 100%;
+  margin: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.bento-module-table thead th {
+  background: #F8FAFC;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #475569;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--bento-border);
+  white-space: nowrap;
+}
+
+.bento-module-table tbody td {
+  padding: 0.95rem 1rem;
+  font-size: 0.85rem;
+  color: var(--bento-text-main);
+  border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+
+.bento-module-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.bento-module-table tbody tr:hover {
+  background-color: #F8FAFC;
+}
+
+/* Permission Matrix Grid (roles/edit.php) */
+.bento-matrix-card {
+  background: var(--bento-card-bg);
+  border: 1px solid var(--bento-border);
+  border-radius: var(--bento-radius);
+  box-shadow: var(--bento-shadow);
+  overflow: hidden;
+  height: 100%;
+}
+
+.bento-matrix-header {
+  padding: 0.95rem 1.25rem;
+  background: #FAFAFC;
+  border-bottom: 1px solid var(--bento-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.perm-checkbox-chip {
+  background: #F8FAFC;
+  border: 1px solid var(--bento-border);
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  transition: var(--bento-transition);
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.perm-checkbox-chip:hover {
+  background: #FFFFFF;
+  border-color: var(--bento-border-hover);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+
+.perm-checkbox-chip input[type="checkbox"]:checked + label .perm-title {
+  color: var(--bento-primary);
+  font-weight: 700;
+}
+
+.sticky-save-bar {
+  position: sticky;
+  bottom: 1rem;
+  z-index: 1020;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--bento-border);
+  border-radius: 16px;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
+}
+
+/* =========================================================================
+   RESPONSIVE DESIGN (Table-to-Cards Transformation & Mobile Viewports)
+   ========================================================================= */
+@media (max-width: 991.98px) {
+  .roles-hero {
+    padding: 1.25rem 1rem;
+  }
+  .roles-hero-title {
+    font-size: 1.3rem;
+  }
+
+  .bento-role-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  .bento-role-kpi-card {
+    padding: 1rem;
+  }
+  .bento-role-kpi-value {
+    font-size: 1.4rem;
+  }
+
+  .bento-module-card .table-responsive {
+    overflow-x: visible;
+  }
+
+  .bento-module-table {
+    display: block;
+    min-width: 0 !important;
+    width: 100%;
+  }
+
+  .bento-module-table thead {
+    display: none !important;
+  }
+
+  .bento-module-table tbody {
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+  }
+
+  .bento-module-table tbody tr {
+    display: block;
+    width: 100%;
+    background: #FFFFFF;
+    border: 1px solid var(--bento-border);
+    border-radius: 14px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.85rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  }
+
+  .bento-module-table tbody td {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0.5rem 0 !important;
+    border: none !important;
+    border-bottom: 1px dashed #F1F5F9 !important;
+    text-align: right;
+  }
+
+  .bento-module-table tbody td:last-child {
+    border-bottom: none !important;
+  }
+
+  .bento-module-table tbody td::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--bento-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: left;
+    padding-right: 1rem;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .bento-role-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}

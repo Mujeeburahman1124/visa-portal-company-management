@@ -7,7 +7,11 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 $activeTab = $_GET['tab'] ?? 'logs';
 ?>
 
-<div class="content-body">
+<!-- Link Dedicated Bento CSS -->
+<link rel="stylesheet" href="/assets/css/dashboard-bento.css">
+<link rel="stylesheet" href="/assets/css/pages/notifications-admin.css">
+
+<div class="content-body notif-ops-dashboard">
   <?php if ($flash): ?>
     <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'info')) ?> alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
       <div class="d-flex align-items-center gap-2">
@@ -18,182 +22,179 @@ $activeTab = $_GET['tab'] ?? 'logs';
     </div>
   <?php endif; ?>
 
-  <!-- Top Header -->
-  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
-    <div>
-      <div class="d-flex align-items-center gap-2 mb-1">
-        <h3 class="fw-bold brand-font text-dark mb-0">Notification Operations Center</h3>
-        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 small fw-semibold">Real-Time Multi-Channel</span>
+  <!-- Bento Hero Header -->
+  <div class="notif-ops-hero">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div>
+        <div class="notif-ops-hero-title">
+          <i class="fa-solid fa-tower-broadcast text-danger"></i>
+          <span>Notification Operations Center</span>
+          <span class="notif-ops-hero-badge">Multi-Channel Active</span>
+        </div>
+        <p class="notif-ops-hero-desc">
+          Centralized delivery monitoring, Meta WhatsApp Business Cloud API &amp; SMTP logs, automated event trigger rules, and message template engine.
+        </p>
       </div>
-      <p class="text-muted small mb-0">Centralized delivery monitoring, Meta WhatsApp Business Cloud API &amp; SMTP logs, event toggles, and template management.</p>
-    </div>
-    <div class="d-flex flex-wrap gap-2">
-      <a href="/notifications" class="btn btn-outline-secondary btn-sm px-3 bg-white shadow-sm">
-        <i class="fa-solid fa-inbox me-1"></i> My Staff Inbox
-      </a>
-      <button type="button" class="btn btn-outline-primary btn-sm px-3 bg-white shadow-sm" data-bs-toggle="modal" data-bs-target="#testNotificationModal">
-        <i class="fa-solid fa-paper-plane me-1"></i> Send Test Message
-      </button>
-      <a href="/api/notifications/process-queue" target="_blank" class="btn btn-light btn-sm px-3 border shadow-sm" title="Trigger background retry worker">
-        <i class="fa-solid fa-rotate me-1 text-muted"></i> Run Queue Worker
-      </a>
+
+      <div class="d-flex flex-wrap gap-2">
+        <a href="/notifications" class="btn btn-outline-light btn-sm px-3 shadow-sm fw-semibold">
+          <i class="fa-solid fa-inbox me-1.5"></i> My Staff Inbox
+        </a>
+        <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#testNotificationModal">
+          <i class="fa-solid fa-paper-plane me-1.5"></i> Send Test Message
+        </button>
+        <a href="/api/notifications/process-queue" target="_blank" class="btn btn-light btn-sm px-3 shadow-sm fw-semibold text-dark" title="Trigger background retry worker">
+          <i class="fa-solid fa-rotate me-1.5 text-primary"></i> Run Queue Worker
+        </a>
+      </div>
     </div>
   </div>
 
-  <!-- KPI Metrics Cards -->
-  <div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
-      <div class="card card-enterprise shadow-sm border-0 h-100 p-3">
-        <div class="d-flex align-items-center justify-content-between mb-2">
-          <span class="text-muted small fw-semibold">Total Delivered</span>
-          <div class="rounded-circle bg-primary bg-opacity-10 p-2 text-primary" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
-            <i class="fa-solid fa-paper-plane fs-6"></i>
-          </div>
+  <!-- Bento KPI Grid -->
+  <div class="bento-ops-kpi-grid">
+    <!-- Total Delivered -->
+    <div class="bento-ops-kpi-card">
+      <div class="bento-ops-kpi-header">
+        <span class="bento-ops-kpi-label">Total Delivered</span>
+        <div class="bento-ops-kpi-icon ops-icon-delivered">
+          <i class="fa-solid fa-paper-plane"></i>
         </div>
-        <div class="fs-3 fw-bold text-dark mb-1"><?= number_format($totalSent) ?></div>
-        <div class="small text-muted d-flex align-items-center gap-1">
-          <i class="fa-solid fa-shield-halved text-success"></i> Across Email, WhatsApp &amp; In-App
-        </div>
+      </div>
+      <div class="bento-ops-kpi-value"><?= number_format($totalSent) ?></div>
+      <div class="bento-ops-kpi-sub">
+        <span class="text-success fw-semibold"><i class="fa-solid fa-shield-halved me-1"></i>Across Email, WhatsApp &amp; In-App</span>
       </div>
     </div>
 
-    <div class="col-sm-6 col-xl-3">
-      <div class="card card-enterprise shadow-sm border-0 h-100 p-3">
-        <div class="d-flex align-items-center justify-content-between mb-2">
-          <span class="text-muted small fw-semibold">Email Success Rate</span>
-          <div class="rounded-circle bg-info bg-opacity-10 p-2 text-info" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
-            <i class="fa-solid fa-envelope fs-6"></i>
-          </div>
+    <!-- Email Success Rate -->
+    <div class="bento-ops-kpi-card">
+      <div class="bento-ops-kpi-header">
+        <span class="bento-ops-kpi-label">Email Success Rate</span>
+        <div class="bento-ops-kpi-icon ops-icon-email">
+          <i class="fa-solid fa-envelope"></i>
         </div>
-        <div class="fs-3 fw-bold text-dark mb-1"><?= $emailRate ?>%</div>
-        <div class="small text-muted d-flex align-items-center gap-1">
-          <span class="text-info fw-semibold"><?= number_format($emailSuccess) ?></span> sent of <?= number_format($totalEmail) ?> total attempts
-        </div>
+      </div>
+      <div class="bento-ops-kpi-value"><?= $emailRate ?>%</div>
+      <div class="bento-ops-kpi-sub">
+        <span class="text-info fw-semibold"><?= number_format($emailSuccess ?? 0) ?></span> sent of <?= number_format($totalEmail) ?> attempts
       </div>
     </div>
 
-    <div class="col-sm-6 col-xl-3">
-      <div class="card card-enterprise shadow-sm border-0 h-100 p-3">
-        <div class="d-flex align-items-center justify-content-between mb-2">
-          <span class="text-muted small fw-semibold">WhatsApp Delivery Rate</span>
-          <div class="rounded-circle bg-success bg-opacity-10 p-2 text-success" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
-            <i class="fa-brands fa-whatsapp fs-5"></i>
-          </div>
+    <!-- WhatsApp Delivery Rate -->
+    <div class="bento-ops-kpi-card">
+      <div class="bento-ops-kpi-header">
+        <span class="bento-ops-kpi-label">WhatsApp Delivery Rate</span>
+        <div class="bento-ops-kpi-icon ops-icon-whatsapp">
+          <i class="fa-brands fa-whatsapp"></i>
         </div>
-        <div class="fs-3 fw-bold text-dark mb-1"><?= $whatsappRate ?>%</div>
-        <div class="small text-muted d-flex align-items-center gap-1">
-          <span class="text-success fw-semibold"><?= number_format($whatsappSuccess) ?></span> sent of <?= number_format($totalWhatsApp) ?> attempts
-        </div>
+      </div>
+      <div class="bento-ops-kpi-value"><?= $whatsappRate ?>%</div>
+      <div class="bento-ops-kpi-sub">
+        <span class="text-success fw-semibold"><?= number_format($whatsappSuccess ?? 0) ?></span> sent of <?= number_format($totalWhatsApp) ?> attempts
       </div>
     </div>
 
-    <div class="col-sm-6 col-xl-3">
-      <div class="card card-enterprise shadow-sm border-0 h-100 p-3">
-        <div class="d-flex align-items-center justify-content-between mb-2">
-          <span class="text-muted small fw-semibold">Failed &amp; Pending Queue</span>
-          <div class="rounded-circle bg-danger bg-opacity-10 p-2 text-danger" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
-            <i class="fa-solid fa-triangle-exclamation fs-6"></i>
-          </div>
+    <!-- Failed & Pending Queue -->
+    <div class="bento-ops-kpi-card">
+      <div class="bento-ops-kpi-header">
+        <span class="bento-ops-kpi-label">Failed &amp; Pending Queue</span>
+        <div class="bento-ops-kpi-icon ops-icon-queue">
+          <i class="fa-solid fa-triangle-exclamation"></i>
         </div>
-        <div class="fs-3 fw-bold text-danger mb-1"><?= number_format($totalFailed) ?></div>
-        <div class="small text-muted d-flex align-items-center gap-1">
-          <span class="badge bg-warning bg-opacity-20 text-dark border"><?= $activeQueue ?> in retry queue</span>
-        </div>
+      </div>
+      <div class="bento-ops-kpi-value text-danger"><?= number_format($totalFailed) ?></div>
+      <div class="bento-ops-kpi-sub">
+        <span class="badge bg-warning bg-opacity-20 text-dark border"><?= $activeQueue ?> in retry queue</span>
       </div>
     </div>
   </div>
 
   <!-- Tabbed Interface Card -->
-  <div class="card card-enterprise shadow-sm">
-    <div class="card-header bg-white border-bottom p-0">
-      <ul class="nav nav-tabs card-header-tabs m-0 px-3 flex-nowrap overflow-x-auto" role="tablist">
-        <li class="nav-item">
-          <a class="nav-link <?= $activeTab === 'logs' ? 'active' : '' ?> py-3 fw-semibold small text-nowrap" href="/notifications/admin?tab=logs">
-            <i class="fa-solid fa-list-ul text-primary me-1"></i> Delivery Logs &amp; Audit Trail (<?= number_format($totalLogs) ?>)
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link <?= $activeTab === 'settings' ? 'active' : '' ?> py-3 fw-semibold small text-nowrap" href="/notifications/admin?tab=settings">
-            <i class="fa-solid fa-sliders text-success me-1"></i> Event Channel Matrix
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link <?= $activeTab === 'templates' ? 'active' : '' ?> py-3 fw-semibold small text-nowrap" href="/notifications/admin?tab=templates">
-            <i class="fa-solid fa-envelope-open-text text-info me-1"></i> Message Templates (<?= count($templates) ?>)
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link <?= $activeTab === 'test' ? 'active' : '' ?> py-3 fw-semibold small text-nowrap" href="/notifications/admin?tab=test">
-            <i class="fa-solid fa-flask text-warning me-1"></i> Test Messenger &amp; Diagnostic
-          </a>
-        </li>
-      </ul>
+  <div class="notif-ops-tab-card">
+    <div class="notif-ops-tab-nav">
+      <a class="notif-ops-tab-link <?= $activeTab === 'logs' ? 'active' : '' ?>" href="/notifications/admin?tab=logs">
+        <i class="fa-solid fa-list-ul text-primary"></i>
+        <span>Delivery Logs (<?= number_format($totalLogs) ?>)</span>
+      </a>
+      <a class="notif-ops-tab-link <?= $activeTab === 'settings' ? 'active' : '' ?>" href="/notifications/admin?tab=settings">
+        <i class="fa-solid fa-sliders text-success"></i>
+        <span>Event Channel Matrix</span>
+      </a>
+      <a class="notif-ops-tab-link <?= $activeTab === 'templates' ? 'active' : '' ?>" href="/notifications/admin?tab=templates">
+        <i class="fa-solid fa-envelope-open-text text-info"></i>
+        <span>Message Templates (<?= count($templates) ?>)</span>
+      </a>
+      <a class="notif-ops-tab-link <?= $activeTab === 'test' ? 'active' : '' ?>" href="/notifications/admin?tab=test">
+        <i class="fa-solid fa-flask text-warning"></i>
+        <span>Test Messenger &amp; Diagnostic</span>
+      </a>
     </div>
 
-    <div class="card-body p-4">
-
+    <div class="notif-ops-tab-body">
       <!-- ========================================================================= -->
       <!-- TAB 1: DELIVERY LOGS & AUDIT TRAIL -->
       <!-- ========================================================================= -->
       <?php if ($activeTab === 'logs'): ?>
         <!-- Filter Form -->
-        <form method="GET" action="/notifications/admin" class="row g-2 align-items-end mb-4 p-3 bg-light rounded-3 border">
-          <input type="hidden" name="tab" value="logs">
-          
-          <div class="col-md-3 col-sm-6">
-            <label class="form-label small fw-semibold text-muted mb-1">Search Recipient / ID</label>
-            <div class="input-group input-group-sm">
-              <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
-              <input type="text" name="search" class="form-control" placeholder="Name, email, phone, wamid..." value="<?= e($search) ?>">
+        <div class="notif-ops-filter-box">
+          <form method="GET" action="/notifications/admin" class="row g-2 align-items-end">
+            <input type="hidden" name="tab" value="logs">
+            
+            <div class="col-md-3 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Search Recipient / ID</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                <input type="text" name="search" class="form-control" placeholder="Name, email, phone, id..." value="<?= e($search) ?>">
+              </div>
             </div>
-          </div>
 
-          <div class="col-md-2 col-sm-6">
-            <label class="form-label small fw-semibold text-muted mb-1">Channel</label>
-            <select name="channel" class="form-select form-select-sm">
-              <option value="">All Channels</option>
-              <option value="Email" <?= $channel === 'Email' ? 'selected' : '' ?>>Email</option>
-              <option value="WhatsApp" <?= $channel === 'WhatsApp' ? 'selected' : '' ?>>WhatsApp</option>
-              <option value="In-App" <?= $channel === 'In-App' ? 'selected' : '' ?>>In-App</option>
-            </select>
-          </div>
+            <div class="col-md-2 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Channel</label>
+              <select name="channel" class="form-select form-select-sm">
+                <option value="">All Channels</option>
+                <option value="Email" <?= $channel === 'Email' ? 'selected' : '' ?>>Email</option>
+                <option value="WhatsApp" <?= $channel === 'WhatsApp' ? 'selected' : '' ?>>WhatsApp</option>
+                <option value="In-App" <?= $channel === 'In-App' ? 'selected' : '' ?>>In-App</option>
+              </select>
+            </div>
 
-          <div class="col-md-2 col-sm-6">
-            <label class="form-label small fw-semibold text-muted mb-1">Status</label>
-            <select name="status" class="form-select form-select-sm">
-              <option value="">All Statuses</option>
-              <option value="Sent" <?= $status === 'Sent' ? 'selected' : '' ?>>Sent</option>
-              <option value="Simulated" <?= $status === 'Simulated' ? 'selected' : '' ?>>Simulated (Dev)</option>
-              <option value="Failed" <?= $status === 'Failed' ? 'selected' : '' ?>>Failed</option>
-              <option value="Retrying" <?= $status === 'Retrying' ? 'selected' : '' ?>>Retrying</option>
-              <option value="Pending" <?= $status === 'Pending' ? 'selected' : '' ?>>Pending</option>
-            </select>
-          </div>
+            <div class="col-md-2 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">Status</label>
+              <select name="status" class="form-select form-select-sm">
+                <option value="">All Statuses</option>
+                <option value="Sent" <?= $status === 'Sent' ? 'selected' : '' ?>>Sent</option>
+                <option value="Simulated" <?= $status === 'Simulated' ? 'selected' : '' ?>>Simulated (Dev)</option>
+                <option value="Failed" <?= $status === 'Failed' ? 'selected' : '' ?>>Failed</option>
+                <option value="Retrying" <?= $status === 'Retrying' ? 'selected' : '' ?>>Retrying</option>
+                <option value="Pending" <?= $status === 'Pending' ? 'selected' : '' ?>>Pending</option>
+              </select>
+            </div>
 
-          <div class="col-md-2 col-sm-6">
-            <label class="form-label small fw-semibold text-muted mb-1">From Date</label>
-            <input type="date" name="date_from" class="form-control form-control-sm" value="<?= e($dateFrom) ?>">
-          </div>
+            <div class="col-md-2 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">From Date</label>
+              <input type="date" name="date_from" class="form-control form-control-sm" value="<?= e($dateFrom) ?>">
+            </div>
 
-          <div class="col-md-2 col-sm-6">
-            <label class="form-label small fw-semibold text-muted mb-1">To Date</label>
-            <input type="date" name="date_to" class="form-control form-control-sm" value="<?= e($dateTo) ?>">
-          </div>
+            <div class="col-md-2 col-sm-6">
+              <label class="form-label small fw-semibold text-muted mb-1">To Date</label>
+              <input type="date" name="date_to" class="form-control form-control-sm" value="<?= e($dateTo) ?>">
+            </div>
 
-          <div class="col-md-1 col-sm-12 d-flex gap-1">
-            <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold" title="Apply Filter">
-              <i class="fa-solid fa-filter"></i>
-            </button>
-            <a href="/notifications/admin?tab=logs" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
-              <i class="fa-solid fa-rotate-left"></i>
-            </a>
-          </div>
-        </form>
+            <div class="col-md-1 col-sm-12 d-flex gap-1">
+              <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold" title="Apply Filter">
+                <i class="fa-solid fa-filter"></i>
+              </button>
+              <a href="/notifications/admin?tab=logs" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                <i class="fa-solid fa-rotate-left"></i>
+              </a>
+            </div>
+          </form>
+        </div>
 
         <!-- Logs Table -->
         <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
-            <thead class="table-light">
+          <table class="ops-logs-table">
+            <thead>
               <tr>
                 <th style="width: 140px;">Timestamp</th>
                 <th style="width: 110px;">Channel</th>
@@ -216,48 +217,48 @@ $activeTab = $_GET['tab'] ?? 'logs';
               <?php else: ?>
                 <?php foreach ($logs as $log): ?>
                   <tr>
-                    <td class="text-nowrap text-muted" style="font-size: 0.78rem;">
+                    <td data-label="Timestamp" class="text-nowrap text-muted" style="font-size: 0.78rem;">
                       <div><i class="fa-regular fa-clock me-1"></i><?= format_datetime($log['created_at']) ?></div>
                     </td>
-                    <td>
+                    <td data-label="Channel">
                       <?php if ($log['channel'] === 'WhatsApp'): ?>
-                        <span class="badge bg-success bg-opacity-15 text-success border border-success border-opacity-25 px-2 py-1">
-                          <i class="fa-brands fa-whatsapp me-1"></i> WhatsApp
+                        <span class="badge-channel-whatsapp">
+                          <i class="fa-brands fa-whatsapp"></i> WhatsApp
                         </span>
                       <?php elseif ($log['channel'] === 'Email'): ?>
-                        <span class="badge bg-primary bg-opacity-15 text-primary border border-primary border-opacity-25 px-2 py-1">
-                          <i class="fa-solid fa-envelope me-1"></i> Email
+                        <span class="badge-channel-email">
+                          <i class="fa-solid fa-envelope"></i> Email
                         </span>
                       <?php else: ?>
-                        <span class="badge bg-secondary bg-opacity-15 text-dark border px-2 py-1">
-                          <i class="fa-solid fa-bell me-1"></i> In-App
+                        <span class="badge-channel-inapp">
+                          <i class="fa-solid fa-bell"></i> In-App
                         </span>
                       <?php endif; ?>
                     </td>
-                    <td>
+                    <td data-label="Event & Subject">
                       <div class="fw-semibold text-dark"><?= e($log['subject'] ?: $log['event_type']) ?></div>
                       <div class="small text-muted text-truncate" style="max-width: 280px;"><?= e($log['content_preview'] ?: 'Template: ' . $log['template_name']) ?></div>
                     </td>
-                    <td>
+                    <td data-label="Recipient">
                       <div class="fw-medium text-dark"><?= e($log['recipient_name'] ?: 'Customer') ?></div>
                       <div class="small text-muted font-monospace" style="font-size: 0.75rem;">
                         <?= e($log['recipient_phone'] ?: ($log['recipient_email'] ?: 'Portal User #' . $log['recipient_id'])) ?>
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <?php if ($log['status'] === 'Sent'): ?>
-                        <span class="badge bg-success px-2 py-1"><i class="fa-solid fa-check me-1"></i> Sent</span>
+                        <span class="badge-status-sent"><i class="fa-solid fa-check me-1"></i> Sent</span>
                       <?php elseif ($log['status'] === 'Simulated'): ?>
-                        <span class="badge bg-info text-white px-2 py-1" title="Dispatched in local simulation mode"><i class="fa-solid fa-vial me-1"></i> Simulated</span>
+                        <span class="badge-status-simulated" title="Dispatched in local simulation mode"><i class="fa-solid fa-vial me-1"></i> Simulated</span>
                       <?php elseif ($log['status'] === 'Failed'): ?>
-                        <span class="badge bg-danger px-2 py-1"><i class="fa-solid fa-xmark me-1"></i> Failed</span>
+                        <span class="badge-status-failed"><i class="fa-solid fa-xmark me-1"></i> Failed</span>
                       <?php elseif ($log['status'] === 'Retrying'): ?>
-                        <span class="badge bg-warning text-dark px-2 py-1"><i class="fa-solid fa-rotate me-1"></i> Retry #<?= (int)$log['retry_count'] ?></span>
+                        <span class="badge-status-retry"><i class="fa-solid fa-rotate me-1"></i> Retry #<?= (int)$log['retry_count'] ?></span>
                       <?php else: ?>
                         <span class="badge bg-secondary px-2 py-1"><?= e($log['status']) ?></span>
                       <?php endif; ?>
                     </td>
-                    <td>
+                    <td data-label="Provider / Error">
                       <?php if (!empty($log['provider_message_id'])): ?>
                         <div class="font-monospace small text-primary text-truncate" style="max-width: 180px;" title="<?= e($log['provider_message_id']) ?>">
                           <i class="fa-solid fa-hashtag small me-1"></i><?= e($log['provider_message_id']) ?>
@@ -272,7 +273,7 @@ $activeTab = $_GET['tab'] ?? 'logs';
                         <span class="text-muted small">—</span>
                       <?php endif; ?>
                     </td>
-                    <td class="text-end">
+                    <td data-label="Actions" class="text-end">
                       <div class="btn-group btn-group-sm">
                         <button type="button" class="btn btn-outline-secondary btn-sm" 
                                 onclick='viewLogPayload(<?= json_encode($log) ?>)' title="Inspect Details">
@@ -327,19 +328,19 @@ $activeTab = $_GET['tab'] ?? 'logs';
       <?php if ($activeTab === 'settings'): ?>
         <form action="/notifications/settings" method="POST">
           <?= csrf_field() ?>
-          <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-              <h5 class="fw-bold text-dark mb-0">Automated Notification Channel Rules</h5>
+              <h5 class="fw-bold text-dark mb-1">Automated Notification Channel Rules</h5>
               <p class="text-muted small mb-0">Activate or deactivate specific channels (Email, Meta WhatsApp, In-App) for each application lifecycle event.</p>
             </div>
             <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold shadow-sm">
-              <i class="fa-solid fa-floppy-disk me-1"></i> Save Channel Matrix
+              <i class="fa-solid fa-floppy-disk me-1.5"></i> Save Channel Matrix
             </button>
           </div>
 
           <?php foreach ($groupedSettings as $category => $categorySettings): ?>
-            <div class="card mb-4 border shadow-sm">
-              <div class="card-header bg-light py-2 px-3 fw-bold text-dark d-flex align-items-center justify-content-between">
+            <div class="event-category-card">
+              <div class="event-category-header">
                 <span><i class="fa-solid fa-folder-tree text-primary me-2"></i><?= e($category) ?> Events</span>
                 <span class="badge bg-secondary small"><?= count($categorySettings) ?> events</span>
               </div>
@@ -396,9 +397,9 @@ $activeTab = $_GET['tab'] ?? 'logs';
             </div>
           <?php endforeach; ?>
 
-          <div class="text-end mt-3">
+          <div class="text-end mt-4">
             <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
-              <i class="fa-solid fa-floppy-disk me-1"></i> Save All Notification Settings
+              <i class="fa-solid fa-floppy-disk me-1.5"></i> Save All Notification Settings
             </button>
           </div>
         </form>
@@ -410,7 +411,7 @@ $activeTab = $_GET['tab'] ?? 'logs';
       <?php if ($activeTab === 'templates'): ?>
         <div class="d-flex justify-content-between align-items-center mb-3">
           <div>
-            <h5 class="fw-bold text-dark mb-0">Email &amp; WhatsApp Message Templates</h5>
+            <h5 class="fw-bold text-dark mb-1">Email &amp; WhatsApp Message Templates</h5>
             <p class="text-muted small mb-0">Customize subject lines, responsive email layouts, and Meta approved WhatsApp template parameters.</p>
           </div>
         </div>
@@ -431,12 +432,12 @@ $activeTab = $_GET['tab'] ?? 'logs';
                 <tr>
                   <td>
                     <?php if ($t['channel'] === 'WhatsApp'): ?>
-                      <span class="badge bg-success bg-opacity-15 text-success border border-success border-opacity-25 px-2 py-1">
-                        <i class="fa-brands fa-whatsapp me-1"></i> WhatsApp
+                      <span class="badge-channel-whatsapp">
+                        <i class="fa-brands fa-whatsapp"></i> WhatsApp
                       </span>
                     <?php else: ?>
-                      <span class="badge bg-primary bg-opacity-15 text-primary border border-primary border-opacity-25 px-2 py-1">
-                        <i class="fa-solid fa-envelope me-1"></i> Email
+                      <span class="badge-channel-email">
+                        <i class="fa-solid fa-envelope"></i> Email
                       </span>
                     <?php endif; ?>
                   </td>
@@ -469,7 +470,7 @@ $activeTab = $_GET['tab'] ?? 'logs';
       <?php if ($activeTab === 'test'): ?>
         <div class="row g-4">
           <div class="col-lg-7">
-            <div class="card border shadow-sm">
+            <div class="card border shadow-sm rounded-3">
               <div class="card-header bg-light py-3">
                 <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-vial text-primary me-2"></i> Safe Admin Test Message Sender</h6>
               </div>
@@ -504,7 +505,7 @@ $activeTab = $_GET['tab'] ?? 'logs';
 
                   <div class="d-flex justify-content-end">
                     <button type="submit" id="btnTabSendTest" class="btn btn-primary px-4 fw-semibold shadow-sm">
-                      <i class="fa-solid fa-paper-plane me-1"></i> Send Test Notification
+                      <i class="fa-solid fa-paper-plane me-1.5"></i> Send Test Notification
                     </button>
                   </div>
                 </form>
@@ -513,14 +514,14 @@ $activeTab = $_GET['tab'] ?? 'logs';
           </div>
 
           <div class="col-lg-5">
-            <div class="card border shadow-sm h-100">
+            <div class="card border shadow-sm rounded-3 h-100">
               <div class="card-header bg-light py-3">
                 <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-circle-nodes text-success me-2"></i> Environment Configuration Status</h6>
               </div>
               <div class="card-body p-4">
                 <div class="mb-3">
                   <div class="text-muted small fw-semibold">Active Mode</div>
-                  <span class="badge bg-<?= \App\Config\Env::get('NOTIFICATION_ENV') === 'production' ? 'success' : 'warning text-dark' ?> px-2 py-1">
+                  <span class="badge bg-<?= \App\Config\Env::get('NOTIFICATION_ENV') === 'production' ? 'success' : 'warning text-dark' ?> px-2.5 py-1 font-monospace">
                     <?= strtoupper((string)\App\Config\Env::get('NOTIFICATION_ENV', 'development')) ?>
                   </span>
                 </div>
@@ -528,7 +529,7 @@ $activeTab = $_GET['tab'] ?? 'logs';
                 <div class="mb-3 pb-3 border-bottom">
                   <div class="text-muted small fw-semibold">Email Provider</div>
                   <div class="fw-medium text-dark"><?= strtoupper((string)\App\Config\Env::get('EMAIL_PROVIDER', 'smtp')) ?> (Host: <?= e(\App\Config\Env::get('SMTP_HOST', 'smtp.gmail.com')) ?>:<?= e(\App\Config\Env::get('SMTP_PORT', 587)) ?>)</div>
-                  <div class="small text-muted">From: <?= e(\App\Config\Env::get('EMAIL_FROM', 'notifications@mshorizonuae.com')) ?></div>
+                  <div class="small text-muted font-monospace" style="font-size: 0.75rem;">From: <?= e(\App\Config\Env::get('EMAIL_FROM', 'notifications@mshorizonuae.com')) ?></div>
                 </div>
 
                 <div class="mb-3 pb-3 border-bottom">
@@ -539,14 +540,14 @@ $activeTab = $_GET['tab'] ?? 'logs';
                   <div class="text-muted small fw-semibold">Twilio WhatsApp API</div>
                   <div class="fw-medium text-dark">Provider: <?= strtoupper((string)\App\Config\Env::get('WHATSAPP_PROVIDER', 'twilio')) ?></div>
                   <div class="small text-muted">Account SID: <?= $isTwValid ? 'Configured (' . e(substr($twSid, 0, 6)) . '***)' : 'Not Set (Safe Simulation Mode)' ?></div>
-                  <div class="small text-muted">WhatsApp From: <?= e(\App\Config\Env::get('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886')) ?></div>
+                  <div class="small text-muted font-monospace" style="font-size: 0.75rem;">WhatsApp From: <?= e(\App\Config\Env::get('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886')) ?></div>
                 </div>
 
                 <div>
                   <div class="text-muted small fw-semibold">Queue &amp; Retry Policies</div>
                   <div class="small text-muted">Process Mode: <strong><?= strtoupper((string)\App\Config\Env::get('NOTIFICATION_PROCESS_MODE', 'sync')) ?></strong></div>
                   <div class="small text-muted">Max Retries: <strong><?= (int)\App\Config\Env::get('NOTIFICATION_MAX_RETRIES', 3) ?> Attempts</strong></div>
-                  <div class="small text-muted">Backoff Intervals: <strong>2m &rarr; 5m &rarr; 15m</strong></div>
+                  <div class="small text-muted font-monospace" style="font-size: 0.75rem;">Backoff: 2m &rarr; 5m &rarr; 15m</div>
                 </div>
               </div>
             </div>
@@ -563,7 +564,7 @@ $activeTab = $_GET['tab'] ?? 'logs';
 <!-- ========================================================================= -->
 <div class="modal fade" id="testNotificationModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg">
+    <div class="modal-content border-0 shadow-lg rounded-3">
       <form action="/notifications/test" method="POST" id="quickTestNotificationForm">
         <?= csrf_field() ?>
         <div class="modal-header bg-light">
@@ -606,7 +607,7 @@ $activeTab = $_GET['tab'] ?? 'logs';
 <!-- ========================================================================= -->
 <div class="modal fade" id="editTemplateModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg">
+    <div class="modal-content border-0 shadow-lg rounded-3">
       <form action="/notifications/templates/update" method="POST">
         <?= csrf_field() ?>
         <input type="hidden" name="id" id="editTmplId">
@@ -661,7 +662,7 @@ $activeTab = $_GET['tab'] ?? 'logs';
 <!-- ========================================================================= -->
 <div class="modal fade" id="logInspectModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg">
+    <div class="modal-content border-0 shadow-lg rounded-3">
       <div class="modal-header bg-light">
         <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-magnifying-glass-chart text-primary me-2"></i> Delivery Log Details</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -898,5 +899,4 @@ if (tabForm) {
 }
 </script>
 
-<?php
-require_once dirname(__DIR__) . '/layouts/footer.php';
+<?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

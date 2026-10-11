@@ -35,17 +35,18 @@ class ApplicationController
         $priority = trim($_GET['priority'] ?? '');
         $countryId = (int)($_GET['country_id'] ?? 0);
         $serviceId = (int)($_GET['service_id'] ?? 0);
+        $supplierId = (int)($_GET['supplier_id'] ?? 0);
         $staffId = (int)($_GET['staff_id'] ?? 0);
         $branchId = get_scoped_branch_id((int)($_GET['branch_id'] ?? 0), $user);
 
-        // Apply Saved Presets
-        if ($preset === 'my_assigned' && $user) {
+        // Apply Saved Presets (only when corresponding filters are not explicitly selected)
+        if ($preset === 'my_assigned' && $user && $staffId === 0) {
             $staffId = (int)$user['id'];
-        } elseif ($preset === 'critical') {
+        } elseif ($preset === 'critical' && $priority === '') {
             $priority = 'Critical';
-        } elseif ($preset === 'pending_docs') {
+        } elseif ($preset === 'pending_docs' && $status === '') {
             $status = 'Documents Pending';
-        } elseif ($preset === 'action_required') {
+        } elseif ($preset === 'action_required' && $status === '') {
             $status = 'Action Required';
         }
 
@@ -54,7 +55,8 @@ class ApplicationController
                     vs.name as service_name, vs.entry_type, vs.processing_type,
                     ct.name as country_name, ct.flag_emoji,
                     u.name as staff_name, b.name as branch_name,
-                    cp.passport_number as current_passport
+                    cp.passport_number as current_passport,
+                    s.company_name as supplier_name
                 FROM applications a
                 LEFT JOIN customers c ON a.customer_id = c.id
                 LEFT JOIN visa_services vs ON a.visa_service_id = vs.id
@@ -62,6 +64,7 @@ class ApplicationController
                 LEFT JOIN customer_passports cp ON c.id = cp.customer_id AND cp.is_primary = 1
                 LEFT JOIN users u ON a.assigned_staff_id = u.id
                 LEFT JOIN branches b ON a.branch_id = b.id
+                LEFT JOIN suppliers s ON a.supplier_id = s.id
                 WHERE a.is_archived = 0";
 
         $params = [];
@@ -97,13 +100,20 @@ class ApplicationController
         }
 
         if ($countryId > 0) {
-            $sql .= " AND ct.id = ?";
+            $sql .= " AND (vs.country_id = ? OR a.destination_country = (SELECT name FROM countries WHERE id = ?))";
+            $params[] = $countryId;
             $params[] = $countryId;
         }
 
         if ($serviceId > 0) {
-            $sql .= " AND vs.id = ?";
+            $sql .= " AND (a.visa_service_id = ? OR vs.id = ?)";
             $params[] = $serviceId;
+            $params[] = $serviceId;
+        }
+
+        if ($supplierId > 0) {
+            $sql .= " AND a.supplier_id = ?";
+            $params[] = $supplierId;
         }
 
         if ($staffId > 0) {
@@ -125,6 +135,7 @@ class ApplicationController
         // Fetch Filter Meta Options
         $countries = $pdo->query("SELECT id, name, flag_emoji FROM countries WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $services = $pdo->query("SELECT id, name, country_id FROM visa_services WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $suppliers = $pdo->query("SELECT id, company_name FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $staffMembers = $pdo->query("SELECT id, name FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $branches = $pdo->query("SELECT id, name FROM branches WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
 

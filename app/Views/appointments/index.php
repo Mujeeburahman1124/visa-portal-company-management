@@ -9,76 +9,142 @@ $currentView = $_GET['view'] ?? 'table';
 if (!in_array($currentView, ['table', 'grid', 'timeline'], true)) {
     $currentView = 'table';
 }
+
+$aptCounts = [
+    'total' => count($appointments),
+    'scheduled' => 0,
+    'confirmed' => 0,
+    'completed' => 0,
+    'attention' => 0,
+];
+foreach ($appointments as $a) {
+    $st = $a['status'] ?? '';
+    if ($st === 'Scheduled') $aptCounts['scheduled']++;
+    elseif ($st === 'Confirmed') $aptCounts['confirmed']++;
+    elseif ($st === 'Completed') $aptCounts['completed']++;
+    elseif (in_array($st, ['Missed', 'Cancelled', 'Rescheduled'])) $aptCounts['attention']++;
+}
 ?>
 
-<div class="content-body">
-  <?php if ($flash): ?>
-    <div class="alert alert-<?= e($flash['type']) ?> alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
-      <div class="d-flex align-items-center gap-2">
-        <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation' : ($flash['type'] === 'success' ? 'fa-circle-check' : 'fa-circle-info') ?>"></i>
-        <span><?= e($flash['message']) ?></span>
-      </div>
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-  <?php endif; ?>
+<!-- Load Bento Design System CSS & Page Styles -->
+<link rel="stylesheet" href="/assets/css/dashboard-bento.css?v=<?= time() ?>">
+<link rel="stylesheet" href="/assets/css/pages/appointments-index.css?v=<?= time() ?>">
 
-  <!-- Page Header & Action Controls -->
-  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
-    <div>
-      <div class="d-flex align-items-center gap-2">
-        <h3 class="fw-bold brand-font mb-0 text-dark"><i class="fa-solid fa-calendar-check text-primary me-2"></i> Visa &amp; Embassy Appointments</h3>
-        <span class="badge bg-primary-subtle text-primary border rounded-pill"><?= count($appointments) ?> Scheduled</span>
+<div class="content-body p-0 appointments-page">
+  <div class="bento-dashboard-wrap">
+
+    <?php if ($flash): ?>
+      <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'info')) ?> alert-dismissible fade show mb-4 border-0 shadow-sm rounded-4" role="alert">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation' : ($flash['type'] === 'success' ? 'fa-circle-check' : 'fa-circle-info') ?>"></i>
+          <span><?= e($flash['message']) ?></span>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
-      <p class="text-muted small mb-0 mt-1">Manage and schedule Biometrics, VFS appointments, Embassy consular interviews, and Medical fitness tests.</p>
-    </div>
-    
-    <div class="d-flex align-items-center gap-2 flex-wrap">
-      <!-- 3 View Options Switcher -->
-      <div class="btn-group btn-group-sm bg-white shadow-sm border rounded-pill p-1" role="group" aria-label="View Mode">
-        <button type="button" class="btn btn-sm rounded-pill px-3 fw-semibold view-toggle-btn <?= $currentView === 'table' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" onclick="switchAptView('table')" id="btnViewTable">
-          <i class="fa-solid fa-table-list me-1"></i> <span class="d-none d-sm-inline">Table</span>
-        </button>
-        <button type="button" class="btn btn-sm rounded-pill px-3 fw-semibold view-toggle-btn <?= $currentView === 'grid' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" onclick="switchAptView('grid')" id="btnViewGrid">
-          <i class="fa-solid fa-grip me-1"></i> <span class="d-none d-sm-inline">Grid Cards</span>
-        </button>
-        <button type="button" class="btn btn-sm rounded-pill px-3 fw-semibold view-toggle-btn <?= $currentView === 'timeline' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" onclick="switchAptView('timeline')" id="btnViewTimeline">
-          <i class="fa-solid fa-timeline me-1"></i> <span class="d-none d-sm-inline">Timeline</span>
-        </button>
+    <?php endif; ?>
+
+    <!-- ─── 1. BENTO HERO HEADER ─────────────────────────────────────────── -->
+    <header class="bento-header mb-4">
+      <div class="bento-header-left">
+        <div class="bento-tag">
+          <i class="fa-solid fa-calendar-check"></i>
+          <span>Operations &amp; Biometrics</span>
+        </div>
+        <h1 class="bento-header-title">Embassy &amp; Consular Appointments</h1>
+        <p class="bento-header-sub">
+          Schedule and monitor Biometrics capture, VFS bookings, Consular interviews &amp; Medical fitness tests.
+        </p>
       </div>
 
-      <!-- Add Appointment Type Button -->
-      <button type="button" class="btn btn-outline-primary btn-sm px-3 shadow-sm bg-white" data-bs-toggle="modal" data-bs-target="#newAptTypeModal">
-        <i class="fa-solid fa-plus-circle me-1"></i> Add Type
-      </button>
+      <div class="apt-header-actions">
+        <!-- 3-Mode View Switcher -->
+        <div class="apt-segmented me-1" role="group" aria-label="View Mode">
+          <button type="button" class="<?= $currentView === 'table' ? 'active' : '' ?>" id="btnViewTable" onclick="switchAptView('table')" title="Tabular View">
+            <i class="fa-solid fa-table-list"></i> Table
+          </button>
+          <button type="button" class="<?= $currentView === 'grid' ? 'active' : '' ?>" id="btnViewGrid" onclick="switchAptView('grid')" title="Card Grid View">
+            <i class="fa-solid fa-grip"></i> Cards
+          </button>
+          <button type="button" class="<?= $currentView === 'timeline' ? 'active' : '' ?>" id="btnViewTimeline" onclick="switchAptView('timeline')" title="Timeline View">
+            <i class="fa-solid fa-timeline"></i> Timeline
+          </button>
+        </div>
 
-      <!-- Schedule Appointment Button -->
-      <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#newAptModal">
-        <i class="fa-solid fa-calendar-plus me-1"></i> Schedule Appointment
-      </button>
+        <button type="button" class="bento-btn-outline" data-bs-toggle="modal" data-bs-target="#newAptTypeModal" title="Manage Appointment Categories">
+          <i class="fa-solid fa-plus-circle"></i> Add Type
+        </button>
+        <button type="button" class="bento-btn-primary" data-bs-toggle="modal" data-bs-target="#newAptModal" title="Schedule New Appointment">
+          <i class="fa-solid fa-calendar-plus"></i> Schedule Appointment
+        </button>
+      </div>
+    </header>
+
+    <!-- ─── 2. EXECUTIVE KPI STRIP ───────────────────────────────────────── -->
+    <div class="apt-kpi-grid">
+      <!-- Total Scheduled -->
+      <a href="/appointments" class="apt-kpi-card tone-primary">
+        <div class="apt-kpi-top">
+          <span class="apt-kpi-label">Total Bookings</span>
+          <div class="apt-kpi-icon"><i class="fa-solid fa-calendar-days"></i></div>
+        </div>
+        <div class="apt-kpi-val"><?= (int)$aptCounts['total'] ?></div>
+        <span class="apt-kpi-sub">Total booked roster</span>
+      </a>
+
+      <!-- Confirmed -->
+      <a href="/appointments?status=Confirmed" class="apt-kpi-card tone-info">
+        <div class="apt-kpi-top">
+          <span class="apt-kpi-label">Confirmed</span>
+          <div class="apt-kpi-icon"><i class="fa-solid fa-circle-check"></i></div>
+        </div>
+        <div class="apt-kpi-val"><?= (int)$aptCounts['confirmed'] ?></div>
+        <span class="apt-kpi-sub">Ready for consular date</span>
+      </a>
+
+      <!-- Completed -->
+      <a href="/appointments?status=Completed" class="apt-kpi-card tone-success">
+        <div class="apt-kpi-top">
+          <span class="apt-kpi-label">Attended / Completed</span>
+          <div class="apt-kpi-icon"><i class="fa-solid fa-user-check"></i></div>
+        </div>
+        <div class="apt-kpi-val"><?= (int)$aptCounts['completed'] ?></div>
+        <span class="apt-kpi-sub">Biometrics captured</span>
+      </a>
+
+      <!-- Attention / Missed / Rescheduled -->
+      <a href="/appointments?status=Rescheduled" class="apt-kpi-card tone-warning">
+        <div class="apt-kpi-top">
+          <span class="apt-kpi-label">Action / Rescheduled</span>
+          <div class="apt-kpi-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+        </div>
+        <div class="apt-kpi-val"><?= (int)$aptCounts['attention'] ?></div>
+        <span class="apt-kpi-sub">Follow-up needed</span>
+      </a>
     </div>
-  </div>
 
-  <!-- Search & Filter Toolbar -->
-  <div class="card card-enterprise shadow-sm border mb-4 bg-white">
-    <div class="card-body p-3">
-      <form action="/appointments" method="GET" class="row g-2 align-items-center" id="aptFilterForm">
+    <!-- ─── 3. ADVANCED SEARCH & FILTER TOOLBAR ───────────────────────────── -->
+    <div class="apt-filter-card">
+      <form action="/appointments" method="GET" class="row g-2.5 align-items-center" id="aptFilterForm">
         <input type="hidden" name="view" id="activeViewParam" value="<?= e($currentView) ?>">
-        <div class="col-12 col-md-5">
+
+        <div class="col-12 col-md-5 col-xl-4">
           <div class="input-group input-group-sm">
-            <span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-magnifying-glass"></i></span>
-            <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Search applicant, app #, venue, ref #..." value="<?= e($_GET['search'] ?? '') ?>">
+            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <input type="text" name="search" class="form-control" placeholder="Search applicant, app #, venue, ref #..." value="<?= e($_GET['search'] ?? '') ?>">
           </div>
         </div>
-        <div class="col-6 col-md-3">
-          <select name="type" class="form-select form-select-sm" onchange="this.form.submit()">
+
+        <div class="col-6 col-md-3 col-xl-3">
+          <select name="type" class="form-select form-select-sm" title="Appointment Type" onchange="this.form.submit()">
             <option value="">All Appointment Types</option>
             <?php foreach (($appointmentTypes ?? []) as $at): ?>
               <option value="<?= e($at['name']) ?>" <?= ($_GET['type'] ?? '') === $at['name'] ? 'selected' : '' ?>><?= e($at['name']) ?></option>
             <?php endforeach; ?>
           </select>
         </div>
-        <div class="col-6 col-md-2">
-          <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+
+        <div class="col-6 col-md-2 col-xl-2.5">
+          <select name="status" class="form-select form-select-sm" title="Status" onchange="this.form.submit()">
             <option value="">All Statuses</option>
             <option value="Scheduled" <?= ($_GET['status'] ?? '') === 'Scheduled' ? 'selected' : '' ?>>Scheduled</option>
             <option value="Confirmed" <?= ($_GET['status'] ?? '') === 'Confirmed' ? 'selected' : '' ?>>Confirmed</option>
@@ -88,244 +154,287 @@ if (!in_array($currentView, ['table', 'grid', 'timeline'], true)) {
             <option value="Rescheduled" <?= ($_GET['status'] ?? '') === 'Rescheduled' ? 'selected' : '' ?>>Rescheduled</option>
           </select>
         </div>
-        <div class="col-12 col-md-2 d-flex gap-1">
-          <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold"><i class="fa-solid fa-filter me-1"></i> Filter</button>
-          <a href="/appointments" class="btn btn-light btn-sm border" title="Reset Filters"><i class="fa-solid fa-rotate-left"></i></a>
+
+        <div class="col-12 col-md-auto ms-auto d-flex align-items-center gap-1.5">
+          <button type="submit" class="bento-btn-primary" style="padding: 0.45rem 1.15rem; font-size: 0.82rem;">
+            <i class="fa-solid fa-filter me-1"></i> Filter
+          </button>
+          <a href="/appointments" class="btn btn-sm btn-light border rounded-pill px-2.5 py-1.5 text-muted hover-dark" title="Reset Filters">
+            <i class="fa-solid fa-rotate-left"></i>
+          </a>
         </div>
       </form>
     </div>
-  </div>
 
-  <?php if (empty($appointments)): ?>
-    <div class="card card-enterprise shadow-sm border text-center py-5 p-4 bg-white mb-4">
-      <div class="mb-3">
-        <i class="fa-regular fa-calendar-xmark text-muted fs-1 opacity-50"></i>
-      </div>
-      <h5 class="fw-bold text-dark mb-1">No Appointments Found</h5>
-      <p class="text-muted small mb-3">No biometric, consular, or medical appointments match your active filter criteria.</p>
-      <div>
-        <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#newAptModal">
-          <i class="fa-solid fa-calendar-plus me-1"></i> Schedule First Appointment
-        </button>
-      </div>
-    </div>
-  <?php else: ?>
-
-    <!-- ================================================================= -->
-    <!-- VIEW OPTION 1: TABLE VIEW -->
-    <!-- ================================================================= -->
-    <div id="aptViewTable" class="apt-view-container <?= $currentView === 'table' ? '' : 'd-none' ?>">
-      <div class="card card-enterprise shadow-sm border">
-        <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th class="ps-3">Appointment Type</th>
-                <th>Center / Location</th>
-                <th>Applicant &amp; App #</th>
-                <th>Date &amp; Time</th>
-                <th>Reference #</th>
-                <th>Assigned Officer</th>
-                <th>Status</th>
-                <th class="text-end pe-3">Update</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php foreach ($appointments as $apt): ?>
-                <?php
-                  $badge = 'bg-primary';
-                  if ($apt['status'] === 'Completed') $badge = 'bg-success';
-                  elseif ($apt['status'] === 'Confirmed') $badge = 'bg-info text-white';
-                  elseif ($apt['status'] === 'Cancelled' || $apt['status'] === 'Missed') $badge = 'bg-danger';
-                  elseif ($apt['status'] === 'Rescheduled') $badge = 'bg-warning text-dark';
-                ?>
-                <tr>
-                  <td class="ps-3">
-                    <div class="d-flex align-items-center gap-2">
-                      <div class="avatar-sm rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center p-2" style="width: 32px; height: 32px; font-size: 0.8rem;">
-                        <i class="fa-solid fa-calendar-day"></i>
-                      </div>
-                      <span class="fw-bold text-dark"><?= e($apt['appointment_type']) ?></span>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="fw-semibold text-primary"><?= e($apt['center_name']) ?></div>
-                    <div class="text-muted small" style="font-size: 0.75rem;"><i class="fa-solid fa-location-dot me-1 text-muted"></i><?= e($apt['location_address'] ?: 'Consular / Center Location') ?></div>
-                  </td>
-                  <td>
-                    <a href="/applications/show?id=<?= $apt['app_id'] ?>" class="fw-bold text-decoration-none"><?= e($apt['application_number']) ?></a>
-                    <div class="text-muted small fw-medium"><?= e($apt['customer_name']) ?></div>
-                  </td>
-                  <td>
-                    <div class="fw-bold text-dark"><?= format_date($apt['appointment_date']) ?></div>
-                    <div class="text-muted small" style="font-size: 0.75rem;"><i class="fa-regular fa-clock me-1"></i><?= date('h:i A', strtotime($apt['appointment_time'])) ?></div>
-                  </td>
-                  <td><span class="badge bg-light text-dark border font-monospace"><?= e($apt['reference_number'] ?: '—') ?></span></td>
-                  <td><span class="small fw-semibold"><?= e($apt['staff_name'] ?? 'Unassigned') ?></span></td>
-                  <td>
-                    <span class="badge <?= $badge ?> px-2.5 py-1" style="font-size: 0.72rem;"><?= e($apt['status']) ?></span>
-                  </td>
-                  <td class="text-end pe-3">
-                    <div class="btn-group">
-                      <button type="button" class="btn btn-outline-primary btn-sm py-1 px-2.5 fw-semibold shadow-sm" 
-                        onclick="openAptStatusModal(<?= (int)$apt['id'] ?>, '<?= e($apt['status']) ?>', '<?= e($apt['application_number']) ?>', '<?= e($apt['customer_name']) ?>')">
-                        Status <i class="fa-solid fa-pen-to-square ms-1"></i>
-                      </button>
-                      <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle dropdown-toggle-split py-1 px-2" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
-                        <span class="visually-hidden">Toggle</span>
-                      </button>
-                      <ul class="dropdown-menu dropdown-menu-end shadow border-0 small">
-                        <li>
-                          <form action="/appointments/status" method="POST">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="appointment_id" value="<?= $apt['id'] ?>">
-                            <input type="hidden" name="status" value="Confirmed">
-                            <button type="submit" class="dropdown-item py-2"><i class="fa-solid fa-check text-info me-2"></i> Mark Confirmed</button>
-                          </form>
-                        </li>
-                        <li>
-                          <form action="/appointments/status" method="POST">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="appointment_id" value="<?= $apt['id'] ?>">
-                            <input type="hidden" name="status" value="Completed">
-                            <button type="submit" class="dropdown-item py-2"><i class="fa-solid fa-circle-check text-success me-2"></i> Mark Completed</button>
-                          </form>
-                        </li>
-                        <li>
-                          <form action="/appointments/status" method="POST">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="appointment_id" value="<?= $apt['id'] ?>">
-                            <input type="hidden" name="status" value="Missed">
-                            <button type="submit" class="dropdown-item py-2"><i class="fa-solid fa-circle-xmark text-danger me-2"></i> Mark Missed</button>
-                          </form>
-                        </li>
-                        <li>
-                          <form action="/appointments/status" method="POST">
-                            <?= csrf_field() ?>
-                            <input type="hidden" name="appointment_id" value="<?= $apt['id'] ?>">
-                            <input type="hidden" name="status" value="Cancelled">
-                            <button type="submit" class="dropdown-item py-2"><i class="fa-solid fa-ban text-secondary me-2"></i> Mark Cancelled</button>
-                          </form>
-                        </li>
-                      </ul>
-                    </div>
-                  </td>
-                </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
+    <!-- ─── 4. RESULTS PRESENTATION ──────────────────────────────────────── -->
+    <?php if (empty($appointments)): ?>
+      <div class="bento-card text-center py-5">
+        <i class="fa-regular fa-calendar-xmark fs-1 text-muted opacity-50 mb-3 d-block"></i>
+        <h5 class="fw-bold text-dark mb-1">No appointments found</h5>
+        <p class="text-muted small mb-3">No biometric, consular, or medical appointments match your active filter criteria.</p>
+        <div class="d-flex justify-content-center gap-2">
+          <a href="/appointments" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Clear Filters</a>
+          <button type="button" class="bento-btn-primary" style="padding: 0.45rem 1.15rem; font-size: 0.82rem;" data-bs-toggle="modal" data-bs-target="#newAptModal">
+            <i class="fa-solid fa-calendar-plus me-1"></i> Schedule First Appointment
+          </button>
         </div>
       </div>
-    </div>
+    <?php else: ?>
 
-    <!-- ================================================================= -->
-    <!-- VIEW OPTION 2: GRID CARDS VIEW -->
-    <!-- ================================================================= -->
-    <div id="aptViewGrid" class="apt-view-container <?= $currentView === 'grid' ? '' : 'd-none' ?>">
-      <div class="row g-3">
-        <?php foreach ($appointments as $apt): ?>
-          <?php
-            $badge = 'bg-primary';
-            $borderClass = 'border-primary';
-            if ($apt['status'] === 'Completed') { $badge = 'bg-success'; $borderClass = 'border-success'; }
-            elseif ($apt['status'] === 'Confirmed') { $badge = 'bg-info text-white'; $borderClass = 'border-info'; }
-            elseif ($apt['status'] === 'Cancelled' || $apt['status'] === 'Missed') { $badge = 'bg-danger'; $borderClass = 'border-danger'; }
-            elseif ($apt['status'] === 'Rescheduled') { $badge = 'bg-warning text-dark'; $borderClass = 'border-warning'; }
-          ?>
-          <div class="col-12 col-md-6 col-lg-4">
-            <div class="card card-enterprise h-100 shadow-sm border border-start-4 <?= $borderClass ?>">
-              <div class="card-body p-3.5 d-flex flex-column justify-content-between">
-                <div>
-                  <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="badge bg-light text-dark border small fw-semibold">
-                      <i class="fa-solid fa-tag me-1 text-primary"></i><?= e($apt['appointment_type']) ?>
-                    </span>
-                    <span class="badge <?= $badge ?> px-2 py-0.5" style="font-size: 0.72rem;"><?= e($apt['status']) ?></span>
-                  </div>
+      <!-- ─── 4A. TABLE VIEW (BENTO ADAPTIVE DATA TABLE) ─────────────────── -->
+      <div id="aptViewTable" class="apt-view-container <?= $currentView === 'table' ? '' : 'd-none' ?>">
+        <div class="bento-card p-0 overflow-hidden mb-4">
+          <div class="apt-table-wrap">
+            <table class="apt-table">
+              <thead>
+                <tr>
+                  <th>Appointment Type</th>
+                  <th>Center / Location</th>
+                  <th>Applicant &amp; App #</th>
+                  <th>Date &amp; Time</th>
+                  <th>Reference #</th>
+                  <th>Assigned Officer</th>
+                  <th>Status</th>
+                  <th class="text-end">Update</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($appointments as $apt): ?>
+                  <?php
+                    $st = $apt['status'] ?? '';
+                    $chipClass = 'neutral';
+                    if ($st === 'Completed') $chipClass = 'success';
+                    elseif ($st === 'Confirmed') $chipClass = 'info';
+                    elseif ($st === 'Scheduled') $chipClass = 'primary';
+                    elseif ($st === 'Cancelled' || $st === 'Missed') $chipClass = 'danger';
+                    elseif ($st === 'Rescheduled') $chipClass = 'warning';
+                  ?>
+                  <tr>
+                    <!-- Type -->
+                    <td data-label="Type">
+                      <div class="d-flex align-items-center gap-2">
+                        <div class="apt-kpi-icon flex-shrink-0" style="background: var(--bento-primary-soft); color: var(--bento-primary);">
+                          <i class="fa-solid fa-calendar-day"></i>
+                        </div>
+                        <span class="fw-bold text-dark"><?= e($apt['appointment_type']) ?></span>
+                      </div>
+                    </td>
 
-                  <h6 class="fw-bold text-dark mb-1 d-flex align-items-center gap-1.5">
-                    <i class="fa-solid fa-building text-primary small"></i>
-                    <span><?= e($apt['center_name']) ?></span>
-                  </h6>
-                  <p class="text-muted small mb-3" style="font-size: 0.75rem;">
-                    <i class="fa-solid fa-location-dot me-1 text-danger"></i><?= e($apt['location_address'] ?: 'Application Support Center') ?>
-                  </p>
+                    <!-- Center / Location -->
+                    <td data-label="Venue">
+                      <div>
+                        <div class="fw-semibold text-primary"><?= e($apt['center_name']) ?></div>
+                        <div class="text-muted small" style="font-size: 0.74rem;">
+                          <i class="fa-solid fa-location-dot me-1 text-danger"></i><?= e($apt['location_address'] ?: 'Consular / Center Location') ?>
+                        </div>
+                      </div>
+                    </td>
 
-                  <div class="p-2.5 bg-light rounded-3 border mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                      <span class="text-muted small">Applicant:</span>
-                      <strong class="text-dark small"><?= e($apt['customer_name']) ?></strong>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                      <span class="text-muted small">Application #:</span>
-                      <a href="/applications/show?id=<?= $apt['app_id'] ?>" class="small fw-bold text-decoration-none"><?= e($apt['application_number']) ?></a>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                      <span class="text-muted small">Booking Ref:</span>
-                      <span class="font-monospace small fw-semibold text-secondary"><?= e($apt['reference_number'] ?: 'N/A') ?></span>
-                    </div>
-                  </div>
-                </div>
+                    <!-- Applicant & App # -->
+                    <td data-label="Applicant">
+                      <div>
+                        <a href="/applications/show?id=<?= $apt['app_id'] ?>" class="fw-bold text-dark text-decoration-none d-block">
+                          <?= e($apt['application_number']) ?>
+                        </a>
+                        <div class="text-muted small"><?= e($apt['customer_name']) ?></div>
+                      </div>
+                    </td>
 
-                <div class="pt-2 border-top d-flex align-items-center justify-content-between">
-                  <div>
-                    <div class="small fw-bold text-dark"><i class="fa-regular fa-calendar me-1 text-primary"></i><?= format_date($apt['appointment_date']) ?></div>
-                    <div class="text-muted" style="font-size: 0.72rem;"><i class="fa-regular fa-clock me-1"></i><?= date('h:i A', strtotime($apt['appointment_time'])) ?> &bull; <?= e($apt['staff_name'] ?? 'Unassigned') ?></div>
-                  </div>
-                  <button type="button" class="btn btn-sm btn-outline-primary px-2.5 py-1 fw-semibold shadow-sm"
-                    onclick="openAptStatusModal(<?= (int)$apt['id'] ?>, '<?= e($apt['status']) ?>', '<?= e($apt['application_number']) ?>', '<?= e($apt['customer_name']) ?>')">
-                    Status <i class="fa-solid fa-pen-to-square ms-1"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
+                    <!-- Date & Time -->
+                    <td data-label="Schedule">
+                      <div>
+                        <div class="fw-bold text-dark"><?= format_date($apt['appointment_date']) ?></div>
+                        <div class="text-muted small" style="font-size: 0.74rem;">
+                          <i class="fa-regular fa-clock me-1"></i><?= date('h:i A', strtotime($apt['appointment_time'])) ?>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Reference -->
+                    <td data-label="Ref #">
+                      <span class="badge bg-light text-dark border font-monospace"><?= e($apt['reference_number'] ?: '—') ?></span>
+                    </td>
+
+                    <!-- Officer -->
+                    <td data-label="Officer">
+                      <span class="small fw-semibold text-dark"><?= e($apt['staff_name'] ?? 'Unassigned') ?></span>
+                    </td>
+
+                    <!-- Status -->
+                    <td data-label="Status">
+                      <span class="badge rounded-pill px-2.5 py-1 fw-bold text-uppercase" style="font-size: 0.7rem; <?php
+                        if ($st === 'Completed') echo 'background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0;';
+                        elseif ($st === 'Confirmed') echo 'background: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE;';
+                        elseif ($st === 'Scheduled') echo 'background: #FFF1F3; color: #E11D48; border: 1px solid #FCE7F3;';
+                        elseif ($st === 'Rescheduled') echo 'background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A;';
+                        else echo 'background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA;';
+                      ?>">
+                        <?= e($apt['status']) ?>
+                      </span>
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="text-end td-actions" data-label="Actions">
+                      <div class="d-flex align-items-center justify-content-end gap-1">
+                        <div class="btn-group">
+                          <button type="button" class="btn btn-outline-primary btn-sm rounded-start-pill py-1 px-2.5 fw-semibold" 
+                            onclick="openAptStatusModal(<?= (int)$apt['id'] ?>, '<?= e($apt['status']) ?>', '<?= e($apt['application_number']) ?>', '<?= e($apt['customer_name']) ?>')">
+                            Status <i class="fa-solid fa-pen-to-square ms-1"></i>
+                          </button>
+                          <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle dropdown-toggle-split rounded-end-pill py-1 px-2" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="visually-hidden">Toggle</span>
+                          </button>
+                          <ul class="dropdown-menu dropdown-menu-end shadow border-0 small rounded-3">
+                            <li>
+                              <form action="/appointments/status" method="POST">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="appointment_id" value="<?= $apt['id'] ?>">
+                                <input type="hidden" name="status" value="Confirmed">
+                                <button type="submit" class="dropdown-item py-2"><i class="fa-solid fa-check text-info me-2"></i> Mark Confirmed</button>
+                              </form>
+                            </li>
+                            <li>
+                              <form action="/appointments/status" method="POST">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="appointment_id" value="<?= $apt['id'] ?>">
+                                <input type="hidden" name="status" value="Completed">
+                                <button type="submit" class="dropdown-item py-2"><i class="fa-solid fa-circle-check text-success me-2"></i> Mark Completed</button>
+                              </form>
+                            </li>
+                            <li>
+                              <form action="/appointments/status" method="POST">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="appointment_id" value="<?= $apt['id'] ?>">
+                                <input type="hidden" name="status" value="Missed">
+                                <button type="submit" class="dropdown-item py-2"><i class="fa-solid fa-circle-xmark text-danger me-2"></i> Mark Missed</button>
+                              </form>
+                            </li>
+                            <li>
+                              <form action="/appointments/status" method="POST">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="appointment_id" value="<?= $apt['id'] ?>">
+                                <input type="hidden" name="status" value="Cancelled">
+                                <button type="submit" class="dropdown-item py-2"><i class="fa-solid fa-ban text-secondary me-2"></i> Mark Cancelled</button>
+                              </form>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
           </div>
-        <?php endforeach; ?>
+        </div>
       </div>
-    </div>
 
-    <!-- ================================================================= -->
-    <!-- VIEW OPTION 3: TIMELINE / CHRONOLOGICAL VIEW -->
-    <!-- ================================================================= -->
-    <div id="aptViewTimeline" class="apt-view-container <?= $currentView === 'timeline' ? '' : 'd-none' ?>">
-      <div class="card card-enterprise shadow-sm border p-3 p-md-4 bg-white">
-        <div class="timeline-container position-relative ps-4" style="border-left: 2px solid #e2e8f0; margin-left: 12px;">
+      <!-- ─── 4B. GRID CARDS VIEW ────────────────────────────────────────── -->
+      <div id="aptViewGrid" class="apt-view-container <?= $currentView === 'grid' ? '' : 'd-none' ?> mb-4">
+        <div class="apt-grid">
           <?php foreach ($appointments as $apt): ?>
             <?php
-              $badge = 'bg-primary';
-              $dotColor = '#2563eb';
-              if ($apt['status'] === 'Completed') { $badge = 'bg-success'; $dotColor = '#10b981'; }
-              elseif ($apt['status'] === 'Confirmed') { $badge = 'bg-info text-white'; $dotColor = '#06b6d4'; }
-              elseif ($apt['status'] === 'Cancelled' || $apt['status'] === 'Missed') { $badge = 'bg-danger'; $dotColor = '#ef4444'; }
-              elseif ($apt['status'] === 'Rescheduled') { $badge = 'bg-warning text-dark'; $dotColor = '#f59e0b'; }
+              $st = $apt['status'] ?? '';
             ?>
-            <div class="timeline-item position-relative mb-4">
-              <!-- Timeline Marker Dot -->
-              <span class="position-absolute rounded-circle shadow-sm" style="left: -29px; top: 4px; width: 14px; height: 14px; background-color: <?= $dotColor ?>; border: 3px solid #ffffff;"></span>
+            <div class="apt-card">
+              <div>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="badge bg-light text-dark border small fw-semibold">
+                    <i class="fa-solid fa-tag me-1 text-primary"></i><?= e($apt['appointment_type']) ?>
+                  </span>
+                  <span class="badge rounded-pill px-2 py-0.5 fw-bold" style="<?php
+                    if ($st === 'Completed') echo 'background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0;';
+                    elseif ($st === 'Confirmed') echo 'background: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE;';
+                    elseif ($st === 'Scheduled') echo 'background: #FFF1F3; color: #E11D48; border: 1px solid #FCE7F3;';
+                    elseif ($st === 'Rescheduled') echo 'background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A;';
+                    else echo 'background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA;';
+                  ?>">
+                    <?= e($apt['status']) ?>
+                  </span>
+                </div>
 
-              <div class="card shadow-sm border p-3">
+                <h6 class="fw-bold text-dark mb-1 d-flex align-items-center gap-1.5">
+                  <i class="fa-solid fa-building text-primary small"></i>
+                  <span><?= e($apt['center_name']) ?></span>
+                </h6>
+                <p class="text-muted small mb-3" style="font-size: 0.75rem;">
+                  <i class="fa-solid fa-location-dot me-1 text-danger"></i><?= e($apt['location_address'] ?: 'Application Support Center') ?>
+                </p>
+
+                <div class="p-2.5 bg-light rounded-3 border mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-muted small">Applicant:</span>
+                    <strong class="text-dark small"><?= e($apt['customer_name']) ?></strong>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-muted small">Application #:</span>
+                    <a href="/applications/show?id=<?= $apt['app_id'] ?>" class="small fw-bold text-decoration-none"><?= e($apt['application_number']) ?></a>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">Booking Ref:</span>
+                    <span class="font-monospace small fw-semibold text-secondary"><?= e($apt['reference_number'] ?: '—') ?></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-2 border-top d-flex align-items-center justify-content-between">
+                <div>
+                  <div class="small fw-bold text-dark"><i class="fa-regular fa-calendar me-1 text-primary"></i><?= format_date($apt['appointment_date']) ?></div>
+                  <div class="text-muted" style="font-size: 0.72rem;"><i class="fa-regular fa-clock me-1"></i><?= date('h:i A', strtotime($apt['appointment_time'])) ?> &bull; <?= e($apt['staff_name'] ?? 'Unassigned') ?></div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-semibold shadow-sm"
+                  onclick="openAptStatusModal(<?= (int)$apt['id'] ?>, '<?= e($apt['status']) ?>', '<?= e($apt['application_number']) ?>', '<?= e($apt['customer_name']) ?>')">
+                  Status <i class="fa-solid fa-pen-to-square ms-1"></i>
+                </button>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      </div>
+
+      <!-- ─── 4C. TIMELINE VIEW ─────────────────────────────────────────── -->
+      <div id="aptViewTimeline" class="apt-view-container <?= $currentView === 'timeline' ? '' : 'd-none' ?> mb-4">
+        <div class="apt-timeline">
+          <?php foreach ($appointments as $apt): ?>
+            <?php
+              $st = $apt['status'] ?? '';
+            ?>
+            <div class="apt-timeline-item">
+              <div class="apt-timeline-date">
+                <div class="fw-bold text-dark" style="font-size: 0.85rem;"><?= format_date($apt['appointment_date']) ?></div>
+                <div class="text-muted small"><?= date('h:i A', strtotime($apt['appointment_time'])) ?></div>
+              </div>
+
+              <div class="apt-timeline-body">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
                   <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-dark text-white font-monospace small"><i class="fa-regular fa-calendar me-1"></i><?= format_date($apt['appointment_date']) ?> @ <?= date('h:i A', strtotime($apt['appointment_time'])) ?></span>
                     <span class="badge bg-light text-dark border small fw-semibold"><?= e($apt['appointment_type']) ?></span>
+                    <span class="badge rounded-pill px-2.5 py-0.5 fw-bold" style="<?php
+                      if ($st === 'Completed') echo 'background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0;';
+                      elseif ($st === 'Confirmed') echo 'background: #EFF6FF; color: #2563EB; border: 1px solid #BFDBFE;';
+                      elseif ($st === 'Scheduled') echo 'background: #FFF1F3; color: #E11D48; border: 1px solid #FCE7F3;';
+                      elseif ($st === 'Rescheduled') echo 'background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A;';
+                      else echo 'background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA;';
+                    ?>">
+                      <?= e($apt['status']) ?>
+                    </span>
                   </div>
-                  <span class="badge <?= $badge ?> px-2.5 py-1" style="font-size: 0.72rem;"><?= e($apt['status']) ?></span>
+                  <div>
+                    <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 fw-semibold"
+                      onclick="openAptStatusModal(<?= (int)$apt['id'] ?>, '<?= e($apt['status']) ?>', '<?= e($apt['application_number']) ?>', '<?= e($apt['customer_name']) ?>')">
+                      Update <i class="fa-solid fa-pen-to-square ms-1"></i>
+                    </button>
+                  </div>
                 </div>
 
                 <div class="row g-2 align-items-center">
-                  <div class="col-md-5">
+                  <div class="col-md-6">
                     <div class="fw-bold text-dark fs-6"><?= e($apt['center_name']) ?></div>
                     <div class="text-muted small"><i class="fa-solid fa-location-dot me-1 text-danger"></i><?= e($apt['location_address'] ?: 'Consular / Center Venue') ?></div>
                   </div>
-                  <div class="col-md-4">
+                  <div class="col-md-6">
                     <div class="small text-muted">Applicant: <strong class="text-dark"><?= e($apt['customer_name']) ?></strong></div>
                     <div class="small">File: <a href="/applications/show?id=<?= $apt['app_id'] ?>" class="fw-semibold text-decoration-none"><?= e($apt['application_number']) ?></a> (Ref: <span class="font-monospace text-muted"><?= e($apt['reference_number'] ?: '—') ?></span>)</div>
-                  </div>
-                  <div class="col-md-3 text-md-end">
-                    <button type="button" class="btn btn-outline-primary btn-sm px-3 fw-semibold shadow-sm"
-                      onclick="openAptStatusModal(<?= (int)$apt['id'] ?>, '<?= e($apt['status']) ?>', '<?= e($apt['application_number']) ?>', '<?= e($apt['customer_name']) ?>')">
-                      Update Status <i class="fa-solid fa-pen-to-square ms-1"></i>
-                    </button>
                   </div>
                 </div>
               </div>
@@ -333,32 +442,33 @@ if (!in_array($currentView, ['table', 'grid', 'timeline'], true)) {
           <?php endforeach; ?>
         </div>
       </div>
-    </div>
 
-  <?php endif; ?>
+    <?php endif; ?>
+
+  </div>
 </div>
 
-<!-- ================================================================= -->
-<!-- MODAL: ADD APPOINTMENT TYPE -->
-<!-- ================================================================= -->
+<!-- ======================================================================= -->
+<!-- MODAL: ADD APPOINTMENT TYPE                                             -->
+<!-- ======================================================================= -->
 <div class="modal fade" id="newAptTypeModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
+    <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
       <form action="/appointments/types/store" method="POST">
         <?= csrf_field() ?>
-        <div class="modal-header bg-primary text-white">
-          <h6 class="modal-title fw-bold"><i class="fa-solid fa-plus-circle me-2"></i> Add New Appointment Type</h6>
+        <div class="modal-header bg-dark text-white p-3.5">
+          <h6 class="modal-title fw-bold fs-6"><i class="fa-solid fa-plus-circle me-2 text-primary"></i> Add New Appointment Type</h6>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-4">
           <div class="mb-3">
             <label class="form-label small fw-semibold">Appointment Type Name <span class="text-danger">*</span></label>
-            <input type="text" name="name" class="form-control" placeholder="e.g. Passport Drop-off, Embassy VIP Lounge, DNA Verification" required>
+            <input type="text" name="name" class="form-control rounded-3" placeholder="e.g. Passport Drop-off, Embassy VIP Lounge, DNA Verification" required>
             <div class="form-text small">Descriptive label shown across appointment bookings and filters.</div>
           </div>
           <div class="mb-3">
             <label class="form-label small fw-semibold">Description (Optional)</label>
-            <textarea name="description" class="form-control" rows="2" placeholder="Brief note on requirements or instructions for this appointment category..."></textarea>
+            <textarea name="description" class="form-control rounded-3" rows="2" placeholder="Brief note on requirements or instructions for this appointment category..."></textarea>
           </div>
 
           <div class="p-3 bg-light rounded-3 border">
@@ -370,9 +480,9 @@ if (!in_array($currentView, ['table', 'grid', 'timeline'], true)) {
             </div>
           </div>
         </div>
-        <div class="modal-footer bg-light">
-          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold shadow-sm">
+        <div class="modal-footer bg-light p-3 border-top">
+          <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="bento-btn-primary" style="padding: 0.45rem 1.15rem; font-size: 0.82rem;">
             <i class="fa-solid fa-check me-1"></i> Save Appointment Type
           </button>
         </div>
@@ -381,14 +491,14 @@ if (!in_array($currentView, ['table', 'grid', 'timeline'], true)) {
   </div>
 </div>
 
-<!-- ================================================================= -->
-<!-- MODAL: UPDATE APPOINTMENT STATUS -->
-<!-- ================================================================= -->
+<!-- ======================================================================= -->
+<!-- MODAL: UPDATE APPOINTMENT STATUS                                        -->
+<!-- ======================================================================= -->
 <div class="modal fade" id="updateAptStatusModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-primary text-white">
-        <h6 class="modal-title fw-bold"><i class="fa-solid fa-calendar-check me-2"></i> Update Appointment Status</h6>
+    <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+      <div class="modal-header bg-dark text-white p-3.5">
+        <h6 class="modal-title fw-bold fs-6"><i class="fa-solid fa-calendar-check me-2 text-primary"></i> Update Appointment Status</h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <form action="/appointments/status" method="POST">
@@ -401,7 +511,7 @@ if (!in_array($currentView, ['table', 'grid', 'timeline'], true)) {
           </div>
           <div class="mb-3">
             <label class="form-label small fw-semibold">Select New Status <span class="text-danger">*</span></label>
-            <select name="status" id="modalAptStatusSelect" class="form-select" required>
+            <select name="status" id="modalAptStatusSelect" class="form-select rounded-3" required>
               <option value="Confirmed">Confirmed (Biometrics / Consular Confirmed)</option>
               <option value="Completed">Completed (Applicant Attended Successfully)</option>
               <option value="Scheduled">Scheduled (Upcoming / Pending)</option>
@@ -411,23 +521,23 @@ if (!in_array($currentView, ['table', 'grid', 'timeline'], true)) {
             </select>
           </div>
         </div>
-        <div class="modal-footer bg-light">
-          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold shadow-sm">Save Status</button>
+        <div class="modal-footer bg-light p-3 border-top">
+          <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="bento-btn-primary" style="padding: 0.45rem 1.15rem; font-size: 0.82rem;">Save Status</button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
-<!-- ================================================================= -->
-<!-- MODAL: SCHEDULE APPOINTMENT -->
-<!-- ================================================================= -->
+<!-- ======================================================================= -->
+<!-- MODAL: SCHEDULE APPOINTMENT                                             -->
+<!-- ======================================================================= -->
 <div class="modal fade" id="newAptModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-primary text-white">
-        <h6 class="modal-title fw-bold"><i class="fa-solid fa-calendar-plus me-2"></i> Schedule Appointment</h6>
+    <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+      <div class="modal-header bg-dark text-white p-3.5">
+        <h6 class="modal-title fw-bold fs-6"><i class="fa-solid fa-calendar-plus me-2 text-primary"></i> Schedule Appointment</h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <form action="/appointments/store" method="POST" enctype="multipart/form-data">
@@ -436,7 +546,7 @@ if (!in_array($currentView, ['table', 'grid', 'timeline'], true)) {
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <label class="form-label small fw-semibold">Visa Application <span class="text-danger">*</span></label>
-              <select name="application_id" class="form-select" required>
+              <select name="application_id" class="form-select rounded-3" required>
                 <option value="">-- Select Active Application --</option>
                 <?php foreach ($activeApplications as $a): ?>
                   <option value="<?= $a['id'] ?>"><?= e($a['application_number']) ?> &bull; <?= e($a['customer_name']) ?></option>
@@ -448,7 +558,7 @@ if (!in_array($currentView, ['table', 'grid', 'timeline'], true)) {
                 <label class="form-label small fw-semibold mb-0">Appointment Type <span class="text-danger">*</span></label>
                 <a href="javascript:void(0)" class="small text-decoration-none text-primary fw-semibold" onclick="document.getElementById('customTypeContainer').classList.toggle('d-none');">+ Add New</a>
               </div>
-              <select name="appointment_type" id="schedAptTypeSelect" class="form-select" required onchange="handleTypeSelectChange(this)">
+              <select name="appointment_type" id="schedAptTypeSelect" class="form-select rounded-3" required onchange="handleTypeSelectChange(this)">
                 <?php foreach (($appointmentTypes ?? []) as $at): ?>
                   <option value="<?= e($at['name']) ?>"><?= e($at['name']) ?></option>
                 <?php endforeach; ?>
@@ -459,40 +569,40 @@ if (!in_array($currentView, ['table', 'grid', 'timeline'], true)) {
 
           <div id="customTypeContainer" class="mb-3 p-3 bg-light rounded-3 border d-none">
             <label class="form-label small fw-semibold text-primary"><i class="fa-solid fa-pen-nib me-1"></i> Specify Custom Appointment Type</label>
-            <input type="text" name="custom_appointment_type" id="customTypeInput" class="form-control" placeholder="Type new appointment category name...">
+            <input type="text" name="custom_appointment_type" id="customTypeInput" class="form-control rounded-3" placeholder="Type new appointment category name...">
             <div class="form-text small">This new category will automatically be saved to your system appointment types.</div>
           </div>
 
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <label class="form-label small fw-semibold">Center / Venue Name <span class="text-danger">*</span></label>
-              <input type="text" name="center_name" class="form-control" placeholder="e.g. VFS Global Wafi Mall, Smart Salem Al Quoz" required>
+              <input type="text" name="center_name" class="form-control rounded-3" placeholder="e.g. VFS Global Wafi Mall, Smart Salem Al Quoz" required>
             </div>
             <div class="col-md-6">
               <label class="form-label small fw-semibold">Location Address</label>
-              <input type="text" name="location_address" class="form-control" placeholder="e.g. Level 3, Wafi City Mall, Oud Metha, Dubai">
+              <input type="text" name="location_address" class="form-control rounded-3" placeholder="e.g. Level 3, Wafi City Mall, Oud Metha, Dubai">
             </div>
           </div>
 
           <div class="row g-3 mb-3">
             <div class="col-md-4">
               <label class="form-label small fw-semibold">Date <span class="text-danger">*</span></label>
-              <input type="date" name="appointment_date" class="form-control" required value="<?= date('Y-m-d', strtotime('+1 day')) ?>">
+              <input type="date" name="appointment_date" class="form-control rounded-3" required value="<?= date('Y-m-d', strtotime('+1 day')) ?>">
             </div>
             <div class="col-md-4">
               <label class="form-label small fw-semibold">Time <span class="text-danger">*</span></label>
-              <input type="time" name="appointment_time" class="form-control" required value="09:30">
+              <input type="time" name="appointment_time" class="form-control rounded-3" required value="09:30">
             </div>
             <div class="col-md-4">
               <label class="form-label small fw-semibold">Booking Ref # (Slip / Barcode)</label>
-              <input type="text" name="reference_number" class="form-control" placeholder="e.g. VFS-DXB-99881">
+              <input type="text" name="reference_number" class="form-control rounded-3" placeholder="e.g. VFS-DXB-99881">
             </div>
           </div>
 
           <div class="row g-3 mb-3">
             <div class="col-md-6">
               <label class="form-label small fw-semibold">Assigned Accompanying Officer</label>
-              <select name="assigned_staff_id" class="form-select">
+              <select name="assigned_staff_id" class="form-select rounded-3">
                 <option value="">-- Auto-assign active staff --</option>
                 <?php foreach (($staffMembers ?? []) as $sm): ?>
                   <option value="<?= $sm['id'] ?>"><?= e($sm['name']) ?></option>
@@ -501,18 +611,18 @@ if (!in_array($currentView, ['table', 'grid', 'timeline'], true)) {
             </div>
             <div class="col-md-6">
               <label class="form-label small fw-semibold">Upload Appointment Letter / Slip (PDF/JPG)</label>
-              <input type="file" name="document_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+              <input type="file" name="document_file" class="form-control rounded-3" accept=".pdf,.jpg,.jpeg,.png">
             </div>
           </div>
 
           <div class="mb-2">
             <label class="form-label small fw-semibold">Special Instructions / Applicant Notes</label>
-            <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Original passport, 2 biometric photos, and bank statements required on day of visit."></textarea>
+            <textarea name="notes" class="form-control rounded-3" rows="2" placeholder="e.g. Original passport, 2 biometric photos, and bank statements required on day of visit."></textarea>
           </div>
         </div>
-        <div class="modal-footer bg-light">
-          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-sm px-4 fw-semibold shadow-sm">
+        <div class="modal-footer bg-light p-3 border-top">
+          <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="bento-btn-primary" style="padding: 0.45rem 1.25rem; font-size: 0.82rem;">
             <i class="fa-solid fa-check me-1"></i> Confirm &amp; Notify Applicant
           </button>
         </div>
@@ -523,30 +633,18 @@ if (!in_array($currentView, ['table', 'grid', 'timeline'], true)) {
 
 <script>
 function switchAptView(view) {
-  // Hide all view containers
   document.querySelectorAll('.apt-view-container').forEach(el => el.classList.add('d-none'));
+  document.querySelectorAll('.apt-segmented button').forEach(btn => btn.classList.remove('active'));
 
-  // Show active view container
   const target = document.getElementById('aptView' + view.charAt(0).toUpperCase() + view.slice(1));
   if (target) target.classList.remove('d-none');
 
-  // Update button active states
-  document.querySelectorAll('.view-toggle-btn').forEach(btn => {
-    btn.classList.remove('btn-primary', 'shadow-sm');
-    btn.classList.add('btn-light', 'text-muted');
-  });
-
   const activeBtn = document.getElementById('btnView' + view.charAt(0).toUpperCase() + view.slice(1));
-  if (activeBtn) {
-    activeBtn.classList.remove('btn-light', 'text-muted');
-    activeBtn.classList.add('btn-primary', 'shadow-sm');
-  }
+  if (activeBtn) activeBtn.classList.add('active');
 
-  // Update hidden input in filter form
   const viewInput = document.getElementById('activeViewParam');
   if (viewInput) viewInput.value = view;
 
-  // Persist preference in localStorage
   try { localStorage.setItem('apt_active_view', view); } catch (e) {}
 }
 
@@ -575,7 +673,6 @@ function openAptStatusModal(aptId, currentStatus, appNo, custName) {
   modal.show();
 }
 
-// Restore saved view preference if URL does not specify one
 document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   if (!urlParams.has('view')) {

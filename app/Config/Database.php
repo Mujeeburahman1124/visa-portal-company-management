@@ -62,6 +62,7 @@ class Database
                             self::$pdo->exec('PRAGMA foreign_keys = ON;');
                             self::$pdo->exec('PRAGMA journal_mode = WAL;');
                             self::$pdo->exec('PRAGMA busy_timeout = 60000;');
+                            self::initSqliteFunctions(self::$pdo);
                         } else {
                             error_log("Production MySQL Connection Failure: " . $ex->getMessage());
                             if (php_sapi_name() !== 'cli' && !headers_sent()) {
@@ -95,9 +96,25 @@ class Database
                 self::$pdo->exec('PRAGMA foreign_keys = ON;');
                 self::$pdo->exec('PRAGMA journal_mode = WAL;');
                 self::$pdo->exec('PRAGMA busy_timeout = 60000;');
+                self::initSqliteFunctions(self::$pdo);
             }
         }
 
         return self::$pdo;
+    }
+
+    private static function initSqliteFunctions(PDO $pdo): void
+    {
+        try {
+            if (method_exists($pdo, 'sqliteCreateFunction')) {
+                @$pdo->sqliteCreateFunction('DATEDIFF', function($d1, $d2) {
+                    if (!$d1 || !$d2) return 0;
+                    $t1 = strtotime((string)$d1);
+                    $t2 = strtotime((string)$d2);
+                    if ($t1 === false || $t2 === false) return 0;
+                    return (int)round(($t1 - $t2) / 86400);
+                }, 2);
+            }
+        } catch (\Throwable $e) {}
     }
 }

@@ -1,0 +1,384 @@
+/* ==========================================================================
+   APPOINTMENTS SCHEDULER — BENTO REDESIGN & RESPONSIVE SYSTEM
+   Referencing Dashboard & Bento Tokens
+   ========================================================================== */
+
+.appointments-page .bento-dashboard-wrap {
+  padding: 1.5rem 1.75rem 3.5rem;
+  max-width: 1720px;
+  margin: 0 auto;
+}
+
+.appointments-page .bento-header-title {
+  font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.25rem);
+}
+
+.apt-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* ── Segmented Control ───────────────────────────────────────────────── */
+.apt-segmented {
+  display: inline-flex;
+  background: #FFFFFF;
+  border: 1px solid var(--bento-card-border-hover, #E2E8F0);
+  border-radius: var(--bento-radius-pill, 9999px);
+  padding: 4px;
+  box-shadow: var(--bento-shadow-card, 0 4px 20px -4px rgba(15, 23, 42, 0.05));
+}
+
+.apt-segmented button {
+  border: 0;
+  background: transparent;
+  color: var(--bento-text-muted, #64748B);
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.95rem;
+  border-radius: var(--bento-radius-pill, 9999px);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.apt-segmented button:hover {
+  color: var(--bento-text-main, #0F172A);
+}
+
+.apt-segmented button.active {
+  background: var(--bento-primary, #E11D48);
+  color: #FFFFFF !important;
+  box-shadow: 0 3px 10px var(--bento-primary-glow, rgba(225, 29, 72, 0.16));
+}
+
+/* ── 4 KPI Metric Cards ──────────────────────────────────────────────── */
+.apt-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.95rem;
+  margin-bottom: 1.35rem;
+}
+
+.apt-kpi-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding: 1rem 1.15rem;
+  background: #FFFFFF;
+  border: 1.5px solid var(--bento-card-border, #F1F5F9);
+  border-radius: 18px;
+  box-shadow: var(--bento-shadow-card, 0 4px 20px -4px rgba(15, 23, 42, 0.05));
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--bento-text-main, #0F172A);
+  text-decoration: none !important;
+}
+
+.apt-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--bento-shadow-hover, 0 12px 30px -6px rgba(15, 23, 42, 0.10));
+  border-color: var(--bento-card-border-hover, #E2E8F0);
+}
+
+.apt-kpi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.apt-kpi-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bento-text-muted, #64748B);
+}
+
+.apt-kpi-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  background: var(--bento-bg, #F8FAFC);
+  color: var(--bento-text-muted, #64748B);
+  flex-shrink: 0;
+}
+
+.apt-kpi-val {
+  font-size: 1.85rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-family: 'Outfit', sans-serif;
+}
+
+.apt-kpi-sub {
+  font-size: 0.72rem;
+  color: var(--bento-text-muted, #64748B);
+}
+
+.apt-kpi-card.tone-primary .apt-kpi-icon { background: var(--bento-primary-soft, #FFF1F3); color: var(--bento-primary, #E11D48); }
+.apt-kpi-card.tone-primary .apt-kpi-val { color: var(--bento-primary, #E11D48); }
+
+.apt-kpi-card.tone-info .apt-kpi-icon { background: var(--bento-info-soft, #EFF6FF); color: var(--bento-info, #2563EB); }
+.apt-kpi-card.tone-info .apt-kpi-val { color: var(--bento-info, #2563EB); }
+
+.apt-kpi-card.tone-success .apt-kpi-icon { background: var(--bento-success-soft, #ECFDF5); color: var(--bento-success, #059669); }
+.apt-kpi-card.tone-success .apt-kpi-val { color: var(--bento-success, #059669); }
+
+.apt-kpi-card.tone-warning .apt-kpi-icon { background: var(--bento-warning-soft, #FFFBEB); color: var(--bento-warning, #D97706); }
+.apt-kpi-card.tone-warning .apt-kpi-val { color: var(--bento-warning, #D97706); }
+
+/* ── Filter Toolbar ──────────────────────────────────────────────────── */
+.apt-filter-card {
+  background: #FFFFFF;
+  border: 1px solid var(--bento-card-border, #F1F5F9);
+  border-radius: 20px;
+  box-shadow: var(--bento-shadow-card, 0 4px 20px -4px rgba(15, 23, 42, 0.05));
+  padding: 1.15rem 1.35rem;
+  margin-bottom: 1.5rem;
+}
+
+.apt-filter-card .form-control,
+.apt-filter-card .form-select {
+  background-color: var(--bento-bg, #F8FAFC);
+  border: 1px solid var(--bento-card-border-hover, #E2E8F0);
+  border-radius: 12px;
+  font-size: 0.82rem;
+  padding-top: 0.48rem;
+  padding-bottom: 0.48rem;
+}
+
+.apt-filter-card .form-control:focus,
+.apt-filter-card .form-select:focus {
+  border-color: var(--bento-primary-light, #FB7185);
+  box-shadow: 0 0 0 3px var(--bento-primary-glow, rgba(225, 29, 72, 0.16));
+  background: #FFFFFF;
+}
+
+.apt-filter-card .input-group-text {
+  background: var(--bento-bg, #F8FAFC);
+  border: 1px solid var(--bento-card-border-hover, #E2E8F0);
+  border-right: 0;
+  border-radius: 12px 0 0 12px;
+  color: var(--bento-text-muted, #64748B);
+}
+
+.apt-filter-card .input-group .form-control {
+  border-left: 0;
+  border-radius: 0 12px 12px 0;
+}
+
+/* ── 1. Table View ───────────────────────────────────────────────────── */
+.apt-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.apt-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.apt-table thead th {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bento-text-muted, #64748B);
+  padding: 0.85rem 1.15rem;
+  background: var(--bento-bg, #F8FAFC);
+  border-bottom: 1px solid var(--bento-card-border-hover, #E2E8F0);
+  border-top: none;
+  white-space: nowrap;
+}
+
+.apt-table tbody tr {
+  background: #FFFFFF;
+  transition: all 0.15s ease;
+}
+
+.apt-table tbody tr:hover {
+  background: var(--bento-bg, #F8FAFC);
+}
+
+.apt-table tbody td {
+  padding: 0.95rem 1.15rem;
+  font-size: 0.85rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--bento-card-border, #F1F5F9);
+}
+
+/* ── 2. Grid View ────────────────────────────────────────────────────── */
+.apt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 1.15rem;
+}
+
+.apt-card {
+  background: #FFFFFF;
+  border: 1.5px solid var(--bento-card-border, #F1F5F9);
+  border-radius: 20px;
+  padding: 1.25rem;
+  box-shadow: var(--bento-shadow-card, 0 4px 20px -4px rgba(15, 23, 42, 0.05));
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.apt-card:hover {
+  border-color: var(--bento-card-border-hover, #E2E8F0);
+  box-shadow: var(--bento-shadow-hover, 0 12px 30px -6px rgba(15, 23, 42, 0.10));
+  transform: translateY(-2px);
+}
+
+/* ── 3. Timeline View ────────────────────────────────────────────────── */
+.apt-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.apt-timeline-item {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+
+.apt-timeline-date {
+  width: 90px;
+  flex-shrink: 0;
+  text-align: right;
+  padding-top: 0.4rem;
+}
+
+.apt-timeline-body {
+  flex: 1;
+  background: #FFFFFF;
+  border: 1.5px solid var(--bento-card-border, #F1F5F9);
+  border-radius: 18px;
+  padding: 1.15rem 1.35rem;
+  box-shadow: var(--bento-shadow-card, 0 4px 20px -4px rgba(15, 23, 42, 0.05));
+  transition: all 0.2s ease;
+}
+
+.apt-timeline-body:hover {
+  border-color: var(--bento-card-border-hover, #E2E8F0);
+  transform: translateX(3px);
+}
+
+/* Responsive Table to Cards */
+@media (max-width: 991.98px) {
+  .apt-table-wrap {
+    overflow: visible;
+  }
+  .apt-table, .apt-table tbody, .apt-table tr, .apt-table td {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+  }
+  .apt-table thead {
+    display: none;
+  }
+  .apt-table tbody tr {
+    margin: 0.85rem 0;
+    padding: 0.45rem 0.25rem;
+    border: 1.5px solid var(--bento-card-border-hover, #E2E8F0);
+    border-radius: 16px;
+    box-shadow: var(--bento-shadow-card, 0 4px 20px -4px rgba(15, 23, 42, 0.05));
+    background: #FFFFFF;
+  }
+  .apt-table tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    white-space: normal;
+    border: none;
+    padding: 0.55rem 0.95rem;
+    text-align: right;
+  }
+  .apt-table tbody td::before {
+    content: attr(data-label);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--bento-text-muted, #64748B);
+    text-align: left;
+    flex-shrink: 0;
+  }
+  .apt-table tbody td.td-actions {
+    justify-content: flex-end;
+    border-top: 1px solid #F1F5F9 !important;
+    margin-top: 0.35rem;
+    padding-top: 0.75rem;
+  }
+  .apt-table tbody td.td-actions::before {
+    display: none;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .appointments-page .bento-dashboard-wrap {
+    padding: 1rem 0.75rem 2.5rem;
+  }
+  .apt-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+  }
+  .apt-kpi-card {
+    padding: 0.85rem 0.95rem;
+  }
+  .apt-kpi-val {
+    font-size: 1.5rem;
+  }
+  .apt-header-actions {
+    width: 100%;
+  }
+  .apt-header-actions .bento-btn-primary,
+  .apt-header-actions .bento-btn-outline {
+    flex: 1 1 auto;
+    text-align: center;
+    justify-content: center;
+  }
+  .apt-segmented {
+    width: 100%;
+  }
+  .apt-segmented button {
+    flex: 1;
+    justify-content: center;
+    padding: 0.45rem 0.5rem;
+  }
+  .apt-grid {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+  .apt-timeline-item {
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .apt-timeline-date {
+    width: 100%;
+    text-align: left;
+  }
+}
+
+@media (max-width: 480px) {
+  .apt-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}

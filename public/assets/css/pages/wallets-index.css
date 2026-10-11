@@ -1,0 +1,226 @@
+/* ==========================================================================
+   DIGITAL WALLETS & MASTER LEDGERS — BENTO REDESIGN & RESPONSIVE SYSTEM
+   Referencing Dashboard, Visa Tracking & Bento Tokens
+   ========================================================================== */
+
+.wallets-page .bento-dashboard-wrap {
+  padding: 1.5rem 1.75rem 3.5rem;
+  max-width: 1720px;
+  margin: 0 auto;
+}
+
+.wallets-page .bento-header-title {
+  font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.25rem);
+}
+
+.wallet-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* ── Modern Bento Tab Switcher ───────────────────────────────────────── */
+.wallet-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px;
+  background: #FFFFFF;
+  border: 1px solid var(--bento-card-border-hover, #E2E8F0);
+  border-radius: var(--bento-radius-pill, 9999px);
+  box-shadow: var(--bento-shadow-card, 0 4px 20px -4px rgba(15, 23, 42, 0.05));
+  margin-bottom: 1.5rem;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.wallet-nav-tabs .wallet-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 1.1rem;
+  border-radius: var(--bento-radius-pill, 9999px);
+  color: var(--bento-text-muted, #64748B);
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-decoration: none !important;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  border: 0;
+  background: transparent;
+}
+
+.wallet-nav-tabs .wallet-tab-btn:hover {
+  color: var(--bento-text-main, #0F172A);
+  background: var(--bento-bg, #F8FAFC);
+}
+
+.wallet-nav-tabs .wallet-tab-btn.is-active {
+  background: var(--bento-primary, #E11D48);
+  color: #FFFFFF !important;
+  box-shadow: 0 3px 10px var(--bento-primary-glow, rgba(225, 29, 72, 0.16));
+}
+
+/* ── Filter Toolbar ──────────────────────────────────────────────────── */
+.wallet-filter-card {
+  background: #FFFFFF;
+  border: 1px solid var(--bento-card-border, #F1F5F9);
+  border-radius: 20px;
+  box-shadow: var(--bento-shadow-card, 0 4px 20px -4px rgba(15, 23, 42, 0.05));
+  padding: 1.15rem 1.35rem;
+  margin-bottom: 1.5rem;
+}
+
+.wallet-filter-card .form-control,
+.wallet-filter-card .form-select {
+  background-color: var(--bento-bg, #F8FAFC);
+  border: 1px solid var(--bento-card-border-hover, #E2E8F0);
+  border-radius: 12px;
+  font-size: 0.82rem;
+  padding-top: 0.48rem;
+  padding-bottom: 0.48rem;
+}
+
+.wallet-filter-card .form-control:focus,
+.wallet-filter-card .form-select:focus {
+  border-color: var(--bento-primary-light, #FB7185);
+  box-shadow: 0 0 0 3px var(--bento-primary-glow, rgba(225, 29, 72, 0.16));
+  background: #FFFFFF;
+}
+
+.wallet-filter-card .input-group-text {
+  background: var(--bento-bg, #F8FAFC);
+  border: 1px solid var(--bento-card-border-hover, #E2E8F0);
+  border-right: 0;
+  border-radius: 12px 0 0 12px;
+  color: var(--bento-text-muted, #64748B);
+}
+
+.wallet-filter-card .input-group .form-control {
+  border-left: 0;
+  border-radius: 0 12px 12px 0;
+}
+
+/* ── Bento Wallet Tables ─────────────────────────────────────────────── */
+.wallet-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.wallet-table {
+  width: 100%;
+  min-width: 880px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.wallet-table thead th {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bento-text-muted, #64748B);
+  padding: 0.85rem 1.15rem;
+  background: var(--bento-bg, #F8FAFC);
+  border-bottom: 1px solid var(--bento-card-border-hover, #E2E8F0);
+  border-top: none;
+  white-space: nowrap;
+}
+
+.wallet-table tbody tr {
+  background: #FFFFFF;
+  transition: all 0.15s ease;
+}
+
+.wallet-table tbody tr:hover {
+  background: var(--bento-bg, #F8FAFC);
+}
+
+.wallet-table tbody td {
+  padding: 0.95rem 1.15rem;
+  font-size: 0.85rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--bento-card-border, #F1F5F9);
+}
+
+/* Balance Display */
+.wallet-balance-val {
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Responsive Table to Cards on mobile */
+@media (max-width: 991.98px) {
+  .wallet-table-wrap {
+    overflow: visible;
+  }
+  .wallet-table, .wallet-table tbody, .wallet-table tr, .wallet-table td {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+  }
+  .wallet-table thead {
+    display: none;
+  }
+  .wallet-table tbody tr {
+    margin: 0.85rem 0;
+    padding: 0.45rem 0.25rem;
+    border: 1.5px solid var(--bento-card-border-hover, #E2E8F0);
+    border-radius: 16px;
+    box-shadow: var(--bento-shadow-card, 0 4px 20px -4px rgba(15, 23, 42, 0.05));
+    background: #FFFFFF;
+  }
+  .wallet-table tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    white-space: normal;
+    border: none;
+    padding: 0.55rem 0.95rem;
+    text-align: right;
+  }
+  .wallet-table tbody td::before {
+    content: attr(data-label);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--bento-text-muted, #64748B);
+    text-align: left;
+    flex-shrink: 0;
+  }
+  .wallet-table tbody td.td-actions {
+    justify-content: flex-end;
+    border-top: 1px solid #F1F5F9 !important;
+    margin-top: 0.35rem;
+    padding-top: 0.75rem;
+  }
+  .wallet-table tbody td.td-actions::before {
+    display: none;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .wallets-page .bento-dashboard-wrap {
+    padding: 1rem 0.75rem 2.5rem;
+  }
+  .wallet-header-actions {
+    width: 100%;
+  }
+  .wallet-header-actions button,
+  .wallet-header-actions a {
+    flex: 1 1 auto;
+    text-align: center;
+    justify-content: center;
+  }
+  .wallet-nav-tabs {
+    width: 100%;
+  }
+}
