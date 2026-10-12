@@ -281,17 +281,43 @@ class TaskController
                 }
 
                 if ($uploadedProofFile !== null) {
-                    $uploadDir = dirname(__DIR__, 2) . '/public/uploads/tasks/';
-                    if (!is_dir($uploadDir)) {
-                        @mkdir($uploadDir, 0777, true);
-                    }
+                    $baseDir = dirname(__DIR__, 2);
                     $origName = $uploadedProofFile['name'];
                     $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
                     $allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'zip'];
                     if (in_array($ext, $allowed, true)) {
                         $newFileName = 'proof_' . $taskId . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
-                        if (move_uploaded_file($uploadedProofFile['tmp_name'], $uploadDir . $newFileName)) {
+
+                        // Ensure all local target upload directories exist
+                        $targetDirs = [
+                            $baseDir . '/public/uploads/tasks/',
+                            $baseDir . '/storage/documents/',
+                            $baseDir . '/uploads/tasks/',
+                        ];
+                        foreach ($targetDirs as $d) {
+                            if (!is_dir($d)) {
+                                @mkdir($d, 0777, true);
+                            }
+                        }
+
+                        // Save file to primary location with fallback
+                        $saved = false;
+                        $primaryPath = $baseDir . '/public/uploads/tasks/' . $newFileName;
+                        if (@move_uploaded_file($uploadedProofFile['tmp_name'], $primaryPath) || @copy($uploadedProofFile['tmp_name'], $primaryPath)) {
+                            $saved = true;
                             $proofAttachment = 'uploads/tasks/' . $newFileName;
+                            // Redundantly preserve in storage/documents
+                            @copy($primaryPath, $baseDir . '/storage/documents/' . $newFileName);
+                        } else {
+                            $backupPath = $baseDir . '/storage/documents/' . $newFileName;
+                            if (@move_uploaded_file($uploadedProofFile['tmp_name'], $backupPath) || @copy($uploadedProofFile['tmp_name'], $backupPath)) {
+                                $saved = true;
+                                $proofAttachment = 'storage/documents/' . $newFileName;
+                            }
+                        }
+
+                        if (!$saved) {
+                            error_log("[TaskController] Failed to store proof upload: {$origName}");
                         }
                     }
                 }
@@ -786,7 +812,13 @@ class TaskController
             die('Access Denied. You are not authorized to view this proof document.');
         }
 
-        $relPath = ltrim($task['proof_attachment'], '/');
+        $rawPath = trim($task['proof_attachment'] ?? '');
+        if ($rawPath === '') {
+            redirect($this->getRedirectUrl(), 'No proof document attachment found for this task.', 'warning');
+            return;
+        }
+
+        $relPath = ltrim($rawPath, '/\\');
         // Prevent path traversal
         if (str_contains($relPath, '..')) {
             http_response_code(400);
@@ -794,15 +826,71 @@ class TaskController
         }
 
         $baseDir = dirname(__DIR__, 2);
-        $filePath = $baseDir . '/public/' . $relPath;
-        if (!file_exists($filePath)) {
-            $altPath = $baseDir . '/storage/' . $relPath;
-            if (file_exists($altPath)) {
-                $filePath = $altPath;
-            } else {
-                http_response_code(404);
-                die('Proof attachment file does not exist on server.');
+        $filename = basename($relPath);
+
+        // Search across all possible storage roots and formats
+        $candidates = array_unique(array_filter([
+            (file_exists($rawPath) && is_file($rawPath)) ? $rawPath : null,
+            $baseDir . '/public/' . $relPath,
+            $baseDir . '/' . $relPath,
+            $baseDir . '/storage/' . preg_replace('#^storage[/\\\\]#i', '', $relPath),
+            $baseDir . '/public/uploads/tasks/' . $filename,
+            $baseDir . '/storage/documents/' . $filename,
+            $baseDir . '/storage/uploads/tasks/' . $filename,
+            $baseDir . '/uploads/tasks/' . $filename,
+            $baseDir . '/public/uploads/documents/' . $filename,
+            App::uploadPath($filename),
+            App::publicPath('uploads/tasks/' . $filename),
+            App::basePath('uploads/tasks/' . $filename),
+            App::basePath('public/uploads/tasks/' . $filename),
+        ]));
+
+        $filePath = null;
+        foreach ($candidates as $cand) {
+            if ($cand && file_exists($cand) && is_file($cand)) {
+                $filePath = $cand;
+                break;
             }
+        }
+
+        if (!$filePath) {
+            $taskTitle = htmlspecialchars($task['task_title'] ?? 'Task');
+            $safeNotes = htmlspecialchars($task['completion_notes'] ?: ($task['proof_of_work'] ?: 'No notes recorded.'));
+            http_response_code(404);
+            echo "<!DOCTYPE html>
+            <html lang='en'>
+            <head>
+                <meta charset='utf-8'>
+                <meta name='viewport' content='width=device-width, initial-scale=1'>
+                <title>Proof Document — MS Travel Hub</title>
+                <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' rel='stylesheet'>
+                <link href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' rel='stylesheet'>
+                <style>
+                    body { background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
+                    .card { max-width: 500px; width: 100%; border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+                    .btn-primary { background: #2563eb; border: none; border-radius: 50px; font-weight: 600; padding: 10px 24px; }
+                </style>
+            </head>
+            <body>
+                <div class='card text-center p-4 p-md-5 bg-white'>
+                    <div class='mb-3 text-warning'>
+                        <i class='fa-solid fa-file-circle-exclamation fa-3x'></i>
+                    </div>
+                    <h5 class='fw-bold text-dark mb-2'>Proof Document Not Found on Server</h5>
+                    <p class='text-muted small mb-3'>
+                        The file attached to <strong>{$taskTitle}</strong> was not located on local server storage. This can happen if the task was completed before file storage was synchronized, or if the attachment was relocated.
+                    </p>
+                    <div class='p-3 bg-light rounded text-start small mb-4 border'>
+                        <strong class='text-dark d-block mb-1'><i class='fa-solid fa-notes-medical me-1 text-primary'></i> Recorded Completion Notes:</strong>
+                        <span class='text-secondary'>{$safeNotes}</span>
+                    </div>
+                    <div class='d-flex justify-content-center gap-2'>
+                        <a href='/tasks' class='btn btn-primary btn-sm'><i class='fa-solid fa-arrow-left me-1'></i> Return to Tasks Board</a>
+                    </div>
+                </div>
+            </body>
+            </html>";
+            exit;
         }
 
         $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));

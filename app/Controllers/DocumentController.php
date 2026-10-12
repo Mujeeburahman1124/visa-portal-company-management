@@ -1409,15 +1409,32 @@ class DocumentController
             die('Access Denied. You are not authorized to view this document.');
         }
 
-        $filePath = App::uploadPath($doc['file_path']);
-        if (!file_exists($filePath)) {
-            $legacyPath = App::publicPath('uploads/documents/' . basename($doc['file_path']));
-            if (file_exists($legacyPath)) {
-                $filePath = $legacyPath;
-            } else {
-                http_response_code(404);
-                die('File not found in storage repository.');
+        $rawPath = trim($doc['file_path'] ?? '');
+        $filename = basename($rawPath);
+        $baseDir = dirname(__DIR__, 2);
+        $candidates = array_unique(array_filter([
+            (file_exists($rawPath) && is_file($rawPath)) ? $rawPath : null,
+            App::uploadPath($rawPath),
+            App::uploadPath($filename),
+            App::publicPath('uploads/documents/' . $filename),
+            $baseDir . '/storage/documents/' . $filename,
+            $baseDir . '/public/uploads/documents/' . $filename,
+            $baseDir . '/uploads/documents/' . $filename,
+            $baseDir . '/' . ltrim($rawPath, '/\\'),
+            $baseDir . '/public/' . ltrim($rawPath, '/\\'),
+        ]));
+
+        $filePath = null;
+        foreach ($candidates as $cand) {
+            if ($cand && file_exists($cand) && is_file($cand)) {
+                $filePath = $cand;
+                break;
             }
+        }
+
+        if (!$filePath) {
+            http_response_code(404);
+            die('File not found in storage repository.');
         }
 
         $mime = 'application/octet-stream';
@@ -1463,15 +1480,32 @@ class DocumentController
             die('Access Denied. You are not authorized to download this document.');
         }
 
-        $filePath = App::uploadPath($doc['file_path']);
-        if (!file_exists($filePath)) {
-            $legacyPath = App::publicPath('uploads/documents/' . basename($doc['file_path']));
-            if (file_exists($legacyPath)) {
-                $filePath = $legacyPath;
-            } else {
-                http_response_code(404);
-                die('File not found on server.');
+        $rawPath = trim($doc['file_path'] ?? '');
+        $filename = basename($rawPath);
+        $baseDir = dirname(__DIR__, 2);
+        $candidates = array_unique(array_filter([
+            (file_exists($rawPath) && is_file($rawPath)) ? $rawPath : null,
+            App::uploadPath($rawPath),
+            App::uploadPath($filename),
+            App::publicPath('uploads/documents/' . $filename),
+            $baseDir . '/storage/documents/' . $filename,
+            $baseDir . '/public/uploads/documents/' . $filename,
+            $baseDir . '/uploads/documents/' . $filename,
+            $baseDir . '/' . ltrim($rawPath, '/\\'),
+            $baseDir . '/public/' . ltrim($rawPath, '/\\'),
+        ]));
+
+        $filePath = null;
+        foreach ($candidates as $cand) {
+            if ($cand && file_exists($cand) && is_file($cand)) {
+                $filePath = $cand;
+                break;
             }
+        }
+
+        if (!$filePath) {
+            http_response_code(404);
+            die('File not found on server.');
         }
 
         $currentUser = auth_user();

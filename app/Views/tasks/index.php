@@ -716,13 +716,16 @@ foreach ($tasks as $t) {
           <div id="proofImagePreviewWrap" class="mb-2 d-none text-center">
             <img src="" id="proofImagePreview" class="img-fluid rounded border shadow-xs" style="max-height: 240px;" alt="Proof preview">
           </div>
-          <div class="d-flex gap-2">
+          <div class="d-flex flex-wrap gap-2">
             <a href="#" id="proofAttachmentLink" target="_blank" class="bento-btn-outline" style="padding: 0.35rem 0.85rem; font-size: 0.78rem;">
               <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> View Full File
             </a>
             <a href="#" id="proofDownloadLink" class="bento-btn-primary" style="padding: 0.35rem 0.85rem; font-size: 0.78rem;">
               <i class="fa-solid fa-download me-1"></i> Download
             </a>
+            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" style="padding: 0.35rem 0.85rem; font-size: 0.78rem;" onclick="reuploadProofFromModal()">
+              <i class="fa-solid fa-cloud-arrow-up me-1"></i> Update / Re-upload Proof
+            </button>
           </div>
         </div>
       </div>
@@ -843,7 +846,13 @@ function openEditTaskModal(data) {
   modal.show();
 }
 
+var activeProofTaskId = 0;
+var activeProofTaskTitle = '';
+
 function viewProofModal(data) {
+  activeProofTaskId = data.id || 0;
+  activeProofTaskTitle = data.title || '';
+
   document.getElementById('proofTaskTitle').textContent = data.title;
   document.getElementById('proofCompletedBy').textContent = data.completed_by;
   document.getElementById('proofCompletedAt').textContent = data.completed_at;
@@ -876,6 +885,15 @@ function viewProofModal(data) {
 
   var modal = new bootstrap.Modal(document.getElementById('viewProofModal'));
   modal.show();
+}
+
+function reuploadProofFromModal() {
+  var viewModalEl = document.getElementById('viewProofModal');
+  var viewModal = bootstrap.Modal.getInstance(viewModalEl);
+  if (viewModal) viewModal.hide();
+  if (activeProofTaskId > 0) {
+    openCompleteTaskModal(activeProofTaskId, activeProofTaskTitle);
+  }
 }
 
 function switchTaskView(viewMode) {
