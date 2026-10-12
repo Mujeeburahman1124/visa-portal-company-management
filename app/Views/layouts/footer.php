@@ -82,7 +82,7 @@ $curFootUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
 <script src="/assets/js/app-datepicker.js?v=1.0.0"></script>
 <script src="/assets/js/app.js?v=2.1.0"></script>
 <!-- Central Theme Engine -->
-<script src="/assets/js/theme.js?v=2.0"></script>
+<script src="/assets/js/theme.js?v=3.0"></script>
 
 <?php if (!empty($_SESSION['auto_open_whatsapp'])): 
   $waAutoUrl = $_SESSION['auto_open_whatsapp'];

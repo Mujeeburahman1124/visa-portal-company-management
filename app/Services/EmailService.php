@@ -536,7 +536,7 @@ class EmailService
         $currentYear = date('Y');
 
         $emailHeaderBg = '#0f172a';
-        $emailThemeColor = '#2563eb';
+        $emailThemeColor = '#e11d48';
         $emailLogo = 'https://mshorizonuae.com/assets/images/logo.png';
         $emailFooterText = 'MS Travel Hub Global Visa Services &bull; Enterprise Visa Operations';
 

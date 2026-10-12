@@ -13,16 +13,16 @@
   --mh-teal-subtle:    #ecfeff;
   --mh-teal-border:    #a5f3fc;
 
-  --mh-blue:           var(--color-primary, #1e40af);
-  --mh-blue-hover:     var(--color-primary-hover, #1d4ed8);
-  --mh-blue-dark:      var(--color-primary-dark, #1e3a8a);
-  --mh-blue-deep:      var(--color-primary-deep, #172554);
-  --mh-blue-light:     var(--color-surface-alt, #eff6ff);
-  --mh-blue-subtle:    var(--color-surface-secondary, #dbeafe);
-  --mh-blue-border:    var(--color-border, #bfdbfe);
-  --mh-blue-glow:      var(--color-shadow-strong, rgba(30, 64, 175, 0.35));
+  --mh-blue:           var(--color-primary, #e11d48);
+  --mh-blue-hover:     var(--color-primary-hover, #be123c);
+  --mh-blue-dark:      var(--color-primary-dark, #9f1239);
+  --mh-blue-deep:      var(--color-primary-deep, #4c0519);
+  --mh-blue-light:     var(--color-surface-alt, #fff1f2);
+  --mh-blue-subtle:    var(--color-surface-secondary, #ffe4e6);
+  --mh-blue-border:    var(--color-border, #fecdd3);
+  --mh-blue-glow:      var(--color-shadow-strong, rgba(225, 29, 72, 0.35));
 
-  /* === PRIMARY BRAND (BLUE) === */
+  /* === PRIMARY BRAND (MS RUBY PRESTIGE / OFFICIAL RED) === */
   --vt-primary:        var(--mh-blue);
   --vt-primary-hover:  var(--mh-blue-hover);
   --vt-primary-dark:   var(--mh-blue-dark);
@@ -31,14 +31,14 @@
   --vt-primary-border: var(--mh-blue-border);
 
   /* === BRAND GRADIENTS === */
-  --mh-gradient-brand: var(--gradient-primary, linear-gradient(135deg, #1e40af 0%, #0891b2 55%, #7c3aed 100%));
-  --mh-gradient-brand-r: var(--gradient-accent, linear-gradient(135deg, #7c3aed 0%, #0891b2 100%));
-  --mh-gradient-blue:  var(--gradient-primary, linear-gradient(135deg, #1e40af 0%, #0891b2 55%, #7c3aed 100%));
+  --mh-gradient-brand: var(--gradient-primary, linear-gradient(135deg, #e11d48 0%, #be123c 50%, #0f172a 100%));
+  --mh-gradient-brand-r: var(--gradient-accent, linear-gradient(135deg, #be123c 0%, #e11d48 100%));
+  --mh-gradient-blue:  var(--gradient-primary, linear-gradient(135deg, #e11d48 0%, #be123c 50%, #0f172a 100%));
   --mh-gradient-teal:  linear-gradient(135deg, #22d3ee 0%, #06b6d4 50%, #0891b2 100%);
   --mh-gradient-green: linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
   --mh-gradient-dark:  linear-gradient(180deg, #060e1c 0%, #0a1628 100%);
-  --mh-gradient-sidebar: linear-gradient(180deg, #080f1e 0%, #04090f 100%);
-  --mh-gradient-hero:  var(--gradient-hero, linear-gradient(135deg, #0f172a 0%, #1e3a8a 40%, #0e4472 100%));
+  --mh-gradient-sidebar: linear-gradient(180deg, #180308 0%, #0b0e14 100%);
+  --mh-gradient-hero:  var(--gradient-hero, linear-gradient(135deg, #0f172a 0%, #4c0519 50%, #1e293b 100%));
   --ms-gradient-success: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   --ms-gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
 
@@ -49,11 +49,11 @@
   --mh-navy-muted:     #1a2f50;
 
   /* === NEUTRAL SURFACES === */
-  --vt-bg:             var(--color-background, #f0f6ff);
+  --vt-bg:             var(--color-background, #fff5f7);
   --vt-surface:        var(--color-surface, #ffffff);
   --vt-surface-glass:  rgba(255, 255, 255, 0.96);
-  --vt-surface-muted:  var(--color-surface-alt, #f0f6ff);
-  --vt-border:         var(--color-border, #dce8f5);
+  --vt-surface-muted:  var(--color-surface-alt, #fff0f4);
+  --vt-border:         var(--color-border, #fce7f3);
   --vt-border-glass:   rgba(255, 255, 255, 0.6);
 
   /* === TYPOGRAPHY === */

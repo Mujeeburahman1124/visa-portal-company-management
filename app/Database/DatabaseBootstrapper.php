@@ -552,17 +552,20 @@ class DatabaseBootstrapper
 
             // Theme system_settings defaults (idempotent UPSERT via INSERT OR IGNORE)
             $themeDefaults = [
-                ['theme_mode',         'light',          'Theme', 'Color mode: light / dark / system'],
-                ['theme_primary',      '#4F46E5',        'Theme', 'Primary brand color (hex)'],
-                ['theme_secondary',    '#7C3AED',        'Theme', 'Secondary color (hex)'],
-                ['theme_accent',       '#06B6D4',        'Theme', 'Accent color (hex)'],
-                ['theme_sidebar',      'dark',           'Theme', 'Sidebar style: dark / light / glass'],
-                ['theme_header',       'white',          'Theme', 'Header style: white / colored / transparent'],
-                ['theme_border_radius','8',              'Theme', 'Border radius in px'],
-                ['theme_font',         'Inter',          'Theme', 'Google Font name'],
-                ['email_theme_logo',   '',               'EmailTheme', 'Email logo URL'],
-                ['email_theme_primary','#4F46E5',        'EmailTheme', 'Email header/button color'],
-                ['email_theme_footer', 'MS Travel Hub Global Visa Services', 'EmailTheme', 'Email footer text'],
+                ['theme_mode',          'light',          'Theme', 'Color mode: light / dark / system'],
+                ['theme_primary',       '#E11D48',        'Theme', 'Primary brand color (hex)'],
+                ['theme_primary_color', '#E11D48',        'Theme', 'Primary brand color (hex)'],
+                ['theme_secondary',     '#7C3AED',        'Theme', 'Secondary color (hex)'],
+                ['theme_accent',        '#0F172A',        'Theme', 'Accent color (hex)'],
+                ['theme_accent_color',  '#0F172A',        'Theme', 'Accent color (hex)'],
+                ['theme_sidebar',       'dark',           'Theme', 'Sidebar style: dark / light / glass'],
+                ['theme_header',        'white',          'Theme', 'Header style: white / colored / transparent'],
+                ['theme_border_radius', '14px',           'Theme', 'Border radius in px'],
+                ['theme_font',          'Outfit',         'Theme', 'Google Font name'],
+                ['email_theme_logo',    '',               'EmailTheme', 'Email logo URL'],
+                ['email_theme_primary', '#E11D48',        'EmailTheme', 'Email header/button color'],
+                ['email_theme_color',   '#E11D48',        'EmailTheme', 'Email header/button color'],
+                ['email_theme_footer',  'MS Travel Hub Global Visa Services', 'EmailTheme', 'Email footer text'],
             ];
             $insTheme = $pdo->prepare("INSERT OR IGNORE INTO system_settings (setting_key, setting_value, setting_group, description) VALUES (?, ?, ?, ?)");
             foreach ($themeDefaults as $td) {
@@ -3688,6 +3691,13 @@ class DatabaseBootstrapper
             ['company_tagline', 'Global Visa & Document Attestation Services', 'Company', 'Portal branding subtitle'],
             ['portal_brand_text', 'MS Travel Hub', 'Localization', 'Portal brand header title'],
             ['portal_tagline', 'Global Visa Services & Document Management', 'Localization', 'Portal header subtitle'],
+            ['theme_primary', '#E11D48', 'Theme', 'Official primary brand color'],
+            ['theme_primary_color', '#E11D48', 'Theme', 'Official primary brand color'],
+            ['theme_accent', '#0F172A', 'Theme', 'Official accent color'],
+            ['theme_accent_color', '#0F172A', 'Theme', 'Official accent color'],
+            ['theme_mode', 'light', 'Theme', 'Official UI light mode'],
+            ['email_theme_primary', '#E11D48', 'EmailTheme', 'Official email theme color'],
+            ['email_theme_color', '#E11D48', 'EmailTheme', 'Official email theme color'],
             ['email_theme_footer', 'MS Travel Hub Global Visa Services • Enterprise Visa Operations', 'Theme', 'Email notification footer'],
             ['trade_license', 'MS-TRAVEL-UAE', 'Company', 'Registered trade license reference'],
         ];

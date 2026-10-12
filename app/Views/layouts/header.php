@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="ms-ruby-prestige">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
@@ -22,15 +22,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Central Theme Engine — must load BEFORE main.css -->
-  <link rel="stylesheet" href="/assets/css/theme.css?v=2.3">
+  <link rel="stylesheet" href="/assets/css/theme.css?v=3.0">
   <!-- Application CSS -->
-  <link rel="stylesheet" href="/assets/css/main.css?v=7.2.1">
+  <link rel="stylesheet" href="/assets/css/main.css?v=7.3.0">
   <!-- Bankio FinTech Design System -->
   <link rel="stylesheet" href="/assets/css/bankio-theme.css?v=2.1">
   <!-- Flatpickr Datepicker CSS -->
   <link rel="stylesheet" href="/assets/css/flatpickr.min.css">
 
-  <!-- Anti-FOUC: Enforce official brand red theme matching logo -->
+  <!-- Anti-FOUC: Strictly enforce official brand red theme matching logo -->
   <script>
     (function(){
       try {
@@ -41,28 +41,23 @@
   </script>
 
   <?php
-    // Dynamic Website Themes from system_settings (MS Travel Hub Logo Harmonized)
+    // Official MS Travel Hub Logo Harmonized Brand Theme (#E11D48 Ruby)
     $thPrimary = '#E11D48';
     $thAccent = '#0F172A';
     $thRadius = '14px';
     $thFont = "'Outfit', 'Inter', sans-serif";
     $thMode = 'light';
-    try {
-        $thPdo = \App\Config\Database::getConnection();
-        $thRows = $thPdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key LIKE 'theme_%'")->fetchAll(\PDO::FETCH_KEY_PAIR) ?: [];
-        if (!empty($thRows['theme_primary_color'])) $thPrimary = $thRows['theme_primary_color'];
-        if (!empty($thRows['theme_accent_color'])) $thAccent = $thRows['theme_accent_color'];
-        if (!empty($thRows['theme_border_radius'])) $thRadius = $thRows['theme_border_radius'];
-        if (!empty($thRows['theme_font_family'])) $thFont = $thRows['theme_font_family'];
-        if (!empty($thRows['theme_mode'])) $thMode = $thRows['theme_mode'];
-    } catch (\Throwable $e) {}
   ?>
   <style id="dynamicAppThemeVars">
+    :root,
     :root:not([data-theme]),
-    :root[data-theme=""] {
+    :root[data-theme=""],
+    :root[data-theme="ms-ruby-prestige"] {
       --primary-color: <?= e($thPrimary) ?>;
       --bs-primary: <?= e($thPrimary) ?>;
-      --primary-hover: <?= e($thPrimary) ?>dd;
+      --vt-primary: <?= e($thPrimary) ?>;
+      --color-primary: <?= e($thPrimary) ?>;
+      --primary-hover: #be123c;
       --accent-color: <?= e($thAccent) ?>;
       --border-radius-base: <?= e($thRadius) ?>;
     }
@@ -111,23 +106,6 @@
       border-bottom-color: var(--primary-color) !important;
       color: var(--primary-color) !important;
     }
-    <?php if ($thMode === 'dark'): ?>
-    body.app-body {
-      background-color: #0f172a !important;
-      color: #cbd5e1 !important;
-    }
-    .content-body, .card-custom, .card-enterprise, .bg-white {
-      background-color: #1e293b !important;
-      color: #f1f5f9 !important;
-    }
-    .text-dark {
-      color: #f8fafc !important;
-    }
-    .table-light, thead.table-light th {
-      background-color: #334155 !important;
-      color: #f8fafc !important;
-    }
-    <?php endif; ?>
   </style>
 
   <script>

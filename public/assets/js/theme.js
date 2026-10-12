@@ -16,40 +16,19 @@
       feel: 'Diamond Ruby Gem, Obsidian & Cobalt',
       swatches: ['#e11d48', '#0f172a', '#2563eb'],
     },
-    {
-      id: 'sunset-fusion',
-      name: 'Sunset Flight (Logo Coral & Diamond)',
-      feel: 'Warm Coral Orange Facet & Sunset Orbit',
-      swatches: ['#ea580c', '#e11d48', '#1e293b'],
-    },
-    {
-      id: 'aviation-sapphire',
-      name: 'Aviation Sapphire (Sky Route & Ruby)',
-      feel: 'Flight Route Blue, Ruby Pin & Jet Obsidian',
-      swatches: ['#2563eb', '#e11d48', '#0f172a'],
-    },
-    {
-      id: 'consular-emerald',
-      name: 'Consular Emerald (Visa Clearances)',
-      feel: 'Embassy Approval Green & Official Ruby Seal',
-      swatches: ['#059669', '#e11d48', '#0f172a'],
-    },
-    {
-      id: 'obsidian-dark',
-      name: 'Obsidian Dark (Executive Dark & Glowing Ruby)',
-      feel: 'Executive OLED Dark & Glowing Ruby Monogram',
-      swatches: ['#090d16', '#f43f5e', '#38bdf8'],
-    },
   ];
 
   const LEGACY_THEME_MAP = {
-    'ocean-royal': 'aviation-sapphire',
-    'sunset-fusion': 'sunset-fusion',
-    'emerald-royal': 'consular-emerald',
-    'violet-aurora': 'aviation-sapphire',
+    'ocean-royal': 'ms-ruby-prestige',
+    'sunset-fusion': 'ms-ruby-prestige',
+    'emerald-royal': 'ms-ruby-prestige',
+    'violet-aurora': 'ms-ruby-prestige',
     'crimson-midnight': 'ms-ruby-prestige',
-    'imperial-gold': 'sunset-fusion',
-    'dark-mode': 'obsidian-dark',
+    'imperial-gold': 'ms-ruby-prestige',
+    'dark-mode': 'ms-ruby-prestige',
+    'aviation-sapphire': 'ms-ruby-prestige',
+    'consular-emerald': 'ms-ruby-prestige',
+    'obsidian-dark': 'ms-ruby-prestige',
   };
 
   /* ── Read saved theme (enforces official brand red logo identity) ── */
@@ -76,22 +55,22 @@
   }
 
   /* ── Apply immediately (pre-DOM) to prevent flash ── */
-  const initialTheme = getSavedTheme();
+  const initialTheme = DEFAULT_THEME;
   document.documentElement.setAttribute('data-theme', initialTheme);
   document.addEventListener('DOMContentLoaded', function () {
     if (document.body) {
-      document.body.setAttribute('data-theme', getSavedTheme());
+      document.body.setAttribute('data-theme', DEFAULT_THEME);
     }
   });
 
-  /* ── Sync across browser tabs ── */
+  /* ── Sync across browser tabs (strictly enforce official brand theme) ── */
   window.addEventListener('storage', function (e) {
-    if (e.key === STORAGE_KEY && e.newValue) {
-      document.documentElement.setAttribute('data-theme', e.newValue);
+    if (e.key === STORAGE_KEY) {
+      document.documentElement.setAttribute('data-theme', DEFAULT_THEME);
       if (document.body) {
-        document.body.setAttribute('data-theme', e.newValue);
+        document.body.setAttribute('data-theme', DEFAULT_THEME);
       }
-      updateSelectorUI(e.newValue);
+      updateSelectorUI(DEFAULT_THEME);
     }
   });
 

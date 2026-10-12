@@ -430,9 +430,9 @@ $currentUser = auth_user();
                 </label>
                 <div class="d-flex align-items-center gap-2">
                   <input type="color" id="emailThemeColor" class="form-control form-control-color border-0 p-0" style="width: 36px; height: 32px; border-radius: 6px; cursor: pointer;"
-                         value="<?= e(!empty($settings['email_theme_color']) ? $settings['email_theme_color'] : (!empty($settings['email_theme_primary']) ? $settings['email_theme_primary'] : '#2563eb')) ?>" oninput="syncEmailThemeColor(this.value)">
+                         value="<?= e(!empty($settings['email_theme_color']) ? $settings['email_theme_color'] : (!empty($settings['email_theme_primary']) ? $settings['email_theme_primary'] : '#e11d48')) ?>" oninput="syncEmailThemeColor(this.value)">
                   <input type="text" name="settings[email_theme_color]" id="emailThemeColorHex" class="form-control form-control-sm font-monospace text-uppercase" 
-                         value="<?= e(!empty($settings['email_theme_color']) ? $settings['email_theme_color'] : (!empty($settings['email_theme_primary']) ? $settings['email_theme_primary'] : '#2563eb')) ?>" maxlength="7" oninput="syncEmailThemeHex(this.value)">
+                         value="<?= e(!empty($settings['email_theme_color']) ? $settings['email_theme_color'] : (!empty($settings['email_theme_primary']) ? $settings['email_theme_primary'] : '#e11d48')) ?>" maxlength="7" oninput="syncEmailThemeHex(this.value)">
                 </div>
               </div>
 
@@ -459,7 +459,7 @@ $currentUser = auth_user();
                 <span class="small fw-bold text-secondary text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Live Email Header &amp; Button Preview:</span>
                 <span class="badge bg-success-subtle text-success small" style="font-size: 0.68rem;">Realtime CSS Preview</span>
               </div>
-              <div id="liveEmailHeaderPreview" style="background-color: <?= e(!empty($settings['email_theme_header_bg']) ? $settings['email_theme_header_bg'] : '#0f172a') ?>; border-bottom: 4px solid <?= e(!empty($settings['email_theme_color']) ? $settings['email_theme_color'] : '#2563eb') ?>; padding: 14px 20px; border-radius: 8px 8px 0 0;" class="d-flex align-items-center justify-content-between shadow-sm">
+              <div id="liveEmailHeaderPreview" style="background-color: <?= e(!empty($settings['email_theme_header_bg']) ? $settings['email_theme_header_bg'] : '#0f172a') ?>; border-bottom: 4px solid <?= e(!empty($settings['email_theme_color']) ? $settings['email_theme_color'] : '#e11d48') ?>; padding: 14px 20px; border-radius: 8px 8px 0 0;" class="d-flex align-items-center justify-content-between shadow-sm">
                 <div class="d-flex align-items-center gap-3">
                   <img id="previewEmailLogoImg" src="<?= e(!empty($settings['email_theme_logo']) ? $settings['email_theme_logo'] : '/assets/images/logo.png') ?>" alt="Logo" style="max-height: 38px; width: auto; max-width: 140px; border-radius: 4px; display: block;" onerror="this.src='/assets/images/logo.png'">
                   <div>
@@ -471,7 +471,7 @@ $currentUser = auth_user();
               </div>
               <div class="bg-white p-3 border-start border-end border-bottom rounded-bottom-2 d-flex flex-wrap align-items-center justify-content-between gap-2 shadow-sm">
                 <div class="small text-secondary"><i class="fa-solid fa-wand-magic-sparkles text-primary me-1"></i> Sample Branded Email CTA Button:</div>
-                <button type="button" id="previewEmailBtn" class="btn btn-sm text-white fw-semibold px-4 shadow-sm" style="background-color: <?= e(!empty($settings['email_theme_color']) ? $settings['email_theme_color'] : '#2563eb') ?>; border-radius: 6px; font-size: 0.82rem; pointer-events: none;">
+                <button type="button" id="previewEmailBtn" class="btn btn-sm text-white fw-semibold px-4 shadow-sm" style="background-color: <?= e(!empty($settings['email_theme_color']) ? $settings['email_theme_color'] : '#e11d48') ?>; border-radius: 6px; font-size: 0.82rem; pointer-events: none;">
                   Review Visa Application &rarr;
                 </button>
               </div>
@@ -800,22 +800,13 @@ $currentUser = auth_user();
                 </div>
                 
                 <div class="mb-3">
-                  <label class="form-label small fw-semibold">Dashboard Luxury Theme Presets</label>
-                  <div class="d-flex flex-wrap gap-2">
-                    <button type="button" class="theme-preset-btn" onclick="applyThemePreset('ms-ruby-prestige', '#e11d48', '#0f172a')">
-                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#e11d48;"></span> MS Ruby Prestige (Official)
-                    </button>
-                    <button type="button" class="theme-preset-btn" onclick="applyThemePreset('aviation-sapphire', '#1e40af', '#e11d48')">
-                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#1e40af;"></span> Aviation Sapphire &amp; Ruby
-                    </button>
-                    <button type="button" class="theme-preset-btn" onclick="applyThemePreset('imperial-gold', '#d97706', '#be123c')">
-                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#d97706;"></span> Imperial Gold &amp; Diamond
-                    </button>
-                    <button type="button" class="theme-preset-btn" onclick="applyThemePreset('consular-emerald', '#059669', '#e11d48')">
-                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#059669;"></span> Consular Emerald
-                    </button>
-                    <button type="button" class="theme-preset-btn" onclick="applyThemePreset('obsidian-dark', '#f43f5e', '#38bdf8')">
-                      <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#090d16;border:1px solid #f43f5e;"></span> Obsidian Dark Mode
+                  <label class="form-label small fw-semibold">Official Brand Theme</label>
+                  <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <span class="badge py-2 px-3 text-white d-inline-flex align-items-center gap-2" style="background:#e11d48; border-radius:9999px; font-size: 0.85rem; font-weight:600; box-shadow: 0 4px 12px rgba(225,29,72,0.25);">
+                      <i class="fa-solid fa-gem"></i> MS Ruby Prestige (Official Brand Red &mdash; Locked)
+                    </span>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="applyThemePreset('ms-ruby-prestige', '#e11d48', '#0f172a')">
+                      <i class="fa-solid fa-rotate-left me-1"></i> Enforce Theme
                     </button>
                   </div>
                 </div>
@@ -890,15 +881,15 @@ $currentUser = auth_user();
 
                 <div id="previewCardContainer" class="p-4 bg-white rounded-3 border shadow-sm" style="transition: all 0.3s ease;">
                   <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
-                    <span id="previewBrandName" class="brand-font fw-bold fs-5" style="color: <?= e($settings['theme_primary_color'] ?? '#0284c7') ?>;">MS TRAVEL HUB</span>
-                    <span id="previewBadge" class="badge" style="background-color: <?= e($settings['theme_accent_color'] ?? '#059669') ?>;">Verified</span>
+                    <span id="previewBrandName" class="brand-font fw-bold fs-5" style="color: <?= e($settings['theme_primary_color'] ?? '#e11d48') ?>;">MS TRAVEL HUB</span>
+                    <span id="previewBadge" class="badge" style="background-color: <?= e($settings['theme_accent_color'] ?? '#0f172a') ?>;">Verified</span>
                   </div>
 
                   <h6 id="previewHeading" class="brand-font fw-bold mb-2">Visa Application Status #APP-2026-0042</h6>
                   <p class="text-muted small mb-3">Your visa document verification is progressing as expected with all consular requirements fulfilled.</p>
 
                   <div class="d-flex gap-2 mb-3">
-                    <button type="button" id="previewPrimaryBtn" class="btn btn-sm text-white px-3" style="background-color: <?= e($settings['theme_primary_color'] ?? '#0284c7') ?>; border-radius: <?= e($settings['theme_border_radius'] ?? '8px') ?>;">
+                    <button type="button" id="previewPrimaryBtn" class="btn btn-sm text-white px-3" style="background-color: <?= e($settings['theme_primary_color'] ?? '#e11d48') ?>; border-radius: <?= e($settings['theme_border_radius'] ?? '8px') ?>;">
                       Primary Action
                     </button>
                     <button type="button" id="previewOutlineBtn" class="btn btn-sm btn-outline-secondary px-3" style="border-radius: <?= e($settings['theme_border_radius'] ?? '8px') ?>;">
@@ -1396,6 +1387,9 @@ function executeSendTestEmail() {
 
 // Live Theme & Color Sync Functions
 function applyThemePreset(themeId, primaryHex, accentHex) {
+  themeId = 'ms-ruby-prestige';
+  primaryHex = '#e11d48';
+  accentHex = '#0f172a';
   document.documentElement.setAttribute('data-theme', themeId);
   try { localStorage.setItem('vt_theme', themeId); } catch(e){}
   if (document.getElementById('themePrimaryColor')) document.getElementById('themePrimaryColor').value = primaryHex;
@@ -1426,8 +1420,8 @@ function syncColorHex(type, hex) {
 }
 
 function updateLiveThemePreview() {
-  const primaryColor = document.getElementById('themePrimaryColor') ? document.getElementById('themePrimaryColor').value : '#0284c7';
-  const accentColor = document.getElementById('themeAccentColor') ? document.getElementById('themeAccentColor').value : '#059669';
+  const primaryColor = document.getElementById('themePrimaryColor') ? document.getElementById('themePrimaryColor').value : '#e11d48';
+  const accentColor = document.getElementById('themeAccentColor') ? document.getElementById('themeAccentColor').value : '#0f172a';
   const fontFamily = document.getElementById('themeFontFamily') ? document.getElementById('themeFontFamily').value : "'Plus Jakarta Sans', sans-serif";
   const radius = document.getElementById('themeBorderRadius') ? document.getElementById('themeBorderRadius').value : '18px';
   const mode = document.getElementById('themeModeSelect') ? document.getElementById('themeModeSelect').value : 'light';
