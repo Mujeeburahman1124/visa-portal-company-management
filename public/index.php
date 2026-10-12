@@ -33,6 +33,11 @@ set_exception_handler(function (\Throwable $e): void {
         get_class($e), $e->getFile(), $e->getLine(), $e->getMessage()
     ));
 
+    // Persistent file log (survives DB outages) — storage/logs/app-YYYY-MM-DD.log
+    if (class_exists(\App\Services\LogService::class)) {
+        \App\Services\LogService::exception($e, ['type' => 'unhandled_exception']);
+    }
+
     // Log the error into activity_logs so Super Admin can inspect it
     try {
         if (class_exists(\App\Services\AuditService::class)) {
@@ -105,7 +110,21 @@ set_error_handler(function (int $errno, string $errstr, string $errfile, int $er
     }
     // For non-fatal warnings/notices, log but allow normal flow
     error_log(sprintf('[VISA-TRACK] PHP Warning(%d) in %s:%d — %s', $errno, $errfile, $errline, $errstr));
+    if (($errno & (E_WARNING | E_USER_WARNING)) && class_exists(\App\Services\LogService::class)) {
+        \App\Services\LogService::warning($errstr, ['type' => 'php_warning', 'errno' => $errno, 'file' => $errfile, 'line' => $errline]);
+    }
     return true;
+});
+
+// Capture true fatal errors (out-of-memory, max execution time, compile errors) that bypass the handlers above
+register_shutdown_function(function (): void {
+    $err = error_get_last();
+    if ($err && ($err['type'] & (E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR))) {
+        error_log(sprintf('[VISA-TRACK] FATAL in %s:%d — %s', $err['file'], $err['line'], $err['message']));
+        if (class_exists(\App\Services\LogService::class)) {
+            \App\Services\LogService::error($err['message'], ['type' => 'fatal', 'file' => $err['file'], 'line' => $err['line']]);
+        }
+    }
 });
 // ─────────────────────────────────────────────────────────────────────────────
 

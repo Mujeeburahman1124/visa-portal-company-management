@@ -1,10 +1,10 @@
 <?php
 // Agent Portal shared navbar partial
 $agentAuth = $_SESSION['agent_auth'] ?? [];
-$currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$currentPath = (string)parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 function agentNavActive(string $path): string {
     global $currentPath;
-    return str_starts_with($currentPath, $path) ? 'active' : '';
+    return str_starts_with((string)$currentPath, $path) ? 'active' : '';
 }
 ?>
 <!DOCTYPE html>

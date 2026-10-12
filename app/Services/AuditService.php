@@ -50,9 +50,12 @@ class AuditService
                 $ip,
                 $ua
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Failsafe so audit errors don't interrupt critical business flow
             error_log('Audit log failure: ' . $e->getMessage());
+            if (class_exists(LogService::class)) {
+                LogService::error('Audit log failure: ' . $e->getMessage(), ['type' => 'audit_failure', 'action' => $action, 'module' => $module, 'record_id' => $recordId]);
+            }
         }
     }
 }

@@ -1,9 +1,9 @@
 <?php
 $supplierAuth = $_SESSION['supplier_auth'] ?? [];
-$currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$currentPath = (string)parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 function supplierNavActive(string $path): string {
     global $currentPath;
-    return str_starts_with($currentPath, $path) ? 'active fw-semibold' : '';
+    return str_starts_with((string)$currentPath, $path) ? 'active fw-semibold' : '';
 }
 ?>
 <!DOCTYPE html>

@@ -36,6 +36,12 @@ storage/cache/*
 !public/uploads/**/.htaccess
 !storage/.htaccess
 
+# Task proofs, wallet deposit slips & runtime logs (customer data — never commit)
+public/uploads/tasks/*
+public/uploads/wallet_slips/*
+storage/logs/*
+!storage/logs/.gitkeep
+
 # IDE & Editor Files
 .vscode/
 .idea/
