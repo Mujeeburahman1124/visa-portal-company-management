@@ -260,6 +260,14 @@ class SupplierPortalController
         require_once dirname(__DIR__) . '/Views/portal/activate.php';
     }
 
+    /**
+     * POST /supplier/activate — router entry point (alias of processActivate).
+     */
+    public function activate(): void
+    {
+        $this->processActivate();
+    }
+
     public function processActivate(): void
     {
         $token = trim($_POST['token'] ?? '');

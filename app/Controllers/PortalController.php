@@ -437,9 +437,52 @@ class PortalController
         if ($amount <= 0) {
             redirect('/portal/wallet', 'Deposit amount must be greater than zero.', 'danger');
         }
+        if ($txnRef === '') {
+            redirect('/portal/wallet', 'Transaction reference / slip number is required.', 'danger');
+        }
+
+        // Deposit slip upload is mandatory
+        $slip = $_FILES['deposit_slip'] ?? null;
+        if (!$slip || ($slip['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || empty($slip['tmp_name']) || !is_uploaded_file($slip['tmp_name'])) {
+            redirect('/portal/wallet', 'Please upload your deposit slip / receipt. It is mandatory.', 'danger');
+        }
+        if ((int)$slip['size'] > 10 * 1024 * 1024) {
+            redirect('/portal/wallet', 'Deposit slip must be 10 MB or smaller.', 'danger');
+        }
+        $ext = strtolower(pathinfo($slip['name'], PATHINFO_EXTENSION));
+        $allowedExt = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+        $mime = function_exists('mime_content_type') ? (string)@mime_content_type($slip['tmp_name']) : '';
+        $allowedMime = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+        if (!in_array($ext, $allowedExt, true) || ($mime !== '' && !in_array($mime, $allowedMime, true))) {
+            redirect('/portal/wallet', 'Invalid slip file. Allowed: JPG, PNG, WEBP or PDF.', 'danger');
+        }
+
+        // Save locally (primary + backup copy)
+        $root = dirname(__DIR__, 2);
+        $fileName = 'slip_' . $customerId . '_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+        $primaryDir = $root . '/public/uploads/wallet_slips';
+        $backupDir  = $root . '/storage/documents/wallet_slips';
+        foreach ([$primaryDir, $backupDir] as $dir) {
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0775, true);
+            }
+        }
+        $savedPath = null;
+        if (is_dir($primaryDir) && @move_uploaded_file($slip['tmp_name'], $primaryDir . '/' . $fileName)) {
+            $savedPath = $primaryDir . '/' . $fileName;
+            if (is_dir($backupDir)) {
+                @copy($savedPath, $backupDir . '/' . $fileName);
+            }
+        } elseif (is_dir($backupDir) && @move_uploaded_file($slip['tmp_name'], $backupDir . '/' . $fileName)) {
+            $savedPath = $backupDir . '/' . $fileName;
+        }
+        if (!$savedPath || !is_file($savedPath)) {
+            redirect('/portal/wallet', 'Could not save your deposit slip on the server. Please try again.', 'danger');
+        }
+        $slipUrl = 'uploads/wallet_slips/' . $fileName;
 
         try {
-            $desc = "Customer self-funded advance deposit via {$method}" . (!empty($txnRef) ? " (Ref: {$txnRef})" : '');
+            $desc = "Customer self-funded advance deposit via {$method} (Ref: {$txnRef}) [Slip: {$slipUrl}]";
             \App\Services\WalletService::credit($customerId, $amount, $desc, null, null, null);
             redirect('/portal/wallet', "Successfully credited " . format_currency($amount) . " to your wallet!", 'success');
         } catch (\Throwable $e) {

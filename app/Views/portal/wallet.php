@@ -147,7 +147,7 @@ $flash = get_flash();
         <h5 class="modal-title fw-bold fs-6"><i class="fa-solid fa-wallet me-2"></i>Add Funds to Your Wallet</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <form action="/portal/wallet/deposit" method="POST">
+      <form action="/portal/wallet/deposit" method="POST" enctype="multipart/form-data" id="depositForm">
         <?= csrf_field() ?>
         <div class="modal-body p-4">
           <div class="mb-3">
@@ -165,9 +165,14 @@ $flash = get_flash();
               <option value="Cash Deposit">Cash Deposit at Branch</option>
             </select>
           </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Transaction Reference / Slip # <span class="text-danger">*</span></label>
+            <input type="text" name="transaction_reference" id="depositTxnRef" class="form-control" placeholder="e.g. WIRE-998822" required>
+          </div>
           <div class="mb-0">
-            <label class="form-label small fw-semibold">Transaction Reference / Slip # (Optional)</label>
-            <input type="text" name="transaction_reference" class="form-control" placeholder="e.g. WIRE-998822">
+            <label for="depositSlip" class="form-label small fw-semibold">Upload Deposit Slip / Receipt <span class="text-danger">*</span></label>
+            <input type="file" name="deposit_slip" id="depositSlip" class="form-control" accept=".jpg,.jpeg,.png,.webp,.pdf,image/*,application/pdf" required>
+            <div class="form-text small">Mandatory. JPG, PNG, WEBP or PDF — max 10 MB.</div>
           </div>
         </div>
         <div class="modal-footer bg-light border-top">
@@ -180,5 +185,19 @@ $flash = get_flash();
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.getElementById('depositForm')?.addEventListener('submit', function (e) {
+    const slip = document.getElementById('depositSlip');
+    if (!slip || !slip.files || slip.files.length === 0) {
+      e.preventDefault();
+      alert('Please upload your deposit slip / receipt before confirming.');
+      return;
+    }
+    if (slip.files[0].size > 10 * 1024 * 1024) {
+      e.preventDefault();
+      alert('Deposit slip must be 10 MB or smaller.');
+    }
+  });
+</script>
 </body>
 </html>

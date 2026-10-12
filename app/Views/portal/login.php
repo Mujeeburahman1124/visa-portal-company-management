@@ -132,23 +132,6 @@ $flash = get_flash();
         </button>
       </form>
 
-      <!-- Quick Tracking Option Card -->
-      <div class="mt-3 p-3 bg-light rounded-3 border text-center">
-        <div class="fw-bold small text-dark mb-0.5">Need quick status without signing in?</div>
-        <div class="text-muted small mb-2" style="font-size: 0.76rem;">Lookup immediately using Application Ref # and Passport #</div>
-        <a href="/portal/track" class="btn btn-outline-danger btn-sm w-100 fw-bold py-1.5 shadow-sm rounded-pill" style="font-size: 0.8rem; border-color: var(--auth-primary); color: var(--auth-primary);">
-          <i class="fa-solid fa-magnifying-glass me-1"></i> Public Visa Tracking Tool
-        </a>
-      </div>
-
-      <!-- Quick Switch to Portals -->
-      <div class="auth-switch-links">
-        <span>Other Consoles:</span>
-        <a href="/auth/login" class="auth-switch-pill"><i class="fa-solid fa-user-shield"></i> Staff Portal</a>
-        <a href="/agent/login" class="auth-switch-pill"><i class="fa-solid fa-handshake"></i> Agent Portal</a>
-        <a href="/supplier/login" class="auth-switch-pill"><i class="fa-solid fa-building"></i> Supplier Portal</a>
-      </div>
-
     </div>
 
     <!-- Security Compliance Footer -->
