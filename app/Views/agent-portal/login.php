@@ -1,74 +1,195 @@
-<?php $pageTitle = 'Agent Portal Login — MS Travel Hub'; $flash = get_flash(); ?>
+<?php
+$pageTitle = 'Agent Portal Login — MS TRAVEL HUB';
+$flash = get_flash();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= e($pageTitle) ?></title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤝</text></svg>">
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png?v=2">
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2">
+  <link rel="apple-touch-icon" href="/assets/images/logo.png">
+
+  <!-- Premium Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Frameworks & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/theme.css?v=2.3">
-  <link rel="stylesheet" href="/assets/css/main.css?v=7.0.0">
-  <script>
-    (function(){try{var m={'ocean-royal':'aviation-sapphire','sunset-fusion':'sunset-fusion','emerald-royal':'consular-emerald','violet-aurora':'aviation-sapphire','crimson-midnight':'ms-ruby-prestige','imperial-gold':'sunset-fusion','dark-mode':'obsidian-dark'};var t=localStorage.getItem('vt_theme')||'ms-ruby-prestige';if(m[t])t=m[t];document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
-  </script>
-  <style>
-    @media (max-width: 576px) {
-      .auth-card-compact { padding: 1.25rem 1rem !important; border-radius: 14px !important; }
-      .container { padding: 0.75rem 0.5rem !important; }
-      .brand-font { font-size: 1.2rem !important; }
-      .form-control, .input-group-text, .btn { height: 38px !important; font-size: 0.88rem !important; }
-      .mb-3 { margin-bottom: 0.65rem !important; }
-    }
-  </style>
+
+  <!-- Bento Auth Styling -->
+  <link rel="stylesheet" href="/assets/css/pages/auth-bento.css?v=<?= time() ?>">
 </head>
-<body class="auth-page-body">
-<div class="container d-flex flex-column align-items-center justify-content-center" style="min-height:100vh;padding:1.5rem 1rem;">
-  <div class="auth-card-compact">
-    <div class="text-center mb-3">
-      <div class="d-inline-flex align-items-center justify-content-center text-white rounded-3 shadow-sm mb-2" style="width:48px;height:48px;font-size:1.4rem;background:linear-gradient(135deg,#065f46 0%,#10b981 100%);">
-        <i class="fa-solid fa-handshake"></i>
-      </div>
-      <h3 class="fw-bold brand-font text-dark mb-0" style="font-size:1.45rem;">MS Travel Hub</h3>
-      <div class="text-muted small">Agent Partner Portal</div>
-    </div>
-    <div class="text-center mb-3">
-      <h5 class="fw-bold text-dark mb-0">Agent Sign In</h5>
-      <p class="text-muted small mb-0">Submit visa applications &amp; track your clients</p>
-    </div>
-    <?php if ($flash): ?>
-      <div class="alert alert-<?= e($flash['type']) ?> alert-dismissible fade show py-2 px-3 small mb-3 border-0 shadow-sm">
-        <i class="fa-solid <?= $flash['type']==='danger'?'fa-circle-exclamation':'fa-circle-check' ?> me-1"></i>
-        <?= e($flash['message']) ?>
-        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
-      </div>
-    <?php endif; ?>
-    <form action="/agent/login" method="POST">
-      <?= csrf_field() ?>
-      <div class="mb-3">
-        <label class="form-label small fw-semibold">Email Address</label>
-        <div class="input-group">
-          <span class="input-group-text"><i class="fa-solid fa-envelope text-muted"></i></span>
-          <input type="email" name="email" class="form-control" placeholder="agent@agency.com" value="" required autofocus>
+<body class="auth-bento-body">
+
+  <!-- Atmospheric Glow & Ambient Grid -->
+  <div class="auth-ambient-glow-1"></div>
+  <div class="auth-ambient-glow-2"></div>
+  <div class="auth-ambient-grid"></div>
+
+  <div class="auth-container-wrap">
+    
+    <!-- Bento Login Card -->
+    <div class="auth-bento-card">
+      
+      <!-- Brand & Logo -->
+      <div class="auth-logo-wrap">
+        <a href="/" class="auth-logo-badge text-decoration-none" title="MS Travel Hub">
+          <img src="/assets/images/logo.png" alt="MS Travel Hub Logo" class="auth-logo-img">
+        </a>
+        <div class="auth-brand-name">MS <span class="brand-gem">TRAVEL HUB</span></div>
+        <div class="auth-brand-subtitle">B2B Partner &amp; Agency Network</div>
+        <div>
+          <span class="auth-portal-badge">
+            <i class="fa-solid fa-handshake"></i> Agent Partner Portal
+          </span>
         </div>
       </div>
-      <div class="mb-3">
-        <label class="form-label small fw-semibold">Password</label>
-        <div class="input-group">
-          <span class="input-group-text"><i class="fa-solid fa-lock text-muted"></i></span>
-          <input type="password" name="password" class="form-control" placeholder="••••••••" value="" required>
-        </div>
+
+      <!-- Heading -->
+      <div class="auth-heading-wrap">
+        <h5 class="auth-heading-title">Agent Partner Sign In</h5>
+        <p class="auth-heading-desc">Submit visa applications &amp; track clients in real time</p>
       </div>
-      <button type="submit" class="btn btn-success w-100 fw-semibold py-2">
-        <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In to Agent Portal
-      </button>
-    </form>
-    <div class="text-center mt-2 small">
-      <a href="/agent/forgot-password" class="text-success text-decoration-none"><i class="fa-solid fa-key me-1"></i>Forgot your password?</a>
+
+      <!-- Flash Message -->
+      <?php if ($flash): ?>
+        <?php 
+          $alertType = $flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'info');
+          $alertIcon = $flash['type'] === 'danger' ? 'fa-circle-exclamation' : ($flash['type'] === 'success' ? 'fa-circle-check' : 'fa-circle-info');
+        ?>
+        <div class="alert alert-<?= e($alertType) ?> alert-dismissible fade show d-flex align-items-center gap-2 py-2 px-3 small mb-3 border-0 shadow-sm rounded-3" role="alert">
+          <i class="fa-solid <?= $alertIcon ?>"></i>
+          <div class="flex-grow-1"><?= e($flash['message']) ?></div>
+          <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+        </div>
+      <?php endif; ?>
+
+      <!-- Authentication Form -->
+      <form action="/agent/login" method="POST" id="agentLoginForm" novalidate autocomplete="on">
+        <?= csrf_field() ?>
+
+        <!-- Email Field -->
+        <div class="auth-form-group">
+          <label for="agentEmail" class="auth-form-label">Agency Email</label>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">
+              <i class="fa-solid fa-envelope"></i>
+            </span>
+            <input 
+              type="email" 
+              name="email" 
+              id="agentEmail" 
+              class="auth-input-field" 
+              placeholder="agent@agency.com" 
+              required 
+              autocomplete="username" 
+              autofocus
+            >
+          </div>
+        </div>
+
+        <!-- Password Field -->
+        <div class="auth-form-group">
+          <label for="agentPassword" class="auth-form-label">Password</label>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">
+              <i class="fa-solid fa-lock"></i>
+            </span>
+            <input 
+              type="password" 
+              name="password" 
+              id="agentPassword" 
+              class="auth-input-field" 
+              placeholder="••••••••" 
+              required 
+              autocomplete="current-password"
+            >
+            <button type="button" class="auth-pwd-toggle" id="toggleAgentPass" aria-label="Toggle password visibility">
+              <i class="fa-solid fa-eye" id="toggleAgentIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Options Row -->
+        <div class="auth-options-row">
+          <label class="auth-checkbox-wrap" for="rememberAgent">
+            <input type="checkbox" name="remember" id="rememberAgent">
+            <span>Remember agency</span>
+          </label>
+          <a href="/agent/forgot-password" class="auth-link">Forgot password?</a>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="auth-btn-primary" id="btnAgentSubmit">
+          <span class="spinner-border spinner-border-sm d-none" id="agentSubmitSpinner" role="status" aria-hidden="true"></span>
+          <i class="fa-solid fa-right-to-bracket" id="agentSubmitIcon"></i>
+          <span>Sign In to Agent Portal</span>
+        </button>
+      </form>
+
+      <!-- Security Box -->
+      <div class="auth-security-box">
+        <div class="auth-security-line">
+          <i class="fa-solid fa-handshake text-primary"></i>
+          <span>Verified Partner Network</span>
+        </div>
+        <div>Wholesale B2B pricing, instant tracking, and bulk submittals.</div>
+      </div>
+
+      <!-- Quick Switch to Portals -->
+      <div class="auth-switch-links">
+        <span>Switch Console:</span>
+        <a href="/auth/login" class="auth-switch-pill"><i class="fa-solid fa-user-shield"></i> Staff Portal</a>
+        <a href="/portal/login" class="auth-switch-pill"><i class="fa-solid fa-plane-departure"></i> Applicant Portal</a>
+        <a href="/supplier/login" class="auth-switch-pill"><i class="fa-solid fa-building"></i> Supplier Portal</a>
+      </div>
+
     </div>
+
+    <!-- Security Compliance Footer -->
+    <div class="auth-footer-note">
+      &copy; <?= date('Y') ?> <span>MS TRAVEL HUB</span> &bull; Global Partner Operations<br>
+      Authorized Travel Agencies &bull; Enterprise Secure API
+    </div>
+
   </div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Password Reveal Toggle
+    document.getElementById('toggleAgentPass')?.addEventListener('click', function() {
+      const pwd = document.getElementById('agentPassword');
+      const icon = document.getElementById('toggleAgentIcon');
+      if (!pwd || !icon) return;
+
+      if (pwd.type === 'password') {
+        pwd.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+      } else {
+        pwd.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+      }
+    });
+
+    // Submit Loading Feedback
+    document.getElementById('agentLoginForm')?.addEventListener('submit', function() {
+      const btn = document.getElementById('btnAgentSubmit');
+      const spinner = document.getElementById('agentSubmitSpinner');
+      const icon = document.getElementById('agentSubmitIcon');
+
+      if (btn && spinner && icon) {
+        btn.disabled = true;
+        spinner.classList.remove('d-none');
+        icon.classList.add('d-none');
+      }
+    });
+  </script>
 </body>
 </html>
