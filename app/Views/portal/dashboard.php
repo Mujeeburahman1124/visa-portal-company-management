@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Applicant Portal Dashboard — VISA TRACK';
+$pageTitle = 'Applicant Portal Dashboard — MS TRAVEL HUB';
 $flash = get_flash();
 ?>
 <!DOCTYPE html>
@@ -8,90 +8,104 @@ $flash = get_flash();
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= e($pageTitle) ?></title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>✈️</text></svg>">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  
+  <!-- Favicons -->
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png?v=2">
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2">
+  <link rel="apple-touch-icon" href="/assets/images/logo.png">
+
+  <!-- Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Frameworks & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/main.css?v=7.0.0">
+
+  <!-- Bento Styling -->
+  <link rel="stylesheet" href="/assets/css/pages/portal-bento.css?v=<?= time() ?>">
 </head>
-<body class="app-body">
+<body class="portal-body">
 
 <?php require_once __DIR__ . '/navbar.php'; ?>
 
-<div class="container py-4">
+<div class="container-fluid container-xl py-4">
   <?php if ($flash): ?>
-    <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'info')) ?> alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
-      <div class="d-flex align-items-center gap-2">
-        <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation' : ($flash['type'] === 'success' ? 'fa-circle-check' : 'fa-circle-info') ?>"></i>
-        <span><?= e($flash['message']) ?></span>
-      </div>
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'info')) ?> alert-dismissible fade show mb-4 border-0 shadow-sm rounded-3 d-flex align-items-center gap-2" role="alert">
+      <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation' : ($flash['type'] === 'success' ? 'fa-circle-check' : 'fa-circle-info') ?> fs-6"></i>
+      <div class="flex-grow-1 fw-semibold small"><?= e($flash['message']) ?></div>
+      <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
     </div>
   <?php endif; ?>
 
-  <!-- Welcome Hero Banner -->
-  <div class="card mb-4 shadow-sm border-0" style="background: linear-gradient(135deg, #090e1a 0%, #1e3a8a 60%, #3b82f6 100%); color: white; border-radius: var(--radius-md, 14px); overflow: hidden;">
-    <div class="card-body p-4 p-md-5">
-      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-        <div>
-          <span class="badge text-white px-3 py-2 rounded-pill fw-semibold mb-2" style="font-size: 0.75rem; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(6px);">
-            <i class="fa-solid fa-shield-halved me-1"></i> SECURE APPLICANT SESSION
-          </span>
-          <h2 class="fw-bold brand-font mb-1 text-white">Welcome, <?= e($customer['full_name']) ?></h2>
-          <p class="text-white-50 mb-0" style="max-width: 540px; font-size: 0.95rem;">
-            Track your visa application progress, upload requested documents, and check consular appointments in real-time.
-          </p>
-        </div>
+  <!-- ─── HERO BANNER (BENTO STYLE) ────────────────────────────────────────── -->
+  <div class="portal-hero-card">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div>
+        <span class="portal-hero-badge">
+          <i class="fa-solid fa-shield-halved"></i> Secure Applicant Session
+        </span>
+        <h1 class="portal-hero-title">Welcome, <?= e($customer['full_name']) ?></h1>
+        <p class="portal-hero-desc">
+          Track your visa application progress, upload requested documents, and verify consular appointments in real-time.
+        </p>
+      </div>
 
-        <div class="d-flex flex-wrap gap-2">
-          <a href="/portal/documents" class="btn btn-light btn-sm px-3 py-2 fw-semibold rounded-pill shadow-sm">
-            <i class="fa-solid fa-cloud-arrow-up me-1 text-primary"></i> Upload Documents
-          </a>
-          <a href="/portal/support" class="btn btn-outline-light btn-sm px-3 py-2 fw-semibold rounded-pill">
-            <i class="fa-solid fa-headset me-1"></i> Contact Support
-          </a>
-        </div>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="/portal/documents" class="portal-btn-primary">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <span>Upload Documents</span>
+        </a>
+        <a href="/portal/support" class="portal-btn-outline">
+          <i class="fa-solid fa-headset"></i>
+          <span>Contact Support</span>
+        </a>
       </div>
     </div>
   </div>
 
-  <!-- URGENT ACTION REQUIRED BANNER -->
+  <!-- ─── URGENT ACTION REQUIRED BANNER ────────────────────────────────────── -->
   <?php if (!empty($pendingDocRequests)): ?>
-    <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); border-left: 5px solid #f43f5e !important;">
-      <div class="card-body p-4">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-          <div class="d-flex align-items-center gap-3">
-            <div class="fs-2 text-danger"><i class="fa-solid fa-triangle-exclamation"></i></div>
-            <div>
-              <div class="fw-bold text-dark fs-6">Action Required: Document Submission Requested</div>
-              <div class="text-secondary small">
-                Our visa operations officer has requested: 
-                <?php foreach ($pendingDocRequests as $dr): ?>
-                  <strong><?= e($dr['doc_name']) ?></strong> (Due: <?= format_date($dr['due_date']) ?>) &bull;
-                <?php endforeach; ?>
-              </div>
+    <div class="portal-banner-action mb-4">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-3">
+          <div class="fs-2 text-danger"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div>
+            <div class="fw-bold text-dark fs-6">Action Required: Document Submission Requested</div>
+            <div class="text-secondary small">
+              Our visa operations officer has requested: 
+              <?php foreach ($pendingDocRequests as $dr): ?>
+                <strong><?= e($dr['doc_name']) ?></strong> (Due: <?= format_date($dr['due_date']) ?>) &bull;
+              <?php endforeach; ?>
             </div>
           </div>
-          <a href="/portal/documents" class="btn btn-danger btn-sm px-4 py-2 fw-semibold rounded-pill shadow-sm">
-            <i class="fa-solid fa-upload me-1"></i> Upload Requested Files &rarr;
-          </a>
         </div>
+        <a href="/portal/documents" class="portal-btn-primary py-2 px-3.5" style="font-size:0.85rem;">
+          <i class="fa-solid fa-upload"></i>
+          <span>Upload Requested Files</span>
+        </a>
       </div>
     </div>
   <?php endif; ?>
 
-  <!-- My Active Visa Applications -->
-  <h4 class="fw-bold brand-font text-dark mb-3">
-    <i class="fa-solid fa-folder-open text-primary me-2"></i> My Visa Applications
-  </h4>
+  <!-- ─── MY VISA APPLICATIONS SECTION ─────────────────────────────────────── -->
+  <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+    <h4 class="fw-bold mb-0 text-dark" style="font-family:'Outfit', sans-serif;">
+      <i class="fa-solid fa-folder-open me-2" style="color:var(--portal-primary);"></i> My Visa Applications
+    </h4>
+  </div>
 
   <?php if (empty($applications)): ?>
-    <div class="card card-enterprise text-center py-5 shadow-sm">
-      <i class="fa-solid fa-passport text-muted fs-1 mb-2"></i>
-      <h5 class="fw-bold text-dark">No active visa applications found.</h5>
-      <p class="text-muted small">Please contact your visa consultant if your application was recently registered.</p>
+    <div class="portal-bento-card text-center py-5">
+      <div class="mb-3">
+        <i class="fa-solid fa-passport fs-1 opacity-25" style="color:var(--portal-primary);"></i>
+      </div>
+      <h5 class="fw-bold text-dark">No Active Visa Applications Found</h5>
+      <p class="text-muted small max-w-sm mx-auto">
+        Please contact your visa consultant if your application was recently registered or under file creation.
+      </p>
     </div>
   <?php else: ?>
     <?php foreach ($applications as $app): ?>
@@ -99,19 +113,19 @@ $flash = get_flash();
         $isApproved = ($app['status'] === 'Approved' || $app['status'] === 'Completed');
         $isActionRequired = ($app['status'] === 'Action Required');
       ?>
-      <div class="card card-enterprise mb-4 shadow-sm border">
+      <div class="portal-bento-card">
         <!-- Application Card Header -->
-        <div class="card-header bg-white border-bottom py-3 px-3 px-md-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="portal-card-header">
           <div class="d-flex align-items-center gap-3">
-            <div class="fs-2 lh-1 p-2 rounded-3 bg-light border shadow-sm d-flex align-items-center justify-content-center" style="width: 46px; height: 46px;">
+            <div class="fs-2 lh-1 p-2 rounded-3 bg-light border d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
               <?= $app['flag_emoji'] ?>
             </div>
             <div>
               <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-                <span class="fw-bold fs-6 text-primary me-1"><?= e($app['application_number']) ?></span>
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill small fw-semibold"><?= e($app['service_name']) ?></span>
+                <span class="portal-app-num"><?= e($app['application_number']) ?></span>
+                <span class="portal-service-badge"><?= e($app['service_name']) ?></span>
               </div>
-              <div class="text-muted small d-flex flex-wrap align-items-center gap-2" style="font-size: 0.76rem;">
+              <div class="text-muted small d-flex flex-wrap align-items-center gap-2" style="font-size: 0.78rem;">
                 <span><i class="fa-solid fa-earth-americas me-1 text-secondary"></i><?= e($app['country_name']) ?></span>
                 <span>&bull;</span>
                 <span><i class="fa-solid fa-passport me-1 text-secondary"></i><?= e($app['entry_type']) ?></span>
@@ -122,16 +136,27 @@ $flash = get_flash();
           </div>
 
           <div>
-            <span class="badge <?= $isApproved ? 'bg-success' : ($isActionRequired ? 'bg-danger' : 'bg-primary') ?> fs-6 px-3 py-2 fw-bold rounded-pill shadow-sm">
-              <i class="fa-solid <?= $isApproved ? 'fa-circle-check' : ($isActionRequired ? 'fa-triangle-exclamation' : 'fa-spinner fa-spin-pulse') ?> me-1.5"></i>
+            <?php
+              $badgeClass = 'bg-primary';
+              $badgeIcon = 'fa-spinner fa-spin-pulse';
+              if ($isApproved) {
+                $badgeClass = 'bg-success';
+                $badgeIcon = 'fa-circle-check';
+              } elseif ($isActionRequired) {
+                $badgeClass = 'bg-danger';
+                $badgeIcon = 'fa-triangle-exclamation';
+              }
+            ?>
+            <span class="badge <?= $badgeClass ?> fs-6 px-3 py-2 fw-bold rounded-pill shadow-sm">
+              <i class="fa-solid <?= $badgeIcon ?> me-1.5"></i>
               <?= e($app['status']) ?>
             </span>
           </div>
         </div>
 
         <!-- Application Card Body -->
-        <div class="card-body p-3 p-md-4">
-          <!-- Summary Metrics -->
+        <div class="p-3 p-md-4">
+          <!-- Summary Metrics Grid -->
           <div class="row g-3 mb-4">
             <div class="col-6 col-md-3">
               <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem;">Current Stage:</div>
@@ -143,7 +168,7 @@ $flash = get_flash();
             </div>
             <div class="col-6 col-md-3">
               <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem;">Next Milestone:</div>
-              <div class="fw-semibold text-primary"><?= e($app['next_action'] ?: 'Document Verification in progress') ?></div>
+              <div class="fw-semibold" style="color:var(--portal-primary);"><?= e($app['next_action'] ?: 'Document Verification in progress') ?></div>
             </div>
             <div class="col-6 col-md-3">
               <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem;">Target Completion:</div>
@@ -152,13 +177,13 @@ $flash = get_flash();
           </div>
 
           <!-- Customer Friendly Visa Journey Visual Progression -->
-          <div class="p-3 bg-light rounded-3 border mb-3">
-            <div class="fw-bold small text-uppercase mb-3 text-dark d-flex align-items-center gap-2">
-              <i class="fa-solid fa-route text-primary fs-6"></i>
+          <div class="portal-stepper-wrap">
+            <div class="portal-stepper-title">
+              <i class="fa-solid fa-route"></i>
               <span>Visa Tracking Journey</span>
             </div>
 
-            <div class="row g-2.5 text-center">
+            <div class="row g-2 text-center">
               <?php
                 $stagesList = [
                   ['name' => 'Registration', 'icon' => 'fa-id-card'],
@@ -182,12 +207,13 @@ $flash = get_flash();
                   $stepNum = $sIdx + 1;
                   $isDone = ($stepNum < $activeIndex) || $isApproved;
                   $isCurrent = ($stepNum === $activeIndex) && !$isApproved;
+                  $cardStateClass = $isDone ? 'step-done' : ($isCurrent ? 'step-active' : 'step-upcoming');
                 ?>
                 <div class="col-6 col-sm-4 col-md-2 mb-2">
-                  <div class="p-2.5 rounded-3 border h-100 d-flex flex-column align-items-center justify-content-center <?= $isDone ? 'bg-success-subtle border-success text-success' : ($isCurrent ? 'bg-primary-subtle border-primary text-primary shadow-sm' : 'bg-white text-muted') ?>">
-                    <div class="fs-5 mb-1.5"><i class="fa-solid <?= $stg['icon'] ?>"></i></div>
-                    <div class="fw-bold text-truncate w-100" style="font-size: 0.74rem;" title="<?= $stg['name'] ?>"><?= $stg['name'] ?></div>
-                    <div class="small mt-0.5" style="font-size: 0.65rem;">
+                  <div class="portal-step-card <?= $cardStateClass ?>">
+                    <div class="step-icon"><i class="fa-solid <?= $stg['icon'] ?>"></i></div>
+                    <div class="step-label text-truncate w-100" title="<?= $stg['name'] ?>"><?= $stg['name'] ?></div>
+                    <div class="step-state-tag">
                       <?= $isDone ? 'Completed' : ($isCurrent ? 'In Progress' : 'Upcoming') ?>
                     </div>
                   </div>
@@ -196,14 +222,14 @@ $flash = get_flash();
             </div>
           </div>
 
-          <!-- Decision Specific Banners (Section 10) -->
+          <!-- Decision Specific Banners -->
           <?php if ($isApproved && !empty($app['visa_number'])): ?>
-            <div class="p-3 mb-3 rounded-3 border border-success bg-success bg-opacity-10">
+            <div class="portal-banner-approved">
               <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
                 <div>
                   <div class="d-flex align-items-center gap-2 mb-1">
                     <span class="badge bg-success fw-bold px-2.5 py-1 fs-6"><i class="fa-solid fa-circle-check me-1"></i> VISA APPROVED</span>
-                    <span class="fw-bold text-dark">Visa #: <?= e($app['visa_number']) ?></span>
+                    <span class="fw-bold text-dark font-monospace">Visa #: <?= e($app['visa_number']) ?></span>
                   </div>
                   <div class="text-secondary small">
                     Issue Date: <strong><?= format_date($app['visa_issue_date']) ?></strong> &bull; 
@@ -212,38 +238,38 @@ $flash = get_flash();
                     <?php if (!empty($app['validity'])): ?> &bull; Validity: <strong><?= e($app['validity']) ?></strong><?php endif; ?>
                   </div>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
                   <?php if (!empty($app['visa_file'])): ?>
-                    <a href="<?= e($app['visa_file']) ?>" target="_blank" class="btn btn-success btn-sm px-3 fw-semibold shadow-sm">
+                    <a href="<?= e($app['visa_file']) ?>" target="_blank" class="btn btn-success btn-sm px-3 fw-semibold rounded-pill shadow-sm">
                       <i class="fa-solid fa-eye me-1"></i> View Visa
                     </a>
-                    <a href="<?= e($app['visa_file']) ?>" download class="btn btn-outline-success btn-sm px-3 fw-semibold bg-white">
-                      <i class="fa-solid fa-download me-1"></i> Download Visa
+                    <a href="<?= e($app['visa_file']) ?>" download class="btn btn-outline-success btn-sm px-3 fw-semibold bg-white rounded-pill">
+                      <i class="fa-solid fa-download me-1"></i> Download
                     </a>
-                    <button type="button" onclick="window.open('<?= e($app['visa_file']) ?>', '_blank').print();" class="btn btn-outline-dark btn-sm px-3 fw-semibold bg-white">
-                      <i class="fa-solid fa-print me-1"></i> Print Visa
+                    <button type="button" onclick="window.open('<?= e($app['visa_file']) ?>', '_blank').print();" class="btn btn-outline-dark btn-sm px-3 fw-semibold bg-white rounded-pill">
+                      <i class="fa-solid fa-print me-1"></i> Print
                     </button>
                   <?php endif; ?>
                 </div>
               </div>
             </div>
           <?php elseif ($app['status'] === 'Rejected'): ?>
-            <div class="p-3 mb-3 rounded-3 border border-danger bg-danger bg-opacity-10">
+            <div class="portal-banner-rejected">
               <div class="d-flex align-items-start gap-3">
                 <i class="fa-solid fa-circle-xmark text-danger fs-3 mt-1"></i>
                 <div class="flex-grow-1">
                   <div class="fw-bold text-danger fs-6 mb-1">Visa Application Notice: Refused / Rejected</div>
                   <div class="text-dark small mb-2"><?= e($app['rejection_reason_customer'] ?: 'Application refused by consular authority.') ?></div>
                   <?php if (!empty($app['visa_file'])): ?>
-                    <a href="<?= e($app['visa_file']) ?>" target="_blank" class="btn btn-outline-danger btn-sm py-1 px-3 fw-semibold bg-white">
-                      <i class="fa-solid fa-file-pdf me-1"></i> Download Official Rejection Notice
+                    <a href="<?= e($app['visa_file']) ?>" target="_blank" class="btn btn-outline-danger btn-sm py-1 px-3 fw-semibold bg-white rounded-pill">
+                      <i class="fa-solid fa-file-pdf me-1"></i> Download Rejection Notice
                     </a>
                   <?php endif; ?>
                 </div>
               </div>
             </div>
           <?php elseif ($app['status'] === 'Returned' || $app['status'] === 'Modification Required'): ?>
-            <div class="p-3 mb-3 rounded-3 border border-warning bg-warning bg-opacity-10">
+            <div class="portal-banner-action">
               <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
                 <div>
                   <div class="fw-bold text-dark fs-6 mb-1"><i class="fa-solid fa-rotate-left text-warning me-1"></i> Action Required: Application Returned for Modification</div>
@@ -252,24 +278,27 @@ $flash = get_flash();
                     <div class="text-danger small fw-semibold mt-1">Deadline for Resubmission: <?= format_date($app['return_deadline']) ?></div>
                   <?php endif; ?>
                 </div>
-                <a href="/portal/documents?app_id=<?= $app['id'] ?>" class="btn btn-warning btn-sm px-3 fw-semibold shadow-sm text-dark">
-                  <i class="fa-solid fa-upload me-1"></i> Upload Requested Files &rarr;
+                <a href="/portal/documents?app_id=<?= $app['id'] ?>" class="portal-btn-primary py-2 px-3.5" style="font-size:0.85rem;">
+                  <i class="fa-solid fa-upload"></i>
+                  <span>Upload Requested Files</span>
                 </a>
               </div>
             </div>
           <?php endif; ?>
 
-          <!-- Quick Action Buttons -->
-          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 pt-2">
+          <!-- Quick Action Buttons Footer -->
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 pt-2 border-top">
             <div class="small text-muted">
               <i class="fa-solid fa-lock text-success me-1"></i> Data encrypted &amp; verified by MS TRAVEL HUB Consular Desk.
             </div>
             <div class="d-flex gap-2">
-              <a href="/portal/documents?app_id=<?= $app['id'] ?>" class="btn btn-outline-primary btn-sm px-3 fw-semibold">
-                <i class="fa-solid fa-folder-open me-1"></i> View Checklist &amp; Uploads
+              <a href="/portal/documents?app_id=<?= $app['id'] ?>" class="portal-btn-primary py-1.5 px-3" style="font-size:0.82rem;">
+                <i class="fa-solid fa-folder-open"></i>
+                <span>Checklist &amp; Uploads</span>
               </a>
-              <a href="/portal/invoices" class="btn btn-outline-secondary btn-sm px-3 fw-semibold">
-                <i class="fa-solid fa-receipt me-1"></i> Payment Status
+              <a href="/portal/invoices" class="portal-btn-outline py-1.5 px-3" style="font-size:0.82rem;">
+                <i class="fa-solid fa-receipt"></i>
+                <span>Payment Status</span>
               </a>
             </div>
           </div>
@@ -278,25 +307,27 @@ $flash = get_flash();
     <?php endforeach; ?>
   <?php endif; ?>
 
-  <!-- Upcoming Appointments Section -->
+  <!-- ─── UPCOMING APPOINTMENTS SECTION ───────────────────────────────────── -->
   <?php if (!empty($appointments)): ?>
-    <div class="card card-enterprise shadow-sm mb-4">
-      <div class="card-header bg-white border-bottom py-3">
-        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-calendar-check text-primary me-2"></i> Upcoming Consular &amp; Biometrics Appointments</h6>
+    <div class="portal-bento-card mb-4">
+      <div class="portal-card-header">
+        <h6 class="fw-bold text-dark mb-0">
+          <i class="fa-solid fa-calendar-check me-2" style="color:var(--portal-primary);"></i> Upcoming Consular &amp; Biometrics Appointments
+        </h6>
       </div>
-      <div class="card-body p-3">
+      <div class="p-3 p-md-4">
         <div class="row g-3">
           <?php foreach ($appointments as $apt): ?>
             <div class="col-md-6">
-              <div class="p-3 bg-light rounded border h-100">
+              <div class="p-3 bg-light rounded-3 border h-100">
                 <div class="d-flex justify-content-between align-items-start mb-2">
-                  <span class="badge bg-primary fw-bold"><?= e($apt['appointment_type']) ?></span>
+                  <span class="badge fw-bold" style="background:var(--portal-primary);"><?= e($apt['appointment_type']) ?></span>
                   <span class="badge bg-success"><?= e($apt['status']) ?></span>
                 </div>
                 <h6 class="fw-bold text-dark mb-1"><?= e($apt['center_name']) ?></h6>
                 <div class="text-muted small mb-2"><i class="fa-solid fa-location-dot me-1 text-danger"></i><?= e($apt['location_address']) ?></div>
                 <div class="small fw-semibold text-dark">
-                  <i class="fa-regular fa-clock text-primary me-1"></i> <?= format_date($apt['appointment_date']) ?> at <?= date('h:i A', strtotime($apt['appointment_time'])) ?>
+                  <i class="fa-regular fa-clock me-1" style="color:var(--portal-primary);"></i> <?= format_date($apt['appointment_date']) ?> at <?= date('h:i A', strtotime($apt['appointment_time'])) ?>
                 </div>
               </div>
             </div>
@@ -307,7 +338,10 @@ $flash = get_flash();
   <?php endif; ?>
 </div>
 
+<footer class="text-center py-4 text-muted small" style="border-top: 1px solid var(--portal-border-subtle);">
+  &copy; <?= date('Y') ?> <strong style="color:var(--portal-text-main);">MS TRAVEL HUB</strong> &bull; Applicant Portal &bull; Enterprise Visa Solutions
+</footer>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-

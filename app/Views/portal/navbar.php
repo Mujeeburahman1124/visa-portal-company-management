@@ -6,96 +6,99 @@ $customerId = (int)($customer['id'] ?? 0);
 $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE customer_id = {$customerId} AND is_read = 0")->fetchColumn();
 ?>
 
+<!-- Flatpickr Datepicker Assets -->
 <link rel="stylesheet" href="/assets/css/flatpickr.min.css">
 <script src="/assets/js/flatpickr.min.js"></script>
 <script src="/assets/js/app-datepicker.js?v=1.0.0"></script>
 
-<!-- Customer Portal Header Navbar (MS Luxury Obsidian, Emerald & Sapphire Gradient) -->
+<!-- Applicant Portal Bento Design System (Official Brand Red #E11D48 Theme) -->
+<link rel="stylesheet" href="/assets/css/pages/portal-bento.css?v=<?= time() ?>">
 
-<nav class="navbar navbar-expand-xl navbar-dark sticky-top shadow-sm py-2" style="background: linear-gradient(135deg, #070a12 0%, #064e3b 35%, #0369a1 70%, #1d4ed8 100%); border-bottom: 1px solid rgba(255,255,255,0.15); z-index: 1040;">
+<!-- Customer Portal Header Navbar -->
+<nav class="navbar navbar-expand-xl portal-navbar sticky-top">
   <div class="container-fluid container-xl">
     <!-- Brand Logo -->
-    <a class="navbar-brand d-flex align-items-center gap-2 me-3" href="/portal/dashboard">
-      <img src="/assets/images/logo.png" alt="MS Travel Hub" style="height: 36px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));" class="rounded-2">
-      <div class="lh-sm">
-        <span class="fw-bold brand-font text-white fs-5" style="letter-spacing: -0.02em;">MS TRAVEL HUB</span>
-        <span class="text-white-50 small d-none d-sm-inline ms-1" style="font-size: 0.72rem; letter-spacing: 0.05em;">| APPLICANT PORTAL</span>
+    <a class="navbar-brand" href="/portal/dashboard">
+      <img src="/assets/images/logo.png" alt="MS Travel Hub" class="portal-brand-logo">
+      <div class="d-flex flex-column">
+        <span class="portal-brand-title">MS <span class="brand-gem">TRAVEL HUB</span></span>
       </div>
+      <span class="portal-tag ms-1">
+        <i class="fa-solid fa-passport"></i> Applicant Portal
+      </span>
     </a>
 
     <!-- Mobile Toggler -->
     <button class="navbar-toggler border-0 p-2 text-white shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#portalNavbar" aria-controls="portalNavbar" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
+      <i class="fa-solid fa-bars fs-5"></i>
     </button>
 
     <div class="collapse navbar-collapse" id="portalNavbar">
-      <!-- Portal Navigation Links (Stacked Icon + Label Layout) -->
-      <ul class="navbar-nav mx-auto mb-2 mb-xl-0 gap-1 gap-xl-3 py-2 py-xl-0 align-items-stretch align-items-xl-center">
+      <!-- Portal Navigation Links -->
+      <ul class="navbar-nav mx-auto my-2 my-xl-0 gap-1 gap-xl-2 align-items-stretch align-items-xl-center">
         <li class="nav-item">
-          <a class="nav-link portal-nav-link text-center px-2.5 py-1.5 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/dashboard') ? 'active' : '' ?>" href="/portal/dashboard">
-            <i class="fa-solid fa-gauge-high fs-5 mb-xl-1"></i>
-            <span style="font-size: 0.75rem; font-weight: 600;">Dashboard</span>
+          <a class="nav-link <?= str_starts_with($currentUri, '/portal/dashboard') ? 'active' : '' ?>" href="/portal/dashboard">
+            <i class="fa-solid fa-gauge-high"></i>
+            <span>Dashboard</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link portal-nav-link text-center px-2.5 py-1.5 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/documents') ? 'active' : '' ?>" href="/portal/documents">
-            <i class="fa-solid fa-file-circle-check fs-5 mb-xl-1"></i>
-            <span style="font-size: 0.75rem; font-weight: 600;">Documents</span>
+          <a class="nav-link <?= str_starts_with($currentUri, '/portal/documents') ? 'active' : '' ?>" href="/portal/documents">
+            <i class="fa-solid fa-file-circle-check"></i>
+            <span>Documents</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link portal-nav-link text-center px-2.5 py-1.5 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/appointments') ? 'active' : '' ?>" href="/portal/appointments">
-            <i class="fa-solid fa-calendar-check fs-5 mb-xl-1"></i>
-            <span style="font-size: 0.75rem; font-weight: 600;">Appointments</span>
+          <a class="nav-link <?= str_starts_with($currentUri, '/portal/appointments') ? 'active' : '' ?>" href="/portal/appointments">
+            <i class="fa-solid fa-calendar-check"></i>
+            <span>Appointments</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link portal-nav-link text-center px-2.5 py-1.5 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/invoices') ? 'active' : '' ?>" href="/portal/invoices">
-            <i class="fa-solid fa-receipt fs-5 mb-xl-1"></i>
-            <span style="font-size: 0.75rem; font-weight: 600;">Invoices</span>
+          <a class="nav-link <?= str_starts_with($currentUri, '/portal/invoices') ? 'active' : '' ?>" href="/portal/invoices">
+            <i class="fa-solid fa-receipt"></i>
+            <span>Invoices</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link portal-nav-link text-center px-2.5 py-1.5 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/wallet') ? 'active' : '' ?>" href="/portal/wallet">
-            <i class="fa-solid fa-wallet fs-5 mb-xl-1 text-warning"></i>
-            <span style="font-size: 0.75rem; font-weight: 600;">Wallet</span>
+          <a class="nav-link <?= str_starts_with($currentUri, '/portal/wallet') ? 'active' : '' ?>" href="/portal/wallet">
+            <i class="fa-solid fa-wallet"></i>
+            <span>Wallet</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link portal-nav-link text-center px-2.5 py-1.5 rounded-3 position-relative d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/notifications') ? 'active' : '' ?>" href="/portal/notifications">
-            <div class="position-relative">
-              <i class="fa-solid fa-bell fs-5 mb-xl-1" id="portalNotifBellIcon"></i>
-              <span id="portalNotifBadge" class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle <?= $unreadNotifsCount > 0 ? '' : 'd-none' ?>" style="font-size: 0.62rem; padding: 0.25em 0.45em;"><?= $unreadNotifsCount ?></span>
-            </div>
-            <span style="font-size: 0.75rem; font-weight: 600;">Alerts</span>
+          <a class="nav-link position-relative <?= str_starts_with($currentUri, '/portal/notifications') ? 'active' : '' ?>" href="/portal/notifications">
+            <i class="fa-solid fa-bell" id="portalNotifBellIcon"></i>
+            <span>Alerts</span>
+            <span id="portalNotifBadge" class="badge bg-danger rounded-pill ms-1 <?= $unreadNotifsCount > 0 ? '' : 'd-none' ?>" style="font-size: 0.65rem;"><?= $unreadNotifsCount ?></span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link portal-nav-link text-center px-2.5 py-1.5 rounded-3 d-flex flex-row flex-xl-column align-items-center justify-content-start justify-content-xl-center gap-2 gap-xl-0 <?= str_starts_with($currentUri, '/portal/support') ? 'active' : '' ?>" href="/portal/support">
-            <i class="fa-solid fa-headset fs-5 mb-xl-1"></i>
-            <span style="font-size: 0.75rem; font-weight: 600;">Help &amp; Support</span>
+          <a class="nav-link <?= str_starts_with($currentUri, '/portal/support') ? 'active' : '' ?>" href="/portal/support">
+            <i class="fa-solid fa-headset"></i>
+            <span>Help &amp; Support</span>
           </a>
         </li>
       </ul>
 
       <!-- User Profile & Account Actions -->
-      <div class="d-flex align-items-center justify-content-between justify-content-xl-end gap-2 pt-3 pt-xl-0 border-top border-xl-0 border-white border-opacity-10 mt-2 mt-xl-0">
+      <div class="d-flex align-items-center justify-content-between justify-content-xl-end gap-2 pt-2 pt-xl-0">
         <div class="dropdown">
-          <button class="btn btn-outline-light btn-sm rounded-pill py-1 px-3 d-flex align-items-center gap-2 border-white border-opacity-25 shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Account Security & Profile">
-            <div class="rounded-circle bg-white text-dark d-flex align-items-center justify-content-center fw-bold" style="width: 26px; height: 26px; font-size: 0.75rem;">
+          <button class="portal-user-badge border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Account Security &amp; Profile">
+            <div class="portal-avatar-circle">
               <?= strtoupper(substr($customer['full_name'] ?? 'A', 0, 1)) ?>
             </div>
-            <div class="text-white text-start d-none d-sm-block" style="line-height: 1.15;">
-              <div class="fw-semibold small text-white text-truncate" style="max-width: 140px;"><?= e($customer['full_name'] ?? 'Applicant') ?></div>
-              <div class="text-white-50" style="font-size: 0.68rem;"><?= e($customer['customer_code'] ?? 'MSV-CUST') ?></div>
+            <div class="text-start d-none d-sm-block" style="line-height: 1.15;">
+              <div class="fw-bold text-white text-truncate" style="max-width: 140px; font-size: 0.82rem;"><?= e($customer['full_name'] ?? 'Applicant') ?></div>
+              <div class="text-white-50 font-monospace" style="font-size: 0.68rem;"><?= e($customer['customer_code'] ?? 'MSV-CUST') ?></div>
             </div>
-            <i class="fa-solid fa-chevron-down text-white-50 small ms-1" style="font-size: 0.65rem;"></i>
+            <i class="fa-solid fa-chevron-down text-white-50 ms-1" style="font-size: 0.65rem;"></i>
           </button>
-          <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; min-width: 220px; z-index: 1060;">
+          <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 mt-2" style="font-size: 0.85rem; min-width: 220px; z-index: 1060;">
             <li class="px-3 py-2 border-bottom bg-light rounded-top">
               <div class="fw-bold text-dark"><?= e($customer['full_name'] ?? 'Applicant') ?></div>
               <div class="text-muted small text-truncate"><?= e($customer['email'] ?? '') ?></div>
-              <div class="badge bg-primary mt-1"><?= e($customer['customer_code'] ?? '') ?></div>
+              <div class="badge mt-1" style="background:var(--portal-primary);"><?= e($customer['customer_code'] ?? '') ?></div>
             </li>
             <li>
               <button type="button" class="dropdown-item py-2 text-dark" data-bs-toggle="modal" data-bs-target="#portalChangePasswordModal">
@@ -118,12 +121,12 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
 <!-- Modal: Reset / Change Password -->
 <div class="modal fade" id="portalChangePasswordModal" tabindex="-1" aria-labelledby="portalChangePasswordModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-light border-bottom py-3">
-        <h6 class="modal-title fw-bold text-dark mb-0" id="portalChangePasswordModalLabel">
-          <i class="fa-solid fa-shield-halved text-primary me-2"></i> Reset / Change Password
+    <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+      <div class="modal-header text-white" style="background: linear-gradient(135deg, var(--portal-primary) 0%, var(--portal-primary-hover) 100%);">
+        <h6 class="modal-title fw-bold mb-0" id="portalChangePasswordModalLabel">
+          <i class="fa-solid fa-shield-halved me-2"></i> Reset / Change Password
         </h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form action="/portal/change-password" method="POST">
         <?= csrf_field() ?>
@@ -132,7 +135,7 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
             <label class="form-label small fw-semibold text-secondary">Current Password</label>
             <div class="input-group">
               <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-lock"></i></span>
-              <input type="password" name="current_password" class="form-control" placeholder="••••••••" required>
+              <input type="password" name="current_password" class="form-control portal-form-control" placeholder="••••••••" required>
             </div>
             <div class="form-text text-muted small" style="font-size: 0.72rem;">Enter your current password to authorize change.</div>
           </div>
@@ -140,20 +143,20 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
             <label class="form-label small fw-semibold text-secondary">New Password</label>
             <div class="input-group">
               <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-key"></i></span>
-              <input type="password" name="new_password" class="form-control" placeholder="Minimum 6 characters" minlength="6" required>
+              <input type="password" name="new_password" class="form-control portal-form-control" placeholder="Minimum 6 characters" minlength="6" required>
             </div>
           </div>
           <div class="mb-2">
             <label class="form-label small fw-semibold text-secondary">Confirm New Password</label>
             <div class="input-group">
               <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-check-double"></i></span>
-              <input type="password" name="confirm_password" class="form-control" placeholder="Re-type new password" minlength="6" required>
+              <input type="password" name="confirm_password" class="form-control portal-form-control" placeholder="Re-type new password" minlength="6" required>
             </div>
           </div>
         </div>
         <div class="modal-footer bg-light border-top py-2 px-4 d-flex justify-content-between">
-          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary btn-sm px-3 fw-semibold">
+          <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="portal-btn-primary py-1.5 px-3" style="font-size:0.85rem;">
             <i class="fa-solid fa-floppy-disk me-1"></i> Update Password
           </button>
         </div>
@@ -161,37 +164,6 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
     </div>
   </div>
 </div>
-
-<style>
-.portal-nav-link {
-  color: rgba(255, 255, 255, 0.85) !important;
-  transition: all 0.2s ease;
-  border: 1px solid transparent !important;
-}
-.portal-nav-link:hover {
-  color: #ffffff !important;
-  background: rgba(255, 255, 255, 0.12) !important;
-}
-.portal-nav-link.active {
-  color: #ffffff !important;
-  background: rgba(255, 255, 255, 0.22) !important;
-  border-color: rgba(255, 255, 255, 0.35) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
-}
-
-@media (max-width: 1199.98px) {
-  #portalNavbar {
-    background: rgba(7, 10, 18, 0.96);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    padding: 1.25rem;
-    border-radius: 12px;
-    margin-top: 0.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
-  }
-}
-</style>
 
 <script>
 // Real-time Applicant Notification Synchronizer

@@ -1,0 +1,460 @@
+/* ==========================================================================
+   APPLICANT & CUSTOMER PORTAL — MODERN BENTO UI SYSTEM
+   Harmonized with MS Travel Hub Official Logo Brand Red (#E11D48) & Bento Design
+   ========================================================================== */
+
+:root {
+  /* Brand Identity (MS Ruby Prestige) */
+  --portal-primary: #E11D48;
+  --portal-primary-hover: #BE123C;
+  --portal-primary-light: #FB7185;
+  --portal-primary-soft: #FFF1F3;
+  --portal-primary-border: #FFE4E6;
+  --portal-primary-glow: rgba(225, 29, 72, 0.22);
+
+  /* Slate & Dark Accents */
+  --portal-dark-nav: #0B0F19;
+  --portal-dark-surface: #0F172A;
+  --portal-dark-hover: #1E293B;
+
+  /* Neutrals & Surfaces */
+  --portal-bg: #F8FAFC;
+  --portal-card-bg: #FFFFFF;
+  --portal-border: #E2E8F0;
+  --portal-border-subtle: #F1F5F9;
+  --portal-text-main: #0F172A;
+  --portal-text-muted: #64748B;
+  --portal-text-subtle: #94A3B8;
+
+  /* Status Colors */
+  --portal-success: #059669;
+  --portal-success-soft: #ECFDF5;
+  --portal-warning: #D97706;
+  --portal-warning-soft: #FFFBEB;
+  --portal-info: #0284C7;
+  --portal-info-soft: #F0F9FF;
+  --portal-danger: #DC2626;
+  --portal-danger-soft: #FEF2F2;
+
+  /* Geometry & Shadows */
+  --portal-radius-xl: 20px;
+  --portal-radius-lg: 16px;
+  --portal-radius-md: 12px;
+  --portal-radius-sm: 8px;
+  --portal-radius-pill: 9999px;
+  --portal-shadow-card: 0 4px 20px -4px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --portal-shadow-hover: 0 12px 30px -6px rgba(15, 23, 42, 0.10), 0 4px 10px -2px rgba(0, 0, 0, 0.03);
+}
+
+/* Base Body */
+body.portal-body, body.app-body {
+  background-color: var(--portal-bg) !important;
+  color: var(--portal-text-main) !important;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   CUSTOMER PORTAL TOP NAVBAR
+   ───────────────────────────────────────────────────────────────────────── */
+.portal-navbar {
+  background: var(--portal-dark-nav) !important;
+  border-bottom: 1px solid rgba(225, 29, 72, 0.25) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  padding: 0.65rem 1.5rem !important;
+  position: sticky;
+  top: 0;
+  z-index: 1040;
+}
+
+.portal-navbar .navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  padding: 0;
+}
+
+.portal-brand-logo {
+  width: 38px;
+  height: 38px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  object-fit: contain;
+  background: #FFFFFF;
+  padding: 2px;
+  box-shadow: 0 0 14px var(--portal-primary-glow), 0 2px 6px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.portal-navbar .navbar-brand:hover .portal-brand-logo {
+  transform: scale(1.05);
+}
+
+.portal-brand-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #FFFFFF;
+  line-height: 1;
+  margin: 0;
+}
+
+.portal-brand-title .brand-gem {
+  color: var(--portal-primary);
+}
+
+.portal-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.6rem;
+  background: rgba(225, 29, 72, 0.15);
+  border: 1px solid rgba(225, 29, 72, 0.35);
+  border-radius: var(--portal-radius-pill);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #FDA4AF;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Nav Links */
+.portal-navbar .nav-link {
+  color: rgba(255, 255, 255, 0.75) !important;
+  font-size: 0.86rem;
+  font-weight: 600;
+  padding: 0.55rem 0.85rem !important;
+  border-radius: var(--portal-radius-pill);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.portal-navbar .nav-link:hover {
+  color: #FFFFFF !important;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.portal-navbar .nav-link.active {
+  color: #FFFFFF !important;
+  background: var(--portal-primary) !important;
+  box-shadow: 0 4px 12px var(--portal-primary-glow);
+}
+
+/* Applicant Dropdown User Badge */
+.portal-user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.85rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--portal-radius-pill);
+  color: #FFFFFF;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.portal-user-badge:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.portal-avatar-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--portal-primary-soft);
+  color: var(--portal-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.78rem;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   HERO BANNER & BENTO CARDS
+   ───────────────────────────────────────────────────────────────────────── */
+.portal-hero-card {
+  position: relative;
+  background: linear-gradient(135deg, #0B0F19 0%, #1E293B 55%, #0F172A 100%);
+  border-radius: var(--portal-radius-xl);
+  padding: 2.25rem 2.5rem;
+  color: #FFFFFF;
+  margin-bottom: 2rem;
+  box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  overflow: hidden;
+}
+
+.portal-hero-card::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--portal-primary-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.portal-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.85rem;
+  background: rgba(225, 29, 72, 0.2);
+  border: 1px solid rgba(225, 29, 72, 0.4);
+  border-radius: var(--portal-radius-pill);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #FDA4AF;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.portal-hero-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #FFFFFF;
+  margin-bottom: 0.4rem;
+}
+
+.portal-hero-desc {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.75);
+  max-width: 580px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Bento Primary & Outline Buttons */
+.portal-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, var(--portal-primary) 0%, var(--portal-primary-hover) 100%);
+  color: #FFFFFF !important;
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 0.65rem 1.45rem;
+  border-radius: var(--portal-radius-pill);
+  border: none;
+  text-decoration: none !important;
+  box-shadow: 0 4px 14px var(--portal-primary-glow);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.portal-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(225, 29, 72, 0.32);
+  color: #FFFFFF !important;
+}
+
+.portal-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #FFFFFF;
+  color: var(--portal-text-main) !important;
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 0.65rem 1.35rem;
+  border-radius: var(--portal-radius-pill);
+  border: 1px solid var(--portal-border);
+  text-decoration: none !important;
+  box-shadow: var(--portal-shadow-card);
+  transition: all 0.2s ease;
+}
+
+.portal-btn-outline:hover {
+  background: var(--portal-primary-soft);
+  color: var(--portal-primary) !important;
+  border-color: var(--portal-primary-light);
+  transform: translateY(-1px);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   APPLICATION BENTO CARDS
+   ───────────────────────────────────────────────────────────────────────── */
+.portal-bento-card {
+  background: var(--portal-card-bg);
+  border: 1.5px solid var(--portal-border-subtle);
+  border-radius: var(--portal-radius-xl);
+  box-shadow: var(--portal-shadow-card);
+  margin-bottom: 1.75rem;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.portal-bento-card:hover {
+  border-color: var(--portal-border);
+  box-shadow: var(--portal-shadow-hover);
+}
+
+.portal-card-header {
+  padding: 1.25rem 1.5rem;
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--portal-border-subtle);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.portal-app-num {
+  font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--portal-primary);
+}
+
+.portal-service-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--portal-radius-pill);
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--portal-primary-soft);
+  color: var(--portal-primary);
+  border: 1px solid var(--portal-primary-border);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   VISA TRACKING STEPPER (6 PROGRESS STAGES)
+   ───────────────────────────────────────────────────────────────────────── */
+.portal-stepper-wrap {
+  background: #F8FAFC;
+  border: 1px solid var(--portal-border-subtle);
+  border-radius: var(--portal-radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.portal-stepper-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--portal-primary);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.portal-step-card {
+  padding: 0.85rem 0.5rem;
+  border-radius: var(--portal-radius-md);
+  border: 1.5px solid var(--portal-border);
+  background: #FFFFFF;
+  text-align: center;
+  height: 100%;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.portal-step-card.step-done {
+  background: var(--portal-success-soft);
+  border-color: rgba(5, 150, 105, 0.35);
+  color: var(--portal-success);
+}
+
+.portal-step-card.step-active {
+  background: #FFF1F3;
+  border-color: var(--portal-primary);
+  color: var(--portal-primary);
+  box-shadow: 0 4px 14px var(--portal-primary-glow);
+  transform: translateY(-2px);
+}
+
+.portal-step-card.step-upcoming {
+  color: var(--portal-text-subtle);
+  background: #FFFFFF;
+}
+
+.step-icon {
+  font-size: 1.25rem;
+  margin-bottom: 0.4rem;
+}
+
+.step-label {
+  font-weight: 700;
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.step-state-tag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   DECISION SPECIFIC BANNERS
+   ───────────────────────────────────────────────────────────────────────── */
+.portal-banner-approved {
+  background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+  border: 1.5px solid rgba(5, 150, 105, 0.3);
+  border-radius: var(--portal-radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.portal-banner-rejected {
+  background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+  border: 1.5px solid rgba(220, 38, 38, 0.3);
+  border-radius: var(--portal-radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.portal-banner-action {
+  background: linear-gradient(135deg, #FFF1F3 0%, #FFE4E6 100%);
+  border: 1.5px solid rgba(225, 29, 72, 0.35);
+  border-radius: var(--portal-radius-lg);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Form Controls in Customer Portal */
+.portal-form-control {
+  background: #FFFFFF;
+  border: 1.5px solid var(--portal-border);
+  border-radius: var(--portal-radius-md);
+  padding: 0.65rem 0.95rem;
+  font-size: 0.9rem;
+  color: var(--portal-text-main);
+  transition: all 0.2s ease;
+}
+
+.portal-form-control:focus {
+  border-color: var(--portal-primary);
+  box-shadow: 0 0 0 3px var(--portal-primary-glow);
+  outline: none;
+}
