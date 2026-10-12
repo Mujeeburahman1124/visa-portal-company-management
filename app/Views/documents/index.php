@@ -672,9 +672,20 @@ $buildDocUrl = function(array $params = []): string {
 <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content rounded-4 border-0 shadow">
-      <div class="modal-header bg-light border-bottom py-2.5 px-3">
-        <h6 class="modal-title fw-bold text-dark" id="previewModalTitle">Document Preview</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      <div class="modal-header bg-light border-bottom py-2.5 px-3 d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid fa-file-shield text-primary fs-5"></i>
+          <h6 class="modal-title fw-bold text-dark mb-0" id="previewModalTitle">Document Preview</h6>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <a href="#" id="previewModalDownloadBtn" class="btn btn-sm btn-outline-primary rounded-pill px-3" download>
+            <i class="fa-solid fa-download me-1"></i> Download
+          </a>
+          <a href="#" id="previewModalNewTabBtn" target="_blank" class="btn btn-sm btn-primary rounded-pill px-3">
+            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Open Full
+          </a>
+          <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
       </div>
       <div class="modal-body p-3 text-center" id="previewContainer">
         <div class="spinner-border text-primary" role="status"></div>
@@ -957,13 +968,29 @@ function openDocPreviewModal(id, filename, title) {
   document.getElementById('previewModalTitle').textContent = title || filename;
   const ext = (filename || '').split('.').pop().toLowerCase();
 
+  const dlBtn = document.getElementById('previewModalDownloadBtn');
+  const newTabBtn = document.getElementById('previewModalNewTabBtn');
+  if (dlBtn) dlBtn.href = '/documents/download?id=' + id;
+  if (newTabBtn) newTabBtn.href = '/documents/preview?id=' + id;
+
   if (container) {
     if (ext === 'pdf') {
-      container.innerHTML = '<iframe src="/documents/preview?id=' + id + '" style="width: 100%; height: 600px; border: none; border-radius: 6px;"></iframe>';
-    } else if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
-      container.innerHTML = '<img src="/documents/preview?id=' + id + '" class="img-fluid rounded shadow-sm" style="max-height: 550px; object-fit: contain;">';
+      container.innerHTML = `
+        <div class="w-100">
+          <div class="alert alert-light border py-2 px-3 small text-start d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2 rounded-3">
+            <span class="text-secondary"><i class="fa-solid fa-circle-info text-primary me-1"></i> PDF Document Viewer. If your browser blocks inline PDF streaming, use direct download.</span>
+            <div class="d-flex gap-2">
+              <a href="/documents/preview?id=${id}" target="_blank" class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-1" style="font-size:0.75rem;"><i class="fa-solid fa-external-link me-1"></i> Full Window</a>
+              <a href="/documents/download?id=${id}" class="btn btn-xs btn-primary rounded-pill px-2.5 py-1" style="font-size:0.75rem;"><i class="fa-solid fa-download me-1"></i> Save File</a>
+            </div>
+          </div>
+          <iframe src="/documents/preview?id=${id}" style="width: 100%; height: 600px; border: 1px solid #e2e8f0; border-radius: 8px;"></iframe>
+        </div>
+      `;
+    } else if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
+      container.innerHTML = '<img src="/documents/preview?id=' + id + '" class="img-fluid rounded shadow-sm" style="max-height: 580px; object-fit: contain;">';
     } else {
-      container.innerHTML = '<div class="p-5 text-center"><i class="fa-solid fa-file-lines fs-1 text-secondary mb-3"></i><h5>Preview not supported for ' + ext.toUpperCase() + '</h5><a href="/documents/download?id=' + id + '" class="btn btn-primary btn-sm rounded-pill mt-2"><i class="fa-solid fa-download me-1"></i> Download File</a></div>';
+      container.innerHTML = '<div class="p-5 text-center"><i class="fa-solid fa-file-lines fs-1 text-secondary mb-3"></i><h5>Preview not supported for .' + ext.toUpperCase() + '</h5><p class="text-muted small">This format cannot be displayed directly inside the browser viewer.</p><a href="/documents/download?id=' + id + '" class="btn btn-primary btn-sm rounded-pill mt-2 px-4"><i class="fa-solid fa-download me-1"></i> Download File</a></div>';
     }
   }
   bootstrap.Modal.getOrCreateInstance(document.getElementById('previewModal')).show();

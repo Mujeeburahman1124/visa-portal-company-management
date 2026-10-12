@@ -893,36 +893,7 @@ class TaskController
             exit;
         }
 
-        $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-        $mimeMap = [
-            'pdf'  => 'application/pdf',
-            'png'  => 'image/png',
-            'jpg'  => 'image/jpeg',
-            'jpeg' => 'image/jpeg',
-            'webp' => 'image/webp',
-            'gif'  => 'image/gif',
-            'doc'  => 'application/msword',
-            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'xls'  => 'application/vnd.ms-excel',
-            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'txt'  => 'text/plain',
-            'zip'  => 'application/zip',
-        ];
-        $contentType = $mimeMap[$ext] ?? 'application/octet-stream';
         $downloadParam = isset($_GET['download']) && $_GET['download'] === '1';
-        $inlineAllowed = in_array($ext, ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'gif'], true);
-        $disposition = ($downloadParam || !$inlineAllowed) ? 'attachment' : 'inline';
-
-        if (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-
-        header('Content-Description: File Transfer');
-        header('Content-Type: ' . $contentType);
-        header('Content-Disposition: ' . $disposition . '; filename="' . basename($filePath) . '"');
-        header('Content-Length: ' . filesize($filePath));
-        header('Cache-Control: private, max-age=3600');
-        readfile($filePath);
-        exit;
+        \App\Services\FileStreamService::stream($filePath, basename($filePath), $downloadParam);
     }
 }

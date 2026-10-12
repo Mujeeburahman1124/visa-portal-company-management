@@ -1420,6 +1420,8 @@ class DocumentController
             $baseDir . '/storage/documents/' . $filename,
             $baseDir . '/public/uploads/documents/' . $filename,
             $baseDir . '/uploads/documents/' . $filename,
+            $baseDir . '/app/storage/documents/' . $filename,
+            $baseDir . '/storage/' . $filename,
             $baseDir . '/' . ltrim($rawPath, '/\\'),
             $baseDir . '/public/' . ltrim($rawPath, '/\\'),
         ]));
@@ -1433,24 +1435,15 @@ class DocumentController
         }
 
         if (!$filePath) {
-            http_response_code(404);
-            die('File not found in storage repository.');
+            \App\Services\FileStreamService::renderFileNotFound(
+                'Document Not Found on Server',
+                "The file for '" . ($doc['doc_name'] ?? $doc['file_name']) . "' was not found in storage. It may need to be re-uploaded.",
+                '/documents'
+            );
+            return;
         }
 
-        $mime = 'application/octet-stream';
-        if (function_exists('mime_content_type')) {
-            $mime = mime_content_type($filePath) ?: 'application/octet-stream';
-        } elseif (class_exists('finfo')) {
-            $finfo = new \finfo(FILEINFO_MIME_TYPE);
-            $mime = $finfo->file($filePath) ?: 'application/octet-stream';
-        }
-
-        header('Content-Type: ' . $mime);
-        header('Content-Disposition: inline; filename="' . basename($doc['file_name']) . '"');
-        header('Content-Length: ' . filesize($filePath));
-        header('Cache-Control: private, max-age=3600');
-        readfile($filePath);
-        exit;
+        \App\Services\FileStreamService::stream($filePath, $doc['file_name'] ?: basename($filePath), false);
     }
 
     /**
@@ -1491,6 +1484,8 @@ class DocumentController
             $baseDir . '/storage/documents/' . $filename,
             $baseDir . '/public/uploads/documents/' . $filename,
             $baseDir . '/uploads/documents/' . $filename,
+            $baseDir . '/app/storage/documents/' . $filename,
+            $baseDir . '/storage/' . $filename,
             $baseDir . '/' . ltrim($rawPath, '/\\'),
             $baseDir . '/public/' . ltrim($rawPath, '/\\'),
         ]));
@@ -1504,8 +1499,12 @@ class DocumentController
         }
 
         if (!$filePath) {
-            http_response_code(404);
-            die('File not found on server.');
+            \App\Services\FileStreamService::renderFileNotFound(
+                'Document Not Found',
+                "The file for '" . ($doc['file_name'] ?? 'document') . "' was not found in server storage.",
+                '/documents'
+            );
+            return;
         }
 
         $currentUser = auth_user();
@@ -1514,15 +1513,7 @@ class DocumentController
             'file_name' => $doc['file_name']
         ], $currentUser['id'] ?? null);
 
-        header('Content-Description: File Transfer');
-        header('Content-Type: application/octet-stream');
-        header('Content-Disposition: attachment; filename="' . basename($doc['file_name']) . '"');
-        header('Expires: 0');
-        header('Cache-Control: must-revalidate');
-        header('Pragma: public');
-        header('Content-Length: ' . filesize($filePath));
-        readfile($filePath);
-        exit;
+        \App\Services\FileStreamService::stream($filePath, $doc['file_name'] ?: basename($filePath), true);
     }
 
     /**

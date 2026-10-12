@@ -716,6 +716,9 @@ foreach ($tasks as $t) {
           <div id="proofImagePreviewWrap" class="mb-2 d-none text-center">
             <img src="" id="proofImagePreview" class="img-fluid rounded border shadow-xs" style="max-height: 240px;" alt="Proof preview">
           </div>
+          <div id="proofPdfPreviewWrap" class="mb-2 d-none text-center">
+            <iframe src="" id="proofPdfFrame" style="width: 100%; height: 260px; border: 1px solid #e2e8f0; border-radius: 8px;"></iframe>
+          </div>
           <div class="d-flex flex-wrap gap-2">
             <a href="#" id="proofAttachmentLink" target="_blank" class="bento-btn-outline" style="padding: 0.35rem 0.85rem; font-size: 0.78rem;">
               <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> View Full File
@@ -864,6 +867,9 @@ function viewProofModal(data) {
   var imgWrap = document.getElementById('proofImagePreviewWrap');
   var imgEl = document.getElementById('proofImagePreview');
 
+  var pdfWrap = document.getElementById('proofPdfPreviewWrap');
+  var pdfFrame = document.getElementById('proofPdfFrame');
+
   if (data.attachment) {
     link.href = data.attachment;
     if (dlLink) dlLink.href = data.attachment + '&download=1';
@@ -873,14 +879,27 @@ function viewProofModal(data) {
     if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
       imgEl.src = data.attachment;
       imgWrap.classList.remove('d-none');
+      if (pdfWrap) pdfWrap.classList.add('d-none');
+      if (pdfFrame) pdfFrame.src = '';
+    } else if (ext === 'pdf') {
+      imgWrap.classList.add('d-none');
+      imgEl.src = '';
+      if (pdfWrap && pdfFrame) {
+        pdfFrame.src = data.attachment;
+        pdfWrap.classList.remove('d-none');
+      }
     } else {
       imgWrap.classList.add('d-none');
       imgEl.src = '';
+      if (pdfWrap) pdfWrap.classList.add('d-none');
+      if (pdfFrame) pdfFrame.src = '';
     }
   } else {
     container.classList.add('d-none');
     imgWrap.classList.add('d-none');
     imgEl.src = '';
+    if (pdfWrap) pdfWrap.classList.add('d-none');
+    if (pdfFrame) pdfFrame.src = '';
   }
 
   var modal = new bootstrap.Modal(document.getElementById('viewProofModal'));
