@@ -240,6 +240,29 @@ class ApplicationController
             }
         }
 
+        // Check if customer exists by email address (case-insensitive)
+        if ($customerId <= 0 && !empty($email)) {
+            $chkE = $pdo->prepare("SELECT id FROM customers WHERE LOWER(TRIM(email)) = LOWER(?) LIMIT 1");
+            $chkE->execute([$email]);
+            $existingCustId = (int)$chkE->fetchColumn();
+            if ($existingCustId > 0) {
+                $customerId = $existingCustId;
+            }
+        }
+
+        // Check if customer exists by mobile phone
+        if ($customerId <= 0 && !empty($mobile)) {
+            $cleanMobile = preg_replace('/[^0-9]/', '', $mobile);
+            if (strlen($cleanMobile) >= 7) {
+                $chkM = $pdo->prepare("SELECT id FROM customers WHERE REPLACE(REPLACE(REPLACE(REPLACE(mobile, ' ', ''), '-', ''), '+', ''), '(', '') = ? LIMIT 1");
+                $chkM->execute([$cleanMobile]);
+                $existingCustId = (int)$chkM->fetchColumn();
+                if ($existingCustId > 0) {
+                    $customerId = $existingCustId;
+                }
+            }
+        }
+
         if ($customerId <= 0) {
             $computedName = trim($firstName . ($middleName ? ' ' . $middleName : '') . ' ' . $lastName);
             $fullName = !empty($computedName) ? $computedName : $rawFullName;
@@ -254,6 +277,9 @@ class ApplicationController
                     $lastName = $fullName;
                 }
 
+                $cleanEmail = !empty($email) ? strtolower($email) : null;
+                $cleanMobile = !empty($mobile) ? $mobile : '0000000000';
+
                 $insCust = $pdo->prepare("INSERT INTO customers (
                     customer_code, full_name, first_name, middle_name, last_name,
                     gender, dob, nationality, birth_country, place_of_birth, city,
@@ -267,15 +293,59 @@ class ApplicationController
                     ?, ?, ?, ?,
                     ?, 1, CURRENT_TIMESTAMP
                 )");
-                $insCust->execute([
-                    $customerCode, $fullName, $firstName, $middleName, $lastName,
-                    $gender, $dob, $nationality, $birthCountry, $placeOfBirth, $city,
-                    $residingCountry, $address, $mobile, $whatsapp, $email,
-                    $profession, $education, $language, $maritalStatus,
-                    $user['id'] ?? null
-                ]);
-                $customerId = (int)$pdo->lastInsertId();
+
+                try {
+                    $insCust->execute([
+                        $customerCode, $fullName, $firstName, $middleName, $lastName,
+                        $gender, $dob, $nationality, $birthCountry, $placeOfBirth, $city,
+                        $residingCountry, $address, $cleanMobile, $whatsapp, $cleanEmail,
+                        $profession, $education, $language, $maritalStatus,
+                        $user['id'] ?? null
+                    ]);
+                    $customerId = (int)$pdo->lastInsertId();
+                } catch (\PDOException $eCust) {
+                    // Gracefully handle duplicate key violations (email, mobile, customer_code)
+                    if ($eCust->getCode() == 23000 || str_contains($eCust->getMessage(), '1062') || str_contains($eCust->getMessage(), 'Duplicate entry')) {
+                        if (!empty($email)) {
+                            $fCust = $pdo->prepare("SELECT id FROM customers WHERE LOWER(TRIM(email)) = LOWER(?) LIMIT 1");
+                            $fCust->execute([$email]);
+                            $customerId = (int)$fCust->fetchColumn();
+                        }
+                        if ($customerId <= 0 && !empty($cleanMobile)) {
+                            $fCustM = $pdo->prepare("SELECT id FROM customers WHERE mobile = ? LIMIT 1");
+                            $fCustM->execute([$cleanMobile]);
+                            $customerId = (int)$fCustM->fetchColumn();
+                        }
+                        if ($customerId <= 0 && !empty($passportNumber)) {
+                            $fCustP = $pdo->prepare("SELECT customer_id FROM customer_passports WHERE UPPER(passport_number) = ? LIMIT 1");
+                            $fCustP->execute([$passportNumber]);
+                            $customerId = (int)$fCustP->fetchColumn();
+                        }
+                        if ($customerId <= 0) {
+                            throw $eCust;
+                        }
+                    } else {
+                        throw $eCust;
+                    }
+                }
             }
+        }
+
+        if ($customerId > 0) {
+            // Update customer contact info if previously blank
+            try {
+                $updCust = $pdo->prepare("UPDATE customers SET 
+                    mobile = COALESCE(NULLIF(mobile, ''), ?),
+                    email = COALESCE(NULLIF(email, ''), ?),
+                    current_country = COALESCE(NULLIF(current_country, ''), ?)
+                    WHERE id = ?");
+                $updCust->execute([
+                    !empty($mobile) ? $mobile : null,
+                    !empty($email) ? strtolower($email) : null,
+                    !empty($residingCountry) ? $residingCountry : null,
+                    $customerId
+                ]);
+            } catch (\Throwable $ign) {}
         }
 
         if ($customerId <= 0) {

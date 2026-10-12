@@ -198,9 +198,18 @@ class AgentPortalController
         }
 
         // Create or find customer
-        $custStmt = $pdo->prepare("SELECT id FROM customers WHERE mobile = ? LIMIT 1");
-        $custStmt->execute([$mobile]);
-        $existingCust = $custStmt->fetch(PDO::FETCH_ASSOC);
+        $existingCust = null;
+        if (!empty($mobile)) {
+            $custStmt = $pdo->prepare("SELECT id FROM customers WHERE mobile = ? LIMIT 1");
+            $custStmt->execute([$mobile]);
+            $existingCust = $custStmt->fetch(PDO::FETCH_ASSOC);
+        }
+
+        if (!$existingCust && !empty($email)) {
+            $custStmt = $pdo->prepare("SELECT id FROM customers WHERE LOWER(TRIM(email)) = LOWER(?) LIMIT 1");
+            $custStmt->execute([$email]);
+            $existingCust = $custStmt->fetch(PDO::FETCH_ASSOC);
+        }
 
         if ($existingCust) {
             $customerId = (int)$existingCust['id'];
@@ -210,12 +219,33 @@ class AgentPortalController
             $nextNum  = $lastCode ? (int)substr($lastCode, 4) + 1 : 1;
             $custCode = 'MSC-' . str_pad((string)$nextNum, 6, '0', STR_PAD_LEFT);
 
+            $cleanEmail = !empty($email) ? strtolower($email) : null;
             $cStmt = $pdo->prepare("INSERT INTO customers (customer_code, first_name, last_name, full_name, mobile, email, nationality, dob, gender, current_country) VALUES (?,?,?,?,?,?,?,?,?,?)");
-            $cStmt->execute([$custCode, $firstName, $lastName, $fullName, $mobile, $email, $nationality, $dob ?: null, $gender, $nationality]);
-            $customerId = (int)$pdo->lastInsertId();
+            try {
+                $cStmt->execute([$custCode, $firstName, $lastName, $fullName, $mobile, $cleanEmail, $nationality, $dob ?: null, $gender, $nationality]);
+                $customerId = (int)$pdo->lastInsertId();
+            } catch (\PDOException $eCust) {
+                if ($eCust->getCode() == 23000 || str_contains($eCust->getMessage(), '1062')) {
+                    if (!empty($email)) {
+                        $fCust = $pdo->prepare("SELECT id FROM customers WHERE LOWER(TRIM(email)) = LOWER(?) LIMIT 1");
+                        $fCust->execute([$email]);
+                        $customerId = (int)$fCust->fetchColumn();
+                    }
+                    if ($customerId <= 0 && !empty($mobile)) {
+                        $fCustM = $pdo->prepare("SELECT id FROM customers WHERE mobile = ? LIMIT 1");
+                        $fCustM->execute([$mobile]);
+                        $customerId = (int)$fCustM->fetchColumn();
+                    }
+                    if ($customerId <= 0) {
+                        throw $eCust;
+                    }
+                } else {
+                    throw $eCust;
+                }
+            }
 
             // Save passport if provided
-            if (!empty($passportNum) && !empty($passExpiry)) {
+            if (!empty($passportNum) && !empty($passExpiry) && $customerId > 0) {
                 $pdo->prepare("INSERT INTO customer_passports (customer_id, passport_number, issuing_country, expiry_date, is_primary) VALUES (?,?,?,?,1)")->execute([$customerId, $passportNum, $nationality, $passExpiry]);
             }
         }
