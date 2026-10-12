@@ -657,6 +657,7 @@ foreach ($tasks as $t) {
       <form action="/tasks/complete" method="POST" enctype="multipart/form-data">
         <?= csrf_field() ?>
         <input type="hidden" name="task_id" id="completeTaskId" value="0">
+        <input type="hidden" name="status" value="Completed">
         <div class="modal-header bg-dark text-white p-3.5">
           <h6 class="modal-title fw-bold fs-6"><i class="fa-solid fa-circle-check me-2 text-success"></i> Complete Task Verification</h6>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -674,7 +675,7 @@ foreach ($tasks as $t) {
 
           <div class="mb-0">
             <label class="form-label small fw-semibold">Attach Proof of Work (Optional)</label>
-            <input type="file" name="proof_attachment" class="form-control rounded-3" accept=".pdf,.jpg,.jpeg,.png,.docx">
+            <input type="file" name="proof_attachment" class="form-control rounded-3" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt,.zip">
             <div class="form-text small">Upload email confirmation, deposit slip, biometric slip, or chat screenshot.</div>
           </div>
         </div>

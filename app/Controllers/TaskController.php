@@ -239,6 +239,11 @@ class TaskController
         redirect($this->getRedirectUrl(), "Task '{$title}' created successfully.", 'success');
     }
 
+    public function complete(): void
+    {
+        $this->updateStatus();
+    }
+
     public function updateStatus(): void
     {
         AuthMiddleware::handle();
@@ -246,7 +251,10 @@ class TaskController
         $currentUser = auth_user();
 
         $taskId = (int)($_POST['task_id'] ?? 0);
-        $status = trim($_POST['status'] ?? 'Completed');
+        $status = trim($_POST['status'] ?? '');
+        if ($status === '') {
+            $status = 'Completed';
+        }
         $completionNotes = trim($_POST['completion_notes'] ?? '');
 
         if ($taskId > 0 && in_array($status, ['Pending', 'In Progress', 'Completed', 'Overdue', 'Cancelled'], true)) {
@@ -265,17 +273,24 @@ class TaskController
                 }
 
                 // Handle file upload for proof document/screenshot/receipt if provided
-                if (!empty($_FILES['proof_file']['name']) && $_FILES['proof_file']['error'] === UPLOAD_ERR_OK) {
+                $uploadedProofFile = null;
+                if (!empty($_FILES['proof_attachment']['name']) && $_FILES['proof_attachment']['error'] === UPLOAD_ERR_OK) {
+                    $uploadedProofFile = $_FILES['proof_attachment'];
+                } elseif (!empty($_FILES['proof_file']['name']) && $_FILES['proof_file']['error'] === UPLOAD_ERR_OK) {
+                    $uploadedProofFile = $_FILES['proof_file'];
+                }
+
+                if ($uploadedProofFile !== null) {
                     $uploadDir = dirname(__DIR__, 2) . '/public/uploads/tasks/';
                     if (!is_dir($uploadDir)) {
-                        @mkdir($uploadDir, 0755, true);
+                        @mkdir($uploadDir, 0777, true);
                     }
-                    $origName = $_FILES['proof_file']['name'];
+                    $origName = $uploadedProofFile['name'];
                     $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
                     $allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'zip'];
                     if (in_array($ext, $allowed, true)) {
                         $newFileName = 'proof_' . $taskId . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
-                        if (move_uploaded_file($_FILES['proof_file']['tmp_name'], $uploadDir . $newFileName)) {
+                        if (move_uploaded_file($uploadedProofFile['tmp_name'], $uploadDir . $newFileName)) {
                             $proofAttachment = 'uploads/tasks/' . $newFileName;
                         }
                     }

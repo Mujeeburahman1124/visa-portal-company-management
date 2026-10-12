@@ -676,6 +676,7 @@ switch ($uri) {
         break;
 
     case '/tasks/status':
+    case '/tasks/complete':
         require_permission('tasks.view');
         (new App\Controllers\TaskController())->updateStatus();
         break;
