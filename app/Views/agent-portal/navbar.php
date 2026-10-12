@@ -87,8 +87,8 @@ function agentNavActive(string $path): string {
         </li>
       </ul>
 
-      <!-- User & Session Controls -->
-      <div class="d-flex flex-wrap align-items-center gap-2 pt-2 pt-lg-0">
+      <!-- Desktop User & Session Controls (Screens >= 992px) -->
+      <div class="d-none d-lg-flex align-items-center gap-2">
         <div class="agent-agency-pill">
           <i class="fa-solid fa-building"></i>
           <span><?= e($agentAuth['company_name'] ?? 'Agent Partner') ?></span>
@@ -97,6 +97,29 @@ function agentNavActive(string $path): string {
           <i class="fa-solid fa-right-from-bracket"></i>
           <span>Logout</span>
         </a>
+      </div>
+
+      <!-- Mobile Agency Card (Screens < 992px) -->
+      <div class="agent-mobile-user-card d-lg-none">
+        <div class="agent-mobile-user-top">
+          <div class="agent-mobile-avatar">
+            <i class="fa-solid fa-building"></i>
+          </div>
+          <div class="flex-grow-1 overflow-hidden" style="line-height: 1.25;">
+            <div class="fw-bold text-white text-truncate"><?= e($agentAuth['company_name'] ?? 'Agent Partner') ?></div>
+            <?php if (!empty($agentAuth['agent_code'])): ?>
+              <span class="badge font-monospace mt-1" style="background:var(--agent-primary); font-size: 0.68rem;"><?= e($agentAuth['agent_code']) ?></span>
+            <?php endif; ?>
+          </div>
+        </div>
+        <div class="agent-mobile-actions">
+          <a href="/agent/profile" class="btn btn-sm btn-outline-light">
+            <i class="fa-solid fa-user-gear"></i> Profile
+          </a>
+          <a href="/agent/logout" class="btn btn-sm text-white" style="background:var(--agent-primary); border-color:var(--agent-primary);">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+          </a>
+        </div>
       </div>
     </div>
   </div>

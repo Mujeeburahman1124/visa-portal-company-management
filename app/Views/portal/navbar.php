@@ -81,14 +81,14 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
         </li>
       </ul>
 
-      <!-- User Profile & Account Actions -->
-      <div class="d-flex align-items-center justify-content-between justify-content-xl-end gap-2 pt-2 pt-xl-0">
+      <!-- Desktop User Profile Dropdown (Screens >= 1200px) -->
+      <div class="d-none d-xl-flex align-items-center justify-content-end gap-2">
         <div class="dropdown">
           <button class="portal-user-badge border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Account Security &amp; Profile">
             <div class="portal-avatar-circle">
               <?= strtoupper(substr($customer['full_name'] ?? 'A', 0, 1)) ?>
             </div>
-            <div class="text-start d-none d-sm-block" style="line-height: 1.15;">
+            <div class="text-start" style="line-height: 1.15;">
               <div class="fw-bold text-white text-truncate" style="max-width: 140px; font-size: 0.82rem;"><?= e($customer['full_name'] ?? 'Applicant') ?></div>
               <div class="text-white-50 font-monospace" style="font-size: 0.68rem;"><?= e($customer['customer_code'] ?? 'MSV-CUST') ?></div>
             </div>
@@ -114,6 +114,29 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
           </ul>
         </div>
       </div>
+
+      <!-- Mobile User Account Card (Screens < 1200px) -->
+      <div class="portal-mobile-user-card d-xl-none">
+        <div class="portal-mobile-user-top">
+          <div class="portal-mobile-avatar">
+            <?= strtoupper(substr($customer['full_name'] ?? 'A', 0, 1)) ?>
+          </div>
+          <div class="flex-grow-1 overflow-hidden" style="line-height: 1.25;">
+            <div class="fw-bold text-white text-truncate"><?= e($customer['full_name'] ?? 'Applicant') ?></div>
+            <div class="text-white-50 small text-truncate" style="font-size: 0.75rem;"><?= e($customer['email'] ?? '') ?></div>
+            <span class="badge font-monospace mt-1" style="background:var(--portal-primary); font-size: 0.68rem;"><?= e($customer['customer_code'] ?? 'MSV-CUST') ?></span>
+          </div>
+        </div>
+        <div class="portal-mobile-actions">
+          <button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#portalChangePasswordModal">
+            <i class="fa-solid fa-key text-warning"></i> Password
+          </button>
+          <a href="/portal/logout" class="btn btn-sm text-white" style="background:var(--portal-primary); border-color:var(--portal-primary);">
+            <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+          </a>
+        </div>
+      </div>
+
     </div>
   </div>
 </nav>

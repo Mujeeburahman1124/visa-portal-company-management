@@ -64,7 +64,7 @@ body.portal-body, body.app-body {
   background: var(--portal-dark-nav) !important;
   border-bottom: 1px solid rgba(225, 29, 72, 0.25) !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
-  padding: 0.65rem 1.5rem !important;
+  padding: 0.65rem 1.25rem !important;
   position: sticky;
   top: 0;
   z-index: 1040;
@@ -126,7 +126,7 @@ body.portal-body, body.app-body {
 
 /* Nav Links */
 .portal-navbar .nav-link {
-  color: rgba(255, 255, 255, 0.75) !important;
+  color: rgba(255, 255, 255, 0.78) !important;
   font-size: 0.86rem;
   font-weight: 600;
   padding: 0.55rem 0.85rem !important;
@@ -134,7 +134,7 @@ body.portal-body, body.app-body {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
 }
 
 .portal-navbar .nav-link:hover {
@@ -148,7 +148,7 @@ body.portal-body, body.app-body {
   box-shadow: 0 4px 12px var(--portal-primary-glow);
 }
 
-/* Applicant Dropdown User Badge */
+/* Applicant Dropdown User Badge (Desktop) */
 .portal-user-badge {
   display: inline-flex;
   align-items: center;
@@ -182,6 +182,76 @@ body.portal-body, body.app-body {
   font-size: 0.78rem;
 }
 
+/* Mobile Collapse Drawer Styling */
+@media (max-width: 1199.98px) {
+  #portalNavbar.show, #portalNavbar.collapsing {
+    background: rgba(11, 15, 25, 0.98);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 16px;
+    margin-top: 0.75rem;
+    padding: 1.25rem 1rem;
+    border: 1px solid rgba(225, 29, 72, 0.25);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(225, 29, 72, 0.15);
+  }
+
+  .portal-navbar .navbar-nav {
+    gap: 0.45rem !important;
+  }
+
+  .portal-navbar .nav-link {
+    width: 100%;
+    padding: 0.75rem 1rem !important;
+    border-radius: 12px !important;
+    font-size: 0.92rem !important;
+  }
+
+  .portal-mobile-user-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-top: 1rem;
+  }
+
+  .portal-mobile-user-top {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .portal-mobile-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--portal-primary-soft);
+    color: var(--portal-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .portal-mobile-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .portal-mobile-actions .btn {
+    flex: 1;
+    font-size: 0.82rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+  }
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
    HERO BANNER & BENTO CARDS
    ───────────────────────────────────────────────────────────────────────── */
@@ -195,6 +265,12 @@ body.portal-body, body.app-body {
   box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.10);
   overflow: hidden;
+}
+
+@media (max-width: 767.98px) {
+  .portal-hero-card {
+    padding: 1.5rem 1.25rem;
+  }
 }
 
 .portal-hero-card::before {
@@ -232,6 +308,12 @@ body.portal-body, body.app-body {
   letter-spacing: -0.025em;
   color: #FFFFFF;
   margin-bottom: 0.4rem;
+}
+
+@media (max-width: 767.98px) {
+  .portal-hero-title {
+    font-size: 1.5rem;
+  }
 }
 
 .portal-hero-desc {
