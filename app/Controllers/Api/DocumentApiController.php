@@ -176,7 +176,9 @@ class DocumentApiController extends ApiController
         // Validate MIME type
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mimeType = finfo_file($finfo, $tmpPath) ?: ($file['type'] ?? 'application/octet-stream');
-        finfo_close($finfo);
+        if (PHP_VERSION_ID < 80500) {
+            @finfo_close($finfo);
+        }
 
         $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
         if (!in_array($mimeType, $allowedMimes, true)) {
@@ -229,24 +231,24 @@ class DocumentApiController extends ApiController
         ];
 
         // Process OCR extraction
+        $previewUrl = '/api/documents/temp-preview?token=' . urlencode($token);
         try {
             $ocrService = new \App\Services\Ocr\PassportOcrService();
             $ocrResult = $ocrService->extract($targetPath, ['original_name' => $origName, 'mime_type' => $mimeType]);
         } catch (\Throwable $e) {
-            error_log("[OCR ERROR] Passport OCR process failure for {$origName}: " . $e->getMessage());
-            $ocrResult = [
-                'success' => false,
-                'message' => 'Passport OCR could not process this document. Please enter details manually.',
-                'ocr_provider' => 'error',
+            error_log("[OCR ERROR] Passport OCR Exception for {$origName}: " . $e->getMessage());
+            $this->jsonError($e->getMessage(), [
+                'temp_token' => $token,
+                'preview_url' => $previewUrl,
+                'original_filename' => $origName,
+                'ocr_provider' => 'none',
                 'overall_confidence' => 0,
                 'mrz_detected' => false,
                 'extracted' => [],
-                'confidence' => [],
-                'warnings' => ['ocr_exception']
-            ];
+                'confidence' => []
+            ], 422);
+            return;
         }
-
-        $previewUrl = '/api/documents/temp-preview?token=' . urlencode($token);
 
         // Check if extraction succeeded with readable fields
         if (empty($ocrResult['success'])) {
@@ -327,7 +329,9 @@ class DocumentApiController extends ApiController
                 $filePath = $matches[0];
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
                 $mimeType = finfo_file($finfo, $filePath) ?: 'image/jpeg';
-                finfo_close($finfo);
+                if (PHP_VERSION_ID < 80500) {
+                    @finfo_close($finfo);
+                }
             } else {
                 http_response_code(404);
                 echo 'Temporary file not found or expired.';

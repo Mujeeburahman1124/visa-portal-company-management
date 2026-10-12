@@ -1321,6 +1321,20 @@ function dismissOcrError() {
   document.getElementById('passportNoInput').focus();
 }
 
+function normalizeIsoDate(dStr) {
+  if (!dStr) return '';
+  dStr = String(dStr).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dStr)) return dStr;
+  const m = dStr.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if (m) {
+    const d = m[1].padStart(2, '0');
+    const mo = m[2].padStart(2, '0');
+    const y = m[3];
+    return `${y}-${mo}-${d}`;
+  }
+  return dStr;
+}
+
 // Side-by-Side Review Modal Logic
 function openOcrReviewModal(data) {
   const ext = data.extracted || data.data || {};
@@ -1353,12 +1367,19 @@ function openOcrReviewModal(data) {
   setReviewField('review_surname', ext.surname || ext.last_name || '', conf.surname || conf.last_name, 'confTag_surname');
   setReviewField('review_given_names', ext.given_names || ext.first_name || '', conf.given_names || conf.first_name, 'confTag_given_names');
   setReviewField('review_nationality', ext.nationality || '', conf.nationality, 'confTag_nationality');
-  setReviewField('review_dob', ext.dob || ext.date_of_birth || '', conf.dob || conf.date_of_birth, 'confTag_dob');
-  setReviewField('review_gender', ext.gender || ext.sex || '', conf.gender || conf.sex, 'confTag_gender');
-  setReviewField('review_issue_date', ext.issue_date || ext.date_of_issue || '', conf.issue_date || conf.date_of_issue, 'confTag_issue_date');
-  setReviewField('review_expiry_date', ext.expiry_date || ext.date_of_expiry || '', conf.expiry_date || conf.date_of_expiry, 'confTag_expiry_date');
+  setReviewField('review_dob', normalizeIsoDate(ext.dob || ext.date_of_birth || ''), conf.dob || conf.date_of_birth, 'confTag_dob');
+  
+  const gEl = document.getElementById('review_gender');
+  const detectedGender = (ext.gender || ext.sex || '').trim();
+  if (gEl && detectedGender) {
+    gEl.value = (detectedGender.toLowerCase() === 'female') ? 'Female' : 'Male';
+  }
+  setReviewField('review_gender', detectedGender, conf.gender || conf.sex, 'confTag_gender');
+
+  setReviewField('review_issue_date', normalizeIsoDate(ext.issue_date || ext.date_of_issue || ''), conf.issue_date || conf.date_of_issue, 'confTag_issue_date');
+  setReviewField('review_expiry_date', normalizeIsoDate(ext.expiry_date || ext.date_of_expiry || ''), conf.expiry_date || conf.date_of_expiry, 'confTag_expiry_date');
   setReviewField('review_issuing_country', ext.issuing_country || ext.nationality || '', conf.issuing_country, 'confTag_issuing_country');
-  setReviewField('review_birth_place', ext.place_of_birth || ext.birth_place || '', conf.place_of_birth, 'confTag_birth_place');
+  setReviewField('review_birth_place', ext.place_of_birth || ext.birth_place || '', conf.place_of_birth || conf.birth_place, 'confTag_birth_place');
 
   const modal = new bootstrap.Modal(document.getElementById('ocrReviewModal'));
   modal.show();
@@ -1366,8 +1387,20 @@ function openOcrReviewModal(data) {
 
 function setReviewField(inputId, val, confScore, tagId) {
   const el = document.getElementById(inputId);
-  const cleanVal = (val !== null && val !== undefined) ? String(val).trim() : '';
-  if (el) el.value = cleanVal;
+  let cleanVal = (val !== null && val !== undefined) ? String(val).trim() : '';
+  if (el && (el.type === 'date' || el._flatpickr)) {
+    cleanVal = normalizeIsoDate(cleanVal);
+  }
+  if (el) {
+    el.value = cleanVal;
+    if (el._flatpickr) {
+      if (cleanVal) {
+        try { el._flatpickr.setDate(cleanVal, true, 'Y-m-d'); } catch (e) {}
+      } else {
+        try { el._flatpickr.clear(); } catch (e) {}
+      }
+    }
+  }
 
   const tag = document.getElementById(tagId);
   if (!tag) return;
@@ -1391,6 +1424,15 @@ function setReviewField(inputId, val, confScore, tagId) {
     tag.className = 'conf-tag conf-low';
     tag.innerText = `⚠ Low`;
   }
+}
+
+function getReviewFieldValue(inputId) {
+  const el = document.getElementById(inputId);
+  if (!el) return '';
+  if (el._flatpickr && el._flatpickr.selectedDates && el._flatpickr.selectedDates.length > 0) {
+    return el._flatpickr.formatDate(el._flatpickr.selectedDates[0], 'Y-m-d');
+  }
+  return normalizeIsoDate(el.value.trim());
 }
 
 // User inline correction in review modal
@@ -1428,12 +1470,13 @@ function applyOcrDataToForm() {
   const surname = document.getElementById('review_surname').value.trim();
   const givenNames = document.getElementById('review_given_names').value.trim();
   const nat = document.getElementById('review_nationality').value.trim();
-  const dob = document.getElementById('review_dob').value.trim();
+  const dob = getReviewFieldValue('review_dob');
   const gender = document.getElementById('review_gender').value;
-  const issueDate = document.getElementById('review_issue_date').value.trim();
-  const expiryDate = document.getElementById('review_expiry_date').value.trim();
+  const issueDate = getReviewFieldValue('review_issue_date');
+  const expiryDate = getReviewFieldValue('review_expiry_date');
   const issuingCountry = document.getElementById('review_issuing_country').value.trim();
   const birthPlace = document.getElementById('review_birth_place').value.trim();
+  const placeOfIssue = (currentOcrData?.extracted?.place_of_issue || currentOcrData?.data?.place_of_issue || '').trim();
 
   // Name splitting (Given Names -> First + Middle, Surname -> Last)
   const nameParts = givenNames.split(/\s+/).filter(Boolean);
@@ -1442,7 +1485,7 @@ function applyOcrDataToForm() {
 
   // Development-only debugging pipeline log (Requirement #20)
   console.group('Passport OCR Auto-Fill Debug Pipeline');
-  console.log('1. REVIEW MODAL VALUES:', { pNum, surname, givenNames, nat, dob, gender, issueDate, expiryDate, issuingCountry, birthPlace });
+  console.log('1. REVIEW MODAL VALUES:', { pNum, surname, givenNames, nat, dob, gender, issueDate, expiryDate, issuingCountry, birthPlace, placeOfIssue });
   console.log('2. DOM APPLICATION FIELD MAPPING:');
   console.log('   passport_number -> #passportNoInput =', pNum);
   console.log('   nationality -> #nationalityInput =', nat);
@@ -1456,6 +1499,7 @@ function applyOcrDataToForm() {
   console.log('   passport_issue_date -> #issueDateInput =', issueDate);
   console.log('   passport_expiry_date -> #expiryDateInput =', expiryDate);
   console.log('   passport_issuing_country -> #issuingCountryInput =', issuingCountry);
+  console.log('   passport_place_of_issue -> #placeOfIssueInput =', placeOfIssue);
   console.groupEnd();
 
   // Populate main form fields
@@ -1477,13 +1521,14 @@ function applyOcrDataToForm() {
   if (expiryDate) setFormValue('expiryDateInput', expiryDate, 'prov_expiry_date');
   if (issuingCountry) setFormValue('issuingCountryInput', issuingCountry, 'prov_issuing_country');
   if (birthPlace) setFormValue('birthPlaceInput', birthPlace, 'prov_place_of_birth');
+  if (placeOfIssue) setFormValue('placeOfIssueInput', placeOfIssue, 'prov_place_of_issue');
 
-  if (gender === 'Female') {
-    document.getElementById('genderFemale').checked = true;
-  } else if (gender === 'Male') {
-    document.getElementById('genderMale').checked = true;
-  }
   if (gender) {
+    if (gender.toLowerCase() === 'female') {
+      document.getElementById('genderFemale').checked = true;
+    } else {
+      document.getElementById('genderMale').checked = true;
+    }
     setProvenancePill('prov_gender', 'ocr');
   }
 
@@ -1517,7 +1562,18 @@ function applyOcrDataToForm() {
 function setFormValue(id, val, provId) {
   const el = document.getElementById(id);
   if (el) {
-    el.value = val;
+    const isoVal = normalizeIsoDate(val);
+    const finalVal = isoVal || val;
+    el.value = finalVal;
+    if (el._flatpickr) {
+      if (finalVal) {
+        try { el._flatpickr.setDate(finalVal, true, 'Y-m-d'); } catch (e) {}
+      } else {
+        try { el._flatpickr.clear(); } catch (e) {}
+      }
+    }
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
     setProvenancePill(provId, 'ocr');
   }
 }

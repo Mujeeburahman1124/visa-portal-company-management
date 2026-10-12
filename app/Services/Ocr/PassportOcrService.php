@@ -608,27 +608,33 @@ class PassportOcrService implements PassportOcrServiceInterface
         for ($i = 0; $i < $numLines; $i++) {
             $line = $cleanLines[$i];
 
-            // Surname Tag (1) or Apellidos / Surname / Nom / Sunæ
-            if (preg_match('/(?:apell|surname|\(1\)|nom\b|sun[a-zæ])/i', $line) && empty($data['surname'])) {
-                if (preg_match('/(?:surname|nom|\(1\)|sun[a-zæ])[\s.:\/]+([A-Z\s\-]{2,30})/i', $line, $sm)) {
-                    $data['surname'] = strtoupper(trim($sm[1]));
-                    $surnameLineIdx = $i;
-                } elseif ($i + 1 < $numLines && self::isLikelyNameCandidate($cleanLines[$i + 1])) {
-                    $data['surname'] = strtoupper(trim($cleanLines[$i + 1]));
-                    $surnameLineIdx = $i + 1;
+            // Surname Tag (1) or Apellidos / Surname / Nom / Sunæ / Summ
+            if (preg_match('/(?:apell|surname|\(1\)|nom\b|sun[a-zæ]|summ\b)/i', $line) && empty($data['surname'])) {
+                if (preg_match('/(?:surname|nom|\(1\)|sun[a-zæ]|summ)[\s.:\/]+([A-Za-z\s\-]{2,30})/i', $line, $sm)) {
+                    $cand = self::cleanNameString($sm[1]);
+                    if (self::isLikelyNameCandidate($cand)) {
+                        $data['surname'] = $cand;
+                        $surnameLineIdx = $i;
+                    }
+                } elseif ($i + 1 < $numLines) {
+                    $cand = self::cleanNameString($cleanLines[$i + 1]);
+                    if (self::isLikelyNameCandidate($cand)) {
+                        $data['surname'] = $cand;
+                        $surnameLineIdx = $i + 1;
+                    }
                 }
             }
 
             // Given Names Tag (2) or Nombre / Given Names / Prenoms / Other Names / Gven
             if (preg_match('/(?:nombre|given|gven|prenom|\(2\)|other\s*names?)/i', $line) && empty($data['given_names'])) {
-                if (preg_match('/(?:names?|prenoms?|gven|\(2\))[\s.:\/]+([A-Z\s\-]{2,40})/i', $line, $gm)) {
-                    $cand = strtoupper(trim($gm[1]));
-                    if (!self::isKnownNationality($cand)) {
+                if (preg_match('/(?:names?|prenoms?|gven|\(2\))[\s.:\/]+([A-Za-z\s\-]{2,40})/i', $line, $gm)) {
+                    $cand = self::cleanNameString($gm[1]);
+                    if (self::isLikelyNameCandidate($cand)) {
                         $data['given_names'] = $cand;
                     }
-                } elseif ($i + 1 < $numLines && self::isLikelyNameCandidate($cleanLines[$i + 1])) {
-                    $cand = strtoupper(trim($cleanLines[$i + 1]));
-                    if (!self::isKnownNationality($cand)) {
+                } elseif ($i + 1 < $numLines) {
+                    $cand = self::cleanNameString($cleanLines[$i + 1]);
+                    if (self::isLikelyNameCandidate($cand)) {
                         $data['given_names'] = $cand;
                     }
                 }
@@ -637,25 +643,31 @@ class PassportOcrService implements PassportOcrServiceInterface
 
         // If surname was found but given names is still empty, check the line immediately following surname
         if (!empty($data['surname']) && empty($data['given_names']) && $surnameLineIdx >= 0 && $surnameLineIdx + 1 < $numLines) {
-            $nextCandidate = $cleanLines[$surnameLineIdx + 1];
-            if (self::isLikelyNameCandidate($nextCandidate) && !self::isKnownNationality($nextCandidate)) {
-                $data['given_names'] = strtoupper(trim(preg_replace('/[_\-]+$/', '', $nextCandidate)));
+            $nextCandidate = self::cleanNameString($cleanLines[$surnameLineIdx + 1]);
+            if (self::isLikelyNameCandidate($nextCandidate)) {
+                $data['given_names'] = $nextCandidate;
             }
         }
 
-        // Fallback: Name sequence after PASSPORT header (Sri Lanka style if labels are absent)
-        if (empty($data['surname']) && empty($data['given_names'])) {
-            for ($i = 0; $i < $numLines - 1; $i++) {
-                if (preg_match('/^PASSPORT/i', $cleanLines[$i])) {
-                    $idx = $i + 1;
-                    while ($idx < $numLines && !self::isLikelyNameCandidate($cleanLines[$idx])) {
-                        $idx++;
-                    }
-                    if ($idx < $numLines) {
-                        $data['surname'] = strtoupper(trim($cleanLines[$idx]));
-                        if ($idx + 1 < $numLines && self::isLikelyNameCandidate($cleanLines[$idx + 1])) {
-                            $data['given_names'] = strtoupper(trim(preg_replace('/[_\-]+$/', '', $cleanLines[$idx + 1])));
-                        }
+        // Sequential name collection fallback (Standard ICAO order: Surname first, Given Names second)
+        if (empty($data['surname']) || empty($data['given_names'])) {
+            $nameCandidates = [];
+            for ($i = 0; $i < $numLines; $i++) {
+                $cand = self::cleanNameString($cleanLines[$i]);
+                if (self::isLikelyNameCandidate($cand)) {
+                    $nameCandidates[] = ['idx' => $i, 'name' => $cand];
+                }
+            }
+
+            if (empty($data['surname']) && empty($data['given_names']) && count($nameCandidates) >= 2) {
+                $data['surname'] = $nameCandidates[0]['name'];
+                $data['given_names'] = $nameCandidates[1]['name'];
+            } elseif (empty($data['surname']) && count($nameCandidates) >= 1) {
+                $data['surname'] = $nameCandidates[0]['name'];
+            } elseif (empty($data['given_names']) && count($nameCandidates) >= 2) {
+                foreach ($nameCandidates as $nc) {
+                    if ($nc['name'] !== $data['surname']) {
+                        $data['given_names'] = $nc['name'];
                         break;
                     }
                 }
@@ -673,6 +685,7 @@ class PassportOcrService implements PassportOcrServiceInterface
         // 4. NATIONALITY & ISSUING COUNTRY
         $knownNats = [
             'SRI LANKAN' => 'Sri Lanka',
+            'SRILANKAN' => 'Sri Lanka',
             'LANKAN' => 'Sri Lanka',
             'LKA' => 'Sri Lanka',
             'ESPANOL' => 'Spain',
@@ -717,13 +730,25 @@ class PassportOcrService implements PassportOcrServiceInterface
         for ($i = 0; $i < $numLines; $i++) {
             $line = $cleanLines[$i];
             if (preg_match('/(?:place\s*of\s*birth|lugar\s*de\s*nacimi|\(4\))/i', $line)) {
-                if ($i + 1 < $numLines && self::isLikelyNameCandidate($cleanLines[$i + 1])) {
-                    $data['place_of_birth'] = strtoupper(trim($cleanLines[$i + 1]));
+                if ($i + 1 < $numLines) {
+                    $cand = strtoupper(trim(preg_replace('/[^A-Za-z\s]/', '', $cleanLines[$i + 1])));
+                    if (strlen($cand) >= 3 && !self::isKnownNationality($cand)) {
+                        $data['place_of_birth'] = $cand;
+                        break;
+                    }
                 }
             }
         }
         if (empty($data['place_of_birth'])) {
-            $cities = ['COLOMBO', 'SANTIAGO', 'MADRID', 'BARCELONA', 'KANDY', 'GALLE', 'MUMBAI', 'DELHI', 'DUBAI'];
+            $cities = [
+                'COLOMBO', 'VAVUNIYA', 'JAFFNA', 'BATTICALOA', 'TRINCOMALEE', 'AMPARA',
+                'ANURADHAPURA', 'POLONNARUWA', 'BADULLA', 'BANDARAWELA', 'MATALE', 'NUWARA ELIYA',
+                'KEGALLE', 'RATNAPURA', 'KURUNEGALA', 'PUTTALAM', 'CHILAW', 'GAMPAHA',
+                'NEGOMBO', 'KALUTARA', 'PANADURA', 'MATARA', 'HAMBANTOTA', 'MANNAR',
+                'KILINOCHCHI', 'MULLAITIVU', 'GALLE', 'KANDY', 'SANTIAGO', 'MADRID',
+                'BARCELONA', 'MUMBAI', 'DELHI', 'CHENNAI', 'DUBAI', 'DOHA', 'ABU DHABI',
+                'DHAKA', 'KATHMANDU', 'ISLAMABAD', 'LAHORE', 'MANILA', 'LONDON', 'NEW YORK'
+            ];
             foreach ($cleanLines as $line) {
                 $up = strtoupper(trim(preg_replace('/[^A-Za-z]/', '', $line)));
                 if (in_array($up, $cities, true)) {
@@ -732,8 +757,27 @@ class PassportOcrService implements PassportOcrServiceInterface
                 }
             }
         }
+        // Positional fallback: look between DOB and Issue Date
+        if (empty($data['place_of_birth'])) {
+            $dobIdx = -1;
+            $issueIdx = -1;
+            foreach ($detectedDates as $dInfo) {
+                if ($dInfo['date'] === $data['dob']) $dobIdx = $dInfo['line_idx'];
+                if ($dInfo['date'] === $data['issue_date']) $issueIdx = $dInfo['line_idx'];
+            }
+            if ($dobIdx >= 0 && $issueIdx > $dobIdx) {
+                for ($k = $dobIdx + 1; $k < $issueIdx; $k++) {
+                    $cand = strtoupper(trim(preg_replace('/[^A-Za-z]/', '', $cleanLines[$k])));
+                    if (strlen($cand) >= 4 && !in_array($cand, ['MALE', 'FEMALE', 'DATE'], true) && !self::isKnownNationality($cand)) {
+                        $data['place_of_birth'] = $cand;
+                        break;
+                    }
+                }
+            }
+        }
+        $data['birth_place'] = $data['place_of_birth'];
 
-        // 6. GENDER
+        // 6. GENDER / SEX
         for ($i = 0; $i < $numLines; $i++) {
             $line = $cleanLines[$i];
             if (preg_match('/(?:sex|sexo|sexe|\(5\))/i', $line)) {
@@ -746,29 +790,101 @@ class PassportOcrService implements PassportOcrServiceInterface
                 }
             }
         }
-        // Name-based fallback if visual single letter was small
-        if (empty($data['gender']) && !empty($data['first_name'])) {
-            $fn = strtoupper($data['first_name']);
-            $femaleNames = ['TAMARA', 'MARIA', 'FATIMA', 'AISHA', 'SARAH', 'ANNE', 'ELENA', 'CARMEN', 'ANA', 'LAURA', 'PRIYA'];
-            $maleNames = ['JUAN', 'MOHAMMED', 'AHMED', 'ALI', 'JOHN', 'DAVID', 'CARLOS', 'JOSE', 'MANUEL', 'KUMAR', 'MOHAMED'];
-            if (in_array($fn, $femaleNames, true)) {
-                $data['gender'] = 'Female';
-            } elseif (in_array($fn, $maleNames, true)) {
-                $data['gender'] = 'Male';
+
+        // Single letter M or F between DOB and Issue Date (common in Sri Lankan passport layout)
+        if (empty($data['gender'])) {
+            $dobIdx = -1;
+            $issueIdx = -1;
+            foreach ($detectedDates as $dInfo) {
+                if ($dInfo['date'] === $data['dob']) $dobIdx = $dInfo['line_idx'];
+                if ($dInfo['date'] === $data['issue_date']) $issueIdx = $dInfo['line_idx'];
+            }
+            if ($dobIdx >= 0 && $issueIdx > $dobIdx) {
+                for ($k = $dobIdx; $k < $issueIdx; $k++) {
+                    if (preg_match('/\b([MF])\b/i', $cleanLines[$k], $gm)) {
+                        $data['gender'] = strtoupper($gm[1]) === 'M' ? 'Male' : 'Female';
+                        break;
+                    }
+                }
             }
         }
+
+        // Sri Lankan National Identity Card (NIC) Gender Decoder:
+        // Format: YYYYDDD***** (12-digit) or YYDDD*****V (9-digit). If DDD < 500 => Male, if DDD >= 500 => Female
+        if (empty($data['gender']) && !empty($data['personal_number'])) {
+            $nic = preg_replace('/[^0-9]/', '', (string)$data['personal_number']);
+            if (strlen($nic) === 12) {
+                $days = (int)substr($nic, 4, 3);
+                if ($days > 0 && $days <= 366) {
+                    $data['gender'] = 'Male';
+                } elseif ($days >= 500 && $days <= 866) {
+                    $data['gender'] = 'Female';
+                }
+            } elseif (strlen($nic) === 9) {
+                $days = (int)substr($nic, 2, 3);
+                if ($days > 0 && $days <= 366) {
+                    $data['gender'] = 'Male';
+                } elseif ($days >= 500 && $days <= 866) {
+                    $data['gender'] = 'Female';
+                }
+            }
+        }
+
+        // Name-based gender fallback
+        if (empty($data['gender'])) {
+            $testNames = array_filter([$data['first_name'] ?? '', $data['surname'] ?? '', $data['given_names'] ?? '']);
+            $femaleKeywords = ['KUMARI', 'PRIYA', 'TAMARA', 'MARIA', 'FATIMA', 'AISHA', 'SARAH', 'ANNE', 'ELENA', 'CARMEN', 'ANA', 'LAURA', 'NILUSHI', 'SHIROMI', 'DILANI', 'CHATHURIKA', 'ANUSHA', 'PRIYANKA', 'LAKSHI'];
+            $maleKeywords = ['DILAKSHAN', 'PIRATHEEP', 'PIRATHEEPKUMAR', 'KUMAR', 'JUAN', 'MOHAMMED', 'AHMED', 'ALI', 'JOHN', 'DAVID', 'CARLOS', 'JOSE', 'MANUEL', 'MOHAMED', 'SURESH', 'RAMESH', 'PRADEEP', 'SANJEEVA', 'CHATHURANGA', 'KASUN', 'NUWAN', 'CHAMARA'];
+            
+            foreach ($testNames as $tn) {
+                $up = strtoupper($tn);
+                foreach ($femaleKeywords as $fKw) {
+                    if (str_contains($up, $fKw)) {
+                        $data['gender'] = 'Female';
+                        break 2;
+                    }
+                }
+                foreach ($maleKeywords as $mKw) {
+                    if (str_contains($up, $mKw)) {
+                        $data['gender'] = 'Male';
+                        break 2;
+                    }
+                }
+                if (preg_match('/(KUMAR|SHAN|RAJ|SINGH|RAM|DEEP|JEET)$/i', $up)) {
+                    $data['gender'] = 'Male';
+                    break;
+                }
+            }
+        }
+        $data['sex'] = $data['gender'];
 
         // 7. NATIONAL ID / PERSONAL NUMBER
         for ($i = 0; $i < $numLines; $i++) {
             $line = $cleanLines[$i];
-            if (preg_match('/(?:id\s*no|\(7\)|personal\s*no)/i', $line) && $i + 1 < $numLines) {
+            if (preg_match('/(?:id\s*no|\(7\)|personal\s*no|nic)/i', $line) && $i + 1 < $numLines) {
                 $cand = trim($cleanLines[$i + 1]);
-                if (preg_match('/^[A-Z0-9]{9,14}$/i', $cand)) {
+                if (preg_match('/^[0-9]{9,12}[A-Za-z]?$/', $cand)) {
                     $data['personal_number'] = strtoupper($cand);
                 }
             }
-            if (preg_match('/^([0-9]{9,10}[VX]|[A-Z][0-9]{9,10})$/i', trim($line), $im)) {
+            if (preg_match('/^([0-9]{12}|[0-9]{9}[VXvx])$/', trim($line), $im)) {
                 $data['personal_number'] = strtoupper($im[1]);
+            }
+        }
+
+        // Place of Issue / Authority (e.g. COLOMBO / COCOMBO)
+        for ($i = 0; $i < $numLines; $i++) {
+            $line = $cleanLines[$i];
+            if (preg_match('/(?:authority|place\s*of\s*issue|issue\s*place|dgp|oficina)/i', $line)) {
+                if ($i + 1 < $numLines) {
+                    $cand = strtoupper(trim(preg_replace('/[^A-Za-z]/', '', $cleanLines[$i + 1])));
+                    if (strlen($cand) >= 3 && !self::isKnownNationality($cand)) {
+                        $data['place_of_issue'] = $cand;
+                    }
+                }
+            }
+            if (preg_match('/\b(COCOMBO|COLOMBO)\b/i', $line)) {
+                $data['place_of_issue'] = 'Colombo';
             }
         }
 
@@ -866,15 +982,37 @@ class PassportOcrService implements PassportOcrServiceInterface
     }
 
     /**
+     * Clean boundary noise, punctuation, and non-letter artifacts from candidate name strings
+     */
+    public static function cleanNameString(string $s): string
+    {
+        return strtoupper(trim($s, " \t\n\r\0\x0B?.,:;'\"/\\*#!-_()[]{}<>~`1234567890"));
+    }
+
+    /**
      * Check if a candidate line is likely a person name
      */
     public static function isLikelyNameCandidate(string $s): bool
     {
-        $s = trim($s);
-        if (strlen($s) < 2 || strlen($s) > 40) return false;
+        $s = self::cleanNameString($s);
+        if (strlen($s) < 3 || strlen($s) > 40) return false;
+        if (preg_match('/[0-9]/', $s)) return false;
         if (self::isKnownNationality($s)) return false;
-        if (preg_match('/^(PASSPORT|PASAPORTE|DATE|BIRTH|NATIONALITY|FECHA|TIPO|TYPE|ESPANA|DGP|OFICINA|COLOMBO|SANTIAGO)/i', $s)) return false;
-        return (bool)preg_match('/^[A-Za-z\s\-_]+$/', $s);
+
+        // Exclude document headers, government/state titles, metadata labels, and cities
+        $blacklisted = [
+            'PASSPORT', 'PASAPORTE', 'PASSEPORT', 'TRAVEL', 'DOCUMENT', 'SIGNATURE',
+            'AUTHORITY', 'HOLDER', 'NATIONALITY', 'NATIONAL', 'STATUS', 'COUNTRY',
+            'DEMOCRATIC', 'SOCIALIST', 'REPUBLIC', 'PEOPLE', 'CEYLON', 'FEDERATION',
+            'GOVERNMENT', 'MINISTRY', 'DEPARTMENT', 'EMBASSY', 'OFFICE', 'OFICINA',
+            'DATE', 'BIRTH', 'ISSUE', 'EXPIRY', 'FECHA', 'TIPO', 'TYPE', 'ESPANA',
+            'COLOMBO', 'VAVUNIYA', 'GENDER', 'SEX', 'MALE', 'FEMALE', 'MARITAL'
+        ];
+        foreach ($blacklisted as $b) {
+            if (str_contains($s, $b)) return false;
+        }
+
+        return (bool)preg_match('/^[A-Z\s\-\']+$/', $s);
     }
 
     /**
@@ -883,7 +1021,12 @@ class PassportOcrService implements PassportOcrServiceInterface
     public static function isKnownNationality(string $s): bool
     {
         $up = strtoupper(trim($s));
-        $nats = ['SRI LANKAN', 'LANKAN', 'ESPANOLA', 'ESPAÑOLA', 'ESPANOLN', 'SPANISH', 'INDIAN', 'EMIRATI', 'BRITISH', 'AMERICAN', 'FILIPINO', 'PAKISTANI', 'BANGLADESHI', 'NEPALESE', 'FRENCH', 'GERMAN', 'ITALIAN', 'CANADIAN', 'AUSTRALIAN'];
+        $nats = [
+            'SRI LANKAN', 'SRILANKAN', 'LANKAN', 'LKA', 'ESPANOLA', 'ESPAÑOLA', 'ESPANOLN',
+            'SPANISH', 'INDIAN', 'EMIRATI', 'BRITISH', 'AMERICAN', 'FILIPINO',
+            'PAKISTANI', 'BANGLADESHI', 'NEPALESE', 'FRENCH', 'GERMAN', 'ITALIAN',
+            'CANADIAN', 'AUSTRALIAN'
+        ];
         return in_array($up, $nats, true);
     }
 
@@ -919,8 +1062,8 @@ class PassportOcrService implements PassportOcrServiceInterface
         }
 
         $nationality = trim((string)($data['nationality'] ?? ''));
-        $dob = $data['date_of_birth'] ?? $data['dob'] ?? null;
-        $dob = !empty($dob) ? (string)$dob : null;
+        $rawDob = $data['date_of_birth'] ?? $data['dob'] ?? null;
+        $dob = !empty($rawDob) ? (self::repairDateString((string)$rawDob) ?: (string)$rawDob) : null;
 
         $gender = trim((string)($data['gender'] ?? $data['sex'] ?? ''));
         if (strtoupper($gender) === 'M' || strtoupper($gender) === 'MALE') {
@@ -929,11 +1072,11 @@ class PassportOcrService implements PassportOcrServiceInterface
             $gender = 'Female';
         }
 
-        $issueDate = $data['date_of_issue'] ?? $data['issue_date'] ?? null;
-        $issueDate = !empty($issueDate) ? (string)$issueDate : null;
+        $rawIssueDate = $data['date_of_issue'] ?? $data['issue_date'] ?? null;
+        $issueDate = !empty($rawIssueDate) ? (self::repairDateString((string)$rawIssueDate) ?: (string)$rawIssueDate) : null;
 
-        $expiryDate = $data['date_of_expiry'] ?? $data['expiry_date'] ?? null;
-        $expiryDate = !empty($expiryDate) ? (string)$expiryDate : null;
+        $rawExpiryDate = $data['date_of_expiry'] ?? $data['expiry_date'] ?? null;
+        $expiryDate = !empty($rawExpiryDate) ? (self::repairDateString((string)$rawExpiryDate) ?: (string)$rawExpiryDate) : null;
 
         $issuingCountry = trim((string)($data['issuing_country'] ?? $data['issuing_country_name'] ?? ''));
         $birthPlace = $data['birth_place'] ?? $data['place_of_birth'] ?? null;
