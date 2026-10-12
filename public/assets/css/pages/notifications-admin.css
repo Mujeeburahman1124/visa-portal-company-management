@@ -76,7 +76,7 @@
   margin: 0;
 }
 
-/* Bento KPI Grid */
+/* Bento KPI Grid & Status Section (Harmonized with Visa Tracking / Bento reference) */
 .bento-ops-kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -163,6 +163,43 @@
   color: var(--bento-text-muted);
 }
 
+/* Enhancements for .bento-stat-card in Notification Ops */
+.notif-ops-dashboard .bento-stat-card {
+  min-height: 125px;
+  padding: 1.15rem 1.1rem;
+  border-radius: 18px;
+  border: 1.5px solid var(--bento-border);
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04);
+}
+
+.notif-ops-dashboard .bento-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.08);
+  border-color: var(--bento-border-hover);
+}
+
+.notif-ops-dashboard .bento-stat-card.featured-card {
+  background: linear-gradient(135deg, var(--bento-primary, #E11D48) 0%, #BE123C 100%);
+  border-color: var(--bento-primary, #E11D48);
+  box-shadow: 0 8px 25px -4px rgba(225, 29, 72, 0.28);
+}
+
+.notif-ops-dashboard .bento-stat-card.featured-card .bento-arrow-circle {
+  background: #FFFFFF;
+  color: var(--bento-primary, #E11D48);
+  border-color: transparent;
+}
+
+.notif-ops-dashboard .bento-stat-card.featured-card .bento-arrow-circle:hover {
+  background: #FFF1F2;
+}
+
+.notif-ops-dashboard .bento-stat-value {
+  font-family: 'JetBrains Mono', 'Outfit', sans-serif;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
 /* Tabbed Operations Container */
 .notif-ops-tab-card {
   background: var(--bento-card-bg);
@@ -214,13 +251,50 @@
   padding: 1.5rem;
 }
 
-/* Filter Bar */
+/* Filter Bar (Modern Bento Styling matching Visa Tracking Reference) */
 .notif-ops-filter-box {
-  background: #F8FAFC;
-  border: 1px solid var(--bento-border);
-  border-radius: 14px;
-  padding: 1rem 1.25rem;
+  background: #FFFFFF;
+  border: 1.5px solid var(--bento-border);
+  border-radius: 18px;
+  padding: 1.25rem 1.35rem;
   margin-bottom: 1.5rem;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04);
+}
+
+.notif-ops-filter-box .form-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bento-text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.notif-ops-filter-box .form-control,
+.notif-ops-filter-box .form-select {
+  border-color: #E2E8F0;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  background-color: #F8FAFC;
+  transition: all 0.2s ease;
+}
+
+.notif-ops-filter-box .form-control:focus,
+.notif-ops-filter-box .form-select:focus {
+  background-color: #FFFFFF;
+  border-color: var(--bento-primary, #E11D48);
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12);
+}
+
+.notif-ops-filter-box .input-group-text {
+  border-color: #E2E8F0;
+  border-radius: 10px 0 0 10px;
+  background-color: #F8FAFC !important;
+}
+
+.notif-ops-filter-box .btn {
+  font-size: 0.84rem;
+  padding: 0.45rem 1.15rem;
 }
 
 /* Delivery Logs Table */
@@ -228,17 +302,19 @@
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
+  min-width: 1050px;
 }
 
 .ops-logs-table thead th {
   background: #F8FAFC;
   color: var(--bento-text-muted);
-  font-size: 0.75rem;
+  font-size: 0.76rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0.85rem 1rem;
   border-bottom: 1px solid var(--bento-border);
+  white-space: nowrap;
 }
 
 .ops-logs-table tbody tr {
@@ -256,6 +332,15 @@
   vertical-align: middle;
 }
 
+.ops-logs-table td[data-label="Status"] {
+  white-space: nowrap !important;
+  min-width: 120px;
+}
+
+.ops-logs-table td[data-label="Provider / Error"] {
+  min-width: 190px;
+}
+
 /* Channel & Status Badges */
 .badge-channel-whatsapp {
   background: rgba(16, 185, 129, 0.12);
@@ -268,6 +353,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  white-space: nowrap;
 }
 
 .badge-channel-email {
@@ -281,6 +367,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  white-space: nowrap;
 }
 
 .badge-channel-inapp {
@@ -294,42 +381,63 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  white-space: nowrap;
+}
+
+/* Status Badges - Inline-Flex, Row & White-Space No-Wrap to prevent icon/text vertical stacking */
+.badge-status-sent,
+.badge-status-simulated,
+.badge-status-failed,
+.badge-status-retry {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.35rem !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  line-height: 1.2 !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  padding: 0.32rem 0.7rem !important;
+  border-radius: 9999px !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.badge-status-sent i,
+.badge-status-simulated i,
+.badge-status-failed i,
+.badge-status-retry i {
+  font-size: 0.7rem !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+  display: inline-block !important;
 }
 
 .badge-status-sent {
-  background: #10B981;
-  color: #FFFFFF;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.25rem 0.6rem;
-  border-radius: 9999px;
+  background: #10B981 !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .badge-status-simulated {
-  background: #0284C7;
-  color: #FFFFFF;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.25rem 0.6rem;
-  border-radius: 9999px;
+  background: #0284C7 !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(2, 132, 199, 0.3);
 }
 
 .badge-status-failed {
-  background: #E11D48;
-  color: #FFFFFF;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.25rem 0.6rem;
-  border-radius: 9999px;
+  background: #E11D48 !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(225, 29, 72, 0.3);
 }
 
 .badge-status-retry {
-  background: #F59E0B;
-  color: #FFFFFF;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.25rem 0.6rem;
-  border-radius: 9999px;
+  background: #F59E0B !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 /* Event Category Card */
@@ -353,23 +461,73 @@
   font-size: 0.9rem;
 }
 
-/* Responsive Table to Cards Transformation */
+/* Responsive Table & Layout Transformation (Harmonized with Visa Tracking reference) */
 @media (max-width: 991.98px) {
+  .notif-ops-dashboard {
+    padding-bottom: 5.5rem;
+  }
   .notif-ops-hero {
     padding: 1.25rem 1rem;
+    border-radius: 16px;
   }
   .notif-ops-hero-title {
     font-size: 1.3rem;
   }
-  .bento-ops-kpi-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
+  .notif-ops-hero-desc {
+    font-size: 0.82rem;
   }
-  .bento-ops-kpi-card {
-    padding: 1rem;
+  .notif-ops-filter-box {
+    padding: 1rem 0.85rem;
+    border-radius: 14px;
   }
-  .bento-ops-kpi-value {
-    font-size: 1.4rem;
+
+  /* Bento Stat Grid 2x2 on Tablet & Mobile (Harmonized with Visa Tracking) */
+  .notif-ops-dashboard .bento-stat-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .notif-ops-dashboard .bento-stat-grid > [class*="col-"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    flex: none !important;
+  }
+
+  .notif-ops-dashboard .bento-stat-card {
+    min-height: 115px !important;
+    padding: 0.95rem 0.85rem !important;
+    border-radius: 16px !important;
+  }
+
+  .notif-ops-dashboard .bento-stat-top {
+    gap: 0.35rem !important;
+  }
+
+  .notif-ops-dashboard .bento-stat-title {
+    font-size: 0.76rem !important;
+    line-height: 1.25 !important;
+    font-weight: 600 !important;
+  }
+
+  .notif-ops-dashboard .bento-arrow-circle {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 0.7rem !important;
+  }
+
+  .notif-ops-dashboard .bento-stat-value {
+    font-size: 1.55rem !important;
+    margin: 0.35rem 0 !important;
+    line-height: 1.1 !important;
+  }
+
+  .notif-ops-dashboard .bento-stat-badge {
+    font-size: 0.68rem !important;
   }
 
   .ops-logs-table {
@@ -426,7 +584,26 @@
 }
 
 @media (max-width: 575.98px) {
-  .bento-ops-kpi-grid {
-    grid-template-columns: 1fr;
+  .notif-ops-dashboard .bento-stat-grid {
+    gap: 0.5rem !important;
+  }
+  .notif-ops-dashboard .bento-stat-card {
+    min-height: 105px !important;
+    padding: 0.8rem 0.7rem !important;
+    border-radius: 14px !important;
+  }
+  .notif-ops-dashboard .bento-stat-title {
+    font-size: 0.72rem !important;
+  }
+  .notif-ops-dashboard .bento-stat-value {
+    font-size: 1.35rem !important;
+  }
+  .notif-ops-filter-box {
+    padding: 0.85rem 0.75rem;
+  }
+  .notif-ops-filter-box .btn {
+    flex: 1 1 auto;
+    text-align: center;
+    justify-content: center;
   }
 }
