@@ -526,6 +526,19 @@ class ApplicationController
         $paymentType = $isPayNow ? 'Pay Now' : 'Pay Later';
         $paymentStatus = 'Unpaid';
 
+        // Self-heal applications schema if source_type or visit_reason are missing in current DB
+        try {
+            $pdo->query("SELECT source_type, visit_reason FROM applications LIMIT 1");
+        } catch (\Throwable $colEx) {
+            try {
+                $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                $srcDef = ($driver === 'mysql') ? "VARCHAR(100) DEFAULT 'Direct'" : "TEXT DEFAULT 'Direct'";
+                $visDef = ($driver === 'mysql') ? "TEXT NULL" : "TEXT NULL";
+                $pdo->exec("ALTER TABLE applications ADD COLUMN source_type {$srcDef}");
+                $pdo->exec("ALTER TABLE applications ADD COLUMN visit_reason {$visDef}");
+            } catch (\Throwable $ignored) {}
+        }
+
         $pdo->beginTransaction();
         try {
             $insSql = "INSERT INTO applications (

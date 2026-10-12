@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 35;
+    private const SCHEMA_VERSION = 36;
 
     public static function init(bool $force = false): void
     {
@@ -3669,10 +3669,24 @@ class DatabaseBootstrapper
             'rejection_reason'   => ($driver === 'mysql') ? 'TEXT NULL' : 'TEXT NULL',
             'return_reason'      => ($driver === 'mysql') ? 'TEXT NULL' : 'TEXT NULL',
             'return_deadline'    => ($driver === 'mysql') ? 'DATE NULL' : 'TEXT NULL',
+            'source_type'        => ($driver === 'mysql') ? "VARCHAR(100) DEFAULT 'Direct'" : "TEXT DEFAULT 'Direct'",
+            'visit_reason'       => ($driver === 'mysql') ? 'TEXT NULL' : 'TEXT NULL',
         ];
         foreach ($appUniversalCols as $col => $def) {
             try {
                 $pdo->exec("ALTER TABLE applications ADD COLUMN {$col} {$def};");
+            } catch (\Throwable $e) {}
+        }
+
+        $docUniversalCols = [
+            'ocr_status'     => ($driver === 'mysql') ? 'VARCHAR(50) NULL' : 'TEXT NULL',
+            'ocr_confidence' => ($driver === 'mysql') ? 'DECIMAL(5,2) NULL' : 'REAL NULL',
+            'ocr_provider'   => ($driver === 'mysql') ? 'VARCHAR(100) NULL' : 'TEXT NULL',
+            'ocr_data'       => ($driver === 'mysql') ? 'LONGTEXT NULL' : 'TEXT NULL',
+        ];
+        foreach ($docUniversalCols as $col => $def) {
+            try {
+                $pdo->exec("ALTER TABLE documents ADD COLUMN {$col} {$def};");
             } catch (\Throwable $e) {}
         }
     }

@@ -229,8 +229,22 @@ class DocumentApiController extends ApiController
         ];
 
         // Process OCR extraction
-        $ocrService = new \App\Services\Ocr\PassportOcrService();
-        $ocrResult = $ocrService->extract($targetPath, ['original_name' => $origName, 'mime_type' => $mimeType]);
+        try {
+            $ocrService = new \App\Services\Ocr\PassportOcrService();
+            $ocrResult = $ocrService->extract($targetPath, ['original_name' => $origName, 'mime_type' => $mimeType]);
+        } catch (\Throwable $e) {
+            error_log("[OCR ERROR] Passport OCR process failure for {$origName}: " . $e->getMessage());
+            $ocrResult = [
+                'success' => false,
+                'message' => 'Passport OCR could not process this document. Please enter details manually.',
+                'ocr_provider' => 'error',
+                'overall_confidence' => 0,
+                'mrz_detected' => false,
+                'extracted' => [],
+                'confidence' => [],
+                'warnings' => ['ocr_exception']
+            ];
+        }
 
         $previewUrl = '/api/documents/temp-preview?token=' . urlencode($token);
 

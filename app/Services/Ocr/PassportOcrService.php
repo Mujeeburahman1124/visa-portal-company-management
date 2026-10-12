@@ -80,12 +80,17 @@ class PassportOcrService implements PassportOcrServiceInterface
 
         // Dispatch to appropriate provider
         $providerUsed = $configuredProvider;
-        $ocrData = match ($configuredProvider) {
-            'google_vision' => $this->extractViaGoogleVision($filePath),
-            'aws_textract' => $this->extractViaAwsTextract($filePath),
-            'azure_document_intelligence' => $this->extractViaAzure($filePath),
-            default => $this->extractViaLocalEngine($filePath)
-        };
+        try {
+            $ocrData = match ($configuredProvider) {
+                'google_vision' => $this->extractViaGoogleVision($filePath),
+                'aws_textract' => $this->extractViaAwsTextract($filePath),
+                'azure_document_intelligence' => $this->extractViaAzure($filePath),
+                default => $this->extractViaLocalEngine($filePath)
+            };
+        } catch (\Throwable $e) {
+            error_log(sprintf("[OCR] Provider '%s' failed: %s", $configuredProvider, $e->getMessage()));
+            $ocrData = ['text' => '', 'lines' => [], 'words' => []];
+        }
 
         if ($configuredProvider === 'auto' || $configuredProvider === 'local') {
             $providerUsed = 'local_windows_media_ocr';
@@ -259,25 +264,42 @@ class PassportOcrService implements PassportOcrServiceInterface
     }
 
     /**
-     * Local engine using native Windows Media OCR or PowerShell script
+     * Local engine using native Windows Media OCR or PowerShell script with safe fallback
      */
     private function extractViaLocalEngine(string $filePath): array
     {
-        $scriptPath = dirname(__DIR__, 3) . '/scripts/windows_ocr.ps1';
-        if (!file_exists($scriptPath)) {
-            $scriptPath = dirname(__DIR__, 2) . '/scripts/windows_ocr.ps1';
-        }
-        if (!file_exists($scriptPath)) {
+        $hasShellExecution = $this->isFunctionAvailable('shell_exec')
+            || $this->isFunctionAvailable('exec')
+            || $this->isFunctionAvailable('proc_open')
+            || $this->isFunctionAvailable('passthru');
+
+        if (!$hasShellExecution) {
+            error_log("[OCR Notice] Local OCR skipped: System command execution functions (shell_exec, exec, proc_open) are disabled in php.ini. Consider configuring GOOGLE_VISION_API_KEY in .env for cloud OCR.");
             return ['text' => '', 'lines' => [], 'words' => []];
         }
 
-        $cmd = sprintf(
-            'powershell -NoProfile -ExecutionPolicy Bypass -File %s -ImagePath %s 2>&1',
-            escapeshellarg($scriptPath),
-            escapeshellarg($filePath)
-        );
+        $isWindows = (DIRECTORY_SEPARATOR === '\\' || stripos(PHP_OS, 'WIN') === 0);
+        $output = null;
 
-        $output = shell_exec($cmd);
+        if ($isWindows) {
+            $scriptPath = dirname(__DIR__, 3) . '/scripts/windows_ocr.ps1';
+            if (!file_exists($scriptPath)) {
+                $scriptPath = dirname(__DIR__, 2) . '/scripts/windows_ocr.ps1';
+            }
+            if (file_exists($scriptPath)) {
+                $cmd = sprintf(
+                    'powershell -NoProfile -ExecutionPolicy Bypass -File %s -ImagePath %s 2>&1',
+                    escapeshellarg($scriptPath),
+                    escapeshellarg($filePath)
+                );
+                $output = $this->runShellCommand($cmd);
+            }
+        } else {
+            // Linux / Unix environment: Check for Tesseract if installed
+            $cmd = sprintf('tesseract %s stdout -l eng+osd 2>/dev/null', escapeshellarg($filePath));
+            $output = $this->runShellCommand($cmd);
+        }
+
         if (!$output) {
             return ['text' => '', 'lines' => [], 'words' => []];
         }
@@ -302,6 +324,109 @@ class PassportOcrService implements PassportOcrServiceInterface
         $text = (string)$output;
         $lines = preg_split('/[\r\n]+/', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
         return ['text' => $text, 'lines' => $lines, 'words' => []];
+    }
+
+    /**
+     * Safely executes a system shell command with fallback across execution mechanisms
+     * and rigorous checks for disabled functions in php.ini.
+     * Prevents fatal "Call to undefined function" errors on secured or shared hosting environments.
+     */
+    private function runShellCommand(string $cmd): ?string
+    {
+        // 1. Try shell_exec if available and not disabled
+        if ($this->isFunctionAvailable('shell_exec')) {
+            try {
+                $output = @\shell_exec($cmd);
+                if ($output !== false && $output !== null) {
+                    return (string)$output;
+                }
+            } catch (\Throwable $e) {
+                error_log("[OCR] shell_exec execution failed: " . $e->getMessage());
+            }
+        }
+
+        // 2. Fallback to exec if available and not disabled
+        if ($this->isFunctionAvailable('exec')) {
+            try {
+                $outputLines = [];
+                $returnCode = 0;
+                @\exec($cmd, $outputLines, $returnCode);
+                if (!empty($outputLines)) {
+                    return implode("\n", $outputLines);
+                }
+            } catch (\Throwable $e) {
+                error_log("[OCR] exec execution failed: " . $e->getMessage());
+            }
+        }
+
+        // 3. Fallback to proc_open if available and not disabled
+        if ($this->isFunctionAvailable('proc_open')) {
+            try {
+                $descriptors = [
+                    0 => ['pipe', 'r'],
+                    1 => ['pipe', 'w'],
+                    2 => ['pipe', 'w']
+                ];
+                $process = @\proc_open($cmd, $descriptors, $pipes);
+                if (is_resource($process)) {
+                    if (isset($pipes[0]) && is_resource($pipes[0])) {
+                        @fclose($pipes[0]);
+                    }
+                    $stdout = isset($pipes[1]) && is_resource($pipes[1]) ? (string)@stream_get_contents($pipes[1]) : '';
+                    if (isset($pipes[1]) && is_resource($pipes[1])) {
+                        @fclose($pipes[1]);
+                    }
+                    if (isset($pipes[2]) && is_resource($pipes[2])) {
+                        @fclose($pipes[2]);
+                    }
+                    @\proc_close($process);
+                    if (trim($stdout) !== '') {
+                        return $stdout;
+                    }
+                }
+            } catch (\Throwable $e) {
+                error_log("[OCR] proc_open execution failed: " . $e->getMessage());
+            }
+        }
+
+        // 4. Fallback to passthru if available and not disabled
+        if ($this->isFunctionAvailable('passthru')) {
+            try {
+                ob_start();
+                @\passthru($cmd);
+                $captured = ob_get_clean();
+                if ($captured !== false && trim((string)$captured) !== '') {
+                    return (string)$captured;
+                }
+            } catch (\Throwable $e) {
+                if (ob_get_level() > 0) {
+                    @ob_end_clean();
+                }
+                error_log("[OCR] passthru execution failed: " . $e->getMessage());
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if a PHP native function is callable and not listed in php.ini disable_functions
+     */
+    private function isFunctionAvailable(string $functionName): bool
+    {
+        if (!function_exists($functionName)) {
+            return false;
+        }
+
+        $disabled = (string)ini_get('disable_functions');
+        if ($disabled !== '') {
+            $disabledList = array_map('trim', explode(',', strtolower($disabled)));
+            if (in_array(strtolower($functionName), $disabledList, true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
