@@ -38,6 +38,11 @@ set_exception_handler(function (\Throwable $e): void {
         \App\Services\LogService::exception($e, ['type' => 'unhandled_exception']);
     }
 
+    // Sentry Cloud Error Monitoring (if SENTRY_DSN is configured in .env)
+    if (class_exists(\App\Services\SentryService::class)) {
+        \App\Services\SentryService::captureException($e);
+    }
+
     // Log the error into activity_logs so Super Admin can inspect it
     try {
         if (class_exists(\App\Services\AuditService::class)) {
@@ -123,6 +128,9 @@ register_shutdown_function(function (): void {
         error_log(sprintf('[VISA-TRACK] FATAL in %s:%d — %s', $err['file'], $err['line'], $err['message']));
         if (class_exists(\App\Services\LogService::class)) {
             \App\Services\LogService::error($err['message'], ['type' => 'fatal', 'file' => $err['file'], 'line' => $err['line']]);
+        }
+        if (class_exists(\App\Services\SentryService::class)) {
+            \App\Services\SentryService::captureFatal($err['message'], $err['file'], (int)$err['line']);
         }
     }
 });
