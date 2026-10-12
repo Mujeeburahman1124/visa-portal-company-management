@@ -824,15 +824,15 @@ $currentUser = auth_user();
                   <div class="col-md-6">
                     <label class="form-label small fw-semibold">Primary Brand Color</label>
                     <div class="input-group input-group-sm">
-                      <input type="color" name="settings[theme_primary_color]" id="themePrimaryColor" class="form-control form-control-color border-0 p-0" style="width: 36px; height: 32px; border-radius: 6px; cursor: pointer;" value="<?= e($settings['theme_primary_color'] ?? '#0284c7') ?>" oninput="syncColorInput('primary', this.value)">
-                      <input type="text" id="themePrimaryColorHex" class="form-control font-monospace" value="<?= e($settings['theme_primary_color'] ?? '#0284c7') ?>" oninput="syncColorHex('primary', this.value)">
+                      <input type="color" name="settings[theme_primary_color]" id="themePrimaryColor" class="form-control form-control-color border-0 p-0" style="width: 36px; height: 32px; border-radius: 6px; cursor: pointer;" value="<?= e($settings['theme_primary_color'] ?? '#e11d48') ?>" oninput="syncColorInput('primary', this.value)">
+                      <input type="text" id="themePrimaryColorHex" class="form-control font-monospace" value="<?= e($settings['theme_primary_color'] ?? '#e11d48') ?>" oninput="syncColorHex('primary', this.value)">
                     </div>
                   </div>
                   <div class="col-md-6">
                     <label class="form-label small fw-semibold">Accent / Action Color</label>
                     <div class="input-group input-group-sm">
-                      <input type="color" name="settings[theme_accent_color]" id="themeAccentColor" class="form-control form-control-color border-0 p-0" style="width: 36px; height: 32px; border-radius: 6px; cursor: pointer;" value="<?= e($settings['theme_accent_color'] ?? '#059669') ?>" oninput="syncColorInput('accent', this.value)">
-                      <input type="text" id="themeAccentColorHex" class="form-control font-monospace" value="<?= e($settings['theme_accent_color'] ?? '#059669') ?>" oninput="syncColorHex('accent', this.value)">
+                      <input type="color" name="settings[theme_accent_color]" id="themeAccentColor" class="form-control form-control-color border-0 p-0" style="width: 36px; height: 32px; border-radius: 6px; cursor: pointer;" value="<?= e($settings['theme_accent_color'] ?? '#0f172a') ?>" oninput="syncColorInput('accent', this.value)">
+                      <input type="text" id="themeAccentColorHex" class="form-control font-monospace" value="<?= e($settings['theme_accent_color'] ?? '#0f172a') ?>" oninput="syncColorHex('accent', this.value)">
                     </div>
                   </div>
                 </div>

@@ -151,12 +151,6 @@ $uriSegments = array_filter(explode('/', trim($currentUri, '/')));
       </a>
     <?php endif; ?>
 
-    <!-- Theme Palette Selector (Circular macOS button, responsive on all devices) -->
-    <div class="theme-selector-wrap flex-shrink-0">
-      <button class="theme-selector-btn" type="button" aria-label="Choose Theme" title="Choose Theme">
-        <span class="theme-swatch-current"></span>
-      </button>
-    </div>
 
     <!-- Notification Bell with Dropdown Panel -->
     <div class="dropdown flex-shrink-0">

@@ -52,27 +52,20 @@
     'dark-mode': 'obsidian-dark',
   };
 
-  /* ── Read saved theme (runs before DOM ready to avoid flash) ── */
+  /* ── Read saved theme (enforces official brand red logo identity) ── */
   function getSavedTheme() {
     try {
-      let t = localStorage.getItem(STORAGE_KEY);
-      if (t && LEGACY_THEME_MAP[t]) {
-        t = LEGACY_THEME_MAP[t];
-        try { localStorage.setItem(STORAGE_KEY, t); } catch (e) {}
-      }
-      return (t && THEMES.some(function(item) { return item.id === t; })) ? t : DEFAULT_THEME;
-    } catch (e) {
-      return DEFAULT_THEME;
-    }
+      localStorage.setItem(STORAGE_KEY, DEFAULT_THEME);
+    } catch (e) {}
+    return DEFAULT_THEME;
   }
 
   function saveTheme(id) {
-    try { localStorage.setItem(STORAGE_KEY, id); } catch (e) {}
+    try { localStorage.setItem(STORAGE_KEY, DEFAULT_THEME); } catch (e) {}
   }
 
   function applyTheme(id) {
-    const valid = THEMES.find(t => t.id === id);
-    const theme = valid ? id : DEFAULT_THEME;
+    const theme = DEFAULT_THEME;
     document.documentElement.setAttribute('data-theme', theme);
     if (document.body) {
       document.body.setAttribute('data-theme', theme);
