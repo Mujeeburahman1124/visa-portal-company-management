@@ -4,7 +4,7 @@ $agentAuth = $_SESSION['agent_auth'] ?? [];
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 function agentNavActive(string $path): string {
     global $currentPath;
-    return str_starts_with($currentPath, $path) ? 'active fw-semibold' : '';
+    return str_starts_with($currentPath, $path) ? 'active' : '';
 }
 ?>
 <!DOCTYPE html>
@@ -12,59 +12,101 @@ function agentNavActive(string $path): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= e($pageTitle ?? 'Agent Portal — MS Travel Hub') ?></title>
-  <!-- Official Favicon -->
-  <link rel="icon" type="image/png" href="/assets/images/logo.png">
+  <title><?= e($pageTitle ?? 'Agent Portal — MS TRAVEL HUB') ?></title>
+  
+  <!-- Favicons -->
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png?v=2">
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2">
+  <link rel="apple-touch-icon" href="/assets/images/logo.png">
+
+  <!-- Premium Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Frameworks & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  
+  <!-- Base Application Styles & Datepicker -->
   <link rel="stylesheet" href="/assets/css/main.css?v=7.0.0">
   <link rel="stylesheet" href="/assets/css/flatpickr.min.css">
   <script src="/assets/js/flatpickr.min.js"></script>
   <script src="/assets/js/app-datepicker.js?v=1.0.0"></script>
 
-  <style>
-    .agent-navbar { background: linear-gradient(135deg, #070a12 0%, #064e3b 35%, #0369a1 70%, #1d4ed8 100%); }
-    .agent-navbar .nav-link { color: rgba(255,255,255,.85) !important; font-size:.9rem; padding:.5rem .9rem; border-radius:6px; transition:background .2s; }
-    .agent-navbar .nav-link:hover, .agent-navbar .nav-link.active { background:rgba(255,255,255,.15); color:#fff !important; }
-    .agent-navbar .navbar-brand { color:#fff !important; font-weight:700; }
-    .agent-portal-body { background:#f0fdf4; min-height:100vh; font-family:'Times New Roman', Times, serif; }
-    .agent-card { background:#fff; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,.07); padding:1.5rem; margin-bottom:1.25rem; border:1px solid #d1fae5; }
-    .stat-agent { background:#fff; border-radius:10px; padding:1.25rem; border:1px solid #d1fae5; display:flex; align-items:center; gap:1rem; }
-    .stat-agent-icon { width:42px;height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem; }
-  </style>
+  <!-- Agent Portal Bento Design System (Official Brand Red #E11D48 Theme) -->
+  <link rel="stylesheet" href="/assets/css/pages/agent-bento.css?v=<?= time() ?>">
 </head>
 <body class="agent-portal-body">
 
-<nav class="navbar navbar-expand-lg agent-navbar px-3 py-2 shadow-sm mb-0">
-  <a class="navbar-brand d-flex align-items-center gap-2" href="/agent/dashboard">
-    <img src="/assets/images/logo.png" alt="MS Travel Hub" style="height: 36px; width: auto;" class="bg-white p-1 rounded-2 shadow-sm">
-    <span>MS TRAVEL HUB</span>
-    <span class="text-white-50 small" style="font-size: 0.72rem;">| AGENT PORTAL</span>
-    <span class="badge bg-white text-success ms-1" style="font-size:.65rem;"><?= e($agentAuth['agent_code'] ?? '') ?></span>
-  </a>
-  <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#agentNav">
-    <span class="navbar-toggler-icon" style="filter:invert(1)"></span>
-  </button>
-  <div class="collapse navbar-collapse" id="agentNav">
-    <ul class="navbar-nav ms-3 me-auto gap-1">
-      <li class="nav-item"><a class="nav-link <?= agentNavActive('/agent/dashboard') ?>" href="/agent/dashboard"><i class="fa-solid fa-gauge me-1"></i>Dashboard</a></li>
-      <li class="nav-item"><a class="nav-link <?= agentNavActive('/agent/applications') ?>" href="/agent/applications"><i class="fa-solid fa-folder-open me-1"></i>My Applications</a></li>
-      <li class="nav-item"><a class="nav-link <?= agentNavActive('/agent/create') ?>" href="/agent/create-application"><i class="fa-solid fa-plus-circle me-1"></i>New Application</a></li>
-      <li class="nav-item"><a class="nav-link <?= agentNavActive('/agent/profile') ?>" href="/agent/profile"><i class="fa-solid fa-user-circle me-1"></i>Profile &amp; Payments</a></li>
-    </ul>
-    <div class="d-flex align-items-center gap-2">
-      <span class="text-white small opacity-75"><?= e($agentAuth['company_name'] ?? '') ?></span>
-      <a href="/agent/logout" class="btn btn-sm btn-outline-light fw-semibold">
-        <i class="fa-solid fa-right-from-bracket me-1"></i>Logout
-      </a>
+<nav class="navbar navbar-expand-lg agent-navbar">
+  <div class="container-fluid px-lg-4">
+    <!-- Brand & Identity -->
+    <a class="navbar-brand" href="/agent/dashboard">
+      <img src="/assets/images/logo.png" alt="MS Travel Hub" class="agent-brand-logo">
+      <div class="d-flex flex-column">
+        <span class="agent-brand-title">MS <span class="brand-gem">TRAVEL HUB</span></span>
+      </div>
+      <span class="agent-portal-tag ms-1">
+        <i class="fa-solid fa-briefcase"></i> Agent Portal
+      </span>
+      <?php if (!empty($agentAuth['agent_code'])): ?>
+        <span class="agent-code-tag d-none d-sm-inline-flex">
+          <?= e($agentAuth['agent_code']) ?>
+        </span>
+      <?php endif; ?>
+    </a>
+
+    <!-- Mobile Menu Toggle -->
+    <button class="navbar-toggler border-0 p-2 text-white shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#agentNav" aria-controls="agentNav" aria-expanded="false" aria-label="Toggle navigation">
+      <i class="fa-solid fa-bars fs-5"></i>
+    </button>
+
+    <!-- Nav Links & Agency Profile -->
+    <div class="collapse navbar-collapse" id="agentNav">
+      <ul class="navbar-nav mx-auto my-2 my-lg-0 gap-1">
+        <li class="nav-item">
+          <a class="nav-link <?= agentNavActive('/agent/dashboard') ?>" href="/agent/dashboard">
+            <i class="fa-solid fa-gauge"></i> <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <?= agentNavActive('/agent/applications') ?>" href="/agent/applications">
+            <i class="fa-solid fa-folder-open"></i> <span>My Applications</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <?= agentNavActive('/agent/create') ?>" href="/agent/create-application">
+            <i class="fa-solid fa-circle-plus"></i> <span>New Application</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <?= agentNavActive('/agent/profile') ?>" href="/agent/profile">
+            <i class="fa-solid fa-user-gear"></i> <span>Profile &amp; Payments</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- User & Session Controls -->
+      <div class="d-flex flex-wrap align-items-center gap-2 pt-2 pt-lg-0">
+        <div class="agent-agency-pill">
+          <i class="fa-solid fa-building"></i>
+          <span><?= e($agentAuth['company_name'] ?? 'Agent Partner') ?></span>
+        </div>
+        <a href="/agent/logout" class="agent-btn-logout" title="Sign out of Agent Portal">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Logout</span>
+        </a>
+      </div>
     </div>
   </div>
 </nav>
-<div class="container-fluid px-4 py-4">
+
+<div class="container-fluid px-3 px-md-4 py-4" style="max-width: 1440px;">
 <?php if (!empty($flash)): ?>
-  <div class="alert alert-<?= e($flash['type']) ?> alert-dismissible fade show mb-3">
-    <i class="fa-solid <?= $flash['type']==='danger'?'fa-circle-exclamation':'fa-circle-check' ?> me-2"></i>
-    <?= e($flash['message']) ?>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : 'success') ?> alert-dismissible fade show d-flex align-items-center gap-2 py-2 px-3 small mb-4 border-0 shadow-sm rounded-3">
+    <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation' : 'fa-circle-check' ?> fs-6"></i>
+    <div class="flex-grow-1 fw-semibold"><?= e($flash['message']) ?></div>
+    <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
   </div>
 <?php endif; ?>

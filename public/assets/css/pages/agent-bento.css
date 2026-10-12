@@ -1,0 +1,696 @@
+/* ==========================================================================
+   AGENT PORTAL — MODERN BENTO UI SYSTEM
+   Harmonized with MS Travel Hub Official Logo Brand Red (#E11D48) & Bento Design
+   ========================================================================== */
+
+:root {
+  /* Brand Identity (MS Ruby Prestige) */
+  --agent-primary: #E11D48;
+  --agent-primary-hover: #BE123C;
+  --agent-primary-light: #FB7185;
+  --agent-primary-soft: #FFF1F3;
+  --agent-primary-border: #FFE4E6;
+  --agent-primary-glow: rgba(225, 29, 72, 0.22);
+
+  /* Slate & Dark Accents */
+  --agent-dark-nav: #0B0F19;
+  --agent-dark-surface: #0F172A;
+  --agent-dark-hover: #1E293B;
+
+  /* Neutrals & Surfaces */
+  --agent-bg: #F8FAFC;
+  --agent-card-bg: #FFFFFF;
+  --agent-border: #E2E8F0;
+  --agent-border-subtle: #F1F5F9;
+  --agent-text-main: #0F172A;
+  --agent-text-muted: #64748B;
+  --agent-text-subtle: #94A3B8;
+
+  /* Status Colors */
+  --agent-success: #059669;
+  --agent-success-soft: #ECFDF5;
+  --agent-warning: #D97706;
+  --agent-warning-soft: #FFFBEB;
+  --agent-info: #0284C7;
+  --agent-info-soft: #F0F9FF;
+  --agent-danger: #DC2626;
+  --agent-danger-soft: #FEF2F2;
+
+  /* Geometry & Shadows */
+  --agent-radius-xl: 20px;
+  --agent-radius-lg: 16px;
+  --agent-radius-md: 12px;
+  --agent-radius-sm: 8px;
+  --agent-radius-pill: 9999px;
+  --agent-shadow-card: 0 4px 20px -4px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --agent-shadow-hover: 0 12px 30px -6px rgba(15, 23, 42, 0.10), 0 4px 10px -2px rgba(0, 0, 0, 0.03);
+}
+
+/* Base Body */
+body.agent-portal-body {
+  background-color: var(--agent-bg) !important;
+  color: var(--agent-text-main) !important;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   AGENT PORTAL TOP NAVBAR
+   ───────────────────────────────────────────────────────────────────────── */
+.agent-navbar {
+  background: var(--agent-dark-nav) !important;
+  border-bottom: 1px solid rgba(225, 29, 72, 0.25) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  padding: 0.65rem 1.5rem !important;
+  position: sticky;
+  top: 0;
+  z-index: 1040;
+}
+
+.agent-navbar .navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  padding: 0;
+}
+
+.agent-brand-logo {
+  width: 40px;
+  height: 40px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  object-fit: contain;
+  background: #FFFFFF;
+  padding: 2px;
+  box-shadow: 0 0 14px var(--agent-primary-glow), 0 2px 6px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.agent-navbar .navbar-brand:hover .agent-brand-logo {
+  transform: scale(1.05);
+}
+
+.agent-brand-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.18rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #FFFFFF;
+  line-height: 1;
+  margin: 0;
+}
+
+.agent-brand-title .brand-gem {
+  color: var(--agent-primary);
+}
+
+.agent-portal-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.6rem;
+  background: rgba(225, 29, 72, 0.15);
+  border: 1px solid rgba(225, 29, 72, 0.35);
+  border-radius: var(--agent-radius-pill);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #FDA4AF;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.agent-code-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.55rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--agent-radius-pill);
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
+  color: #E2E8F0;
+  letter-spacing: 0.04em;
+}
+
+/* Nav Links */
+.agent-navbar .nav-link {
+  color: rgba(255, 255, 255, 0.75) !important;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.55rem 0.95rem !important;
+  border-radius: var(--agent-radius-pill);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.agent-navbar .nav-link:hover {
+  color: #FFFFFF !important;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.agent-navbar .nav-link.active {
+  color: #FFFFFF !important;
+  background: var(--agent-primary) !important;
+  box-shadow: 0 4px 12px var(--agent-primary-glow);
+}
+
+/* Agency User Badge & Actions */
+.agent-agency-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--agent-radius-pill);
+  color: #FFFFFF;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.agent-agency-pill i {
+  color: var(--agent-primary-light);
+}
+
+.agent-btn-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.9rem;
+  border-radius: var(--agent-radius-pill);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #FFFFFF !important;
+  background: rgba(225, 29, 72, 0.15);
+  border: 1px solid rgba(225, 29, 72, 0.35);
+  text-decoration: none !important;
+  transition: all 0.2s ease;
+}
+
+.agent-btn-logout:hover {
+  background: var(--agent-primary);
+  border-color: var(--agent-primary);
+  box-shadow: 0 4px 14px var(--agent-primary-glow);
+  transform: translateY(-1px);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   PAGE HEADER (BENTO TITLE & ACTIONS)
+   ───────────────────────────────────────────────────────────────────────── */
+.agent-header-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.agent-header-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--agent-text-main);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.agent-header-subtitle {
+  font-size: 0.92rem;
+  color: var(--agent-text-muted);
+  margin-top: 0.35rem;
+  margin-bottom: 0;
+}
+
+.agent-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, var(--agent-primary) 0%, var(--agent-primary-hover) 100%);
+  color: #FFFFFF !important;
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 0.65rem 1.35rem;
+  border-radius: var(--agent-radius-pill);
+  border: none;
+  text-decoration: none !important;
+  box-shadow: 0 4px 14px var(--agent-primary-glow);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.agent-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(225, 29, 72, 0.32);
+  color: #FFFFFF !important;
+}
+
+.agent-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #FFFFFF;
+  color: var(--agent-text-main) !important;
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: var(--agent-radius-pill);
+  border: 1px solid var(--agent-border);
+  text-decoration: none !important;
+  box-shadow: var(--agent-shadow-card);
+  transition: all 0.2s ease;
+}
+
+.agent-btn-outline:hover {
+  background: var(--agent-primary-soft);
+  color: var(--agent-primary) !important;
+  border-color: var(--agent-primary-light);
+  transform: translateY(-1px);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   TOP 4 BENTO METRIC STAT CARDS
+   ───────────────────────────────────────────────────────────────────────── */
+.agent-stat-card {
+  position: relative;
+  background: var(--agent-card-bg);
+  border: 1.5px solid var(--agent-border-subtle);
+  border-radius: var(--agent-radius-xl);
+  padding: 1.35rem 1.4rem;
+  box-shadow: var(--agent-shadow-card);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 165px;
+  overflow: hidden;
+}
+
+.agent-stat-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--agent-border);
+  box-shadow: var(--agent-shadow-hover);
+}
+
+/* Featured Brand Red Stat Card */
+.agent-stat-card.featured-card {
+  background: linear-gradient(135deg, var(--agent-primary) 0%, var(--agent-primary-hover) 100%);
+  border-color: var(--agent-primary);
+  color: #FFFFFF !important;
+  box-shadow: 0 10px 30px -4px var(--agent-primary-glow);
+}
+
+.agent-stat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.agent-stat-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--agent-text-muted);
+  letter-spacing: -0.01em;
+}
+
+.featured-card .agent-stat-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.agent-stat-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--agent-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  background: var(--agent-bg);
+  color: var(--agent-text-main);
+  transition: transform 0.2s ease;
+}
+
+.featured-card .agent-stat-icon-wrap {
+  background: rgba(255, 255, 255, 0.18);
+  color: #FFFFFF;
+}
+
+.agent-stat-card:hover .agent-stat-icon-wrap {
+  transform: scale(1.08);
+}
+
+.agent-stat-value {
+  font-family: 'Outfit', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--agent-text-main);
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+}
+
+.featured-card .agent-stat-value {
+  color: #FFFFFF;
+}
+
+.agent-stat-bottom {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--agent-text-muted);
+}
+
+.featured-card .agent-stat-bottom {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.agent-stat-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: var(--agent-radius-pill);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.featured-card .agent-stat-badge-pill {
+  background: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   BENTO CONTENT CARDS (CONTAINERS)
+   ───────────────────────────────────────────────────────────────────────── */
+.agent-bento-card {
+  background: var(--agent-card-bg);
+  border: 1.5px solid var(--agent-border-subtle);
+  border-radius: var(--agent-radius-xl);
+  padding: 1.5rem;
+  box-shadow: var(--agent-shadow-card);
+  margin-bottom: 1.5rem;
+}
+
+.agent-bento-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--agent-border-subtle);
+}
+
+.agent-bento-card-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--agent-text-main);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.agent-bento-card-title .card-title-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--agent-radius-sm);
+  background: var(--agent-primary-soft);
+  color: var(--agent-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+/* Quick Action Tiles */
+.agent-action-tile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+  border-radius: var(--agent-radius-lg);
+  border: 1.5px solid var(--agent-border-subtle);
+  background: var(--agent-card-bg);
+  color: var(--agent-text-main) !important;
+  text-decoration: none !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 0.75rem;
+}
+
+.agent-action-tile:hover {
+  border-color: var(--agent-primary-light);
+  background: var(--agent-primary-soft);
+  transform: translateX(4px);
+  box-shadow: var(--agent-shadow-card);
+}
+
+.agent-action-tile.tile-featured {
+  background: linear-gradient(135deg, var(--agent-primary) 0%, var(--agent-primary-hover) 100%);
+  border-color: var(--agent-primary);
+  color: #FFFFFF !important;
+  box-shadow: 0 6px 18px var(--agent-primary-glow);
+}
+
+.agent-action-tile.tile-featured:hover {
+  background: linear-gradient(135deg, var(--agent-primary-hover) 0%, var(--agent-primary) 100%);
+  transform: translateX(4px);
+}
+
+.tile-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--agent-radius-md);
+  background: var(--agent-bg);
+  color: var(--agent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.tile-featured .tile-icon-box {
+  background: rgba(255, 255, 255, 0.18);
+  color: #FFFFFF;
+}
+
+.tile-content {
+  flex-grow: 1;
+}
+
+.tile-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.tile-desc {
+  font-size: 0.78rem;
+  color: var(--agent-text-muted);
+  margin-top: 0.15rem;
+}
+
+.tile-featured .tile-desc {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.tile-arrow {
+  color: var(--agent-text-subtle);
+  font-size: 0.85rem;
+  transition: transform 0.2s ease;
+}
+
+.tile-featured .tile-arrow {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.agent-action-tile:hover .tile-arrow {
+  transform: translateX(3px);
+  color: var(--agent-primary);
+}
+
+.tile-featured:hover .tile-arrow {
+  color: #FFFFFF;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   BENTO TABLE & RECENT SUBMISSIONS
+   ───────────────────────────────────────────────────────────────────────── */
+.agent-table {
+  width: 100%;
+  margin-bottom: 0;
+  vertical-align: middle;
+}
+
+.agent-table thead th {
+  background: #F8FAFC !important;
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: var(--agent-text-muted) !important;
+  border-bottom: 1.5px solid var(--agent-border) !important;
+  padding: 0.85rem 1rem !important;
+  white-space: nowrap;
+}
+
+.agent-table tbody td {
+  padding: 0.95rem 1rem !important;
+  border-bottom: 1px solid var(--agent-border-subtle) !important;
+  font-size: 0.88rem;
+  color: var(--agent-text-main);
+  background: transparent;
+}
+
+.agent-table tbody tr {
+  transition: background-color 0.18s ease;
+}
+
+.agent-table tbody tr:hover {
+  background-color: #F8FAFC !important;
+}
+
+/* Status Badges */
+.agent-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.26rem 0.75rem;
+  border-radius: var(--agent-radius-pill);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.agent-status-badge.status-approved {
+  background: var(--agent-success-soft);
+  color: var(--agent-success);
+  border: 1px solid rgba(5, 150, 105, 0.25);
+}
+
+.agent-status-badge.status-processing {
+  background: var(--agent-info-soft);
+  color: var(--agent-info);
+  border: 1px solid rgba(2, 132, 199, 0.25);
+}
+
+.agent-status-badge.status-pending {
+  background: var(--agent-warning-soft);
+  color: var(--agent-warning);
+  border: 1px solid rgba(217, 119, 6, 0.25);
+}
+
+.agent-status-badge.status-action {
+  background: var(--agent-danger-soft);
+  color: var(--agent-danger);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+}
+
+.agent-status-badge.status-rejected {
+  background: #F1F5F9;
+  color: #475569;
+  border: 1px solid #CBD5E1;
+}
+
+/* Empty State */
+.agent-empty-box {
+  text-align: center;
+  padding: 3.5rem 1.5rem;
+}
+
+.agent-empty-icon-circle {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: var(--agent-primary-soft);
+  color: var(--agent-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 16px var(--agent-primary-glow);
+}
+
+.agent-empty-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--agent-text-main);
+  margin-bottom: 0.4rem;
+}
+
+.agent-empty-desc {
+  font-size: 0.88rem;
+  color: var(--agent-text-muted);
+  max-width: 380px;
+  margin: 0 auto 1.5rem auto;
+}
+
+/* Payment List */
+.agent-pay-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--agent-border-subtle);
+}
+
+.agent-pay-item:last-child {
+  border-bottom: none;
+}
+
+.agent-pay-ref {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--agent-text-main);
+}
+
+.agent-pay-meta {
+  font-size: 0.76rem;
+  color: var(--agent-text-muted);
+}
+
+.agent-pay-amount {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--agent-success);
+}
+
+/* Form Controls in Agent Portal */
+.agent-form-control {
+  background: #FFFFFF;
+  border: 1.5px solid var(--agent-border);
+  border-radius: var(--agent-radius-md);
+  padding: 0.65rem 0.95rem;
+  font-size: 0.9rem;
+  color: var(--agent-text-main);
+  transition: all 0.2s ease;
+}
+
+.agent-form-control:focus {
+  border-color: var(--agent-primary);
+  box-shadow: 0 0 0 3px var(--agent-primary-glow);
+  outline: none;
+}
