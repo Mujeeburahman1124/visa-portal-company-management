@@ -1298,30 +1298,77 @@ switch ($uri) {
         }
         break;
 
-    // Retired: Supplier Self-Service Portal (Removed from system requirements)
+    // Supplier Self-Service Portal
     case '/supplier':
     case '/supplier-portal':
     case '/supplier/login':
     case '/supplier-portal/login':
-    case '/supplier/activate':
-    case '/supplier-portal/activate':
-    case '/supplier/forgot-password':
-    case '/supplier-portal/forgot-password':
-    case '/supplier/reset-password':
-    case '/supplier-portal/reset-password':
+        $suppCtrl = new App\Controllers\SupplierPortalController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $suppCtrl->login();
+        } else {
+            $suppCtrl->showLogin();
+        }
+        break;
+
     case '/supplier/logout':
     case '/supplier-portal/logout':
+        (new App\Controllers\SupplierPortalController())->logout();
+        break;
+
     case '/supplier/dashboard':
     case '/supplier-portal/dashboard':
+        (new App\Controllers\SupplierPortalController())->dashboard();
+        break;
+
     case '/supplier/applications':
     case '/supplier-portal/applications':
+        (new App\Controllers\SupplierPortalController())->applications();
+        break;
+
     case '/supplier/update-status':
     case '/supplier-portal/update-status':
+        (new App\Controllers\SupplierPortalController())->updateStatus();
+        break;
+
     case '/supplier/payments':
     case '/supplier-portal/payments':
+        (new App\Controllers\SupplierPortalController())->payments();
+        break;
+
     case '/supplier/profile':
     case '/supplier-portal/profile':
-        redirect('/dashboard');
+        (new App\Controllers\SupplierPortalController())->profile();
+        break;
+
+    case '/supplier/forgot-password':
+    case '/supplier-portal/forgot-password':
+        $suppCtrl = new App\Controllers\SupplierPortalController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $suppCtrl->forgotPassword();
+        } else {
+            $suppCtrl->showForgotPassword();
+        }
+        break;
+
+    case '/supplier/reset-password':
+    case '/supplier-portal/reset-password':
+        $suppCtrl = new App\Controllers\SupplierPortalController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $suppCtrl->resetPassword();
+        } else {
+            $suppCtrl->showResetPassword();
+        }
+        break;
+
+    case '/supplier/activate':
+    case '/supplier-portal/activate':
+        $suppCtrl = new App\Controllers\SupplierPortalController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $suppCtrl->activate();
+        } else {
+            $suppCtrl->showActivate();
+        }
         break;
 
     // RESTful API Endpoints & Global Live Search

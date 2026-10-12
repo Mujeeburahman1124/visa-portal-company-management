@@ -1,0 +1,530 @@
+/* ==========================================================================
+   BENTO AUTHENTICATION & LOGIN UI SYSTEM — MS TRAVEL HUB
+   Harmonized with Official Logo Identity (Ruby Brand Red #E11D48) & Bento Design
+   ========================================================================== */
+
+:root {
+  --auth-primary: #E11D48;
+  --auth-primary-hover: #BE123C;
+  --auth-primary-light: #FB7185;
+  --auth-primary-soft: #FFF1F3;
+  --auth-primary-wash: #FFF5F7;
+  --auth-primary-border: #FCE7F3;
+  --auth-primary-glow: rgba(225, 29, 72, 0.28);
+  --auth-dark: #0F172A;
+  --auth-dark-surface: #1E293B;
+  --auth-text-main: #0F172A;
+  --auth-text-muted: #64748B;
+  --auth-border: #E2E8F0;
+  --auth-bg-input: #F8FAFC;
+  --auth-radius-card: 24px;
+  --auth-radius-input: 12px;
+  --auth-radius-btn: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body.auth-bento-body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: 'Outfit', 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: radial-gradient(ellipse at 50% 0%, #200913 0%, #0F172A 55%, #020617 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow-x: hidden;
+  color: var(--auth-text-main);
+  padding: 2rem 1rem;
+}
+
+/* Atmospheric Glow & Grid */
+.auth-ambient-glow-1 {
+  position: fixed;
+  top: -140px;
+  left: 20%;
+  width: 550px;
+  height: 550px;
+  background: radial-gradient(circle, rgba(225, 29, 72, 0.22) 0%, rgba(225, 29, 72, 0) 70%);
+  pointer-events: none;
+  filter: blur(55px);
+  z-index: 0;
+}
+
+.auth-ambient-glow-2 {
+  position: fixed;
+  bottom: -150px;
+  right: 20%;
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.14) 0%, rgba(225, 29, 72, 0) 70%);
+  pointer-events: none;
+  filter: blur(65px);
+  z-index: 0;
+}
+
+.auth-ambient-grid {
+  position: fixed;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Wrapper */
+.auth-container-wrap {
+  width: 100%;
+  max-width: 480px;
+  position: relative;
+  z-index: 2;
+  margin: auto;
+}
+
+/* Bento Card Shell */
+.auth-bento-card {
+  background: #FFFFFF;
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+  border-radius: var(--auth-radius-card);
+  padding: 2.5rem 2.25rem;
+  box-shadow: 
+    0 25px 60px -15px rgba(2, 6, 23, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.4) inset,
+    0 10px 30px -5px rgba(225, 29, 72, 0.14);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  position: relative;
+}
+
+/* Dark Bento Card (Executive Console) */
+.auth-bento-card-dark {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1.5px solid rgba(225, 29, 72, 0.35);
+  color: #F8FAFC;
+  box-shadow: 
+    0 25px 60px rgba(0, 0, 0, 0.8),
+    0 0 40px rgba(225, 29, 72, 0.16);
+}
+
+/* Logo Presentation */
+.auth-logo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.auth-logo-badge {
+  width: 68px;
+  height: 68px;
+  min-width: 68px;
+  min-height: 68px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 8px 24px -4px rgba(225, 29, 72, 0.25),
+    0 2px 6px rgba(0, 0, 0, 0.08);
+  border: 2px solid var(--auth-primary-border);
+  margin-bottom: 0.85rem;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.auth-logo-badge:hover {
+  transform: scale(1.05);
+  box-shadow: 
+    0 12px 30px -4px rgba(225, 29, 72, 0.35),
+    0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.auth-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+  display: block;
+}
+
+.auth-brand-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0F172A;
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+}
+
+.auth-bento-card-dark .auth-brand-name {
+  color: #FFFFFF;
+}
+
+.auth-brand-name .brand-gem {
+  color: var(--auth-primary);
+}
+
+.auth-brand-subtitle {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--auth-text-muted);
+}
+
+.auth-bento-card-dark .auth-brand-subtitle {
+  color: #94A3B8;
+}
+
+/* Portal Role Badge */
+.auth-portal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.95rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin-top: 0.65rem;
+  background: var(--auth-primary-soft);
+  color: var(--auth-primary);
+  border: 1px solid var(--auth-primary-border);
+}
+
+.auth-bento-card-dark .auth-portal-badge {
+  background: rgba(225, 29, 72, 0.18);
+  color: #FDA4AF;
+  border-color: rgba(225, 29, 72, 0.4);
+}
+
+/* Card Heading */
+.auth-heading-wrap {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.auth-heading-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin-bottom: 0.2rem;
+}
+
+.auth-bento-card-dark .auth-heading-title {
+  color: #FFFFFF;
+}
+
+.auth-heading-desc {
+  font-size: 0.82rem;
+  color: var(--auth-text-muted);
+  margin-bottom: 0;
+}
+
+.auth-bento-card-dark .auth-heading-desc {
+  color: #94A3B8;
+}
+
+/* Form Controls */
+.auth-form-group {
+  margin-bottom: 1.15rem;
+}
+
+.auth-form-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--auth-text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.auth-bento-card-dark .auth-form-label {
+  color: #CBD5E1;
+}
+
+.auth-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: var(--auth-radius-input);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.auth-bento-card-dark .auth-input-wrap {
+  background: #090D16;
+  border-color: #334155;
+}
+
+.auth-input-wrap:focus-within {
+  background: #FFFFFF;
+  border-color: var(--auth-primary);
+  box-shadow: 0 0 0 3.5px rgba(225, 29, 72, 0.14);
+}
+
+.auth-bento-card-dark .auth-input-wrap:focus-within {
+  background: #0B1120;
+  border-color: var(--auth-primary);
+  box-shadow: 0 0 0 3.5px rgba(225, 29, 72, 0.25);
+}
+
+.auth-input-icon {
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94A3B8;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.auth-input-wrap:focus-within .auth-input-icon {
+  color: var(--auth-primary);
+}
+
+.auth-input-field {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0.72rem 0.85rem 0.72rem 0;
+  font-size: 0.92rem;
+  font-family: inherit;
+  color: #0F172A;
+  outline: none;
+  min-width: 0;
+}
+
+.auth-bento-card-dark .auth-input-field {
+  color: #F8FAFC;
+}
+
+.auth-input-field::placeholder {
+  color: #94A3B8;
+  font-weight: 400;
+}
+
+.auth-pwd-toggle {
+  background: transparent;
+  border: none;
+  padding: 0 0.85rem;
+  color: #94A3B8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.auth-pwd-toggle:hover {
+  color: var(--auth-primary);
+}
+
+/* Checkbox & Options */
+.auth-options-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.35rem;
+  font-size: 0.82rem;
+}
+
+.auth-checkbox-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: var(--auth-text-muted);
+  user-select: none;
+}
+
+.auth-bento-card-dark .auth-checkbox-wrap {
+  color: #94A3B8;
+}
+
+.auth-checkbox-wrap input[type="checkbox"] {
+  accent-color: var(--auth-primary);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.auth-link {
+  color: var(--auth-primary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.auth-link:hover {
+  color: var(--auth-primary-hover);
+  text-decoration: underline;
+}
+
+/* Primary Submit Button */
+.auth-btn-primary {
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(135deg, var(--auth-primary) 0%, var(--auth-primary-hover) 100%);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--auth-radius-btn);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  box-shadow: 0 10px 25px -4px var(--auth-primary-glow);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+}
+
+.auth-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -4px rgba(225, 29, 72, 0.42);
+  color: #FFFFFF;
+}
+
+.auth-btn-primary:active {
+  transform: translateY(0);
+}
+
+.auth-btn-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Security Assurance Box */
+.auth-security-box {
+  margin-top: 1.5rem;
+  padding: 0.85rem 1rem;
+  background: #F8FAFC;
+  border: 1px dashed #E2E8F0;
+  border-radius: 14px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--auth-text-muted);
+}
+
+.auth-bento-card-dark .auth-security-box {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(225, 29, 72, 0.25);
+  color: #94A3B8;
+}
+
+.auth-security-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin-bottom: 0.2rem;
+}
+
+.auth-bento-card-dark .auth-security-line {
+  color: #F8FAFC;
+}
+
+/* Quick Switch / Alternate Portals */
+.auth-switch-links {
+  margin-top: 1.25rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid #F1F5F9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  color: var(--auth-text-muted);
+}
+
+.auth-bento-card-dark .auth-switch-links {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.auth-switch-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  background: #F1F5F9;
+  border-radius: 9999px;
+  color: var(--auth-dark);
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.auth-switch-pill:hover {
+  background: var(--auth-primary-soft);
+  color: var(--auth-primary);
+}
+
+.auth-bento-card-dark .auth-switch-pill {
+  background: #1E293B;
+  color: #CBD5E1;
+}
+
+.auth-bento-card-dark .auth-switch-pill:hover {
+  background: rgba(225, 29, 72, 0.2);
+  color: #FDA4AF;
+}
+
+/* Footer Note */
+.auth-footer-note {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.4;
+}
+
+.auth-footer-note span {
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 575.98px) {
+  body.auth-bento-body {
+    padding: 1rem 0.75rem;
+  }
+  .auth-bento-card {
+    padding: 1.75rem 1.25rem;
+    border-radius: 20px;
+  }
+  .auth-brand-name {
+    font-size: 1.35rem;
+  }
+  .auth-btn-primary {
+    height: 44px;
+    font-size: 0.9rem;
+  }
+  .auth-logo-badge {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    min-height: 60px;
+  }
+}
