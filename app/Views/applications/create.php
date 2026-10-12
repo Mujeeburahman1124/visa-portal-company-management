@@ -1425,6 +1425,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   <option value="French">French</option>
 </datalist>
 
+<!-- Client-Side In-Browser OCR Engine Fallback for Hosting / Linux Servers without native Tesseract -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
 <!-- JavaScript Data & Logic -->
 <script>
 const allServices = <?= json_encode($services) ?>;
@@ -2179,7 +2182,7 @@ function applyPreScanAndExecuteOcr() {
 }
 
 // Core OCR Execution Pipeline: Sends document to /api/documents/ocr-passport
-function executePassportOcr(fileOrBlob, filename = 'passport.jpg') {
+function executePassportOcr(fileOrBlob, filename = 'passport.jpg', clientOcrText = '', isFallbackAttempt = false) {
   // Show OCR progress overlay with animated checklist steps
   const overlay = document.getElementById('ocrProgressOverlay');
   const errorBanner = document.getElementById('ocrErrorBanner');
@@ -2190,6 +2193,9 @@ function executePassportOcr(fileOrBlob, filename = 'passport.jpg') {
 
   const formData = new FormData();
   formData.append('passport_file', fileOrBlob, filename);
+  if (clientOcrText) {
+    formData.append('client_ocr_text', clientOcrText);
+  }
   const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
   formData.append('csrf_token', csrfToken);
 
@@ -2202,19 +2208,81 @@ function executePassportOcr(fileOrBlob, filename = 'passport.jpg') {
   })
   .then(res => res.json())
   .then(resp => {
-    if (overlay) overlay.classList.add('d-none');
-    if (!resp.success || !resp.data) {
-      showOcrError('Extraction Notice', resp.message || 'Could not confidently read passport information. You can use the Crop & Clarify studio or enter details manually.');
+    if (resp.success && resp.data) {
+      if (overlay) overlay.classList.add('d-none');
+      currentOcrData = resp.data;
+      openOcrReviewModal(resp.data);
       return;
     }
 
-    currentOcrData = resp.data;
-    openOcrReviewModal(resp.data);
+    // If server OCR failed (e.g. Linux shared hosting with no local tesseract binary),
+    // automatically trigger in-browser WebAssembly OCR fallback!
+    if (!isFallbackAttempt) {
+      runClientSideOcrFallback(fileOrBlob, filename, resp?.data?.temp_token || '');
+    } else {
+      if (overlay) overlay.classList.add('d-none');
+      showOcrError('Extraction Notice', resp.message || 'Could not confidently read passport information. You can use the Crop & Clarify studio or enter details manually.');
+    }
   })
   .catch(err => {
-    if (overlay) overlay.classList.add('d-none');
-    showOcrError('Connection Error', 'Automatic extraction service temporarily unavailable. You can enter details manually.');
+    if (!isFallbackAttempt) {
+      runClientSideOcrFallback(fileOrBlob, filename, '');
+    } else {
+      if (overlay) overlay.classList.add('d-none');
+      showOcrError('Connection Error', 'Automatic extraction service temporarily unavailable. You can enter details manually.');
+    }
   });
+}
+
+// In-Browser WebAssembly OCR Fallback Engine (for Linux hosts lacking local OCR)
+function runClientSideOcrFallback(fileOrBlob, filename, tempToken) {
+  const overlay = document.getElementById('ocrProgressOverlay');
+  const statusTitle = document.getElementById('ocrStatusTitle');
+  if (statusTitle) {
+    statusTitle.innerHTML = '<i class="fa-solid fa-microchip text-primary me-2"></i> Analyzing via In-Browser Engine...';
+  }
+
+  const s2 = document.getElementById('ocrStep2');
+  const s3 = document.getElementById('ocrStep3');
+  const s4 = document.getElementById('ocrStep4');
+  if (s2) s2.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-primary"></i> Initializing WebAssembly neural OCR...';
+  if (s3) s3.innerHTML = '<i class="fa-regular fa-circle"></i> Reading text & MRZ character lines...';
+
+  if (typeof Tesseract !== 'undefined') {
+    Tesseract.recognize(
+      fileOrBlob,
+      'eng',
+      {
+        logger: m => {
+          if (m.status === 'recognizing text' && s3) {
+            const pct = Math.round((m.progress || 0) * 100);
+            s3.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-primary"></i> Reading characters (${pct}%)...`;
+          }
+        }
+      }
+    )
+    .then(result => {
+      const recognizedText = result?.data?.text || '';
+      if (recognizedText.trim() !== '') {
+        if (s3) s3.innerHTML = '<i class="fa-solid fa-check text-success"></i> Characters recognized!';
+        if (s4) s4.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-primary"></i> Normalizing passport fields & checksums...';
+
+        // Submit recognized text to server for normalization & verification
+        executePassportOcr(fileOrBlob, filename, recognizedText, true);
+      } else {
+        if (overlay) overlay.classList.add('d-none');
+        showOcrError('Extraction Notice', 'Passport data could not be confidently read. Please upload a clear photo or enter manually.');
+      }
+    })
+    .catch(err => {
+      console.warn('[Client OCR Error]', err);
+      if (overlay) overlay.classList.add('d-none');
+      showOcrError('Extraction Notice', 'Could not read passport scan. Please try using "Crop & Clarify in Studio" or enter details manually.');
+    });
+  } else {
+    if (overlay) overlay.classList.add('d-none');
+    showOcrError('Extraction Notice', 'Server local OCR engine unavailable on this hosting. Please use "Crop & Clarify in Studio" or enter details manually.');
+  }
 }
 
 // Load sample passport file for rapid browser testing without native OS picker

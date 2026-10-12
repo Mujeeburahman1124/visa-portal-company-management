@@ -232,9 +232,15 @@ class DocumentApiController extends ApiController
 
         // Process OCR extraction
         $previewUrl = '/api/documents/temp-preview?token=' . urlencode($token);
+        $clientOcrText = trim((string)($_POST['client_ocr_text'] ?? ''));
+
         try {
             $ocrService = new \App\Services\Ocr\PassportOcrService();
-            $ocrResult = $ocrService->extract($targetPath, ['original_name' => $origName, 'mime_type' => $mimeType]);
+            $ocrResult = $ocrService->extract($targetPath, [
+                'original_name' => $origName,
+                'mime_type' => $mimeType,
+                'client_ocr_text' => $clientOcrText
+            ]);
         } catch (\Throwable $e) {
             error_log("[OCR ERROR] Passport OCR Exception for {$origName}: " . $e->getMessage());
             $this->jsonError($e->getMessage(), [
@@ -244,6 +250,7 @@ class DocumentApiController extends ApiController
                 'ocr_provider' => 'none',
                 'overall_confidence' => 0,
                 'mrz_detected' => false,
+                'can_fallback_client_ocr' => true,
                 'extracted' => [],
                 'confidence' => []
             ], 422);
@@ -261,6 +268,7 @@ class DocumentApiController extends ApiController
                 'ocr_provider' => $ocrResult['ocr_provider'] ?? 'none',
                 'overall_confidence' => 0,
                 'mrz_detected' => false,
+                'can_fallback_client_ocr' => true,
                 'extracted' => $ocrResult['extracted'] ?? [],
                 'confidence' => []
             ], 422);

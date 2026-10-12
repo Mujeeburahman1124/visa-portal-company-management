@@ -85,15 +85,18 @@ class PassportOcrService implements PassportOcrServiceInterface
                 'google_vision' => $this->extractViaGoogleVision($filePath),
                 'aws_textract' => $this->extractViaAwsTextract($filePath),
                 'azure_document_intelligence' => $this->extractViaAzure($filePath),
-                default => $this->extractViaLocalEngine($filePath)
+                'ocr_space' => $this->extractViaOcrSpace($filePath),
+                default => $this->extractViaLocalEngine($filePath, $options)
             };
         } catch (\Throwable $e) {
             error_log(sprintf("[OCR] Provider '%s' failed: %s", $configuredProvider, $e->getMessage()));
             $ocrData = ['text' => '', 'lines' => [], 'words' => []];
         }
 
-        if ($configuredProvider === 'auto' || $configuredProvider === 'local') {
-            $providerUsed = 'local_windows_media_ocr';
+        if (!empty($ocrData['provider'])) {
+            $providerUsed = (string)$ocrData['provider'];
+        } elseif ($configuredProvider === 'auto' || $configuredProvider === 'local') {
+            $providerUsed = (DIRECTORY_SEPARATOR === '\\' || stripos(PHP_OS, 'WIN') === 0) ? 'local_windows_media_ocr' : 'local_linux_tesseract';
         }
 
         $rawText = (string)($ocrData['text'] ?? '');
@@ -266,22 +269,31 @@ class PassportOcrService implements PassportOcrServiceInterface
     /**
      * Local engine using native Windows Media OCR or PowerShell script with safe fallback
      */
-    private function extractViaLocalEngine(string $filePath): array
+    /**
+     * Multi-tier engine: Supports local Windows Media OCR, Linux Tesseract,
+     * client in-browser pre-extracted text, and zero-config Cloud OCR fallback.
+     */
+    private function extractViaLocalEngine(string $filePath, array $options = []): array
     {
-        $hasShellExecution = $this->isFunctionAvailable('shell_exec')
-            || $this->isFunctionAvailable('exec')
-            || $this->isFunctionAvailable('proc_open')
-            || $this->isFunctionAvailable('passthru');
-
-        if (!$hasShellExecution) {
-            error_log("[OCR Notice] Local OCR skipped: System command execution functions (shell_exec, exec, proc_open) are disabled in php.ini. Consider configuring GOOGLE_VISION_API_KEY in .env for cloud OCR.");
-            return ['text' => '', 'lines' => [], 'words' => []];
+        // 1. Client in-browser OCR (Tesseract.js) fallback data passed from frontend
+        if (!empty($options['client_ocr_text'])) {
+            $clientText = trim((string)$options['client_ocr_text']);
+            if ($clientText !== '') {
+                $lines = preg_split('/[\r\n]+/', $clientText, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+                return [
+                    'text' => $clientText,
+                    'lines' => $lines,
+                    'words' => [],
+                    'provider' => 'client_browser_ocr'
+                ];
+            }
         }
 
         $isWindows = (DIRECTORY_SEPARATOR === '\\' || stripos(PHP_OS, 'WIN') === 0);
         $output = null;
+        $hasShell = $this->hasShellExecution();
 
-        if ($isWindows) {
+        if ($isWindows && $hasShell) {
             $scriptPath = dirname(__DIR__, 3) . '/scripts/windows_ocr.ps1';
             if (!file_exists($scriptPath)) {
                 $scriptPath = dirname(__DIR__, 2) . '/scripts/windows_ocr.ps1';
@@ -294,36 +306,149 @@ class PassportOcrService implements PassportOcrServiceInterface
                 );
                 $output = $this->runShellCommand($cmd);
             }
-        } else {
+        } elseif (!$isWindows && $hasShell) {
             // Linux / Unix environment: Check for Tesseract if installed
-            $cmd = sprintf('tesseract %s stdout -l eng+osd 2>/dev/null', escapeshellarg($filePath));
-            $output = $this->runShellCommand($cmd);
+            $tesseractBin = $this->findLinuxTesseractBinary();
+            if ($tesseractBin !== null) {
+                $cmd = sprintf('%s %s stdout -l eng+osd 2>/dev/null', escapeshellarg($tesseractBin), escapeshellarg($filePath));
+                $output = $this->runShellCommand($cmd);
+            }
         }
 
-        if (!$output) {
+        if ($output) {
+            $json = json_decode($output, true);
+            if (is_array($json)) {
+                $lines = is_array($json['lines'] ?? null) ? $json['lines'] : [];
+                $text = (string)($json['text'] ?? '');
+                if (empty($lines) && $text !== '') {
+                    $lines = preg_split('/[\r\n]+/', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+                }
+                if ($text === '' && !empty($lines)) {
+                    $text = implode("\n", $lines);
+                }
+                if ($text !== '') {
+                    return [
+                        'text' => $text,
+                        'lines' => $lines,
+                        'words' => is_array($json['words'] ?? null) ? $json['words'] : [],
+                        'provider' => $isWindows ? 'local_windows_media_ocr' : 'local_linux_tesseract'
+                    ];
+                }
+            } else {
+                $text = trim((string)$output);
+                if ($text !== '') {
+                    $lines = preg_split('/[\r\n]+/', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+                    return [
+                        'text' => $text,
+                        'lines' => $lines,
+                        'words' => [],
+                        'provider' => 'local_linux_tesseract'
+                    ];
+                }
+            }
+        }
+
+        // 2. Hosting Fallback 1: Google Cloud Vision (if key provided in .env)
+        $googleKey = Env::get('GOOGLE_VISION_API_KEY', '');
+        if (!empty($googleKey)) {
+            $visionResult = $this->extractViaGoogleVision($filePath);
+            if (!empty($visionResult['text'])) {
+                $visionResult['provider'] = 'google_vision';
+                return $visionResult;
+            }
+        }
+
+        // 3. Hosting Fallback 2: Universal OCR.Space API (Works on any Linux hosting out of the box)
+        $ocrSpaceResult = $this->extractViaOcrSpace($filePath);
+        if (!empty($ocrSpaceResult['text'])) {
+            $ocrSpaceResult['provider'] = 'ocr_space_cloud';
+            return $ocrSpaceResult;
+        }
+
+        return ['text' => '', 'lines' => [], 'words' => []];
+    }
+
+    /**
+     * Universal Free Cloud OCR via OCR.Space
+     * Works on any Linux hosting (including cPanel/shared hosting with no tesseract binary)
+     */
+    public function extractViaOcrSpace(string $filePath): array
+    {
+        if (!function_exists('curl_init') || !file_exists($filePath)) {
             return ['text' => '', 'lines' => [], 'words' => []];
         }
 
-        $json = json_decode($output, true);
-        if (is_array($json)) {
-            $lines = is_array($json['lines'] ?? null) ? $json['lines'] : [];
-            $text = (string)($json['text'] ?? '');
-            if (empty($lines) && $text !== '') {
-                $lines = preg_split('/[\r\n]+/', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-            }
-            if ($text === '' && !empty($lines)) {
-                $text = implode("\n", $lines);
-            }
-            return [
-                'text' => $text,
-                'lines' => $lines,
-                'words' => is_array($json['words'] ?? null) ? $json['words'] : []
-            ];
+        $apiKey = Env::get('OCR_SPACE_API_KEY', 'helloworld');
+        $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+        $mime = $finfo ? (@finfo_file($finfo, $filePath) ?: 'image/jpeg') : 'image/jpeg';
+        if ($finfo && PHP_VERSION_ID < 80500) {
+            @finfo_close($finfo);
         }
 
-        $text = (string)$output;
-        $lines = preg_split('/[\r\n]+/', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-        return ['text' => $text, 'lines' => $lines, 'words' => []];
+        $postData = [
+            'apikey' => $apiKey,
+            'language' => 'eng',
+            'isOverlayRequired' => 'false',
+            'OCREngine' => '2',
+            'scale' => 'true',
+            'isTable' => 'true',
+            'file' => new \CURLFile($filePath, $mime, basename($filePath))
+        ];
+
+        $ch = curl_init('https://api.ocr.space/parse/image');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 25);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if (PHP_VERSION_ID < 80500) {
+            @curl_close($ch);
+        }
+
+        if ($httpCode === 200 && $response) {
+            $json = json_decode((string)$response, true);
+            if (!empty($json['ParsedResults'][0]['ParsedText'])) {
+                $text = (string)$json['ParsedResults'][0]['ParsedText'];
+                $lines = preg_split('/[\r\n]+/', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+                return ['text' => $text, 'lines' => $lines, 'words' => [], 'provider' => 'ocr_space_cloud'];
+            }
+        }
+
+        return ['text' => '', 'lines' => [], 'words' => []];
+    }
+
+    /**
+     * Search common Linux binary paths for tesseract binary
+     */
+    private function findLinuxTesseractBinary(): ?string
+    {
+        $commonPaths = [
+            '/usr/bin/tesseract',
+            '/usr/local/bin/tesseract',
+            '/opt/homebrew/bin/tesseract',
+            '/bin/tesseract'
+        ];
+        foreach ($commonPaths as $path) {
+            if (@file_exists($path) && @is_executable($path)) {
+                return $path;
+            }
+        }
+        $which = $this->runShellCommand('which tesseract 2>/dev/null');
+        if ($which && trim($which) !== '') {
+            return trim($which);
+        }
+        return null;
+    }
+
+    private function hasShellExecution(): bool
+    {
+        return $this->isFunctionAvailable('shell_exec')
+            || $this->isFunctionAvailable('exec')
+            || $this->isFunctionAvailable('proc_open')
+            || $this->isFunctionAvailable('passthru');
     }
 
     /**
