@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Forgot Password — Applicant Portal';
+$pageTitle = 'Forgot Password — Applicant Portal — MS TRAVEL HUB';
 $flash = $flash ?? get_flash();
 ?>
 <!DOCTYPE html>
@@ -8,58 +8,106 @@ $flash = $flash ?? get_flash();
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= e($pageTitle) ?></title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✈️</text></svg>">
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png?v=2">
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2">
+  <link rel="apple-touch-icon" href="/assets/images/logo.png">
+
+  <!-- Premium Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Frameworks & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/main.css?v=7.0.0">
+
+  <!-- Bento Auth Styling -->
+  <link rel="stylesheet" href="/assets/css/pages/auth-bento.css?v=<?= time() ?>">
 </head>
-<body class="auth-page-body">
-<div class="container d-flex flex-column align-items-center justify-content-center" style="min-height:100vh;padding:1.5rem 1rem;">
-  <div class="auth-card-compact">
-    <div class="text-center mb-3">
-      <div class="d-inline-flex align-items-center justify-content-center text-white rounded-3 shadow-sm mb-2" style="width:44px;height:44px;font-size:1.25rem;background:linear-gradient(135deg,#1e3a8a 0%,#2563eb 100%);">
-        <i class="fa-solid fa-key"></i>
+<body class="auth-bento-body">
+
+  <!-- Atmospheric Glow & Ambient Grid -->
+  <div class="auth-ambient-glow-1"></div>
+  <div class="auth-ambient-glow-2"></div>
+  <div class="auth-ambient-grid"></div>
+
+  <div class="auth-container-wrap">
+    
+    <!-- Bento Recovery Card -->
+    <div class="auth-bento-card">
+      
+      <!-- Brand & Logo -->
+      <div class="auth-logo-wrap">
+        <a href="/" class="auth-logo-badge text-decoration-none" title="MS Travel Hub">
+          <img src="/assets/images/logo.png" alt="MS Travel Hub Logo" class="auth-logo-img">
+        </a>
+        <div class="auth-brand-name">MS <span class="brand-gem">TRAVEL HUB</span></div>
+        <div class="auth-brand-subtitle">Applicant Portal Recovery</div>
       </div>
-      <h3 class="fw-bold brand-font text-dark mb-0" style="font-size:1.45rem;letter-spacing:-0.01em;">VISA TRACK</h3>
-      <div class="text-muted small" style="font-size:0.78rem;">Applicant Portal — Password Recovery</div>
-    </div>
 
-    <div class="text-center mb-3">
-      <h5 class="fw-bold text-dark mb-1" style="font-size:1.1rem;">Forgot Your Password?</h5>
-      <p class="text-muted small mb-0" style="font-size:0.82rem;">Enter your registered email. We'll send a secure reset link.</p>
-    </div>
-
-    <?php if ($flash): ?>
-      <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'info')) ?> alert-dismissible fade show py-2 px-3 small mb-3 border-0 shadow-sm">
-        <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation' : 'fa-circle-check' ?> me-1"></i>
-        <?= e($flash['message']) ?>
-        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+      <!-- Heading -->
+      <div class="auth-heading-wrap">
+        <h5 class="auth-heading-title">Forgot Your Password?</h5>
+        <p class="auth-heading-desc">Enter your registered email address and we'll send you a secure password reset link.</p>
       </div>
-    <?php endif; ?>
 
-    <form action="/portal/forgot-password" method="POST" id="portalForgotForm">
-      <?= csrf_field() ?>
-      <div class="mb-3">
-        <label class="form-label small fw-semibold text-secondary mb-1" style="font-size:0.85rem;">Email Address</label>
-        <div class="input-group">
-          <span class="input-group-text bg-light border-end-0 text-muted" style="font-size:0.85rem;"><i class="fa-solid fa-envelope"></i></span>
-          <input type="email" name="email" id="forgotEmail" class="form-control border-start-0 ps-0" placeholder="your.email@domain.com" required autofocus style="font-size:0.9rem;height:40px;">
+      <!-- Flash Message -->
+      <?php if ($flash): ?>
+        <?php 
+          $alertType = $flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'info');
+          $alertIcon = $flash['type'] === 'danger' ? 'fa-circle-exclamation' : ($flash['type'] === 'success' ? 'fa-circle-check' : 'fa-circle-info');
+        ?>
+        <div class="alert alert-<?= e($alertType) ?> alert-dismissible fade show d-flex align-items-center gap-2 py-2 px-3 small mb-3 border-0 shadow-sm rounded-3" role="alert">
+          <i class="fa-solid <?= $alertIcon ?>"></i>
+          <div class="flex-grow-1"><?= e($flash['message']) ?></div>
+          <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
         </div>
-      </div>
-      <button type="submit" class="btn btn-primary w-100 fw-semibold shadow-sm rounded-2 mb-2" style="height:42px;font-size:0.92rem;">
-        <i class="fa-solid fa-paper-plane me-1"></i> Send Reset Link
-      </button>
-    </form>
+      <?php endif; ?>
 
-    <div class="text-center small text-muted mt-2" style="font-size:0.78rem;">
-      Remembered it? <a href="/portal/login" class="text-primary fw-semibold text-decoration-none">Back to Login &rarr;</a>
+      <!-- Form -->
+      <form action="/portal/forgot-password" method="POST" id="portalForgotForm" novalidate autocomplete="on">
+        <?= csrf_field() ?>
+
+        <div class="auth-form-group">
+          <label for="forgotEmail" class="auth-form-label">Registered Email Address</label>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">
+              <i class="fa-solid fa-envelope"></i>
+            </span>
+            <input 
+              type="email" 
+              name="email" 
+              id="forgotEmail" 
+              class="auth-input-field" 
+              placeholder="your.email@domain.com" 
+              required 
+              autofocus
+              autocomplete="email"
+            >
+          </div>
+        </div>
+
+        <button type="submit" class="auth-btn-primary mt-3" id="btnForgotSubmit">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span>Send Reset Link</span>
+        </button>
+
+        <div class="text-center mt-3 pt-2">
+          <a href="/portal/login" class="auth-link small d-inline-flex align-items-center gap-1.5">
+            <i class="fa-solid fa-arrow-left"></i> Back to Applicant Login
+          </a>
+        </div>
+      </form>
+
     </div>
+
+    <!-- Security Compliance Footer -->
+    <div class="auth-footer-note">
+      &copy; <?= date('Y') ?> <span>MS TRAVEL HUB</span> &bull; Applicant Self-Service Portal
+    </div>
+
   </div>
 
-  <div class="text-center text-muted small mt-3" style="font-size:0.75rem;">
-    &copy; <?= date('Y') ?> VISA TRACK &bull; Applicant Self-Service
-  </div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

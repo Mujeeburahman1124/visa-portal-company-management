@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Reset Password — Supplier Portal';
+$pageTitle = 'Reset Password — Supplier Portal — MS TRAVEL HUB';
 $flash = $flash ?? get_flash();
 $token = $_GET['token'] ?? '';
 ?>
@@ -9,57 +9,145 @@ $token = $_GET['token'] ?? '';
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= e($pageTitle) ?></title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏢</text></svg>">
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png?v=2">
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2">
+  <link rel="apple-touch-icon" href="/assets/images/logo.png">
+
+  <!-- Premium Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Frameworks & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/main.css?v=7.0.0">
+
+  <!-- Bento Auth Styling -->
+  <link rel="stylesheet" href="/assets/css/pages/auth-bento.css?v=<?= time() ?>">
 </head>
-<body class="auth-page-body">
-<div class="container d-flex flex-column align-items-center justify-content-center" style="min-height:100vh;padding:1.5rem 1rem;">
-  <div class="auth-card-compact">
-    <div class="text-center mb-3">
-      <div class="d-inline-flex align-items-center justify-content-center text-white rounded-3 shadow-sm mb-2" style="width:48px;height:48px;font-size:1.4rem;background:linear-gradient(135deg,#1e293b 0%,#475569 100%);">
-        <i class="fa-solid fa-lock-open"></i>
+<body class="auth-bento-body">
+
+  <!-- Atmospheric Glow & Ambient Grid -->
+  <div class="auth-ambient-glow-1"></div>
+  <div class="auth-ambient-glow-2"></div>
+  <div class="auth-ambient-grid"></div>
+
+  <div class="auth-container-wrap">
+    
+    <!-- Bento Reset Card -->
+    <div class="auth-bento-card">
+      
+      <!-- Brand & Logo -->
+      <div class="auth-logo-wrap">
+        <a href="/" class="auth-logo-badge text-decoration-none" title="MS Travel Hub">
+          <img src="/assets/images/logo.png" alt="MS Travel Hub Logo" class="auth-logo-img">
+        </a>
+        <div class="auth-brand-name">MS <span class="brand-gem">TRAVEL HUB</span></div>
+        <div class="auth-brand-subtitle">Supplier Partner Security</div>
       </div>
-      <h3 class="fw-bold brand-font text-dark mb-0" style="font-size:1.45rem;">MS Travel Hub</h3>
-      <div class="text-muted small">Supplier Portal — Set New Password</div>
+
+      <!-- Heading -->
+      <div class="auth-heading-wrap">
+        <h5 class="auth-heading-title">Set New Password</h5>
+        <p class="auth-heading-desc">Choose a secure password with at least 6 characters.</p>
+      </div>
+
+      <!-- Flash Message -->
+      <?php if ($flash): ?>
+        <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : 'success') ?> alert-dismissible fade show d-flex align-items-center gap-2 py-2 px-3 small mb-3 border-0 shadow-sm rounded-3" role="alert">
+          <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation' : 'fa-circle-check' ?>"></i>
+          <div class="flex-grow-1"><?= e($flash['message']) ?></div>
+          <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+        </div>
+      <?php endif; ?>
+
+      <!-- Form -->
+      <form action="/supplier/reset-password" method="POST" id="supplierResetForm" novalidate autocomplete="on">
+        <?= csrf_field() ?>
+        <input type="hidden" name="token" value="<?= e($token) ?>">
+
+        <div class="auth-form-group">
+          <label for="supplierNewPass" class="auth-form-label">New Password <span class="text-danger">*</span></label>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">
+              <i class="fa-solid fa-lock"></i>
+            </span>
+            <input 
+              type="password" 
+              name="password" 
+              id="supplierNewPass" 
+              class="auth-input-field" 
+              placeholder="Minimum 6 characters" 
+              required 
+              minlength="6"
+              autocomplete="new-password"
+              autofocus
+            >
+            <button type="button" class="auth-pwd-toggle" onclick="togglePass('supplierNewPass')" aria-label="Toggle password visibility">
+              <i class="fa-solid fa-eye" id="supplierNewPassIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="auth-form-group">
+          <label for="supplierConfirmPass" class="auth-form-label">Confirm New Password <span class="text-danger">*</span></label>
+          <div class="auth-input-wrap">
+            <span class="auth-input-icon">
+              <i class="fa-solid fa-lock-check"></i>
+            </span>
+            <input 
+              type="password" 
+              name="password_confirm" 
+              id="supplierConfirmPass" 
+              class="auth-input-field" 
+              placeholder="Re-enter new password" 
+              required 
+              minlength="6"
+              autocomplete="new-password"
+            >
+            <button type="button" class="auth-pwd-toggle" onclick="togglePass('supplierConfirmPass')" aria-label="Toggle confirm password visibility">
+              <i class="fa-solid fa-eye" id="supplierConfirmPassIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="auth-btn-primary mt-4" id="btnResetSubmit">
+          <i class="fa-solid fa-shield-check"></i>
+          <span>Update Password &amp; Sign In</span>
+        </button>
+
+        <div class="text-center mt-3 pt-2">
+          <a href="/supplier/login" class="auth-link small d-inline-flex align-items-center gap-1.5">
+            <i class="fa-solid fa-arrow-left"></i> Back to Supplier Login
+          </a>
+        </div>
+      </form>
+
     </div>
 
-    <?php if ($flash): ?>
-      <div class="alert alert-<?= e($flash['type']) ?> alert-dismissible fade show py-2 px-3 small mb-3 border-0 shadow-sm">
-        <i class="fa-solid <?= $flash['type'] === 'danger' ? 'fa-circle-exclamation' : 'fa-circle-check' ?> me-1"></i>
-        <?= e($flash['message']) ?>
-        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
-      </div>
-    <?php endif; ?>
-
-    <form action="/supplier/reset-password" method="POST" id="supplierResetForm">
-      <?= csrf_field() ?>
-      <input type="hidden" name="token" value="<?= e($token) ?>">
-      <div class="mb-3">
-        <label class="form-label small fw-semibold">New Password</label>
-        <div class="input-group">
-          <span class="input-group-text"><i class="fa-solid fa-lock text-muted"></i></span>
-          <input type="password" name="password" class="form-control" placeholder="Minimum 6 characters" required minlength="6">
-        </div>
-      </div>
-      <div class="mb-3">
-        <label class="form-label small fw-semibold">Confirm Password</label>
-        <div class="input-group">
-          <span class="input-group-text"><i class="fa-solid fa-lock text-muted"></i></span>
-          <input type="password" name="password_confirm" class="form-control" placeholder="Repeat password" required>
-        </div>
-      </div>
-      <button type="submit" class="btn btn-dark w-100 fw-semibold py-2">
-        <i class="fa-solid fa-shield-check me-2"></i>Update Password
-      </button>
-    </form>
-
-    <div class="text-center mt-3 small text-muted">
-      <a href="/supplier/login" class="text-decoration-none text-secondary"><i class="fa-solid fa-arrow-left me-1"></i>Back to Supplier Login</a>
+    <!-- Security Compliance Footer -->
+    <div class="auth-footer-note">
+      &copy; <?= date('Y') ?> <span>MS TRAVEL HUB</span> &bull; Supplier Network
     </div>
+
   </div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function togglePass(fieldId) {
+      const field = document.getElementById(fieldId);
+      const icon = document.getElementById(fieldId + 'Icon');
+      if (!field || !icon) return;
+      if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+      } else {
+        field.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+      }
+    }
+  </script>
 </body>
 </html>
