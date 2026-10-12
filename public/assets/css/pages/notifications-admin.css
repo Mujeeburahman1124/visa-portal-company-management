@@ -1,0 +1,432 @@
+/**
+ * VISA TRACK — Enterprise Notification Operations Center (Bento Design System)
+ * File: public/assets/css/pages/notifications-admin.css
+ */
+
+:root {
+  --bento-bg: #F8FAFC;
+  --bento-card-bg: #FFFFFF;
+  --bento-border: #E2E8F0;
+  --bento-border-hover: #CBD5E1;
+  --bento-text-main: #0F172A;
+  --bento-text-muted: #64748B;
+  --bento-primary: #E11D48;
+  --bento-primary-subtle: #FFF1F2;
+  --bento-primary-border: #FECDD3;
+  --bento-radius: 18px;
+  --bento-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  --bento-hover-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.12);
+  --bento-transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.notif-ops-dashboard {
+  color: var(--bento-text-main);
+}
+
+/* Bento Hero Header */
+.notif-ops-hero {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  border-radius: var(--bento-radius);
+  padding: 1.75rem 2rem;
+  color: #FFFFFF;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.notif-ops-hero::after {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(225, 29, 72, 0.25) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.notif-ops-hero-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.notif-ops-hero-badge {
+  background: rgba(225, 29, 72, 0.25);
+  color: #FDA4AF;
+  border: 1px solid rgba(225, 29, 72, 0.4);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.notif-ops-hero-desc {
+  color: #94A3B8;
+  font-size: 0.9rem;
+  max-width: 700px;
+  margin: 0;
+}
+
+/* Bento KPI Grid */
+.bento-ops-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.bento-ops-kpi-card {
+  background: var(--bento-card-bg);
+  border: 1px solid var(--bento-border);
+  border-radius: var(--bento-radius);
+  padding: 1.35rem 1.25rem;
+  box-shadow: var(--bento-shadow);
+  transition: var(--bento-transition);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.bento-ops-kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--bento-hover-shadow);
+  border-color: var(--bento-border-hover);
+}
+
+.bento-ops-kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.bento-ops-kpi-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--bento-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bento-ops-kpi-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+}
+
+.ops-icon-delivered {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+
+.ops-icon-email {
+  background: rgba(14, 165, 233, 0.12);
+  color: #0284c7;
+}
+
+.ops-icon-whatsapp {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.ops-icon-queue {
+  background: rgba(225, 29, 72, 0.12);
+  color: #E11D48;
+}
+
+.bento-ops-kpi-value {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--bento-text-main);
+  line-height: 1.2;
+  margin-bottom: 0.35rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.bento-ops-kpi-sub {
+  font-size: 0.78rem;
+  color: var(--bento-text-muted);
+}
+
+/* Tabbed Operations Container */
+.notif-ops-tab-card {
+  background: var(--bento-card-bg);
+  border: 1px solid var(--bento-border);
+  border-radius: var(--bento-radius);
+  box-shadow: var(--bento-shadow);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.notif-ops-tab-nav {
+  display: flex;
+  background: #F8FAFC;
+  border-bottom: 1px solid var(--bento-border);
+  padding: 0.5rem 1rem 0;
+  overflow-x: auto;
+  gap: 0.5rem;
+}
+
+.notif-ops-tab-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--bento-text-muted);
+  text-decoration: none;
+  border-radius: 12px 12px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  transition: var(--bento-transition);
+  white-space: nowrap;
+}
+
+.notif-ops-tab-link:hover {
+  color: var(--bento-text-main);
+  background: #FFFFFF;
+}
+
+.notif-ops-tab-link.active {
+  color: var(--bento-primary);
+  background: #FFFFFF;
+  border-color: var(--bento-border);
+  box-shadow: 0 -2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.notif-ops-tab-body {
+  padding: 1.5rem;
+}
+
+/* Filter Bar */
+.notif-ops-filter-box {
+  background: #F8FAFC;
+  border: 1px solid var(--bento-border);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Delivery Logs Table */
+.ops-logs-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.ops-logs-table thead th {
+  background: #F8FAFC;
+  color: var(--bento-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--bento-border);
+}
+
+.ops-logs-table tbody tr {
+  transition: var(--bento-transition);
+}
+
+.ops-logs-table tbody tr:hover {
+  background: #F8FAFC;
+}
+
+.ops-logs-table tbody td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid #F1F5F9;
+  font-size: 0.85rem;
+  vertical-align: middle;
+}
+
+/* Channel & Status Badges */
+.badge-channel-whatsapp {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.3rem 0.65rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.badge-channel-email {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.3rem 0.65rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.badge-channel-inapp {
+  background: rgba(100, 116, 139, 0.12);
+  color: #475569;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.3rem 0.65rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.badge-status-sent {
+  background: #10B981;
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+}
+
+.badge-status-simulated {
+  background: #0284C7;
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+}
+
+.badge-status-failed {
+  background: #E11D48;
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+}
+
+.badge-status-retry {
+  background: #F59E0B;
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+}
+
+/* Event Category Card */
+.event-category-card {
+  background: #FFFFFF;
+  border: 1px solid var(--bento-border);
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+.event-category-header {
+  background: #F8FAFC;
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--bento-border);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* Responsive Table to Cards Transformation */
+@media (max-width: 991.98px) {
+  .notif-ops-hero {
+    padding: 1.25rem 1rem;
+  }
+  .notif-ops-hero-title {
+    font-size: 1.3rem;
+  }
+  .bento-ops-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  .bento-ops-kpi-card {
+    padding: 1rem;
+  }
+  .bento-ops-kpi-value {
+    font-size: 1.4rem;
+  }
+
+  .ops-logs-table {
+    display: block;
+    min-width: 0 !important;
+    width: 100%;
+  }
+
+  .ops-logs-table thead {
+    display: none !important;
+  }
+
+  .ops-logs-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .ops-logs-table tbody tr {
+    display: block;
+    width: 100%;
+    background: #FFFFFF;
+    border: 1px solid var(--bento-border);
+    border-radius: 14px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.85rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  }
+
+  .ops-logs-table tbody td {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0.5rem 0 !important;
+    border: none !important;
+    border-bottom: 1px dashed #F1F5F9 !important;
+    text-align: right;
+  }
+
+  .ops-logs-table tbody td:last-child {
+    border-bottom: none !important;
+  }
+
+  .ops-logs-table tbody td::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--bento-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: left;
+    padding-right: 1rem;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .bento-ops-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}

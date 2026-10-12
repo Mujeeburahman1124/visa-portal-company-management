@@ -11,15 +11,23 @@ if (!in_array($currentView, ['table', 'timeline', 'grid'], true)) {
 }
 
 $hasSystemErrors = false;
+$errorCount = 0;
 foreach ($logs as $l) {
     if (in_array($l['action'], ['SYSTEM_ERROR', 'ERROR', 'EXCEPTION'], true)) {
         $hasSystemErrors = true;
-        break;
+        $errorCount++;
     }
 }
+$totalLogsCount = count($logs);
+$totalModulesCount = count($modules ?? []);
+$totalUsersCount = count($users ?? []);
 ?>
 
-<div class="content-body">
+<!-- Link Dedicated Bento CSS -->
+<link rel="stylesheet" href="/assets/css/dashboard-bento.css">
+<link rel="stylesheet" href="/assets/css/pages/audit-logs-index.css">
+
+<div class="content-body audit-dashboard">
   <?php if ($flash): ?>
     <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'info')) ?> alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
       <div class="d-flex align-items-center gap-2">
@@ -31,108 +39,181 @@ foreach ($logs as $l) {
   <?php endif; ?>
 
   <?php if ($hasSystemErrors): ?>
-    <div class="alert alert-danger border-0 shadow-sm mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3 p-3">
-      <div class="d-flex align-items-center gap-2">
-        <i class="fa-solid fa-triangle-exclamation fs-5"></i>
+    <div class="alert alert-danger border-0 shadow-sm mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3 p-3.5 rounded-3">
+      <div class="d-flex align-items-center gap-2.5">
+        <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center p-2" style="width: 38px; height: 38px;">
+          <i class="fa-solid fa-triangle-exclamation fs-5"></i>
+        </div>
         <div>
-          <strong class="d-block">System Errors Logged in Operations History</strong>
-          <span class="small">Super Admin diagnostic alerts recorded during application runtime. Once fixed, click Mark Resolved to reset the alert counter.</span>
+          <strong class="d-block text-danger">System Errors Recorded in Operations Ledger</strong>
+          <span class="small text-muted">Super Admin diagnostic alerts recorded during application runtime. Click Mark Resolved to reset the alert counter.</span>
         </div>
       </div>
       <a href="/audit-logs/clear-errors" class="btn btn-dark btn-sm px-3 shadow-sm fw-semibold" onclick="return confirm('Mark all recorded system error alerts as resolved and reset the error badge to zero?');">
-        <i class="fa-solid fa-check-double me-1"></i> Mark Resolved &amp; Reset to Zero
+        <i class="fa-solid fa-check-double me-1.5 text-success"></i> Mark Resolved &amp; Reset to Zero
       </a>
     </div>
   <?php endif; ?>
 
-  <!-- Page Header & View Toggle -->
-  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
-    <div>
-      <div class="d-flex align-items-center gap-2 mb-1">
-        <h3 class="fw-bold brand-font text-dark mb-0"><i class="fa-solid fa-clock-rotate-left text-primary me-2"></i> System Audit Trail &amp; History</h3>
-        <span class="badge bg-primary-subtle text-primary fw-bold border"><i class="fa-solid fa-shield-halved me-1"></i>Immutable Log</span>
+  <!-- Bento Hero Header -->
+  <div class="audit-hero">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div>
+        <div class="audit-hero-title">
+          <i class="fa-solid fa-clock-rotate-left text-danger"></i>
+          <span>System Audit Trail &amp; Compliance</span>
+          <span class="audit-hero-badge">Immutable Ledger</span>
+        </div>
+        <p class="audit-hero-desc">
+          Complete chronological record of user actions, stage shifts, payment events, document approvals, and system diagnostics.
+        </p>
       </div>
-      <p class="text-muted small mb-0">Complete historical record of user actions, stage shifts, payment events, document approvals, and system diagnostics.</p>
+
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <!-- 3 View Options Switcher -->
+        <div class="audit-view-switcher" role="group" aria-label="View Mode">
+          <button type="button" class="audit-view-btn <?= $currentView === 'table' ? 'active' : '' ?>" onclick="switchAuditView('table')" id="btnAuditViewTable">
+            <i class="fa-solid fa-table-list"></i> <span>Table</span>
+          </button>
+          <button type="button" class="audit-view-btn <?= $currentView === 'timeline' ? 'active' : '' ?>" onclick="switchAuditView('timeline')" id="btnAuditViewTimeline">
+            <i class="fa-solid fa-timeline"></i> <span>Timeline</span>
+          </button>
+          <button type="button" class="audit-view-btn <?= $currentView === 'grid' ? 'active' : '' ?>" onclick="switchAuditView('grid')" id="btnAuditViewGrid">
+            <i class="fa-solid fa-grip"></i> <span>Cards</span>
+          </button>
+        </div>
+
+        <a href="/audit-logs/clear-errors" class="btn btn-outline-light btn-sm px-3 shadow-sm fw-semibold" onclick="return confirm('Clear and resolve all system error alerts to reset the topbar badge to zero?');">
+          <i class="fa-solid fa-check-double me-1.5"></i> Clear Errors
+        </a>
+
+        <a href="/audit-logs/export" class="btn btn-light btn-sm px-3 shadow-sm fw-semibold text-dark">
+          <i class="fa-solid fa-file-excel me-1.5 text-success"></i> Export CSV
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bento KPI Grid -->
+  <div class="bento-audit-kpi-grid">
+    <!-- Total Events -->
+    <div class="bento-audit-kpi-card">
+      <div class="bento-audit-kpi-header">
+        <span class="bento-audit-kpi-label">Audit Events Logged</span>
+        <div class="bento-audit-kpi-icon audit-icon-events">
+          <i class="fa-solid fa-fingerprint"></i>
+        </div>
+      </div>
+      <div class="bento-audit-kpi-value"><?= number_format($totalLogsCount) ?></div>
+      <div class="bento-audit-kpi-sub">
+        <span>Recorded activities in view</span>
+      </div>
     </div>
 
-    <div class="d-flex align-items-center gap-2 flex-wrap">
-      <!-- 3 View Options Switcher -->
-      <div class="btn-group btn-group-sm bg-white shadow-sm border rounded-pill p-1" role="group" aria-label="View Mode">
-        <button type="button" class="btn btn-sm rounded-pill px-3 fw-semibold audit-view-btn <?= $currentView === 'table' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" onclick="switchAuditView('table')" id="btnAuditViewTable">
-          <i class="fa-solid fa-table-list me-1"></i> <span class="d-none d-sm-inline">Table</span>
-        </button>
-        <button type="button" class="btn btn-sm rounded-pill px-3 fw-semibold audit-view-btn <?= $currentView === 'timeline' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" onclick="switchAuditView('timeline')" id="btnAuditViewTimeline">
-          <i class="fa-solid fa-timeline me-1"></i> <span class="d-none d-sm-inline">Timeline</span>
-        </button>
-        <button type="button" class="btn btn-sm rounded-pill px-3 fw-semibold audit-view-btn <?= $currentView === 'grid' ? 'btn-primary shadow-sm' : 'btn-light text-muted' ?>" onclick="switchAuditView('grid')" id="btnAuditViewGrid">
-          <i class="fa-solid fa-grip me-1"></i> <span class="d-none d-sm-inline">Event Cards</span>
-        </button>
+    <!-- Security & System Alerts -->
+    <div class="bento-audit-kpi-card">
+      <div class="bento-audit-kpi-header">
+        <span class="bento-audit-kpi-label">Diagnostic Errors</span>
+        <div class="bento-audit-kpi-icon audit-icon-errors">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
       </div>
+      <div class="bento-audit-kpi-value <?= $errorCount > 0 ? 'text-danger' : 'text-success' ?>"><?= number_format($errorCount) ?></div>
+      <div class="bento-audit-kpi-sub">
+        <?php if ($errorCount > 0): ?>
+          <span class="text-danger fw-semibold"><i class="fa-solid fa-triangle-exclamation me-1"></i>System alerts pending</span>
+        <?php else: ?>
+          <span class="text-success fw-semibold"><i class="fa-solid fa-check me-1"></i>All system health nominal</span>
+        <?php endif; ?>
+      </div>
+    </div>
 
-      <a href="/audit-logs/clear-errors" class="btn btn-outline-danger btn-sm px-3 shadow-sm bg-white" onclick="return confirm('Clear and resolve all system error alerts to reset the topbar badge to zero?');">
-        <i class="fa-solid fa-check-double me-1"></i> Clear Error Badge
-      </a>
+    <!-- Monitored Modules -->
+    <div class="bento-audit-kpi-card">
+      <div class="bento-audit-kpi-header">
+        <span class="bento-audit-kpi-label">Monitored Modules</span>
+        <div class="bento-audit-kpi-icon audit-icon-modules">
+          <i class="fa-solid fa-cubes-stacked"></i>
+        </div>
+      </div>
+      <div class="bento-audit-kpi-value"><?= number_format($totalModulesCount) ?></div>
+      <div class="bento-audit-kpi-sub">
+        <span>Active business sub-systems</span>
+      </div>
+    </div>
 
-      <a href="/audit-logs/export" class="btn btn-outline-success btn-sm px-3 bg-white shadow-sm">
-        <i class="fa-solid fa-file-excel me-1"></i> Export CSV
-      </a>
+    <!-- Active User Actors -->
+    <div class="bento-audit-kpi-card">
+      <div class="bento-audit-kpi-header">
+        <span class="bento-audit-kpi-label">Registered Actors</span>
+        <div class="bento-audit-kpi-icon audit-icon-actors">
+          <i class="fa-solid fa-users-gear"></i>
+        </div>
+      </div>
+      <div class="bento-audit-kpi-value"><?= number_format($totalUsersCount) ?></div>
+      <div class="bento-audit-kpi-sub">
+        <span>Staff &amp; system users tracked</span>
+      </div>
     </div>
   </div>
 
   <!-- Multi-Filter Toolbar -->
-  <div class="card card-enterprise mb-4 shadow-sm border bg-white">
-    <div class="card-body p-3">
-      <form action="/audit-logs" method="GET" class="row g-2 align-items-center" id="auditFilterForm">
-        <input type="hidden" name="view" id="activeAuditViewParam" value="<?= e($currentView) ?>">
-        <div class="col-12 col-md-3">
-          <div class="input-group input-group-sm">
-            <span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-magnifying-glass"></i></span>
-            <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Search description, context, IP..." value="<?= e($_GET['search'] ?? '') ?>">
-          </div>
+  <div class="audit-filter-card">
+    <form action="/audit-logs" method="GET" class="row g-2 align-items-center" id="auditFilterForm">
+      <input type="hidden" name="view" id="activeAuditViewParam" value="<?= e($currentView) ?>">
+      
+      <div class="col-12 col-md-3">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-light text-muted border-end-0"><i class="fa-solid fa-magnifying-glass"></i></span>
+          <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Search description, context, IP..." value="<?= e($_GET['search'] ?? '') ?>">
         </div>
+      </div>
 
-        <div class="col-6 col-md-2">
-          <select name="module" class="form-select form-select-sm" onchange="this.form.submit()">
-            <option value="">All Modules</option>
-            <?php foreach (($modules ?? []) as $m): ?>
-              <option value="<?= e($m) ?>" <?= ($_GET['module'] ?? '') === $m ? 'selected' : '' ?>><?= e($m) ?></option>
-            <?php endforeach; ?>
-          </select>
-        </div>
+      <div class="col-6 col-md-2">
+        <select name="module" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Modules</option>
+          <?php foreach (($modules ?? []) as $m): ?>
+            <option value="<?= e($m) ?>" <?= ($_GET['module'] ?? '') === $m ? 'selected' : '' ?>><?= e($m) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
 
-        <div class="col-6 col-md-2">
-          <select name="action" class="form-select form-select-sm" onchange="this.form.submit()">
-            <option value="">All Actions</option>
-            <?php foreach (($actions ?? []) as $a): ?>
-              <option value="<?= e($a) ?>" <?= ($_GET['action'] ?? '') === $a ? 'selected' : '' ?>><?= e($a) ?></option>
-            <?php endforeach; ?>
-          </select>
-        </div>
+      <div class="col-6 col-md-2">
+        <select name="action" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Actions</option>
+          <?php foreach (($actions ?? []) as $a): ?>
+            <option value="<?= e($a) ?>" <?= ($_GET['action'] ?? '') === $a ? 'selected' : '' ?>><?= e($a) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
 
-        <div class="col-6 col-md-2">
-          <select name="user_id" class="form-select form-select-sm" onchange="this.form.submit()">
-            <option value="">All Actors</option>
-            <?php foreach (($users ?? []) as $u): ?>
-              <option value="<?= $u['id'] ?>" <?= ((int)($_GET['user_id'] ?? 0)) === (int)$u['id'] ? 'selected' : '' ?>><?= e($u['name']) ?></option>
-            <?php endforeach; ?>
-          </select>
-        </div>
+      <div class="col-6 col-md-2">
+        <select name="user_id" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Actors</option>
+          <?php foreach (($users ?? []) as $u): ?>
+            <option value="<?= $u['id'] ?>" <?= ((int)($_GET['user_id'] ?? 0)) === (int)$u['id'] ? 'selected' : '' ?>><?= e($u['name']) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
 
-        <div class="col-6 col-md-2 d-flex gap-1">
-          <input type="date" name="date_from" class="form-control form-control-sm" value="<?= e($_GET['date_from'] ?? '') ?>" title="From Date">
-          <input type="date" name="date_to" class="form-control form-control-sm" value="<?= e($_GET['date_to'] ?? '') ?>" title="To Date">
-        </div>
+      <div class="col-6 col-md-2 d-flex gap-1">
+        <input type="date" name="date_from" class="form-control form-control-sm" value="<?= e($_GET['date_from'] ?? '') ?>" title="From Date">
+        <input type="date" name="date_to" class="form-control form-control-sm" value="<?= e($_GET['date_to'] ?? '') ?>" title="To Date">
+      </div>
 
-        <div class="col-12 col-md-1 d-flex gap-1">
-          <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold"><i class="fa-solid fa-filter me-1"></i> Filter</button>
-          <a href="/audit-logs" class="btn btn-light btn-sm border" title="Reset Filters"><i class="fa-solid fa-rotate-left"></i></a>
-        </div>
-      </form>
-    </div>
+      <div class="col-12 col-md-1 d-flex gap-1">
+        <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold" title="Apply Filter">
+          <i class="fa-solid fa-filter"></i>
+        </button>
+        <a href="/audit-logs" class="btn btn-light btn-sm border" title="Reset Filters">
+          <i class="fa-solid fa-rotate-left"></i>
+        </a>
+      </div>
+    </form>
   </div>
 
   <?php if (empty($logs)): ?>
-    <div class="card card-enterprise shadow-sm border text-center py-5 p-4 bg-white mb-4">
+    <div class="card card-enterprise shadow-sm border text-center py-5 p-4 bg-white mb-4 rounded-3">
       <div class="mb-3">
         <i class="fa-regular fa-folder-open text-muted fs-1 opacity-50"></i>
       </div>
@@ -145,33 +226,33 @@ foreach ($logs as $l) {
     <!-- VIEW OPTION 1: TABLE VIEW -->
     <!-- ================================================================= -->
     <div id="auditViewTable" class="audit-view-container <?= $currentView === 'table' ? '' : 'd-none' ?>">
-      <div class="card card-enterprise shadow-sm border">
+      <div class="audit-table-card">
         <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0" style="min-width: 960px;">
-            <thead class="table-light">
+          <table class="audit-table">
+            <thead>
               <tr>
-                <th class="ps-3" style="width: 170px;">Timestamp</th>
+                <th style="width: 170px;">Timestamp</th>
                 <th style="width: 180px;">Actor / User</th>
                 <th style="width: 120px;">Module</th>
                 <th style="width: 140px;">Action</th>
                 <th>Description &amp; Delta Context</th>
-                <th class="pe-3" style="width: 120px;">IP Address</th>
+                <th class="text-end" style="width: 140px;">IP Address</th>
               </tr>
             </thead>
             <tbody>
               <?php foreach ($logs as $log): ?>
                 <?php
                   $isError = in_array($log['action'], ['SYSTEM_ERROR', 'ERROR', 'EXCEPTION'], true);
-                  $rowClass = $isError ? 'table-danger' : '';
+                  $rowClass = $isError ? 'is-system-error' : '';
                 ?>
                 <tr class="<?= $rowClass ?>">
-                  <td class="ps-3">
+                  <td data-label="Timestamp">
                     <span class="small font-monospace text-dark d-block fw-semibold"><?= format_datetime($log['created_at']) ?></span>
                   </td>
-                  <td>
+                  <td data-label="Actor">
                     <div class="d-flex align-items-center gap-2">
-                      <div class="avatar-sm rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center p-2 fw-bold" style="width: 28px; height: 28px; font-size: 0.7rem;">
-                        <?= strtoupper(substr($log['user_name'] ?? 'System', 0, 1)) ?>
+                      <div class="audit-actor-avatar">
+                        <?= strtoupper(substr($log['user_name'] ?? 'S', 0, 1)) ?>
                       </div>
                       <div>
                         <div class="fw-semibold text-dark small"><?= e($log['user_name'] ?? 'System') ?></div>
@@ -179,25 +260,27 @@ foreach ($logs as $l) {
                       </div>
                     </div>
                   </td>
-                  <td>
-                    <span class="badge bg-light text-dark border px-2 py-0.5 small"><?= e($log['module'] ?: 'System') ?></span>
+                  <td data-label="Module">
+                    <span class="badge-module-pill"><?= e($log['module'] ?: 'System') ?></span>
                   </td>
-                  <td>
+                  <td data-label="Action">
                     <?php if ($isError): ?>
-                      <span class="badge bg-danger px-2.5 py-1 font-monospace" style="font-size: 0.72rem;"><?= e($log['action']) ?></span>
+                      <span class="badge-audit-action badge-audit-error"><?= e($log['action']) ?></span>
                     <?php elseif ($log['action'] === 'RESOLVED_ERROR'): ?>
-                      <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 font-monospace" style="font-size: 0.72rem;"><i class="fa-solid fa-check me-1"></i>RESOLVED</span>
+                      <span class="badge-audit-action badge-audit-resolved"><i class="fa-solid fa-check me-1"></i>RESOLVED</span>
                     <?php else: ?>
-                      <span class="badge bg-primary-subtle text-primary font-monospace px-2.5 py-1" style="font-size: 0.72rem;"><?= e($log['action']) ?></span>
+                      <span class="badge-audit-action badge-audit-default"><?= e($log['action']) ?></span>
                     <?php endif; ?>
                   </td>
-                  <td>
-                    <div class="small fw-semibold text-dark mb-0.5"><?= e($log['description']) ?></div>
+                  <td data-label="Description & Delta">
+                    <div class="small fw-semibold text-dark mb-1"><?= e($log['description']) ?></div>
                     <?php if (!empty($log['details_json'])): ?>
-                      <pre class="bg-light p-2 rounded border small mb-0 text-muted font-monospace" style="font-size: 0.7rem; max-height: 90px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;"><?= e($log['details_json']) ?></pre>
+                      <button type="button" class="btn btn-light btn-xs border px-2 py-0.5 text-muted small" style="font-size: 0.72rem;" onclick='openAuditJsonModal(<?= json_encode($log['details_json']) ?>)'>
+                        <i class="fa-solid fa-code me-1 text-primary"></i> View Delta JSON
+                      </button>
                     <?php endif; ?>
                   </td>
-                  <td class="pe-3">
+                  <td data-label="IP Address" class="text-end">
                     <span class="small font-monospace text-muted"><?= e($log['ip_address'] ?: '127.0.0.1') ?></span>
                   </td>
                 </tr>
@@ -212,24 +295,26 @@ foreach ($logs as $l) {
     <!-- VIEW OPTION 2: TIMELINE STREAM VIEW -->
     <!-- ================================================================= -->
     <div id="auditViewTimeline" class="audit-view-container <?= $currentView === 'timeline' ? '' : 'd-none' ?>">
-      <div class="card card-enterprise shadow-sm border p-3 p-md-4 bg-white">
-        <div class="timeline-container position-relative ps-4" style="border-left: 2px solid #e2e8f0; margin-left: 12px;">
+      <div class="audit-timeline-card">
+        <div class="audit-timeline-track">
           <?php foreach ($logs as $log): ?>
             <?php
               $isError = in_array($log['action'], ['SYSTEM_ERROR', 'ERROR', 'EXCEPTION'], true);
-              $dotColor = $isError ? '#ef4444' : '#2563eb';
-              $badgeClass = $isError ? 'bg-danger' : 'bg-primary-subtle text-primary';
             ?>
-            <div class="timeline-item position-relative mb-3.5">
-              <!-- Timeline Marker Dot -->
-              <span class="position-absolute rounded-circle shadow-sm" style="left: -29px; top: 5px; width: 14px; height: 14px; background-color: <?= $dotColor ?>; border: 3px solid #ffffff;"></span>
+            <div class="audit-timeline-node">
+              <!-- Marker Dot -->
+              <span class="audit-timeline-dot <?= $isError ? 'danger' : '' ?>"></span>
 
-              <div class="card shadow-sm border p-3 <?= $isError ? 'border-danger-subtle bg-danger-subtle bg-opacity-10' : 'bg-white' ?>">
-                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1.5">
+              <div class="audit-timeline-box <?= $isError ? 'bg-danger-subtle bg-opacity-25' : '' ?>">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
                   <div class="d-flex align-items-center gap-2">
                     <span class="badge bg-dark text-white font-monospace small"><i class="fa-regular fa-clock me-1"></i><?= format_datetime($log['created_at']) ?></span>
-                    <span class="badge <?= $badgeClass ?> font-monospace small px-2 py-0.5"><?= e($log['action']) ?></span>
-                    <span class="badge bg-light text-dark border small"><?= e($log['module'] ?: 'System') ?></span>
+                    <?php if ($isError): ?>
+                      <span class="badge-audit-action badge-audit-error"><?= e($log['action']) ?></span>
+                    <?php else: ?>
+                      <span class="badge-audit-action badge-audit-default"><?= e($log['action']) ?></span>
+                    <?php endif; ?>
+                    <span class="badge-module-pill"><?= e($log['module'] ?: 'System') ?></span>
                   </div>
                   <div class="small text-muted font-monospace">
                     <i class="fa-solid fa-network-wired me-1"></i><?= e($log['ip_address'] ?: '127.0.0.1') ?>
@@ -237,7 +322,7 @@ foreach ($logs as $l) {
                 </div>
 
                 <div class="d-flex align-items-center gap-2 mb-2">
-                  <div class="avatar-xs rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width: 22px; height: 22px; font-size: 0.65rem;">
+                  <div class="audit-actor-avatar" style="width: 24px; height: 24px; font-size: 0.68rem;">
                     <?= strtoupper(substr($log['user_name'] ?? 'S', 0, 1)) ?>
                   </div>
                   <strong class="text-dark small"><?= e($log['user_name'] ?? 'System') ?></strong>
@@ -249,7 +334,9 @@ foreach ($logs as $l) {
                 </div>
 
                 <?php if (!empty($log['details_json'])): ?>
-                  <pre class="bg-light p-2 rounded border small mb-0 font-monospace text-muted" style="font-size: 0.68rem; max-height: 90px; overflow-y: auto;"><?= e($log['details_json']) ?></pre>
+                  <button type="button" class="btn btn-light btn-xs border px-2 py-0.5 text-muted small mt-1" style="font-size: 0.72rem;" onclick='openAuditJsonModal(<?= json_encode($log['details_json']) ?>)'>
+                    <i class="fa-solid fa-code me-1 text-primary"></i> Inspect Details Payload
+                  </button>
                 <?php endif; ?>
               </div>
             </div>
@@ -262,44 +349,42 @@ foreach ($logs as $l) {
     <!-- VIEW OPTION 3: EVENT CARDS VIEW -->
     <!-- ================================================================= -->
     <div id="auditViewGrid" class="audit-view-container <?= $currentView === 'grid' ? '' : 'd-none' ?>">
-      <div class="row g-3">
+      <div class="audit-grid-container">
         <?php foreach ($logs as $log): ?>
           <?php
             $isError = in_array($log['action'], ['SYSTEM_ERROR', 'ERROR', 'EXCEPTION'], true);
-            $cardBorder = $isError ? 'border-danger' : 'border-light';
-            $badgeBg = $isError ? 'bg-danger' : 'bg-primary';
           ?>
-          <div class="col-12 col-md-6 col-lg-4">
-            <div class="card card-enterprise h-100 shadow-sm border <?= $cardBorder ?>">
-              <div class="card-body p-3.5 d-flex flex-column justify-content-between">
-                <div>
-                  <div class="d-flex align-items-center justify-content-between mb-2">
-                    <span class="badge <?= $badgeBg ?> font-monospace small px-2 py-0.5">
-                      <?= e($log['action']) ?>
-                    </span>
-                    <span class="badge bg-light text-dark border small">
-                      <?= e($log['module'] ?: 'System') ?>
-                    </span>
-                  </div>
+          <div class="audit-event-card <?= $isError ? 'is-error' : '' ?>">
+            <div>
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <?php if ($isError): ?>
+                  <span class="badge-audit-action badge-audit-error"><?= e($log['action']) ?></span>
+                <?php else: ?>
+                  <span class="badge-audit-action badge-audit-default"><?= e($log['action']) ?></span>
+                <?php endif; ?>
+                <span class="badge-module-pill"><?= e($log['module'] ?: 'System') ?></span>
+              </div>
 
-                  <p class="text-dark small fw-semibold mb-2" style="min-height: 40px;">
-                    <?= e(mb_strimwidth($log['description'], 0, 120, '...')) ?>
-                  </p>
+              <p class="text-dark small fw-semibold mb-2" style="min-height: 40px;">
+                <?= e(mb_strimwidth($log['description'], 0, 120, '...')) ?>
+              </p>
 
-                  <?php if (!empty($log['details_json'])): ?>
-                    <pre class="bg-light p-2 rounded border small mb-3 text-muted font-monospace" style="font-size: 0.65rem; max-height: 70px; overflow-y: auto;"><?= e($log['details_json']) ?></pre>
-                  <?php endif; ?>
+              <?php if (!empty($log['details_json'])): ?>
+                <button type="button" class="btn btn-light btn-xs border px-2 py-0.5 text-muted small mb-3" style="font-size: 0.72rem;" onclick='openAuditJsonModal(<?= json_encode($log['details_json']) ?>)'>
+                  <i class="fa-solid fa-code me-1 text-primary"></i> Inspect Payload
+                </button>
+              <?php endif; ?>
+            </div>
+
+            <div class="pt-2 border-top d-flex align-items-center justify-content-between small text-muted">
+              <div class="d-flex align-items-center gap-1.5">
+                <div class="audit-actor-avatar" style="width: 22px; height: 22px; font-size: 0.65rem;">
+                  <?= strtoupper(substr($log['user_name'] ?? 'S', 0, 1)) ?>
                 </div>
-
-                <div class="pt-2 border-top d-flex align-items-center justify-content-between small text-muted">
-                  <div class="d-flex align-items-center gap-1.5">
-                    <i class="fa-solid fa-user small text-primary"></i>
-                    <span class="fw-semibold text-dark"><?= e($log['user_name'] ?? 'System') ?></span>
-                  </div>
-                  <div class="font-monospace" style="font-size: 0.72rem;">
-                    <?= date('d M, H:i', strtotime($log['created_at'])) ?>
-                  </div>
-                </div>
+                <span class="fw-semibold text-dark"><?= e($log['user_name'] ?? 'System') ?></span>
+              </div>
+              <div class="font-monospace" style="font-size: 0.72rem;">
+                <?= date('d M, H:i', strtotime($log['created_at'])) ?>
               </div>
             </div>
           </div>
@@ -310,7 +395,38 @@ foreach ($logs as $l) {
   <?php endif; ?>
 </div>
 
+<!-- ========================================================================= -->
+<!-- MODAL: AUDIT JSON PAYLOAD INSPECTOR -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="auditJsonModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-3">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-code text-primary me-2"></i> Audit Event Delta Payload</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <pre class="bg-dark text-light p-3 rounded font-monospace small mb-0" id="auditJsonPayloadViewer" style="max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;"></pre>
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+function openAuditJsonModal(rawJson) {
+  const viewer = document.getElementById('auditJsonPayloadViewer');
+  try {
+    const parsed = typeof rawJson === 'string' ? JSON.parse(rawJson) : rawJson;
+    viewer.textContent = JSON.stringify(parsed, null, 2);
+  } catch(e) {
+    viewer.textContent = rawJson || 'No additional JSON data.';
+  }
+  new bootstrap.Modal(document.getElementById('auditJsonModal')).show();
+}
+
 function switchAuditView(view) {
   // Hide all view containers
   document.querySelectorAll('.audit-view-container').forEach(el => el.classList.add('d-none'));
@@ -321,14 +437,12 @@ function switchAuditView(view) {
 
   // Update button active states
   document.querySelectorAll('.audit-view-btn').forEach(btn => {
-    btn.classList.remove('btn-primary', 'shadow-sm');
-    btn.classList.add('btn-light', 'text-muted');
+    btn.classList.remove('active');
   });
 
   const activeBtn = document.getElementById('btnAuditView' + view.charAt(0).toUpperCase() + view.slice(1));
   if (activeBtn) {
-    activeBtn.classList.remove('btn-light', 'text-muted');
-    activeBtn.classList.add('btn-primary', 'shadow-sm');
+    activeBtn.classList.add('active');
   }
 
   // Update hidden input in filter form

@@ -1,0 +1,479 @@
+/**
+ * VISA TRACK — Audit Trail & Security Compliance Ledger (Bento Design System)
+ * File: public/assets/css/pages/audit-logs-index.css
+ */
+
+:root {
+  --bento-bg: #F8FAFC;
+  --bento-card-bg: #FFFFFF;
+  --bento-border: #E2E8F0;
+  --bento-border-hover: #CBD5E1;
+  --bento-text-main: #0F172A;
+  --bento-text-muted: #64748B;
+  --bento-primary: #E11D48;
+  --bento-primary-subtle: #FFF1F2;
+  --bento-primary-border: #FECDD3;
+  --bento-radius: 18px;
+  --bento-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  --bento-hover-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.12);
+  --bento-transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.audit-dashboard {
+  color: var(--bento-text-main);
+}
+
+/* Bento Hero Header */
+.audit-hero {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  border-radius: var(--bento-radius);
+  padding: 1.75rem 2rem;
+  color: #FFFFFF;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.audit-hero::after {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(225, 29, 72, 0.25) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.audit-hero-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.audit-hero-badge {
+  background: rgba(225, 29, 72, 0.25);
+  color: #FDA4AF;
+  border: 1px solid rgba(225, 29, 72, 0.4);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.audit-hero-desc {
+  color: #94A3B8;
+  font-size: 0.9rem;
+  max-width: 680px;
+  margin: 0;
+}
+
+/* View Mode Switcher */
+.audit-view-switcher {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 9999px;
+  padding: 3px;
+  display: inline-flex;
+}
+
+.audit-view-btn {
+  border: none;
+  background: transparent;
+  color: #E2E8F0;
+  padding: 0.35rem 0.95rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  transition: var(--bento-transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.audit-view-btn:hover {
+  color: #FFFFFF;
+}
+
+.audit-view-btn.active {
+  background: #FFFFFF;
+  color: #0F172A;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Bento KPI Grid */
+.bento-audit-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.bento-audit-kpi-card {
+  background: var(--bento-card-bg);
+  border: 1px solid var(--bento-border);
+  border-radius: var(--bento-radius);
+  padding: 1.35rem 1.25rem;
+  box-shadow: var(--bento-shadow);
+  transition: var(--bento-transition);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.bento-audit-kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--bento-hover-shadow);
+  border-color: var(--bento-border-hover);
+}
+
+.bento-audit-kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.bento-audit-kpi-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--bento-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bento-audit-kpi-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+}
+
+.audit-icon-events {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+
+.audit-icon-errors {
+  background: rgba(225, 29, 72, 0.12);
+  color: #E11D48;
+}
+
+.audit-icon-modules {
+  background: rgba(14, 165, 233, 0.12);
+  color: #0284c7;
+}
+
+.audit-icon-actors {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.bento-audit-kpi-value {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--bento-text-main);
+  line-height: 1.2;
+  margin-bottom: 0.35rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.bento-audit-kpi-sub {
+  font-size: 0.78rem;
+  color: var(--bento-text-muted);
+}
+
+/* Filter Card */
+.audit-filter-card {
+  background: var(--bento-card-bg);
+  border: 1px solid var(--bento-border);
+  border-radius: var(--bento-radius);
+  padding: 1.15rem 1.25rem;
+  box-shadow: var(--bento-shadow);
+  margin-bottom: 1.5rem;
+}
+
+/* Table View Container */
+.audit-table-card {
+  background: var(--bento-card-bg);
+  border: 1px solid var(--bento-border);
+  border-radius: var(--bento-radius);
+  box-shadow: var(--bento-shadow);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.audit-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.audit-table thead th {
+  background: #F8FAFC;
+  color: var(--bento-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--bento-border);
+}
+
+.audit-table tbody tr {
+  transition: var(--bento-transition);
+}
+
+.audit-table tbody tr:hover {
+  background: #F8FAFC;
+}
+
+.audit-table tbody tr.is-system-error {
+  background: #FFF1F2;
+}
+
+.audit-table tbody tr.is-system-error:hover {
+  background: #FFE4E6;
+}
+
+.audit-table tbody td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid #F1F5F9;
+  font-size: 0.85rem;
+  vertical-align: middle;
+}
+
+/* Action Badges */
+.badge-audit-action {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.badge-audit-error {
+  background: #E11D48;
+  color: #FFFFFF;
+}
+
+.badge-audit-resolved {
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-audit-default {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+}
+
+.badge-module-pill {
+  background: #F1F5F9;
+  color: #334155;
+  border: 1px solid #CBD5E1;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+}
+
+/* Actor Avatar */
+.audit-actor-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #EFF6FF;
+  color: #2563eb;
+  font-weight: 800;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Timeline Stream Styling */
+.audit-timeline-card {
+  background: var(--bento-card-bg);
+  border: 1px solid var(--bento-border);
+  border-radius: var(--bento-radius);
+  box-shadow: var(--bento-shadow);
+  padding: 1.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.audit-timeline-track {
+  position: relative;
+  padding-left: 2rem;
+  border-left: 2px solid #E2E8F0;
+  margin-left: 1rem;
+}
+
+.audit-timeline-node {
+  position: relative;
+  margin-bottom: 1.75rem;
+}
+
+.audit-timeline-node:last-child {
+  margin-bottom: 0;
+}
+
+.audit-timeline-dot {
+  position: absolute;
+  left: -2.45rem;
+  top: 0.4rem;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 0 0 2px #E2E8F0;
+}
+
+.audit-timeline-dot.danger {
+  background: #E11D48;
+  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.3);
+}
+
+.audit-timeline-box {
+  background: #FFFFFF;
+  border: 1px solid var(--bento-border);
+  border-radius: 14px;
+  padding: 1.15rem 1.35rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition: var(--bento-transition);
+}
+
+.audit-timeline-box:hover {
+  border-color: var(--bento-border-hover);
+  box-shadow: var(--bento-shadow);
+}
+
+/* Event Cards Grid View */
+.audit-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.audit-event-card {
+  background: var(--bento-card-bg);
+  border: 1px solid var(--bento-border);
+  border-radius: var(--bento-radius);
+  padding: 1.25rem;
+  box-shadow: var(--bento-shadow);
+  transition: var(--bento-transition);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.audit-event-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--bento-hover-shadow);
+  border-color: var(--bento-border-hover);
+}
+
+.audit-event-card.is-error {
+  border-color: #FECDD3;
+  background: #FFF1F2;
+}
+
+/* Responsive Table to Cards Transformation */
+@media (max-width: 991.98px) {
+  .audit-hero {
+    padding: 1.25rem 1rem;
+  }
+  .audit-hero-title {
+    font-size: 1.3rem;
+  }
+  .bento-audit-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  .bento-audit-kpi-card {
+    padding: 1rem;
+  }
+  .bento-audit-kpi-value {
+    font-size: 1.4rem;
+  }
+
+  .audit-table {
+    display: block;
+    min-width: 0 !important;
+    width: 100%;
+  }
+
+  .audit-table thead {
+    display: none !important;
+  }
+
+  .audit-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .audit-table tbody tr {
+    display: block;
+    width: 100%;
+    background: #FFFFFF;
+    border: 1px solid var(--bento-border);
+    border-radius: 14px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.85rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  }
+
+  .audit-table tbody td {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0.5rem 0 !important;
+    border: none !important;
+    border-bottom: 1px dashed #F1F5F9 !important;
+    text-align: right;
+  }
+
+  .audit-table tbody td:last-child {
+    border-bottom: none !important;
+  }
+
+  .audit-table tbody td::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--bento-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: left;
+    padding-right: 1rem;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .bento-audit-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .audit-grid-container {
+    grid-template-columns: 1fr;
+  }
+}

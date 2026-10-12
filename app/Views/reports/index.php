@@ -24,10 +24,14 @@ $reportsCatalog = [
 $activePreset = $preset ?? 'custom';
 ?>
 
+<!-- Link Dedicated Bento CSS -->
+<link rel="stylesheet" href="/assets/css/dashboard-bento.css">
+<link rel="stylesheet" href="/assets/css/pages/reports-index.css">
+
 <!-- Include Chart.js UMD -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 
-<div class="content-body">
+<div class="content-body reports-dashboard">
   <?php if ($flash): ?>
     <div class="alert alert-<?= e($flash['type'] === 'danger' ? 'danger' : ($flash['type'] === 'success' ? 'success' : 'info')) ?> alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
       <div class="d-flex align-items-center gap-2">
@@ -38,285 +42,274 @@ $activePreset = $preset ?? 'custom';
     </div>
   <?php endif; ?>
 
-  <!-- Page Header -->
-  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-    <div>
-      <div class="d-flex align-items-center gap-2 mb-1">
-        <h3 class="fw-bold brand-font mb-0 text-dark">
-          <i class="fa-solid fa-chart-pie text-primary me-2"></i> Operational Intelligence &amp; Analytics
-        </h3>
-        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-semibold px-2 py-1">
-          <i class="fa-solid fa-chart-simple me-1"></i> Interactive Charts &amp; Drilldowns
-        </span>
+  <!-- Bento Hero Header -->
+  <div class="reports-hero">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+          <h1 class="reports-hero-title mb-0">
+            <i class="fa-solid fa-chart-pie text-danger"></i> Operational Intelligence &amp; Analytics
+          </h1>
+          <span class="reports-hero-badge">
+            <i class="fa-solid fa-bolt me-1"></i> Real-Time Live Feed
+          </span>
+        </div>
+        <p class="reports-hero-desc">
+          Executive telemetry, multi-dimensional visa funnel analytics, gross margins, workload attribution, and real-time statutory metrics.
+        </p>
       </div>
-      <p class="text-muted small mb-0">Multi-dimensional operational and financial reports with bar, pie, doughnut, and trend analytics by month, year, and custom dates.</p>
-    </div>
-    
-    <div class="d-flex align-items-center gap-2">
-      <a href="/reports?type=<?= urlencode($reportType) ?>&preset=<?= urlencode($activePreset) ?>&date_from=<?= urlencode($dateFrom) ?>&date_to=<?= urlencode($dateTo) ?>&export=csv" class="btn btn-outline-success btn-sm px-3 shadow-sm fw-semibold">
-        <i class="fa-solid fa-file-csv me-1.5"></i> Export Table (CSV)
-      </a>
+
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <a href="/reports?type=<?= urlencode($reportType) ?>&preset=<?= urlencode($activePreset) ?>&date_from=<?= urlencode($dateFrom) ?>&date_to=<?= urlencode($dateTo) ?>&export=csv" class="btn btn-outline-light btn-sm px-3 shadow-sm fw-semibold rounded-pill">
+          <i class="fa-solid fa-file-csv me-1.5 text-success"></i> Export Report (CSV)
+        </a>
+      </div>
     </div>
   </div>
 
   <!-- Quick Date Presets Bar -->
-  <div class="card card-enterprise mb-4 border shadow-sm">
-    <div class="card-body p-2.5">
-      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <div class="d-flex flex-wrap align-items-center gap-1.5">
-          <span class="small fw-bold text-muted me-1"><i class="fa-solid fa-clock-rotate-left me-1"></i> Quick Presets:</span>
-          <a href="/reports?type=<?= urlencode($reportType) ?>&preset=today" class="btn btn-sm py-1 px-2.5 rounded-pill <?= $activePreset === 'today' ? 'btn-primary fw-bold' : 'btn-light border text-dark' ?>">
-            Today
-          </a>
-          <a href="/reports?type=<?= urlencode($reportType) ?>&preset=this_month" class="btn btn-sm py-1 px-2.5 rounded-pill <?= $activePreset === 'this_month' ? 'btn-primary fw-bold' : 'btn-light border text-dark' ?>">
-            This Month
-          </a>
-          <a href="/reports?type=<?= urlencode($reportType) ?>&preset=last_month" class="btn btn-sm py-1 px-2.5 rounded-pill <?= $activePreset === 'last_month' ? 'btn-primary fw-bold' : 'btn-light border text-dark' ?>">
-            Last Month
-          </a>
-          <a href="/reports?type=<?= urlencode($reportType) ?>&preset=this_year" class="btn btn-sm py-1 px-2.5 rounded-pill <?= $activePreset === 'this_year' ? 'btn-primary fw-bold' : 'btn-light border text-dark' ?>">
-            This Year (By Month)
-          </a>
-          <a href="/reports?type=<?= urlencode($reportType) ?>&preset=last_year" class="btn btn-sm py-1 px-2.5 rounded-pill <?= $activePreset === 'last_year' ? 'btn-primary fw-bold' : 'btn-light border text-dark' ?>">
-            Last Year
-          </a>
-          <a href="/reports?type=<?= urlencode($reportType) ?>&preset=all_time" class="btn btn-sm py-1 px-2.5 rounded-pill <?= $activePreset === 'all_time' ? 'btn-primary fw-bold' : 'btn-light border text-dark' ?>">
-            All Time (Multi-Year)
-          </a>
-        </div>
+  <div class="preset-strip-card">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div class="d-flex flex-wrap align-items-center gap-1.5">
+        <span class="small fw-bold text-muted me-1"><i class="fa-solid fa-clock-rotate-left me-1 text-danger"></i> Quick Presets:</span>
+        <a href="/reports?type=<?= urlencode($reportType) ?>&preset=today" class="preset-pill-btn <?= $activePreset === 'today' ? 'active' : '' ?>">
+          Today
+        </a>
+        <a href="/reports?type=<?= urlencode($reportType) ?>&preset=this_month" class="preset-pill-btn <?= $activePreset === 'this_month' ? 'active' : '' ?>">
+          This Month
+        </a>
+        <a href="/reports?type=<?= urlencode($reportType) ?>&preset=last_month" class="preset-pill-btn <?= $activePreset === 'last_month' ? 'active' : '' ?>">
+          Last Month
+        </a>
+        <a href="/reports?type=<?= urlencode($reportType) ?>&preset=this_year" class="preset-pill-btn <?= $activePreset === 'this_year' ? 'active' : '' ?>">
+          This Year
+        </a>
+        <a href="/reports?type=<?= urlencode($reportType) ?>&preset=last_year" class="preset-pill-btn <?= $activePreset === 'last_year' ? 'active' : '' ?>">
+          Last Year
+        </a>
+        <a href="/reports?type=<?= urlencode($reportType) ?>&preset=all_time" class="preset-pill-btn <?= $activePreset === 'all_time' ? 'active' : '' ?>">
+          All Time
+        </a>
+      </div>
 
-        <div class="text-muted small">
-          <i class="fa-regular fa-calendar me-1 text-primary"></i> <strong>Period:</strong> <?= date('M d, Y', strtotime($dateFrom)) ?> &mdash; <?= date('M d, Y', strtotime($dateTo)) ?>
-        </div>
+      <div class="text-muted small fw-semibold">
+        <i class="fa-regular fa-calendar-check me-1 text-danger"></i> <strong>Period:</strong> <?= date('M d, Y', strtotime($dateFrom)) ?> &mdash; <?= date('M d, Y', strtotime($dateTo)) ?>
       </div>
     </div>
   </div>
 
-  <!-- KPI Metrics Strip -->
-  <div class="row g-3 mb-4">
-    <div class="col-6 col-lg-3">
-      <div class="card card-enterprise border shadow-sm p-3 h-100">
-        <div class="d-flex align-items-center justify-content-between mb-2">
-          <span class="text-muted small fw-semibold">Total Applications</span>
-          <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
-            <i class="fa-solid fa-folder-open"></i>
-          </div>
+  <!-- Bento KPI Metrics Strip -->
+  <div class="bento-kpi-grid">
+    <!-- Card 1: Total Volume -->
+    <div class="bento-kpi-card" style="--kpi-accent: #E11D48; --kpi-icon-bg: #FFF1F2; --kpi-icon-color: #E11D48;">
+      <div class="bento-kpi-header">
+        <span class="bento-kpi-title">Total Applications</span>
+        <div class="bento-kpi-icon">
+          <i class="fa-solid fa-folder-open"></i>
         </div>
-        <div class="fs-4 fw-bold text-dark"><?= number_format($kpiSummary['total_apps'] ?? 0) ?></div>
-        <div class="text-muted small mt-1" style="font-size: 0.76rem;">
-          <i class="fa-solid fa-calendar-check text-primary me-1"></i> Recorded in period
-        </div>
+      </div>
+      <div class="bento-kpi-value"><?= number_format($kpiSummary['total_apps'] ?? 0) ?></div>
+      <div class="bento-kpi-footer">
+        <i class="fa-solid fa-layer-group text-danger"></i>
+        <span>Recorded within selected window</span>
       </div>
     </div>
 
-    <div class="col-6 col-lg-3">
-      <div class="card card-enterprise border shadow-sm p-3 h-100">
-        <div class="d-flex align-items-center justify-content-between mb-2">
-          <span class="text-muted small fw-semibold">Total Revenue</span>
-          <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
-            <i class="fa-solid fa-dollar-sign"></i>
-          </div>
+    <!-- Card 2: Total Revenue -->
+    <div class="bento-kpi-card" style="--kpi-accent: #10B981; --kpi-icon-bg: #ECFDF5; --kpi-icon-color: #059669;">
+      <div class="bento-kpi-header">
+        <span class="bento-kpi-title">Gross Revenue</span>
+        <div class="bento-kpi-icon">
+          <i class="fa-solid fa-coins"></i>
         </div>
-        <div class="fs-4 fw-bold text-dark"><?= format_currency((float)($kpiSummary['total_revenue'] ?? 0.0)) ?></div>
-        <div class="text-muted small mt-1" style="font-size: 0.76rem;">
-          <span class="text-success fw-bold"><i class="fa-solid fa-money-bill-transfer me-1"></i> Paid:</span> <?= format_currency((float)($kpiSummary['total_paid'] ?? 0.0)) ?>
-        </div>
+      </div>
+      <div class="bento-kpi-value text-success"><?= format_currency((float)($kpiSummary['total_revenue'] ?? 0.0)) ?></div>
+      <div class="bento-kpi-footer">
+        <span class="text-success fw-bold"><i class="fa-solid fa-money-bill-transfer me-1"></i> Paid: <?= format_currency((float)($kpiSummary['total_paid'] ?? 0.0)) ?></span>
+        <span class="ms-auto text-muted">Bal: <?= format_currency((float)($kpiSummary['total_outstanding'] ?? 0.0)) ?></span>
       </div>
     </div>
 
-    <div class="col-6 col-lg-3">
-      <div class="card card-enterprise border shadow-sm p-3 h-100">
-        <div class="d-flex align-items-center justify-content-between mb-2">
-          <span class="text-muted small fw-semibold">Gross Profit</span>
-          <div class="rounded-circle bg-info-subtle text-info d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
-            <i class="fa-solid fa-chart-line"></i>
-          </div>
+    <!-- Card 3: Gross Profit -->
+    <div class="bento-kpi-card" style="--kpi-accent: #0284C7; --kpi-icon-bg: #F0F9FF; --kpi-icon-color: #0284C7;">
+      <div class="bento-kpi-header">
+        <span class="bento-kpi-title">Gross Profit</span>
+        <div class="bento-kpi-icon">
+          <i class="fa-solid fa-chart-line"></i>
         </div>
-        <div class="fs-4 fw-bold text-info"><?= format_currency((float)($kpiSummary['total_profit'] ?? 0.0)) ?></div>
-        <div class="text-muted small mt-1" style="font-size: 0.76rem;">
-          <span class="text-muted">Cost: <?= format_currency((float)($kpiSummary['total_cost'] ?? 0.0)) ?></span>
-        </div>
+      </div>
+      <div class="bento-kpi-value text-primary"><?= format_currency((float)($kpiSummary['total_profit'] ?? 0.0)) ?></div>
+      <div class="bento-kpi-footer">
+        <span class="text-muted"><i class="fa-solid fa-hand-holding-dollar me-1 text-secondary"></i> Direct Cost: <?= format_currency((float)($kpiSummary['total_cost'] ?? 0.0)) ?></span>
       </div>
     </div>
 
-    <div class="col-6 col-lg-3">
-      <div class="card card-enterprise border shadow-sm p-3 h-100">
-        <div class="d-flex align-items-center justify-content-between mb-2">
-          <span class="text-muted small fw-semibold">Approved / Success</span>
-          <div class="rounded-circle bg-warning-subtle text-warning-text d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
-            <i class="fa-solid fa-circle-check"></i>
-          </div>
+    <!-- Card 4: Approval Rate -->
+    <div class="bento-kpi-card" style="--kpi-accent: #8B5CF6; --kpi-icon-bg: #F5F3FF; --kpi-icon-color: #7C3AED;">
+      <div class="bento-kpi-header">
+        <span class="bento-kpi-title">Success Rate</span>
+        <div class="bento-kpi-icon">
+          <i class="fa-solid fa-circle-check"></i>
         </div>
-        <div class="fs-4 fw-bold text-success"><?= number_format($kpiSummary['approved_count'] ?? 0) ?></div>
-        <div class="text-muted small mt-1" style="font-size: 0.76rem;">
-          <span class="badge bg-success-subtle text-success px-1.5 py-0.5 fw-semibold me-1"><?= $kpiSummary['approval_rate'] ?? 0 ?>%</span> Success Rate
-        </div>
+      </div>
+      <div class="bento-kpi-value" style="color: #7C3AED;"><?= $kpiSummary['approval_rate'] ?? 0 ?>%</div>
+      <div class="bento-kpi-footer">
+        <span class="text-success fw-bold"><i class="fa-solid fa-check me-1"></i><?= number_format($kpiSummary['approved_count'] ?? 0) ?> Approved</span>
+        <span class="text-danger fw-bold ms-auto"><i class="fa-solid fa-xmark me-1"></i><?= number_format($kpiSummary['rejected_count'] ?? 0) ?> Rejected</span>
       </div>
     </div>
   </div>
 
-  <!-- VISUAL CHARTS GRID: BAR, PIE, DOUGHNUT, LINE -->
+  <!-- VISUAL CHARTS BENTO GRID -->
   <div class="row g-4 mb-4">
     <!-- Chart 1: Monthly Performance (Bar & Line Chart) -->
     <div class="col-12 col-xl-7">
-      <div class="card card-enterprise border shadow-sm h-100">
-        <div class="card-header bg-white border-bottom py-3 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div class="bento-chart-card">
+        <div class="bento-chart-header">
           <div>
-            <h6 class="fw-bold mb-0 text-dark">
-              <i class="fa-solid fa-chart-column text-primary me-2"></i> Monthly Volume &amp; Revenue Trend
-            </h6>
-            <small class="text-muted">Month-by-month visa applications volume and revenue performance</small>
+            <h2 class="bento-chart-title">
+              <i class="fa-solid fa-chart-column text-danger"></i> Monthly Volume &amp; Revenue Trend
+            </h2>
+            <span class="bento-chart-subtitle">Real-time month-over-month visa applications volume and revenue performance</span>
           </div>
-          <div class="btn-group btn-group-sm" role="group">
-            <button type="button" class="btn btn-outline-primary active" id="btnMonthlyBar" onclick="switchMonthlyChart('bar')">
-              <i class="fa-solid fa-chart-column me-1"></i> Bar
+          <div class="chart-toggle-group" role="group">
+            <button type="button" class="chart-toggle-btn active" id="btnMonthlyBar" onclick="switchMonthlyChart('bar')">
+              <i class="fa-solid fa-chart-column"></i> Bar
             </button>
-            <button type="button" class="btn btn-outline-primary" id="btnMonthlyLine" onclick="switchMonthlyChart('line')">
-              <i class="fa-solid fa-chart-line me-1"></i> Line
+            <button type="button" class="chart-toggle-btn" id="btnMonthlyLine" onclick="switchMonthlyChart('line')">
+              <i class="fa-solid fa-chart-line"></i> Line
             </button>
           </div>
         </div>
-        <div class="card-body p-3">
-          <div style="position: relative; height: 300px; width: 100%;">
-            <canvas id="monthlyTrendChart"></canvas>
-          </div>
+        <div class="bento-chart-body">
+          <canvas id="monthlyTrendChart"></canvas>
         </div>
       </div>
     </div>
 
     <!-- Chart 2: Status & Stage Slices (Pie & Doughnut Charts) -->
     <div class="col-12 col-xl-5">
-      <div class="card card-enterprise border shadow-sm h-100">
-        <div class="card-header bg-white border-bottom py-3 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div class="bento-chart-card">
+        <div class="bento-chart-header">
           <div>
-            <h6 class="fw-bold mb-0 text-dark">
-              <i class="fa-solid fa-chart-pie text-success me-2"></i> Status Distribution
-            </h6>
-            <small class="text-muted">Proportion of approved, pending, and in-progress files</small>
+            <h2 class="bento-chart-title">
+              <i class="fa-solid fa-chart-pie text-success"></i> Status Distribution
+            </h2>
+            <span class="bento-chart-subtitle">Proportion of approved, pending, and in-progress files</span>
           </div>
-          <div class="btn-group btn-group-sm" role="group">
-            <button type="button" class="btn btn-outline-success active" id="btnStatusDoughnut" onclick="switchStatusChart('doughnut')">
-              <i class="fa-solid fa-circle-notch me-1"></i> Doughnut
+          <div class="chart-toggle-group" role="group">
+            <button type="button" class="chart-toggle-btn active" id="btnStatusDoughnut" onclick="switchStatusChart('doughnut')">
+              <i class="fa-solid fa-circle-notch"></i> Doughnut
             </button>
-            <button type="button" class="btn btn-outline-success" id="btnStatusPie" onclick="switchStatusChart('pie')">
-              <i class="fa-solid fa-chart-pie me-1"></i> Pie
+            <button type="button" class="chart-toggle-btn" id="btnStatusPie" onclick="switchStatusChart('pie')">
+              <i class="fa-solid fa-chart-pie"></i> Pie
             </button>
           </div>
         </div>
-        <div class="card-body p-3 d-flex flex-column align-items-center justify-content-center">
-          <div style="position: relative; height: 280px; width: 100%;">
-            <canvas id="statusDistChart"></canvas>
-          </div>
+        <div class="bento-chart-body d-flex flex-column align-items-center justify-content-center">
+          <canvas id="statusDistChart"></canvas>
         </div>
       </div>
     </div>
 
     <!-- Chart 3: Multi-Year Comparison (Bar Chart by Years) -->
     <div class="col-12 col-xl-6">
-      <div class="card card-enterprise border shadow-sm h-100">
-        <div class="card-header bg-white border-bottom py-3 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div class="bento-chart-card">
+        <div class="bento-chart-header">
           <div>
-            <h6 class="fw-bold mb-0 text-dark">
-              <i class="fa-solid fa-calendar-days text-info me-2"></i> Multi-Year Performance Comparison (By Year)
-            </h6>
-            <small class="text-muted">Historical application throughput and gross turnover year-by-year</small>
+            <h2 class="bento-chart-title">
+              <i class="fa-solid fa-calendar-days text-primary"></i> Multi-Year Performance Comparison
+            </h2>
+            <span class="bento-chart-subtitle">Historical application throughput and gross turnover year-by-year</span>
           </div>
           <span class="badge bg-light text-secondary border">Annual Summary</span>
         </div>
-        <div class="card-body p-3">
-          <div style="position: relative; height: 270px; width: 100%;">
-            <canvas id="yearlyTrendChart"></canvas>
-          </div>
+        <div class="bento-chart-body">
+          <canvas id="yearlyTrendChart"></canvas>
         </div>
       </div>
     </div>
 
-    <!-- Chart 4: Top Destination Countries & Categories (Horizontal Bar & Polar) -->
+    <!-- Chart 4: Top Destination Countries Breakdown (Horizontal Bar & Polar) -->
     <div class="col-12 col-xl-6">
-      <div class="card card-enterprise border shadow-sm h-100">
-        <div class="card-header bg-white border-bottom py-3 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div class="bento-chart-card">
+        <div class="bento-chart-header">
           <div>
-            <h6 class="fw-bold mb-0 text-dark">
-              <i class="fa-solid fa-earth-americas text-warning-text me-2"></i> Destination Countries Breakdown
-            </h6>
-            <small class="text-muted">Application volume by destination destination country</small>
+            <h2 class="bento-chart-title">
+              <i class="fa-solid fa-earth-americas text-warning"></i> Destination Countries Breakdown
+            </h2>
+            <span class="bento-chart-subtitle">Application volume distributed by destination country</span>
           </div>
-          <div class="btn-group btn-group-sm" role="group">
-            <button type="button" class="btn btn-outline-secondary active" id="btnCountryBar" onclick="switchCountryChart('bar')">
-              <i class="fa-solid fa-bars me-1"></i> Bar
+          <div class="chart-toggle-group" role="group">
+            <button type="button" class="chart-toggle-btn active" id="btnCountryBar" onclick="switchCountryChart('bar')">
+              <i class="fa-solid fa-bars"></i> Bar
             </button>
-            <button type="button" class="btn btn-outline-secondary" id="btnCountryPolar" onclick="switchCountryChart('polarArea')">
-              <i class="fa-solid fa-asterisk me-1"></i> Polar
+            <button type="button" class="chart-toggle-btn" id="btnCountryPolar" onclick="switchCountryChart('polarArea')">
+              <i class="fa-solid fa-asterisk"></i> Polar
             </button>
           </div>
         </div>
-        <div class="card-body p-3">
-          <div style="position: relative; height: 270px; width: 100%;">
-            <canvas id="countryDistChart"></canvas>
-          </div>
+        <div class="bento-chart-body">
+          <canvas id="countryDistChart"></canvas>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Detailed Filter & Report Selector (Date by Date) -->
-  <div class="card card-enterprise mb-4 border shadow-sm">
-    <div class="card-header bg-white border-bottom py-3 px-3">
-      <h6 class="fw-bold mb-0 text-dark">
-        <i class="fa-solid fa-filter text-primary me-2"></i> Custom Date-by-Date &amp; Report Type Filter
-      </h6>
+  <!-- Detailed Filter & Report Selector Panel -->
+  <div class="bento-filter-card">
+    <div class="bento-filter-title">
+      <i class="fa-solid fa-filter text-danger"></i> Custom Date-by-Date &amp; Report Type Filter
     </div>
-    <div class="card-body p-3">
-      <form action="/reports" method="GET" class="row g-3 align-items-end">
-        <input type="hidden" name="preset" value="custom">
+    <form action="/reports" method="GET" class="row g-3 align-items-end">
+      <input type="hidden" name="preset" value="custom">
 
-        <div class="col-12 col-md-4">
-          <label class="form-label small fw-bold text-dark mb-1">Detailed Report Catalog</label>
-          <select name="type" class="form-select form-select-sm" onchange="this.form.submit()">
-            <?php foreach ($reportsCatalog as $key => $name): ?>
-              <option value="<?= $key ?>" <?= $reportType === $key ? 'selected' : '' ?>><?= $name ?></option>
-            <?php endforeach; ?>
-          </select>
-        </div>
+      <div class="col-12 col-md-4">
+        <label class="form-label small fw-bold text-dark mb-1">Detailed Report Catalog</label>
+        <select name="type" class="form-select form-select-sm rounded-pill" onchange="this.form.submit()">
+          <?php foreach ($reportsCatalog as $key => $name): ?>
+            <option value="<?= $key ?>" <?= $reportType === $key ? 'selected' : '' ?>><?= $name ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
 
-        <div class="col-6 col-md-3">
-          <label class="form-label small fw-bold text-dark mb-1">Date From (Date-by-Date)</label>
-          <input type="date" name="date_from" class="form-control form-control-sm" value="<?= e($dateFrom) ?>">
-        </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label small fw-bold text-dark mb-1">Date From</label>
+        <input type="date" name="date_from" class="form-control form-control-sm rounded-pill" value="<?= e($dateFrom) ?>">
+      </div>
 
-        <div class="col-6 col-md-3">
-          <label class="form-label small fw-bold text-dark mb-1">Date To</label>
-          <input type="date" name="date_to" class="form-control form-control-sm" value="<?= e($dateTo) ?>">
-        </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label small fw-bold text-dark mb-1">Date To</label>
+        <input type="date" name="date_to" class="form-control form-control-sm rounded-pill" value="<?= e($dateTo) ?>">
+      </div>
 
-        <div class="col-12 col-md-2 d-flex gap-1">
-          <button type="submit" class="btn btn-primary btn-sm flex-grow-1 fw-bold shadow-sm" title="Generate Report">
-            <i class="fa-solid fa-magnifying-glass me-1"></i> Generate
-          </button>
-          <a href="/reports" class="btn btn-light btn-sm border" title="Reset Filters">
-            <i class="fa-solid fa-rotate-left"></i>
-          </a>
-        </div>
-      </form>
-    </div>
+      <div class="col-12 col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm flex-grow-1 fw-bold rounded-pill shadow-sm" title="Generate Report">
+          <i class="fa-solid fa-magnifying-glass me-1"></i> Generate
+        </button>
+        <a href="/reports" class="btn btn-light btn-sm border rounded-pill px-3" title="Reset Filters">
+          <i class="fa-solid fa-rotate-left"></i>
+        </a>
+      </div>
+    </form>
   </div>
 
-  <!-- Report Data Table Card -->
-  <div class="card card-enterprise border shadow-sm">
-    <div class="card-header bg-white border-bottom py-3 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+  <!-- Report Data Table Bento Card -->
+  <div class="bento-table-card">
+    <div class="bento-table-header">
       <div>
-        <span class="fw-bold fs-6 text-primary"><i class="fa-solid fa-table-list me-2"></i><?= e($title) ?></span>
+        <span class="fw-bold fs-6 text-dark"><i class="fa-solid fa-table-list text-danger me-2"></i><?= e($title) ?></span>
       </div>
       <div>
-        <span class="badge bg-light text-dark border fw-semibold px-2 py-1"><?= count($data) ?> Records Loaded</span>
+        <span class="badge bg-light text-dark border fw-semibold px-2.5 py-1.5 rounded-pill"><?= count($data) ?> Records Loaded</span>
       </div>
     </div>
-    <div class="table-responsive">
-      <table class="table table-custom align-middle mb-0">
-        <thead class="table-light">
+    <div class="table-responsive mb-0">
+      <table class="bento-report-table align-middle">
+        <thead>
           <tr>
             <?php foreach ($columns as $col): ?>
-              <th class="small fw-bold text-secondary text-nowrap"><?= e($col) ?></th>
+              <th><?= e($col) ?></th>
             <?php endforeach; ?>
           </tr>
         </thead>
@@ -325,27 +318,32 @@ $activePreset = $preset ?? 'custom';
             <tr>
               <td colspan="<?= count($columns) ?>" class="text-center py-5 text-muted">
                 <i class="fa-solid fa-inbox fa-2x mb-2 text-secondary opacity-50 d-block"></i>
-                No records found matching the selected dates and filters.
+                No records found matching the selected dates and parameters.
               </td>
             </tr>
           <?php else: ?>
             <?php foreach ($data as $row): ?>
               <tr>
-                <?php for ($i = 1; $i <= count($columns); $i++): ?>
-                  <td class="small">
+                <?php for ($i = 1; $i <= count($columns); $i++): 
+                  $colName = $columns[$i - 1];
+                  $val = $row["col_{$i}"] ?? '';
+                ?>
+                  <td data-label="<?= e($colName) ?>">
                     <?php 
-                      $val = $row["col_{$i}"] ?? '';
                       // Format currency if column indicates monetary amount
-                      if (str_contains($columns[$i-1], '($)') || str_contains($columns[$i-1], 'Price') || str_contains($columns[$i-1], 'Revenue') || str_contains($columns[$i-1], 'Profit') || str_contains($columns[$i-1], 'Paid') || str_contains($columns[$i-1], 'Outstanding') || str_contains($columns[$i-1], 'Cost') || str_contains($columns[$i-1], 'Fee')) {
-                        echo is_numeric($val) ? '<span class="fw-semibold text-dark">' . format_currency((float)$val) . '</span>' : e((string)$val);
-                      } elseif (str_contains($columns[$i-1], 'Status') || str_contains($columns[$i-1], 'Stage')) {
+                      if (str_contains($colName, '($)') || str_contains($colName, 'Price') || str_contains($colName, 'Revenue') || str_contains($colName, 'Profit') || str_contains($colName, 'Paid') || str_contains($colName, 'Outstanding') || str_contains($colName, 'Cost') || str_contains($colName, 'Fee')) {
+                        echo is_numeric($val) ? '<span class="fw-bold text-dark font-monospace">' . format_currency((float)$val) . '</span>' : e((string)$val);
+                      } elseif (str_contains($colName, 'Status') || str_contains($colName, 'Stage')) {
                         $badgeCls = match($val) {
-                          'Approved', 'Completed' => 'bg-success-subtle text-success border border-success-subtle',
-                          'In Progress', 'Submitted', 'Under Review' => 'bg-primary-subtle text-primary border border-primary-subtle',
-                          'Rejected' => 'bg-danger-subtle text-danger border border-danger-subtle',
-                          default => 'bg-secondary-subtle text-secondary border'
+                          'Approved', 'Completed' => 'badge-bento-success',
+                          'In Progress', 'Submitted', 'Under Review' => 'badge-bento-primary',
+                          'Rejected', 'EXPIRED', 'Critical (< 30 Days)' => 'badge-bento-danger',
+                          'Warning (< 60 Days)', 'Expiring Soon' => 'badge-bento-warning',
+                          default => 'badge-bento-neutral'
                         };
-                        echo '<span class="badge ' . $badgeCls . ' fw-semibold px-2 py-1">' . e((string)$val) . '</span>';
+                        echo '<span class="badge-bento ' . $badgeCls . '">' . e((string)$val) . '</span>';
+                      } elseif (str_contains($colName, 'Application #')) {
+                        echo '<span class="font-monospace fw-bold text-dark">' . e((string)$val) . '</span>';
                       } else {
                         echo e((string)$val);
                       }
@@ -364,22 +362,9 @@ $activePreset = $preset ?? 'custom';
 <!-- Chart.js Initialization & Interactive Switching -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const brandColors = {
-    primary: '#2563eb',
-    primaryLight: 'rgba(37, 99, 235, 0.2)',
-    success: '#10b981',
-    successLight: 'rgba(16, 185, 129, 0.2)',
-    danger: '#ef4444',
-    warning: '#f59e0b',
-    info: '#06b6d4',
-    purple: '#8b5cf6',
-    indigo: '#6366f1',
-    slate: '#64748b'
-  };
-
   const chartPalette = [
-    '#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-    '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#64748b'
+    '#E11D48', '#10B981', '#F59E0B', '#0284C7', '#8B5CF6',
+    '#06B6D4', '#EC4899', '#14B8A6', '#F97316', '#64748B'
   ];
 
   // 1. Monthly Trend Chart (Bar & Line)
@@ -397,22 +382,22 @@ document.addEventListener('DOMContentLoaded', function() {
         {
           label: 'Applications (Count)',
           data: monthlyCounts,
-          backgroundColor: 'rgba(37, 99, 235, 0.7)',
-          borderColor: '#2563eb',
+          backgroundColor: 'rgba(225, 29, 72, 0.75)',
+          borderColor: '#E11D48',
           borderWidth: 1.5,
-          borderRadius: 4,
+          borderRadius: 6,
           yAxisID: 'y'
         },
         {
           label: 'Revenue ($)',
           data: monthlyRevenues,
           type: 'line',
-          borderColor: '#10b981',
+          borderColor: '#10B981',
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
           borderWidth: 2.5,
-          pointBackgroundColor: '#10b981',
+          pointBackgroundColor: '#10B981',
           pointRadius: 4,
-          tension: 0.3,
+          tension: 0.35,
           yAxisID: 'y1'
         }
       ]
@@ -483,7 +468,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         }
       },
-      cutout: '60%'
+      cutout: '62%'
     }
   });
 
@@ -502,18 +487,18 @@ document.addEventListener('DOMContentLoaded', function() {
         {
           label: 'Total Cases',
           data: yearlyCounts,
-          backgroundColor: 'rgba(6, 182, 212, 0.75)',
-          borderColor: '#06b6d4',
+          backgroundColor: 'rgba(2, 132, 199, 0.75)',
+          borderColor: '#0284C7',
           borderWidth: 1.5,
-          borderRadius: 4
+          borderRadius: 6
         },
         {
           label: 'Total Revenue ($)',
           data: yearlyRevenues,
-          backgroundColor: 'rgba(99, 102, 241, 0.75)',
-          borderColor: '#6366f1',
+          backgroundColor: 'rgba(139, 92, 246, 0.75)',
+          borderColor: '#8B5CF6',
           borderWidth: 1.5,
-          borderRadius: 4
+          borderRadius: 6
         }
       ]
     },
@@ -546,9 +531,9 @@ document.addEventListener('DOMContentLoaded', function() {
         label: 'Applications Volume',
         data: countryCounts,
         backgroundColor: 'rgba(245, 158, 11, 0.8)',
-        borderColor: '#f59e0b',
+        borderColor: '#F59E0B',
         borderWidth: 1,
-        borderRadius: 4
+        borderRadius: 6
       }]
     },
     options: {
@@ -573,12 +558,12 @@ function switchMonthlyChart(type) {
   if (window.monthlyChartInstance) {
     if (type === 'line') {
       window.monthlyChartInstance.config.data.datasets[0].type = 'line';
-      window.monthlyChartInstance.config.data.datasets[0].tension = 0.3;
+      window.monthlyChartInstance.config.data.datasets[0].tension = 0.35;
       window.monthlyChartInstance.config.data.datasets[0].fill = true;
-      window.monthlyChartInstance.config.data.datasets[0].backgroundColor = 'rgba(37, 99, 235, 0.1)';
+      window.monthlyChartInstance.config.data.datasets[0].backgroundColor = 'rgba(225, 29, 72, 0.1)';
     } else {
       window.monthlyChartInstance.config.data.datasets[0].type = 'bar';
-      window.monthlyChartInstance.config.data.datasets[0].backgroundColor = 'rgba(37, 99, 235, 0.7)';
+      window.monthlyChartInstance.config.data.datasets[0].backgroundColor = 'rgba(225, 29, 72, 0.75)';
     }
     window.monthlyChartInstance.update();
   }
@@ -590,7 +575,7 @@ function switchStatusChart(type) {
   
   if (window.statusChartInstance) {
     window.statusChartInstance.config.type = type;
-    window.statusChartInstance.config.options.cutout = (type === 'doughnut') ? '60%' : '0%';
+    window.statusChartInstance.config.options.cutout = (type === 'doughnut') ? '62%' : '0%';
     window.statusChartInstance.update();
   }
 }
@@ -612,12 +597,12 @@ function switchCountryChart(type) {
           datasets: [{
             data: data.datasets[0].data,
             backgroundColor: [
-              'rgba(37, 99, 235, 0.7)',
-              'rgba(16, 185, 129, 0.7)',
-              'rgba(245, 158, 11, 0.7)',
-              'rgba(239, 68, 68, 0.7)',
-              'rgba(139, 92, 246, 0.7)',
-              'rgba(6, 182, 212, 0.7)'
+              'rgba(225, 29, 72, 0.75)',
+              'rgba(16, 185, 129, 0.75)',
+              'rgba(245, 158, 11, 0.75)',
+              'rgba(2, 132, 199, 0.75)',
+              'rgba(139, 92, 246, 0.75)',
+              'rgba(6, 182, 212, 0.75)'
             ]
           }]
         },
@@ -636,9 +621,9 @@ function switchCountryChart(type) {
             label: 'Applications Volume',
             data: data.datasets[0].data,
             backgroundColor: 'rgba(245, 158, 11, 0.8)',
-            borderColor: '#f59e0b',
+            borderColor: '#F59E0B',
             borderWidth: 1,
-            borderRadius: 4
+            borderRadius: 6
           }]
         },
         options: {

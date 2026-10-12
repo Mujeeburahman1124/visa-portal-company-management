@@ -1026,7 +1026,29 @@ switch ($uri) {
         break;
 
     case '/countries':
-        redirect('/settings?tab=countries');
+    case '/countries/index':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'visa-manager']);
+        (new App\Controllers\CountryController())->index();
+        break;
+
+    case '/countries/store':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
+        (new App\Controllers\CountryController())->store();
+        break;
+
+    case '/countries/update':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
+        (new App\Controllers\CountryController())->update();
+        break;
+
+    case '/countries/toggle':
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        (new App\Controllers\CountryController())->toggleStatus();
+        break;
+
+    case '/countries/delete':
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        (new App\Controllers\CountryController())->delete();
         break;
 
     case '/settings':

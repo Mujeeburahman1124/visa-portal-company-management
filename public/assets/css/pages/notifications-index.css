@@ -1,0 +1,421 @@
+/**
+ * VISA TRACK — Notification Center & Personal Inbox (Bento Design System)
+ * File: public/assets/css/pages/notifications-index.css
+ */
+
+:root {
+  --bento-bg: #F8FAFC;
+  --bento-card-bg: #FFFFFF;
+  --bento-border: #E2E8F0;
+  --bento-border-hover: #CBD5E1;
+  --bento-text-main: #0F172A;
+  --bento-text-muted: #64748B;
+  --bento-primary: #E11D48;
+  --bento-primary-subtle: #FFF1F2;
+  --bento-primary-border: #FECDD3;
+  --bento-radius: 18px;
+  --bento-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  --bento-hover-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.12);
+  --bento-transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.notifications-dashboard {
+  color: var(--bento-text-main);
+}
+
+/* Bento Hero Header */
+.notifications-hero {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  border-radius: var(--bento-radius);
+  padding: 1.75rem 2rem;
+  color: #FFFFFF;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.notifications-hero::after {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(225, 29, 72, 0.25) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.notifications-hero-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.notifications-hero-badge {
+  background: rgba(225, 29, 72, 0.25);
+  color: #FDA4AF;
+  border: 1px solid rgba(225, 29, 72, 0.4);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.notifications-hero-desc {
+  color: #94A3B8;
+  font-size: 0.9rem;
+  max-width: 650px;
+  margin: 0;
+}
+
+/* Bento KPI Grid */
+.bento-notif-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.bento-notif-kpi-card {
+  background: var(--bento-card-bg);
+  border: 1px solid var(--bento-border);
+  border-radius: var(--bento-radius);
+  padding: 1.35rem 1.25rem;
+  box-shadow: var(--bento-shadow);
+  transition: var(--bento-transition);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.bento-notif-kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--bento-hover-shadow);
+  border-color: var(--bento-border-hover);
+}
+
+.bento-notif-kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.bento-notif-kpi-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--bento-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bento-notif-kpi-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.icon-unread {
+  background: rgba(225, 29, 72, 0.12);
+  color: #E11D48;
+}
+
+.icon-total {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+
+.icon-warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #D97706;
+}
+
+.icon-channels {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.bento-notif-kpi-value {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--bento-text-main);
+  line-height: 1.2;
+  margin-bottom: 0.35rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.bento-notif-kpi-sub {
+  font-size: 0.78rem;
+  color: var(--bento-text-muted);
+}
+
+/* Control & Filter Toolbar */
+.notif-toolbar-card {
+  background: var(--bento-card-bg);
+  border: 1px solid var(--bento-border);
+  border-radius: var(--bento-radius);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--bento-shadow);
+  margin-bottom: 1.5rem;
+}
+
+.notif-filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.notif-pill-btn {
+  padding: 0.45rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: var(--bento-transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--bento-border);
+  background: #F8FAFC;
+  color: var(--bento-text-muted);
+}
+
+.notif-pill-btn:hover {
+  background: #EEF2F6;
+  color: var(--bento-text-main);
+}
+
+.notif-pill-btn.active {
+  background: var(--bento-primary);
+  border-color: var(--bento-primary);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.25);
+}
+
+.notif-pill-btn.active-unread {
+  background: #E11D48;
+  border-color: #E11D48;
+  color: #FFFFFF;
+}
+
+/* Notifications List Container */
+.notif-feed-container {
+  background: var(--bento-card-bg);
+  border: 1px solid var(--bento-border);
+  border-radius: var(--bento-radius);
+  box-shadow: var(--bento-shadow);
+  overflow: hidden;
+}
+
+.notif-item {
+  padding: 1.15rem 1.4rem;
+  border-bottom: 1px solid var(--bento-border);
+  transition: var(--bento-transition);
+  display: flex;
+  align-items: flex-start;
+  gap: 1.15rem;
+  position: relative;
+  background: #FFFFFF;
+}
+
+.notif-item:last-child {
+  border-bottom: none;
+}
+
+.notif-item:hover {
+  background: #F8FAFC;
+}
+
+.notif-item.is-unread {
+  background: #FFF1F2;
+  border-left: 4px solid var(--bento-primary);
+}
+
+.notif-item.is-read {
+  border-left: 4px solid transparent;
+}
+
+.notif-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.notif-avatar.danger {
+  background: rgba(225, 29, 72, 0.15);
+  color: #E11D48;
+}
+
+.notif-avatar.warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #D97706;
+}
+
+.notif-avatar.success {
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+}
+
+.notif-avatar.info {
+  background: rgba(37, 99, 235, 0.15);
+  color: #2563eb;
+}
+
+.notif-body {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.notif-header-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.notif-title {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: var(--bento-text-main);
+  margin: 0;
+}
+
+.notif-type-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #F1F5F9;
+  color: #475569;
+  border: 1px solid #E2E8F0;
+  padding: 0.15rem 0.55rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.notif-new-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  background: var(--bento-primary);
+  color: #FFFFFF;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.notif-new-dot {
+  width: 5px;
+  height: 5px;
+  background: #FFFFFF;
+  border-radius: 50%;
+  animation: pulseDot 1.5s infinite;
+}
+
+@keyframes pulseDot {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.6; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.notif-message {
+  font-size: 0.86rem;
+  color: #475569;
+  line-height: 1.45;
+  margin-bottom: 0.5rem;
+}
+
+.notif-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.74rem;
+  color: var(--bento-text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.notif-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Empty State */
+.notif-empty-state {
+  text-align: center;
+  padding: 4rem 1.5rem;
+  color: var(--bento-text-muted);
+}
+
+.notif-empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #F1F5F9;
+  color: #94A3B8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin: 0 auto 1.25rem;
+}
+
+/* Responsive Styles */
+@media (max-width: 991.98px) {
+  .notifications-hero {
+    padding: 1.25rem 1rem;
+  }
+  .notifications-hero-title {
+    font-size: 1.3rem;
+  }
+  .bento-notif-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  .bento-notif-kpi-card {
+    padding: 1rem;
+  }
+  .bento-notif-kpi-value {
+    font-size: 1.4rem;
+  }
+  .notif-item {
+    flex-direction: column;
+    padding: 1rem;
+  }
+  .notif-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed #E2E8F0;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .bento-notif-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}

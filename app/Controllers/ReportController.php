@@ -330,6 +330,6 @@ class ReportController
             exit;
         }
 
-        require_once dirname(__DIR__) . '/Views/reports/index.php';
+        require dirname(__DIR__) . '/Views/reports/index.php';
     }
 }
