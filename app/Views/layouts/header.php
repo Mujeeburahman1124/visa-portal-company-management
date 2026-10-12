@@ -24,9 +24,9 @@
   <!-- Central Theme Engine — must load BEFORE main.css -->
   <link rel="stylesheet" href="/assets/css/theme.css?v=2.3">
   <!-- Application CSS -->
-  <link rel="stylesheet" href="/assets/css/main.css?v=7.2.0">
+  <link rel="stylesheet" href="/assets/css/main.css?v=7.2.1">
   <!-- Bankio FinTech Design System -->
-  <link rel="stylesheet" href="/assets/css/bankio-theme.css?v=2.0">
+  <link rel="stylesheet" href="/assets/css/bankio-theme.css?v=2.1">
   <!-- Flatpickr Datepicker CSS -->
   <link rel="stylesheet" href="/assets/css/flatpickr.min.css">
 

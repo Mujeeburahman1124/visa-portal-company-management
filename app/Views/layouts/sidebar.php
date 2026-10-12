@@ -38,7 +38,7 @@ $canViewNotifAdmin  = $isAdmin || user_has_role(['branch-manager', 'visa-manager
   <!-- Sidebar Brand Header -->
   <div class="sidebar-header">
     <a href="/dashboard" class="sidebar-brand text-decoration-none">
-      <img src="/assets/images/logo.png" alt="MS Travel Hub Logo" class="brand-logo-sidebar me-2">
+      <img src="/assets/images/logo.png" alt="MS Travel Hub Logo" class="brand-logo-sidebar">
       <div class="sidebar-brand-text">
         <div class="fw-bold brand-title">MS <span class="ruby-gem">TRAVEL HUB</span></div>
         <div class="brand-subtitle">GLOBAL VISA MANAGEMENT</div>
