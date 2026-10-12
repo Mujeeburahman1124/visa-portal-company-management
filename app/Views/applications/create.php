@@ -110,6 +110,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <button type="button" class="btn btn-mac-secondary btn-sm px-4" onclick="document.getElementById('passportCameraInput').click()">
             <i class="fa-solid fa-camera me-1"></i> Take Passport Photo
           </button>
+          <button type="button" class="btn btn-outline-info btn-sm px-3" id="btnTestSamplePassport" onclick="loadSamplePassportForTesting()" style="display:none;">
+            <i class="fa-solid fa-flask me-1"></i> Test Sample Passport
+          </button>
         </div>
         <div class="small text-secondary mt-3">
           <i class="fa-solid fa-shield-check text-success me-1"></i> MRZ checksum verified &bull; Visual OCR fallback &bull; Privacy protected
@@ -150,6 +153,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <button type="button" class="btn btn-outline-primary btn-sm" onclick="reopenOcrReviewModal()">
             <i class="fa-solid fa-eye me-1"></i> View Scan &amp; Details
           </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="reopenPreScanFromLastImage()">
+            <i class="fa-solid fa-crop-simple me-1"></i> Edit &amp; Crop
+          </button>
           <button type="button" class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('passportFileInput').click()">
             <i class="fa-solid fa-arrows-rotate me-1"></i> Scan Different
           </button>
@@ -163,10 +169,13 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         <i class="fa-solid fa-triangle-exclamation text-warning mt-1"></i>
         <div class="flex-grow-1">
           <strong id="ocrErrorTitle">Passport data could not be read confidently.</strong>
-          <div class="small" id="ocrErrorMsg">Ensure all four corners and the bottom MRZ lines are clearly visible without glare or blur. You can retry with a clearer photo or enter details manually below.</div>
-          <div class="mt-2 d-flex gap-2">
+          <div class="small" id="ocrErrorMsg">Ensure all four corners and the bottom MRZ lines are clearly visible without glare or blur. You can enhance &amp; crop in the editor, retry with a clearer photo, or enter details manually below.</div>
+          <div class="mt-2 d-flex gap-2 flex-wrap">
+            <button type="button" class="btn btn-primary btn-sm py-1" onclick="reopenPreScanFromLastImage()">
+              <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Crop &amp; Clarify in Studio
+            </button>
             <button type="button" class="btn btn-warning btn-sm py-1" onclick="document.getElementById('passportFileInput').click()">
-              <i class="fa-solid fa-rotate-right me-1"></i> Retry Upload
+              <i class="fa-solid fa-rotate-right me-1"></i> Upload Different Scan
             </button>
             <button type="button" class="btn btn-outline-dark btn-sm py-1" onclick="dismissOcrError()">
               <i class="fa-solid fa-pen me-1"></i> Enter Manually
@@ -1103,16 +1112,240 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
       </div>
 
       <div class="modal-footer bg-light d-flex justify-content-between py-3">
-        <div>
-          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="dismissOcrReviewModal()">
-            <i class="fa-solid fa-pen me-1"></i> Enter Manually
+        <div class="d-flex gap-2 flex-wrap">
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick="reopenPreScanFromReview()">
+            <i class="fa-solid fa-crop-simple me-1"></i> Edit / Re-Crop Scan
           </button>
           <button type="button" class="btn btn-outline-secondary btn-sm" onclick="dismissOcrReviewModal(); document.getElementById('passportFileInput').click();">
             <i class="fa-solid fa-rotate me-1"></i> Scan Different Image
           </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="dismissOcrReviewModal()">
+            <i class="fa-solid fa-pen me-1"></i> Enter Manually
+          </button>
         </div>
         <button type="button" class="btn btn-mac-primary px-4" onclick="applyOcrDataToForm()">
           <i class="fa-solid fa-check me-1"></i> CONFIRM &amp; AUTO-FILL FORM
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PRE-SCAN CROP & CLARITY STUDIO MODAL                        -->
+<!-- ============================================================ -->
+<div class="modal fade modal-mac" id="ocrPreScanModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog prescan-modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center">
+          <div class="traffic-dots">
+            <span class="traffic-dot red" onclick="cancelPreScanEditor()" title="Close"></span>
+            <span class="traffic-dot yellow"></span>
+            <span class="traffic-dot green"></span>
+          </div>
+          <h5 class="modal-title fw-bold text-dark mb-0 fs-6">
+            <i class="fa-solid fa-crop-simple text-primary me-2"></i> Passport Pre-Scan Studio &bull; Crop &amp; Clarify
+          </h5>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5" id="preScanClarityBadge">
+            <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Analyzing Clarity...
+          </span>
+          <button type="button" class="btn-close" onclick="cancelPreScanEditor()"></button>
+        </div>
+      </div>
+
+      <div class="modal-body p-3 p-lg-4">
+        <div class="row g-3">
+          <!-- Left: Canvas Stage & Interactive Crop Box -->
+          <div class="col-lg-7 col-xl-8">
+            <div class="prescan-stage-wrapper">
+              <!-- Stage Toolbar -->
+              <div class="prescan-stage-toolbar">
+                <!-- Aspect Ratio Buttons -->
+                <div class="d-flex align-items-center gap-1 flex-wrap">
+                  <span class="small text-light text-opacity-75 me-1"><i class="fa-solid fa-crop me-1"></i> Aspect:</span>
+                  <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-light active" id="btnCropAspectBio" onclick="setCropAspectPreset('bio')">
+                      <i class="fa-solid fa-id-card me-1"></i> Bio-Page
+                    </button>
+                    <button type="button" class="btn btn-outline-light" id="btnCropAspectMrz" onclick="setCropAspectPreset('mrz')">
+                      <i class="fa-solid fa-barcode me-1"></i> MRZ Strip
+                    </button>
+                    <button type="button" class="btn btn-outline-light" id="btnCropAspectFree" onclick="setCropAspectPreset('free')">
+                      <i class="fa-solid fa-vector-square me-1"></i> Freeform
+                    </button>
+                    <button type="button" class="btn btn-outline-light" id="btnCropAspectFull" onclick="setCropAspectPreset('full')">
+                      <i class="fa-solid fa-expand me-1"></i> Full
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Transform & View Controls -->
+                <div class="d-flex align-items-center gap-1">
+                  <button type="button" class="btn btn-sm btn-outline-light" onclick="rotatePreScan(-90)" title="Rotate 90° Left">
+                    <i class="fa-solid fa-rotate-left"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-light" onclick="rotatePreScan(90)" title="Rotate 90° Right">
+                    <i class="fa-solid fa-rotate-right"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-light" onclick="flipPreScanH()" title="Flip Horizontal">
+                    <i class="fa-solid fa-arrows-left-right"></i>
+                  </button>
+                  <div class="vr bg-secondary mx-1" style="height: 20px;"></div>
+                  <button type="button" class="btn btn-sm btn-outline-light" onclick="adjustPreScanZoom(0.15)" title="Zoom In">
+                    <i class="fa-solid fa-magnifying-glass-plus"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-light" onclick="adjustPreScanZoom(-0.15)" title="Zoom Out">
+                    <i class="fa-solid fa-magnifying-glass-minus"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-light" onclick="resetPreScanZoom()" title="Reset Zoom">
+                    <i class="fa-solid fa-compress"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Canvas Viewport -->
+              <div class="prescan-stage-viewport" id="preScanStageViewport">
+                <div class="prescan-canvas-holder" id="preScanCanvasHolder">
+                  <canvas id="preScanCanvas"></canvas>
+
+                  <!-- Interactive Crop Overlay Box -->
+                  <div class="crop-overlay-box" id="preScanCropBox">
+                    <div class="crop-grid-lines"></div>
+                    <div class="crop-mrz-guidance">
+                      <span><i class="fa-solid fa-barcode me-1"></i> MRZ Reading Zone (Bottom 2-3 Lines)</span>
+                    </div>
+                    <div class="crop-dim-badge" id="preScanCropDims">0 &times; 0 px</div>
+
+                    <!-- 8 Resize Handles -->
+                    <div class="crop-handle handle-nw" data-handle="nw"></div>
+                    <div class="crop-handle handle-n" data-handle="n"></div>
+                    <div class="crop-handle handle-ne" data-handle="ne"></div>
+                    <div class="crop-handle handle-e" data-handle="e"></div>
+                    <div class="crop-handle handle-se" data-handle="se"></div>
+                    <div class="crop-handle handle-s" data-handle="s"></div>
+                    <div class="crop-handle handle-sw" data-handle="sw"></div>
+                    <div class="crop-handle handle-w" data-handle="w"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stage Guidance Tip -->
+            <div class="d-flex justify-content-between align-items-center mt-2 px-1 text-muted small" style="font-size: 0.76rem;">
+              <span>
+                <i class="fa-solid fa-hand-pointer text-primary me-1"></i> Drag box to frame passport bio page &bull; Keep bottom 2 lines inside the MRZ guide
+              </span>
+              <span id="preScanOrigDims" class="font-monospace">Original: --</span>
+            </div>
+          </div>
+
+          <!-- Right: Clear-Wise Clarity Studio -->
+          <div class="col-lg-5 col-xl-4">
+            <div class="clarity-panel">
+              <!-- 1-Click Clear-Wise Presets -->
+              <div>
+                <div class="clarity-section-title">
+                  <span><i class="fa-solid fa-wand-magic-sparkles text-primary me-1"></i> Clear-Wise Instant Filters</span>
+                  <span class="badge bg-primary-subtle text-primary fw-normal" style="font-size: 0.65rem;">1-Click</span>
+                </div>
+                <div class="clarity-preset-grid">
+                  <!-- Auto-Clarify -->
+                  <div class="btn-clarify-preset" id="presetAutoClarify" onclick="applyClarifyPreset('auto')">
+                    <i class="fa-solid fa-bolt preset-icon text-warning"></i>
+                    <span class="preset-name">Auto-Clarify</span>
+                    <span class="preset-hint">Balances light &amp; contrast</span>
+                  </div>
+                  <!-- Document B&W -->
+                  <div class="btn-clarify-preset" id="presetDocBw" onclick="applyClarifyPreset('doc_bw')">
+                    <i class="fa-solid fa-file-invoice preset-icon text-primary"></i>
+                    <span class="preset-name">Doc B&amp;W</span>
+                    <span class="preset-hint">Removes swirls &amp; glare</span>
+                  </div>
+                  <!-- Sharp Text -->
+                  <div class="btn-clarify-preset" id="presetSharpText" onclick="applyClarifyPreset('sharp')">
+                    <i class="fa-solid fa-magnifying-glass-chart preset-icon text-success"></i>
+                    <span class="preset-name">Sharp Text</span>
+                    <span class="preset-hint">De-blurs MRZ letters</span>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-link text-secondary text-decoration-none w-100 mt-1 py-0 text-center" onclick="resetPreScanFilters()" style="font-size: 0.72rem;">
+                  <i class="fa-solid fa-rotate-left me-1"></i> Reset to Natural Image
+                </button>
+              </div>
+
+              <!-- Manual Fine-Tuning Sliders -->
+              <div>
+                <div class="clarity-section-title">
+                  <span><i class="fa-solid fa-sliders text-secondary me-1"></i> Manual Clarity Fine-Tuning</span>
+                </div>
+                <div class="clarity-slider-group">
+                  <!-- Contrast -->
+                  <div class="clarity-slider-item">
+                    <div class="clarity-slider-header">
+                      <span>Contrast</span>
+                      <span class="val-badge" id="valPreScanContrast">0%</span>
+                    </div>
+                    <input type="range" class="form-range" id="sliderPreScanContrast" min="-50" max="100" value="0" step="2" oninput="onClaritySliderChange()">
+                  </div>
+                  <!-- Brightness -->
+                  <div class="clarity-slider-item">
+                    <div class="clarity-slider-header">
+                      <span>Brightness / Exposure</span>
+                      <span class="val-badge" id="valPreScanBrightness">0%</span>
+                    </div>
+                    <input type="range" class="form-range" id="sliderPreScanBrightness" min="-50" max="50" value="0" step="2" oninput="onClaritySliderChange()">
+                  </div>
+                  <!-- Sharpness -->
+                  <div class="clarity-slider-item">
+                    <div class="clarity-slider-header">
+                      <span>Sharpness (De-blur)</span>
+                      <span class="val-badge" id="valPreScanSharpness">0%</span>
+                    </div>
+                    <input type="range" class="form-range" id="sliderPreScanSharpness" min="0" max="100" value="0" step="5" oninput="onClaritySliderChange()">
+                  </div>
+                </div>
+
+                <!-- Compare Button -->
+                <button type="button" class="btn btn-sm btn-light border w-100 mt-2 py-1 text-secondary" id="btnPreScanCompare" style="font-size: 0.74rem;">
+                  <i class="fa-regular fa-eye me-1"></i> Press &amp; Hold to View Original
+                </button>
+              </div>
+
+              <!-- Clarity & Document Health Diagnostics -->
+              <div class="clarity-diagnostic-card mt-auto">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="fw-bold text-dark" style="font-size: 0.78rem;">
+                    <i class="fa-solid fa-shield-heart text-success me-1"></i> Scan Readability Score
+                  </span>
+                  <span class="fw-bold font-monospace" id="preScanHealthPct" style="font-size: 0.8rem; color: #1a7f37;">88%</span>
+                </div>
+                <div class="clarity-meter-bar">
+                  <div class="clarity-meter-fill bg-success" id="preScanHealthFill" style="width: 88%;"></div>
+                </div>
+                <div class="small text-muted" id="preScanHealthDesc" style="font-size: 0.7rem; line-height: 1.25;">
+                  Text &amp; MRZ lines have crisp contrast. Optical extraction will succeed with high accuracy.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer bg-light d-flex justify-content-between py-2.5">
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="cancelPreScanEditor()">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="fastScanOriginalPreScan()" title="Scan without applying crop or filters">
+            <i class="fa-solid fa-forward me-1"></i> Fast Scan (Original)
+          </button>
+        </div>
+        <button type="button" class="btn btn-enhance-scan px-4 py-2" id="btnPreScanEnhanceAndScan" onclick="applyPreScanAndExecuteOcr()">
+          <i class="fa-solid fa-wand-magic-sparkles me-2"></i> ✨ Enhance &amp; Scan Passport
         </button>
       </div>
     </div>
@@ -1233,9 +1466,41 @@ document.addEventListener('DOMContentLoaded', function() {
   // Setup pan/drag inside passport viewer
   setupViewerPan();
   updateServiceInfo();
+
+  // Test mode: Unhide sample passport test button
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('test_ocr') || urlParams.has('test_prescan')) {
+    const testBtn = document.getElementById('btnTestSamplePassport');
+    if (testBtn) testBtn.style.display = 'inline-block';
+  }
 });
 
-// Handle passport file upload & OCR process
+// ============================================================
+// PRE-SCAN CROP & CLARITY STUDIO STATE & ENGINE
+// ============================================================
+let lastRawPassportFile = null;
+let preScanImageObj = null;
+let preScanRotation = 0;          // 0, 90, 180, 270
+let preScanFlipH = false;
+let preScanZoom = 1.0;
+let preScanAspect = 'bio';        // 'bio' (3:2), 'mrz' (bottom strip), 'free', 'full'
+let preScanActivePreset = 'none'; // 'none', 'auto', 'doc_bw', 'sharp'
+let preScanContrast = 0;          // -50 to 100
+let preScanBrightness = 0;        // -50 to 50
+let preScanSharpness = 0;         // 0 to 100
+let preScanIsDocBw = false;
+let isComparingOriginal = false;
+let preScanModalInstance = null;
+
+// Display coordinates of the crop box on #preScanCanvas
+let cropBox = { x: 0, y: 0, w: 0, h: 0 };
+let isDraggingCrop = false;
+let isResizingCrop = false;
+let currentCropHandle = '';
+let cropDragStartX = 0, cropDragStartY = 0;
+let cropStartBox = { x: 0, y: 0, w: 0, h: 0 };
+
+// Main entry point when a user drops or selects a passport file
 function handlePassportFileSelected(file) {
   if (!file) return;
 
@@ -1245,16 +1510,686 @@ function handlePassportFileSelected(file) {
     return;
   }
 
+  lastRawPassportFile = file;
+
+  // PDFs are digital multi-page documents: route directly to OCR engine
+  if (file.type === 'application/pdf' || file.name.match(/\.pdf$/i)) {
+    executePassportOcr(file, file.name);
+    return;
+  }
+
+  // Images (JPG, PNG, WEBP): open the interactive Pre-Scan Studio for Crop & Clarity enhancement
+  openPreScanEditor(file);
+}
+
+// Open Pre-Scan Editor modal with loaded file
+function openPreScanEditor(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    preScanImageObj = new Image();
+    preScanImageObj.onload = function() {
+      // Reset transform & filter parameters
+      preScanRotation = 0;
+      preScanFlipH = false;
+      preScanZoom = 1.0;
+      preScanAspect = 'bio';
+      resetPreScanFilters(false);
+
+      const origDimsEl = document.getElementById('preScanOrigDims');
+      if (origDimsEl) {
+        origDimsEl.innerText = `${preScanImageObj.naturalWidth} × ${preScanImageObj.naturalHeight} px`;
+      }
+
+      // Initialize modal & canvas
+      const modalEl = document.getElementById('ocrPreScanModal');
+      preScanModalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+      preScanModalInstance.show();
+
+      // Render canvas once modal is visible to get accurate container width
+      setTimeout(() => {
+        renderPreScanCanvas();
+        initDefaultCropBox();
+        setupCropEventListeners();
+        evaluatePreScanClarity();
+      }, 150);
+    };
+    preScanImageObj.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Reopen pre-scan studio from error banner or view card
+function reopenPreScanFromLastImage() {
+  if (lastRawPassportFile && (lastRawPassportFile.type !== 'application/pdf' && !lastRawPassportFile.name.match(/\.pdf$/i))) {
+    openPreScanEditor(lastRawPassportFile);
+  } else {
+    document.getElementById('passportFileInput').click();
+  }
+}
+
+// Reopen pre-scan editor directly from review modal
+function reopenPreScanFromReview() {
+  dismissOcrReviewModal();
+  reopenPreScanFromLastImage();
+}
+
+// Initialize default 3:2 bio-page crop box
+function initDefaultCropBox() {
+  const canvas = document.getElementById('preScanCanvas');
+  if (!canvas || !canvas.width || !canvas.height) return;
+
+  const cw = canvas.width;
+  const ch = canvas.height;
+
+  if (preScanAspect === 'bio') {
+    // 3:2 ratio centered, taking up ~88% of width or height
+    let boxW = Math.round(cw * 0.90);
+    let boxH = Math.round(boxW / 1.5);
+    if (boxH > ch * 0.92) {
+      boxH = Math.round(ch * 0.90);
+      boxW = Math.round(boxH * 1.5);
+    }
+    const boxX = Math.round((cw - boxW) / 2);
+    const boxY = Math.round((ch - boxH) / 2);
+    cropBox = { x: Math.max(0, boxX), y: Math.max(0, boxY), w: boxW, h: boxH };
+  } else if (preScanAspect === 'mrz') {
+    const boxW = Math.round(cw * 0.96);
+    const boxH = Math.round(ch * 0.28);
+    cropBox = { x: Math.round((cw - boxW) / 2), y: Math.round(ch - boxH - (ch * 0.04)), w: boxW, h: boxH };
+  } else {
+    cropBox = { x: 0, y: 0, w: cw, h: ch };
+  }
+
+  updateCropBoxDom();
+}
+
+// Update DOM elements for the crop overlay box
+function updateCropBoxDom() {
+  const boxEl = document.getElementById('preScanCropBox');
+  const dimEl = document.getElementById('preScanCropDims');
+  const canvas = document.getElementById('preScanCanvas');
+  if (!boxEl || !canvas || !canvas.width) return;
+
+  boxEl.style.left = cropBox.x + 'px';
+  boxEl.style.top = cropBox.y + 'px';
+  boxEl.style.width = cropBox.w + 'px';
+  boxEl.style.height = cropBox.h + 'px';
+
+  // Compute full-resolution crop dimensions for user display
+  const rotW = (preScanRotation % 180 === 0) ? preScanImageObj.naturalWidth : preScanImageObj.naturalHeight;
+  const scale = rotW / canvas.width;
+  const fullCropW = Math.round(cropBox.w * scale);
+  const fullCropH = Math.round(cropBox.h * scale);
+  if (dimEl) {
+    dimEl.innerText = `${fullCropW} × ${fullCropH} px`;
+  }
+}
+
+// Render the preview canvas with current rotation, flip, zoom, and live clarity filters
+function renderPreScanCanvas(skipFilters = false) {
+  if (!preScanImageObj) return;
+
+  const canvas = document.getElementById('preScanCanvas');
+  const holder = document.getElementById('preScanCanvasHolder');
+  const viewport = document.getElementById('preScanStageViewport');
+  if (!canvas || !holder || !viewport) return;
+
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+  // 1. Determine rotated image dimensions
+  const rotW = (preScanRotation % 180 === 0) ? preScanImageObj.naturalWidth : preScanImageObj.naturalHeight;
+  const rotH = (preScanRotation % 180 === 0) ? preScanImageObj.naturalHeight : preScanImageObj.naturalWidth;
+
+  // 2. Compute display dimensions fitting viewport
+  const maxW = Math.max(260, viewport.clientWidth - 40);
+  const maxH = Math.max(260, viewport.clientHeight - 30);
+  const baseScale = Math.min(maxW / rotW, maxH / rotH);
+  const finalScale = baseScale * preScanZoom;
+
+  const dispW = Math.round(rotW * finalScale);
+  const dispH = Math.round(rotH * finalScale);
+
+  canvas.width = dispW;
+  canvas.height = dispH;
+  holder.style.width = dispW + 'px';
+  holder.style.height = dispH + 'px';
+
+  // 3. Draw rotated & flipped image onto canvas
+  ctx.save();
+  ctx.translate(dispW / 2, dispH / 2);
+  ctx.rotate((preScanRotation * Math.PI) / 180);
+  if (preScanFlipH) {
+    ctx.scale(-1, 1);
+  }
+
+  const drawW = (preScanRotation % 180 === 0) ? dispW : dispH;
+  const drawH = (preScanRotation % 180 === 0) ? dispH : dispW;
+  ctx.drawImage(preScanImageObj, -drawW / 2, -drawH / 2, drawW, drawH);
+  ctx.restore();
+
+  // 4. Apply Clarity Filters (unless user is holding Compare button to see raw)
+  if (!skipFilters && !isComparingOriginal) {
+    applyLiveFiltersToCanvas(ctx, dispW, dispH);
+  }
+
+  // 5. Clamp existing cropBox within new canvas dimensions
+  cropBox.w = Math.min(cropBox.w || dispW, dispW);
+  cropBox.h = Math.min(cropBox.h || dispH, dispH);
+  cropBox.x = Math.max(0, Math.min(dispW - cropBox.w, cropBox.x));
+  cropBox.y = Math.max(0, Math.min(dispH - cropBox.h, cropBox.y));
+
+  updateCropBoxDom();
+}
+
+// Apply contrast, brightness, Doc B&W, and unsharp sharpening to canvas
+function applyLiveFiltersToCanvas(ctx, width, height) {
+  if (preScanIsDocBw) {
+    applyDocumentBwFilter(ctx, width, height, preScanContrast);
+  } else if (preScanContrast !== 0 || preScanBrightness !== 0) {
+    applyContrastBrightnessFilter(ctx, width, height, preScanContrast, preScanBrightness);
+  }
+
+  if (preScanSharpness > 0) {
+    applyConvolutionSharpnessFilter(ctx, width, height, preScanSharpness);
+  }
+}
+
+// Standard digital contrast and brightness filter
+function applyContrastBrightnessFilter(ctx, width, height, contrast, brightness) {
+  const imgData = ctx.getImageData(0, 0, width, height);
+  const d = imgData.data;
+  const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+
+  for (let i = 0; i < d.length; i += 4) {
+    d[i] = Math.max(0, Math.min(255, factor * (d[i] - 128) + 128 + brightness));
+    d[i + 1] = Math.max(0, Math.min(255, factor * (d[i + 1] - 128) + 128 + brightness));
+    d[i + 2] = Math.max(0, Math.min(255, factor * (d[i + 2] - 128) + 128 + brightness));
+  }
+  ctx.putImageData(imgData, 0, 0);
+}
+
+// Document Mode (B&W High-Contrast): Strips rainbow glare, colored watermarks, and shadows
+function applyDocumentBwFilter(ctx, width, height, contrastBoost) {
+  const imgData = ctx.getImageData(0, 0, width, height);
+  const d = imgData.data;
+  const boost = Math.max(20, contrastBoost + 45);
+  const factor = (259 * (boost + 255)) / (255 * (259 - boost));
+
+  for (let i = 0; i < d.length; i += 4) {
+    const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    let val;
+    if (lum > 155) {
+      val = Math.min(255, lum + 60); // Bleach pastel background swirls to crisp white
+    } else if (lum < 95) {
+      val = Math.max(0, lum - 50);   // Deepen text and MRZ characters to solid black
+    } else {
+      val = factor * (lum - 128) + 128;
+      val = val < 0 ? 0 : (val > 255 ? 255 : val);
+    }
+    d[i] = val;
+    d[i + 1] = val;
+    d[i + 2] = val;
+  }
+  ctx.putImageData(imgData, 0, 0);
+}
+
+// 3x3 Convolution Unsharp Mask Filter: Restores edges on soft/blurred camera photos
+function applyConvolutionSharpnessFilter(ctx, width, height, sharpnessVal) {
+  if (sharpnessVal <= 0) return;
+  const s = (sharpnessVal / 100) * 0.72;
+  const srcData = ctx.getImageData(0, 0, width, height);
+  const src = srcData.data;
+  const dstData = ctx.createImageData(width, height);
+  const dst = dstData.data;
+  const centerWeight = 1 + 4 * s;
+
+  for (let y = 1; y < height - 1; y++) {
+    const rowPrev = (y - 1) * width * 4;
+    const rowCurr = y * width * 4;
+    const rowNext = (y + 1) * width * 4;
+
+    for (let x = 1; x < width - 1; x++) {
+      const px = rowCurr + x * 4;
+      const pxLeft = px - 4;
+      const pxRight = px + 4;
+      const pxTop = rowPrev + x * 4;
+      const pxBottom = rowNext + x * 4;
+
+      for (let c = 0; c < 3; c++) {
+        const val = centerWeight * src[px + c] - s * (src[pxTop + c] + src[pxBottom + c] + src[pxLeft + c] + src[pxRight + c]);
+        dst[px + c] = val < 0 ? 0 : (val > 255 ? 255 : val);
+      }
+      dst[px + 3] = src[px + 3]; // Alpha
+    }
+  }
+
+  // Copy edge rows/columns
+  for (let x = 0; x < width; x++) {
+    for (let c = 0; c < 4; c++) {
+      dst[x * 4 + c] = src[x * 4 + c];
+      dst[((height - 1) * width + x) * 4 + c] = src[((height - 1) * width + x) * 4 + c];
+    }
+  }
+  for (let y = 0; y < height; y++) {
+    for (let c = 0; c < 4; c++) {
+      dst[(y * width) * 4 + c] = src[(y * width) * 4 + c];
+      dst[(y * width + (width - 1)) * 4 + c] = src[(y * width + (width - 1)) * 4 + c];
+    }
+  }
+
+  ctx.putImageData(dstData, 0, 0);
+}
+
+// Setup Drag & Resize Event Listeners for the Crop Box
+function setupCropEventListeners() {
+  const holder = document.getElementById('preScanCanvasHolder');
+  const viewport = document.getElementById('preScanStageViewport');
+  if (!holder || holder._cropListenersInitialized) return;
+  holder._cropListenersInitialized = true;
+
+  function onPointerDown(e) {
+    const pt = e.touches ? e.touches[0] : e;
+    const target = e.target;
+
+    if (target.classList.contains('crop-handle')) {
+      isResizingCrop = true;
+      currentCropHandle = target.getAttribute('data-handle');
+      cropDragStartX = pt.clientX;
+      cropDragStartY = pt.clientY;
+      cropStartBox = { ...cropBox };
+      e.preventDefault();
+      e.stopPropagation();
+    } else if (target.closest('#preScanCropBox')) {
+      isDraggingCrop = true;
+      cropDragStartX = pt.clientX;
+      cropDragStartY = pt.clientY;
+      cropStartBox = { ...cropBox };
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }
+
+  function onPointerMove(e) {
+    if (!isDraggingCrop && !isResizingCrop) return;
+    const pt = e.touches ? e.touches[0] : e;
+    const dx = pt.clientX - cropDragStartX;
+    const dy = pt.clientY - cropDragStartY;
+    const canvas = document.getElementById('preScanCanvas');
+    if (!canvas) return;
+
+    const cw = canvas.width;
+    const ch = canvas.height;
+    const minW = 60;
+    const minH = 40;
+
+    if (isDraggingCrop) {
+      cropBox.x = Math.max(0, Math.min(cw - cropBox.w, cropStartBox.x + dx));
+      cropBox.y = Math.max(0, Math.min(ch - cropBox.h, cropStartBox.y + dy));
+    } else if (isResizingCrop) {
+      let newX = cropStartBox.x;
+      let newY = cropStartBox.y;
+      let newW = cropStartBox.w;
+      let newH = cropStartBox.h;
+
+      switch (currentCropHandle) {
+        case 'se':
+          newW = Math.max(minW, Math.min(cw - newX, cropStartBox.w + dx));
+          newH = (preScanAspect === 'bio') ? Math.round(newW / 1.5) : Math.max(minH, Math.min(ch - newY, cropStartBox.h + dy));
+          break;
+        case 'sw':
+          newW = Math.max(minW, Math.min(cropStartBox.x + cropStartBox.w, cropStartBox.w - dx));
+          newX = cropStartBox.x + (cropStartBox.w - newW);
+          newH = (preScanAspect === 'bio') ? Math.round(newW / 1.5) : Math.max(minH, Math.min(ch - newY, cropStartBox.h + dy));
+          break;
+        case 'ne':
+          newW = Math.max(minW, Math.min(cw - newX, cropStartBox.w + dx));
+          newH = (preScanAspect === 'bio') ? Math.round(newW / 1.5) : Math.max(minH, Math.min(cropStartBox.y + cropStartBox.h, cropStartBox.h - dy));
+          newY = cropStartBox.y + (cropStartBox.h - newH);
+          break;
+        case 'nw':
+          newW = Math.max(minW, Math.min(cropStartBox.x + cropStartBox.w, cropStartBox.w - dx));
+          newX = cropStartBox.x + (cropStartBox.w - newW);
+          newH = (preScanAspect === 'bio') ? Math.round(newW / 1.5) : Math.max(minH, Math.min(cropStartBox.y + cropStartBox.h, cropStartBox.h - dy));
+          newY = cropStartBox.y + (cropStartBox.h - newH);
+          break;
+        case 'e':
+          newW = Math.max(minW, Math.min(cw - newX, cropStartBox.w + dx));
+          if (preScanAspect === 'bio') newH = Math.round(newW / 1.5);
+          break;
+        case 'w':
+          newW = Math.max(minW, Math.min(cropStartBox.x + cropStartBox.w, cropStartBox.w - dx));
+          newX = cropStartBox.x + (cropStartBox.w - newW);
+          if (preScanAspect === 'bio') newH = Math.round(newW / 1.5);
+          break;
+        case 's':
+          newH = Math.max(minH, Math.min(ch - newY, cropStartBox.h + dy));
+          if (preScanAspect === 'bio') newW = Math.round(newH * 1.5);
+          break;
+        case 'n':
+          newH = Math.max(minH, Math.min(cropStartBox.y + cropStartBox.h, cropStartBox.h - dy));
+          newY = cropStartBox.y + (cropStartBox.h - newH);
+          if (preScanAspect === 'bio') newW = Math.round(newH * 1.5);
+          break;
+      }
+
+      // Final boundary clamp
+      if (newX + newW <= cw && newY + newH <= ch && newX >= 0 && newY >= 0) {
+        cropBox = { x: newX, y: newY, w: newW, h: newH };
+      }
+    }
+
+    updateCropBoxDom();
+    e.preventDefault();
+  }
+
+  function onPointerUp() {
+    if (isDraggingCrop || isResizingCrop) {
+      isDraggingCrop = false;
+      isResizingCrop = false;
+      evaluatePreScanClarity();
+    }
+  }
+
+  viewport.addEventListener('mousedown', onPointerDown);
+  window.addEventListener('mousemove', onPointerMove);
+  window.addEventListener('mouseup', onPointerUp);
+
+  viewport.addEventListener('touchstart', onPointerDown, { passive: false });
+  window.addEventListener('touchmove', onPointerMove, { passive: false });
+  window.addEventListener('touchend', onPointerUp);
+
+  // Setup Press & Hold Compare Button
+  const btnCompare = document.getElementById('btnPreScanCompare');
+  if (btnCompare) {
+    const startCompare = (e) => { e.preventDefault(); isComparingOriginal = true; renderPreScanCanvas(true); };
+    const stopCompare = (e) => { e.preventDefault(); isComparingOriginal = false; renderPreScanCanvas(false); };
+    btnCompare.addEventListener('mousedown', startCompare);
+    btnCompare.addEventListener('mouseup', stopCompare);
+    btnCompare.addEventListener('mouseleave', stopCompare);
+    btnCompare.addEventListener('touchstart', startCompare);
+    btnCompare.addEventListener('touchend', stopCompare);
+  }
+}
+
+// Aspect ratio preset switcher ('bio', 'mrz', 'free', 'full')
+function setCropAspectPreset(preset) {
+  preScanAspect = preset;
+  ['Bio', 'Mrz', 'Free', 'Full'].forEach(p => {
+    const btn = document.getElementById('btnCropAspect' + p);
+    if (btn) btn.classList.toggle('active', p.toLowerCase() === preset);
+  });
+  initDefaultCropBox();
+  evaluatePreScanClarity();
+}
+
+// Rotate image 90 degrees
+function rotatePreScan(deg) {
+  preScanRotation = (preScanRotation + deg + 360) % 360;
+  renderPreScanCanvas();
+  initDefaultCropBox();
+  evaluatePreScanClarity();
+}
+
+// Flip image horizontally
+function flipPreScanH() {
+  preScanFlipH = !preScanFlipH;
+  renderPreScanCanvas();
+  evaluatePreScanClarity();
+}
+
+// Zoom in/out within stage
+function adjustPreScanZoom(delta) {
+  preScanZoom = Math.max(0.65, Math.min(2.5, preScanZoom + delta));
+  renderPreScanCanvas();
+}
+
+function resetPreScanZoom() {
+  preScanZoom = 1.0;
+  renderPreScanCanvas();
+}
+
+// Clear-Wise 1-Click Presets
+function applyClarifyPreset(preset) {
+  preScanActivePreset = preset;
+  document.querySelectorAll('.btn-clarify-preset').forEach(b => b.classList.remove('active'));
+
+  if (preset === 'auto') {
+    preScanContrast = 35;
+    preScanBrightness = 8;
+    preScanSharpness = 45;
+    preScanIsDocBw = false;
+    document.getElementById('presetAutoClarify')?.classList.add('active');
+  } else if (preset === 'doc_bw') {
+    preScanContrast = 55;
+    preScanBrightness = 5;
+    preScanSharpness = 55;
+    preScanIsDocBw = true;
+    document.getElementById('presetDocBw')?.classList.add('active');
+  } else if (preset === 'sharp') {
+    preScanContrast = 20;
+    preScanBrightness = 0;
+    preScanSharpness = 80;
+    preScanIsDocBw = false;
+    document.getElementById('presetSharpText')?.classList.add('active');
+  }
+
+  syncSliderInputs();
+  renderPreScanCanvas();
+  evaluatePreScanClarity();
+}
+
+// Reset filters to original raw state
+function resetPreScanFilters(shouldRender = true) {
+  preScanActivePreset = 'none';
+  preScanContrast = 0;
+  preScanBrightness = 0;
+  preScanSharpness = 0;
+  preScanIsDocBw = false;
+  document.querySelectorAll('.btn-clarify-preset').forEach(b => b.classList.remove('active'));
+  syncSliderInputs();
+  if (shouldRender) {
+    renderPreScanCanvas();
+    evaluatePreScanClarity();
+  }
+}
+
+// Slider live input handler
+function onClaritySliderChange() {
+  preScanContrast = parseInt(document.getElementById('sliderPreScanContrast').value, 10) || 0;
+  preScanBrightness = parseInt(document.getElementById('sliderPreScanBrightness').value, 10) || 0;
+  preScanSharpness = parseInt(document.getElementById('sliderPreScanSharpness').value, 10) || 0;
+
+  document.getElementById('valPreScanContrast').innerText = (preScanContrast > 0 ? '+' : '') + preScanContrast + '%';
+  document.getElementById('valPreScanBrightness').innerText = (preScanBrightness > 0 ? '+' : '') + preScanBrightness + '%';
+  document.getElementById('valPreScanSharpness').innerText = preScanSharpness + '%';
+
+  // Manual tweaking overrides strict 1-click active highlight
+  preScanActivePreset = 'custom';
+  document.querySelectorAll('.btn-clarify-preset').forEach(b => b.classList.remove('active'));
+
+  renderPreScanCanvas();
+  evaluatePreScanClarity();
+}
+
+function syncSliderInputs() {
+  const sc = document.getElementById('sliderPreScanContrast');
+  const sb = document.getElementById('sliderPreScanBrightness');
+  const ss = document.getElementById('sliderPreScanSharpness');
+  if (sc) sc.value = preScanContrast;
+  if (sb) sb.value = preScanBrightness;
+  if (ss) ss.value = preScanSharpness;
+
+  const vc = document.getElementById('valPreScanContrast');
+  const vb = document.getElementById('valPreScanBrightness');
+  const vs = document.getElementById('valPreScanSharpness');
+  if (vc) vc.innerText = (preScanContrast > 0 ? '+' : '') + preScanContrast + '%';
+  if (vb) vb.innerText = (preScanBrightness > 0 ? '+' : '') + preScanBrightness + '%';
+  if (vs) vs.innerText = preScanSharpness + '%';
+}
+
+// Live Clarity & Document Health Diagnostics
+function evaluatePreScanClarity() {
+  const canvas = document.getElementById('preScanCanvas');
+  if (!canvas || !canvas.width || !canvas.height) return;
+
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const sx = Math.max(0, Math.floor(cropBox.x));
+  const sy = Math.max(0, Math.floor(cropBox.y));
+  const sw = Math.min(canvas.width - sx, Math.floor(cropBox.w));
+  const sh = Math.min(canvas.height - sy, Math.floor(cropBox.h));
+  if (sw < 15 || sh < 15) return;
+
+  const imgData = ctx.getImageData(sx, sy, sw, sh);
+  const d = imgData.data;
+  const total = sw * sh;
+  const step = Math.max(1, Math.floor(total / 1500)); // Sample ~1500 pixels for fast 60fps calculation
+
+  let sum = 0, count = 0;
+  for (let i = 0; i < d.length; i += step * 4) {
+    sum += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    count++;
+  }
+  const mean = sum / count;
+
+  let varianceSum = 0;
+  for (let i = 0; i < d.length; i += step * 4) {
+    const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    varianceSum += Math.pow(lum - mean, 2);
+  }
+  const stdDev = Math.sqrt(varianceSum / count);
+
+  // Compute 0-100% score
+  let score = Math.round(Math.min(99, Math.max(30, (stdDev / 52) * 100)));
+  if (preScanSharpness > 30) score = Math.min(99, score + 8);
+  if (preScanIsDocBw) score = Math.min(99, score + 12);
+  if (mean < 65 || mean > 235) score = Math.max(25, score - 22);
+
+  const badge = document.getElementById('preScanClarityBadge');
+  const pctEl = document.getElementById('preScanHealthPct');
+  const fillEl = document.getElementById('preScanHealthFill');
+  const descEl = document.getElementById('preScanHealthDesc');
+
+  if (pctEl) pctEl.innerText = score + '%';
+  if (fillEl) fillEl.style.width = score + '%';
+
+  if (score >= 80) {
+    if (fillEl) fillEl.className = 'clarity-meter-fill bg-success';
+    if (pctEl) pctEl.style.color = '#1a7f37';
+    if (badge) {
+      badge.className = 'badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5';
+      badge.innerHTML = `<i class="fa-solid fa-sparkles me-1"></i> Clarity: Optimal (${score}%)`;
+    }
+    if (descEl) descEl.innerText = 'Text & MRZ lines have crisp contrast. Optical extraction will succeed with high accuracy.';
+  } else if (score >= 58) {
+    if (fillEl) fillEl.className = 'clarity-meter-fill bg-warning';
+    if (pctEl) pctEl.style.color = '#b25000';
+    if (badge) {
+      badge.className = 'badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1.5';
+      badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-1"></i> Moderate Clarity (${score}%)`;
+    }
+    if (descEl) descEl.innerText = 'Moderate contrast. Click "Auto-Clarify" or "Doc B&W" above to sharpen lettering.';
+  } else {
+    if (fillEl) fillEl.className = 'clarity-meter-fill bg-danger';
+    if (pctEl) pctEl.style.color = '#cf222e';
+    if (badge) {
+      badge.className = 'badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5';
+      badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-1"></i> Low Contrast / Dim (${score}%)`;
+    }
+    if (descEl) descEl.innerText = 'Photo appears faint, dark, or blurry. Use "Auto-Clarify" or increase contrast slider before scanning.';
+  }
+}
+
+// Cancel Pre-Scan Studio
+function cancelPreScanEditor() {
+  if (preScanModalInstance) {
+    preScanModalInstance.hide();
+  }
+}
+
+// Fast Scan Original (Bypasses crop and filters)
+function fastScanOriginalPreScan() {
+  cancelPreScanEditor();
+  if (lastRawPassportFile) {
+    executePassportOcr(lastRawPassportFile, lastRawPassportFile.name);
+  }
+}
+
+// ✨ Apply Pre-Scan Crop & Filters at Full Original Resolution and Execute OCR
+function applyPreScanAndExecuteOcr() {
+  if (!preScanImageObj) return;
+
+  const canvas = document.getElementById('preScanCanvas');
+  if (!canvas || !canvas.width) return;
+
+  // 1. Calculate full-resolution rotated dimensions
+  const rotW = (preScanRotation % 180 === 0) ? preScanImageObj.naturalWidth : preScanImageObj.naturalHeight;
+  const rotH = (preScanRotation % 180 === 0) ? preScanImageObj.naturalHeight : preScanImageObj.naturalWidth;
+  const scale = rotW / canvas.width;
+
+  // 2. Map display crop box coordinates to high-resolution rotated coordinates
+  const cropX = Math.round(cropBox.x * scale);
+  const cropY = Math.round(cropBox.y * scale);
+  const cropW = Math.max(100, Math.round(cropBox.w * scale));
+  const cropH = Math.max(100, Math.round(cropBox.h * scale));
+
+  // 3. Render offscreen full-resolution crop
+  const exportCanvas = document.createElement('canvas');
+  exportCanvas.width = cropW;
+  exportCanvas.height = cropH;
+  const exportCtx = exportCanvas.getContext('2d', { willReadFrequently: true });
+
+  exportCtx.save();
+  // Translate by negative crop offset
+  exportCtx.translate(-cropX, -cropY);
+
+  // Apply rotation & flip matching preview
+  exportCtx.translate(rotW / 2, rotH / 2);
+  exportCtx.rotate((preScanRotation * Math.PI) / 180);
+  if (preScanFlipH) {
+    exportCtx.scale(-1, 1);
+  }
+
+  const drawW = (preScanRotation % 180 === 0) ? rotW : rotH;
+  const drawH = (preScanRotation % 180 === 0) ? rotH : rotW;
+  exportCtx.drawImage(preScanImageObj, -drawW / 2, -drawH / 2, drawW, drawH);
+  exportCtx.restore();
+
+  // 4. Apply Clarity Filters to high-resolution crop
+  if (preScanIsDocBw) {
+    applyDocumentBwFilter(exportCtx, cropW, cropH, preScanContrast);
+  } else if (preScanContrast !== 0 || preScanBrightness !== 0) {
+    applyContrastBrightnessFilter(exportCtx, cropW, cropH, preScanContrast, preScanBrightness);
+  }
+
+  if (preScanSharpness > 0) {
+    applyConvolutionSharpnessFilter(exportCtx, cropW, cropH, preScanSharpness);
+  }
+
+  // 5. Hide Pre-Scan Modal
+  cancelPreScanEditor();
+
+  // 6. Export high-fidelity JPEG Blob and trigger OCR
+  exportCanvas.toBlob(function(blob) {
+    if (blob) {
+      executePassportOcr(blob, 'enhanced_passport.jpg');
+    } else {
+      executePassportOcr(lastRawPassportFile, lastRawPassportFile?.name || 'passport.jpg');
+    }
+  }, 'image/jpeg', 0.95);
+}
+
+// Core OCR Execution Pipeline: Sends document to /api/documents/ocr-passport
+function executePassportOcr(fileOrBlob, filename = 'passport.jpg') {
   // Show OCR progress overlay with animated checklist steps
   const overlay = document.getElementById('ocrProgressOverlay');
   const errorBanner = document.getElementById('ocrErrorBanner');
-  overlay.classList.remove('d-none');
-  errorBanner.classList.add('d-none');
+  if (overlay) overlay.classList.remove('d-none');
+  if (errorBanner) errorBanner.classList.add('d-none');
 
   animateOcrSteps();
 
   const formData = new FormData();
-  formData.append('passport_file', file);
+  formData.append('passport_file', fileOrBlob, filename);
   const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
   formData.append('csrf_token', csrfToken);
 
@@ -1267,9 +2202,9 @@ function handlePassportFileSelected(file) {
   })
   .then(res => res.json())
   .then(resp => {
-    overlay.classList.add('d-none');
+    if (overlay) overlay.classList.add('d-none');
     if (!resp.success || !resp.data) {
-      showOcrError('Extraction Notice', resp.message || 'Could not confidently read passport information. Please upload a clear photo or enter manually.');
+      showOcrError('Extraction Notice', resp.message || 'Could not confidently read passport information. You can use the Crop & Clarify studio or enter details manually.');
       return;
     }
 
@@ -1277,9 +2212,22 @@ function handlePassportFileSelected(file) {
     openOcrReviewModal(resp.data);
   })
   .catch(err => {
-    overlay.classList.add('d-none');
+    if (overlay) overlay.classList.add('d-none');
     showOcrError('Connection Error', 'Automatic extraction service temporarily unavailable. You can enter details manually.');
   });
+}
+
+// Load sample passport file for rapid browser testing without native OS picker
+function loadSamplePassportForTesting() {
+  fetch('/uploads/documents/appdoc_29_passport_1791478892.jpg')
+    .then(r => r.blob())
+    .then(blob => {
+      const file = new File([blob], 'sample_passport.jpg', { type: 'image/jpeg' });
+      handlePassportFileSelected(file);
+    })
+    .catch(err => {
+      console.error('Failed to load sample passport', err);
+    });
 }
 
 function animateOcrSteps() {

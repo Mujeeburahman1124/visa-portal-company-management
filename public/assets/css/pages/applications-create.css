@@ -385,3 +385,322 @@
     flex-direction: column;
   }
 }
+
+/* ============================================================ */
+/* PRE-SCAN CROP & CLARITY STUDIO                               */
+/* ============================================================ */
+.prescan-modal-xl {
+  max-width: 1240px;
+  width: 95vw;
+}
+
+.prescan-stage-wrapper {
+  background: #121316;
+  border-radius: var(--mac-radius-sm);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+.prescan-stage-toolbar {
+  background: rgba(28, 29, 34, 0.95);
+  backdrop-filter: blur(12px);
+  padding: 0.55rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  z-index: 20;
+}
+
+.prescan-stage-viewport {
+  position: relative;
+  height: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+  touch-action: none;
+  background-color: #121316;
+  background-image: 
+    linear-gradient(45deg, #18191d 25%, transparent 25%), 
+    linear-gradient(-45deg, #18191d 25%, transparent 25%), 
+    linear-gradient(45deg, transparent 75%, #18191d 75%), 
+    linear-gradient(-45deg, transparent 75%, #18191d 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+.prescan-canvas-holder {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+#preScanCanvas {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 4px;
+}
+
+/* Crop Box Overlay */
+.crop-overlay-box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border: 2px solid #0071e3;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.62);
+  cursor: move;
+  z-index: 10;
+  touch-action: none;
+}
+
+.crop-overlay-box.crop-active {
+  border-color: #30d158;
+}
+
+/* Crop Rule of Thirds Grid */
+.crop-grid-lines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.22) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.22) 1px, transparent 1px);
+  background-size: 33.333% 33.333%;
+}
+
+/* MRZ Guidance Zone */
+.crop-mrz-guidance {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 28%;
+  border-top: 1.5px dashed rgba(255, 204, 0, 0.85);
+  background: rgba(255, 204, 0, 0.08);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.crop-mrz-guidance span {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #ffcc00;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  padding: 1px 6px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 3px;
+}
+
+/* Dimensions Badge */
+.crop-dim-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  pointer-events: none;
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.02em;
+}
+
+/* Resize Handles */
+.crop-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border: 2px solid #0071e3;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+  z-index: 15;
+  touch-action: none;
+}
+
+.crop-handle.handle-nw { top: -6px; left: -6px; cursor: nwse-resize; }
+.crop-handle.handle-n  { top: -6px; left: calc(50% - 6px); cursor: ns-resize; border-radius: 3px; width: 18px; }
+.crop-handle.handle-ne { top: -6px; right: -6px; cursor: nesw-resize; }
+.crop-handle.handle-e  { top: calc(50% - 6px); right: -6px; cursor: ew-resize; border-radius: 3px; height: 18px; }
+.crop-handle.handle-se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+.crop-handle.handle-s  { bottom: -6px; left: calc(50% - 6px); cursor: ns-resize; border-radius: 3px; width: 18px; }
+.crop-handle.handle-sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.crop-handle.handle-w  { top: calc(50% - 6px); left: -6px; cursor: ew-resize; border-radius: 3px; height: 18px; }
+
+/* Clarity Studio Control Panel */
+.clarity-panel {
+  background: #fbfbfd;
+  border-radius: var(--mac-radius-sm);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 1.15rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.clarity-section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6e6e73;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 1-Click Clear-Wise Presets */
+.clarity-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.btn-clarify-preset {
+  background: #ffffff;
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  padding: 0.65rem 0.45rem;
+  text-align: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.btn-clarify-preset:hover {
+  border-color: var(--mac-accent);
+  background: rgba(0, 113, 227, 0.03);
+  transform: translateY(-1px);
+}
+
+.btn-clarify-preset.active {
+  background: rgba(0, 113, 227, 0.08);
+  border-color: var(--mac-accent);
+  box-shadow: 0 0 0 1px var(--mac-accent);
+}
+
+.btn-clarify-preset .preset-icon {
+  font-size: 1.15rem;
+  color: var(--mac-accent);
+}
+
+.btn-clarify-preset .preset-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1d1d1f;
+  line-height: 1.1;
+}
+
+.btn-clarify-preset .preset-hint {
+  font-size: 0.64rem;
+  color: #86868b;
+  line-height: 1.1;
+}
+
+/* Range Sliders */
+.clarity-slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.clarity-slider-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.clarity-slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #3a3a3c;
+}
+
+.clarity-slider-header span.val-badge {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  color: var(--mac-accent);
+  background: rgba(0, 113, 227, 0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* Clarity Score / Diagnostic Card */
+.clarity-diagnostic-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.clarity-meter-bar {
+  height: 6px;
+  border-radius: 99px;
+  background: #e5e5ea;
+  overflow: hidden;
+  position: relative;
+}
+
+.clarity-meter-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+/* Button Pulse effect for Enhance & Scan CTA */
+.btn-enhance-scan {
+  background: linear-gradient(135deg, #0071e3 0%, #30d158 100%);
+  color: #ffffff;
+  border: none;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  box-shadow: 0 4px 14px rgba(0, 113, 227, 0.35);
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-enhance-scan:hover {
+  background: linear-gradient(135deg, #007bf2 0%, #34c759 100%);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(48, 209, 88, 0.4);
+}
+
+.btn-enhance-scan:active {
+  transform: translateY(1px);
+}
