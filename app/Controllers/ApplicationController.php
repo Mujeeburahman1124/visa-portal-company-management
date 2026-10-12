@@ -297,33 +297,114 @@ class ApplicationController
             }
         }
 
-        // Synchronize / update family record
+        // Synchronize / update family record (resilient & self-healing)
         if (!empty($fatherName) || !empty($motherName) || !empty($spouseName)) {
-            $chkFam = $pdo->prepare("SELECT id FROM customer_family WHERE customer_id = ?");
-            $chkFam->execute([$customerId]);
-            $famId = (int)$chkFam->fetchColumn();
-            if ($famId <= 0) {
-                $insFam = $pdo->prepare("INSERT INTO customer_family (customer_id, father_name, mother_name, spouse_name, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)");
-                $insFam->execute([$customerId, $fatherName, $motherName, $spouseName]);
-            } else {
-                $upFam = $pdo->prepare("UPDATE customer_family SET 
-                    father_name = COALESCE(NULLIF(?, ''), father_name),
-                    mother_name = COALESCE(NULLIF(?, ''), mother_name),
-                    spouse_name = COALESCE(NULLIF(?, ''), spouse_name)
-                    WHERE id = ?");
-                $upFam->execute([$fatherName, $motherName, $spouseName, $famId]);
+            static $hasFamSpouseName = null;
+            if ($hasFamSpouseName === null) {
+                try {
+                    $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                    if ($driver === 'sqlite') {
+                        $fCols = array_column($pdo->query("PRAGMA table_info(customer_family)")->fetchAll(PDO::FETCH_ASSOC), 'name');
+                        $hasFamSpouseName = in_array('spouse_name', $fCols, true);
+                    } else {
+                        $hasFamSpouseName = (bool)$pdo->query("SHOW COLUMNS FROM customer_family LIKE 'spouse_name'")->fetch();
+                    }
+                } catch (\Throwable $e) {
+                    $hasFamSpouseName = false;
+                }
+                if (!$hasFamSpouseName) {
+                    try {
+                        $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                        $def = ($driver === 'mysql') ? "VARCHAR(150) NULL" : "TEXT NULL";
+                        $pdo->exec("ALTER TABLE customer_family ADD COLUMN spouse_name {$def}");
+                        $hasFamSpouseName = true;
+                    } catch (\Throwable $e) {}
+                }
+            }
+
+            try {
+                $chkFam = $pdo->prepare("SELECT id FROM customer_family WHERE customer_id = ?");
+                $chkFam->execute([$customerId]);
+                $famId = (int)$chkFam->fetchColumn();
+                if ($famId <= 0) {
+                    if ($hasFamSpouseName) {
+                        $insFam = $pdo->prepare("INSERT INTO customer_family (customer_id, father_name, mother_name, spouse_name, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)");
+                        $insFam->execute([$customerId, $fatherName, $motherName, $spouseName]);
+                    } else {
+                        $insFam = $pdo->prepare("INSERT INTO customer_family (customer_id, father_name, mother_name, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)");
+                        $insFam->execute([$customerId, $fatherName, $motherName]);
+                    }
+                } else {
+                    if ($hasFamSpouseName) {
+                        $upFam = $pdo->prepare("UPDATE customer_family SET 
+                            father_name = COALESCE(NULLIF(?, ''), father_name),
+                            mother_name = COALESCE(NULLIF(?, ''), mother_name),
+                            spouse_name = COALESCE(NULLIF(?, ''), spouse_name)
+                            WHERE id = ?");
+                        $upFam->execute([$fatherName, $motherName, $spouseName, $famId]);
+                    } else {
+                        $upFam = $pdo->prepare("UPDATE customer_family SET 
+                            father_name = COALESCE(NULLIF(?, ''), father_name),
+                            mother_name = COALESCE(NULLIF(?, ''), mother_name)
+                            WHERE id = ?");
+                        $upFam->execute([$fatherName, $motherName, $famId]);
+                    }
+                }
+            } catch (\Throwable $eFam) {
+                error_log('[ApplicationController] customer_family sync error: ' . $eFam->getMessage());
             }
         }
 
-        // Update customer profile fields if previously missing
-        $upCust = $pdo->prepare("UPDATE customers SET
-            birth_country = COALESCE(NULLIF(?, ''), birth_country),
-            city = COALESCE(NULLIF(?, ''), city),
-            education = COALESCE(NULLIF(?, ''), education),
-            language = COALESCE(NULLIF(?, ''), language),
-            occupation = COALESCE(NULLIF(?, ''), occupation)
-            WHERE id = ?");
-        $upCust->execute([$birthCountry, $city, $education, $language, $profession, $customerId]);
+        // Update customer profile fields if previously missing (resilient & self-healing)
+        static $custUpdateCols = null;
+        if ($custUpdateCols === null) {
+            $requiredCustCols = ['birth_country', 'city', 'education', 'language', 'occupation'];
+            try {
+                $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                if ($driver === 'sqlite') {
+                    $cCols = array_column($pdo->query("PRAGMA table_info(customers)")->fetchAll(PDO::FETCH_ASSOC), 'name');
+                } else {
+                    $cCols = array_column($pdo->query("SHOW COLUMNS FROM customers")->fetchAll(PDO::FETCH_ASSOC), 'Field');
+                }
+                $custUpdateCols = array_intersect($requiredCustCols, $cCols);
+                foreach ($requiredCustCols as $rc) {
+                    if (!in_array($rc, $custUpdateCols, true)) {
+                        try {
+                            $def = ($driver === 'mysql') ? "VARCHAR(100) NULL" : "TEXT NULL";
+                            $pdo->exec("ALTER TABLE customers ADD COLUMN {$rc} {$def}");
+                            $custUpdateCols[] = $rc;
+                        } catch (\Throwable $e) {}
+                    }
+                }
+            } catch (\Throwable $e) {
+                $custUpdateCols = ['occupation'];
+            }
+        }
+
+        $custSets = [];
+        $custParams = [];
+        $valMap = [
+            'birth_country' => $birthCountry,
+            'city'          => $city,
+            'education'     => $education,
+            'language'      => $language,
+            'occupation'    => $profession,
+        ];
+        foreach ($valMap as $cCol => $val) {
+            if (in_array($cCol, $custUpdateCols, true)) {
+                $custSets[] = "{$cCol} = COALESCE(NULLIF(?, ''), {$cCol})";
+                $custParams[] = $val;
+            }
+        }
+        if (!empty($custSets)) {
+            $custParams[] = $customerId;
+            try {
+                $upCust = $pdo->prepare("UPDATE customers SET " . implode(', ', $custSets) . " WHERE id = ?");
+                $upCust->execute($custParams);
+            } catch (\Throwable $eCust) {
+                error_log('[ApplicationController] customers update error: ' . $eCust->getMessage());
+            }
+        }
 
         if ($serviceId <= 0 && empty($customDestCountry) && empty($customVisaType)) {
             redirect('/applications/create', 'Please select both an applicant and a visa service package (or enter custom package details).', 'danger');
@@ -1466,9 +1547,72 @@ class ApplicationController
         // Transition status
         StageTransitionService::transition($appId, 'Visa Issued & Completed', 'Approved', "Visa officially granted. Visa Number: {$visaNumber}", (int)($user['id'] ?? 0));
 
-        // Update application record
-        $pdo->prepare("UPDATE applications SET visa_number = ?, approval_date = ?, approved_visa_file = COALESCE(?, approved_visa_file) WHERE id = ?")
-            ->execute([$visaNumber, $issueDate, $filePath, $appId]);
+        // Update application record (resilient & self-healing)
+        static $hasAppApprovalCols = null;
+        if ($hasAppApprovalCols === null) {
+            try {
+                $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                if ($driver === 'sqlite') {
+                    $cols = array_column($pdo->query("PRAGMA table_info(applications)")->fetchAll(PDO::FETCH_ASSOC), 'name');
+                } else {
+                    $cols = array_column($pdo->query("SHOW COLUMNS FROM applications WHERE Field IN ('visa_number','approval_date','approved_visa_file')")->fetchAll(PDO::FETCH_ASSOC), 'Field');
+                }
+                $hasAppApprovalCols = [
+                    'visa_number'        => in_array('visa_number', $cols, true),
+                    'approval_date'      => in_array('approval_date', $cols, true),
+                    'approved_visa_file' => in_array('approved_visa_file', $cols, true),
+                ];
+            } catch (\Throwable $e) {
+                $hasAppApprovalCols = ['visa_number' => true, 'approval_date' => false, 'approved_visa_file' => true];
+            }
+
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            if (empty($hasAppApprovalCols['approval_date'])) {
+                try {
+                    $def = ($driver === 'mysql') ? "DATE NULL" : "TEXT NULL";
+                    $pdo->exec("ALTER TABLE applications ADD COLUMN approval_date {$def}");
+                    $hasAppApprovalCols['approval_date'] = true;
+                } catch (\Throwable $e) {}
+            }
+            if (empty($hasAppApprovalCols['approved_visa_file'])) {
+                try {
+                    $def = ($driver === 'mysql') ? "VARCHAR(255) NULL" : "TEXT NULL";
+                    $pdo->exec("ALTER TABLE applications ADD COLUMN approved_visa_file {$def}");
+                    $hasAppApprovalCols['approved_visa_file'] = true;
+                } catch (\Throwable $e) {}
+            }
+            if (empty($hasAppApprovalCols['visa_number'])) {
+                try {
+                    $def = ($driver === 'mysql') ? "VARCHAR(100) NULL" : "TEXT NULL";
+                    $pdo->exec("ALTER TABLE applications ADD COLUMN visa_number {$def}");
+                    $hasAppApprovalCols['visa_number'] = true;
+                } catch (\Throwable $e) {}
+            }
+        }
+
+        $appSets = [];
+        $appParams = [];
+        if (!empty($hasAppApprovalCols['visa_number'])) {
+            $appSets[] = "visa_number = ?";
+            $appParams[] = $visaNumber;
+        }
+        if (!empty($hasAppApprovalCols['approval_date'])) {
+            $appSets[] = "approval_date = ?";
+            $appParams[] = $issueDate;
+        }
+        if (!empty($hasAppApprovalCols['approved_visa_file'])) {
+            $appSets[] = "approved_visa_file = COALESCE(?, approved_visa_file)";
+            $appParams[] = $filePath;
+        }
+        if (!empty($appSets)) {
+            $appParams[] = $appId;
+            try {
+                $pdo->prepare("UPDATE applications SET " . implode(', ', $appSets) . " WHERE id = ?")
+                    ->execute($appParams);
+            } catch (\Throwable $eApp) {
+                error_log('[ApplicationController] Update applications on approve error: ' . $eApp->getMessage());
+            }
+        }
 
         AuditService::log('VISA_APPROVED', 'Applications', $appId, "Visa approved & granted: {$visaNumber}", ['visa_number' => $visaNumber, 'expiry_date' => $expiryDate], $user['id'] ?? null);
 
@@ -1591,8 +1735,60 @@ class ApplicationController
 
         StageTransitionService::transition($appId, 'Application Rejected', 'Rejected', "Application rejected: {$customerReason}", (int)($user['id'] ?? 0));
 
-        $pdo->prepare("UPDATE applications SET rejection_date = ?, rejection_reason = ? WHERE id = ?")
-            ->execute([$rejectionDate, $customerReason, $appId]);
+        // Update application record on rejection (resilient & self-healing)
+        static $hasAppRejectionCols = null;
+        if ($hasAppRejectionCols === null) {
+            try {
+                $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                if ($driver === 'sqlite') {
+                    $cols = array_column($pdo->query("PRAGMA table_info(applications)")->fetchAll(PDO::FETCH_ASSOC), 'name');
+                } else {
+                    $cols = array_column($pdo->query("SHOW COLUMNS FROM applications WHERE Field IN ('rejection_date','rejection_reason')")->fetchAll(PDO::FETCH_ASSOC), 'Field');
+                }
+                $hasAppRejectionCols = [
+                    'rejection_date'   => in_array('rejection_date', $cols, true),
+                    'rejection_reason' => in_array('rejection_reason', $cols, true),
+                ];
+            } catch (\Throwable $e) {
+                $hasAppRejectionCols = ['rejection_date' => false, 'rejection_reason' => false];
+            }
+
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            if (empty($hasAppRejectionCols['rejection_date'])) {
+                try {
+                    $def = ($driver === 'mysql') ? "DATE NULL" : "TEXT NULL";
+                    $pdo->exec("ALTER TABLE applications ADD COLUMN rejection_date {$def}");
+                    $hasAppRejectionCols['rejection_date'] = true;
+                } catch (\Throwable $e) {}
+            }
+            if (empty($hasAppRejectionCols['rejection_reason'])) {
+                try {
+                    $def = ($driver === 'mysql') ? "TEXT NULL" : "TEXT NULL";
+                    $pdo->exec("ALTER TABLE applications ADD COLUMN rejection_reason {$def}");
+                    $hasAppRejectionCols['rejection_reason'] = true;
+                } catch (\Throwable $e) {}
+            }
+        }
+
+        $appRejSets = [];
+        $appRejParams = [];
+        if (!empty($hasAppRejectionCols['rejection_date'])) {
+            $appRejSets[] = "rejection_date = ?";
+            $appRejParams[] = $rejectionDate;
+        }
+        if (!empty($hasAppRejectionCols['rejection_reason'])) {
+            $appRejSets[] = "rejection_reason = ?";
+            $appRejParams[] = $customerReason;
+        }
+        if (!empty($appRejSets)) {
+            $appRejParams[] = $appId;
+            try {
+                $pdo->prepare("UPDATE applications SET " . implode(', ', $appRejSets) . " WHERE id = ?")
+                    ->execute($appRejParams);
+            } catch (\Throwable $eRej) {
+                error_log('[ApplicationController] Update applications on reject error: ' . $eRej->getMessage());
+            }
+        }
 
         AuditService::log('VISA_REJECTED', 'Applications', $appId, "Application rejected: {$customerReason}", null, $user['id'] ?? null);
 
@@ -1642,8 +1838,60 @@ class ApplicationController
 
         StageTransitionService::transition($appId, 'Returned', 'Modification Required', "Application returned for corrections: {$returnReason}", (int)($user['id'] ?? 0));
 
-        $pdo->prepare("UPDATE applications SET return_reason = ?, return_deadline = ? WHERE id = ?")
-            ->execute([$returnReason, $deadline, $appId]);
+        // Update application record on return (resilient & self-healing)
+        static $hasAppReturnCols = null;
+        if ($hasAppReturnCols === null) {
+            try {
+                $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                if ($driver === 'sqlite') {
+                    $cols = array_column($pdo->query("PRAGMA table_info(applications)")->fetchAll(PDO::FETCH_ASSOC), 'name');
+                } else {
+                    $cols = array_column($pdo->query("SHOW COLUMNS FROM applications WHERE Field IN ('return_reason','return_deadline')")->fetchAll(PDO::FETCH_ASSOC), 'Field');
+                }
+                $hasAppReturnCols = [
+                    'return_reason'   => in_array('return_reason', $cols, true),
+                    'return_deadline' => in_array('return_deadline', $cols, true),
+                ];
+            } catch (\Throwable $e) {
+                $hasAppReturnCols = ['return_reason' => false, 'return_deadline' => false];
+            }
+
+            $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            if (empty($hasAppReturnCols['return_reason'])) {
+                try {
+                    $def = ($driver === 'mysql') ? "TEXT NULL" : "TEXT NULL";
+                    $pdo->exec("ALTER TABLE applications ADD COLUMN return_reason {$def}");
+                    $hasAppReturnCols['return_reason'] = true;
+                } catch (\Throwable $e) {}
+            }
+            if (empty($hasAppReturnCols['return_deadline'])) {
+                try {
+                    $def = ($driver === 'mysql') ? "DATE NULL" : "TEXT NULL";
+                    $pdo->exec("ALTER TABLE applications ADD COLUMN return_deadline {$def}");
+                    $hasAppReturnCols['return_deadline'] = true;
+                } catch (\Throwable $e) {}
+            }
+        }
+
+        $appRetSets = [];
+        $appRetParams = [];
+        if (!empty($hasAppReturnCols['return_reason'])) {
+            $appRetSets[] = "return_reason = ?";
+            $appRetParams[] = $returnReason;
+        }
+        if (!empty($hasAppReturnCols['return_deadline'])) {
+            $appRetSets[] = "return_deadline = ?";
+            $appRetParams[] = $deadline;
+        }
+        if (!empty($appRetSets)) {
+            $appRetParams[] = $appId;
+            try {
+                $pdo->prepare("UPDATE applications SET " . implode(', ', $appRetSets) . " WHERE id = ?")
+                    ->execute($appRetParams);
+            } catch (\Throwable $eRet) {
+                error_log('[ApplicationController] Update applications on return error: ' . $eRet->getMessage());
+            }
+        }
 
         AuditService::log('VISA_RETURNED', 'Applications', $appId, "Returned for customer modifications: {$returnReason}", ['deadline' => $deadline], $user['id'] ?? null);
 

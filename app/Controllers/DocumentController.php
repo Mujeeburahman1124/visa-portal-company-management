@@ -409,6 +409,30 @@ class DocumentController
         $educationSelect    = !empty($hasCustomerExtras['education'])     ? 'c.education'     : "'' as education";
         $languageSelect     = !empty($hasCustomerExtras['language'])      ? 'c.language'      : "'' as language";
 
+        static $hasFamSpouse = null;
+        if ($hasFamSpouse === null) {
+            try {
+                $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                if ($driver === 'sqlite') {
+                    $fCols = array_column($pdo->query("PRAGMA table_info(customer_family)")->fetchAll(PDO::FETCH_ASSOC), 'name');
+                    $hasFamSpouse = in_array('spouse_name', $fCols, true);
+                } else {
+                    $hasFamSpouse = (bool)$pdo->query("SHOW COLUMNS FROM customer_family LIKE 'spouse_name'")->fetch();
+                }
+            } catch (\Throwable $e) {
+                $hasFamSpouse = false;
+            }
+            if (!$hasFamSpouse) {
+                try {
+                    $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+                    $colType = ($driver === 'mysql') ? 'VARCHAR(150) NULL' : 'TEXT NULL';
+                    $pdo->exec("ALTER TABLE customer_family ADD COLUMN spouse_name {$colType}");
+                    $hasFamSpouse = true;
+                } catch (\Throwable $e) {}
+            }
+        }
+        $spouseNameSelect = !empty($hasFamSpouse) ? 'fam.spouse_name' : "'' as spouse_name";
+
         $stmt = $pdo->prepare("SELECT a.*, 
                     c.id as customer_id, c.customer_code, c.first_name, c.middle_name, c.last_name, c.full_name as customer_name,
                     c.gender, c.dob, c.nationality, c.place_of_birth, {$birthCountrySelect}, {$cityProfileSelect}, {$educationSelect}, {$languageSelect}, c.marital_status, c.religion, c.occupation,
@@ -419,7 +443,7 @@ class DocumentController
                     cp.issue_date as passport_issue_date,
                     COALESCE(cp.expiry_date, a.passport_expiry_date) as passport_expiry_date,
                     cp.place_of_issue as passport_place_of_issue,
-                    fam.father_name, fam.mother_name, fam.spouse_name,
+                    fam.father_name, fam.mother_name, {$spouseNameSelect},
                     nid.id_number as national_id_number, nid.id_type as national_id_type, nid.expiry_date as national_id_expiry,
                     vs.name as service_name, vs.duration as service_duration, vs.entry_type as service_entry_type,
                     vs.processing_type as service_processing_type, vs.estimated_days as service_estimated_days,

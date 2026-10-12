@@ -247,6 +247,7 @@ CREATE TABLE IF NOT EXISTS `customer_family` (
   `mother_nationality` varchar(100) DEFAULT NULL,
   `mother_religion` varchar(100) DEFAULT NULL,
   `mother_mobile` varchar(50) DEFAULT NULL,
+  `spouse_name` varchar(150) DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),

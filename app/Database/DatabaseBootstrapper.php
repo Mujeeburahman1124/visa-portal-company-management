@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 34;
+    private const SCHEMA_VERSION = 35;
 
     public static function init(bool $force = false): void
     {
@@ -722,6 +722,7 @@ class DatabaseBootstrapper
                 mother_nationality VARCHAR(100),
                 mother_religion VARCHAR(100),
                 mother_mobile VARCHAR(50),
+                spouse_name VARCHAR(150),
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
@@ -3361,6 +3362,53 @@ class DatabaseBootstrapper
             }
         }
 
+        // ── MIGRATION 35: Ensure customer_family & applications columns integrity ──
+        if ($currentVer < 35) {
+            // customer_family spouse_name
+            try {
+                $spouseDef = ($driver === 'mysql') ? "VARCHAR(150) NULL" : "TEXT NULL";
+                $pdo->exec("ALTER TABLE customer_family ADD COLUMN spouse_name {$spouseDef}");
+            } catch (\Throwable $e) {}
+
+            // applications approval, file, rejection, and return columns
+            $appCols = [
+                'approval_date'      => ($driver === 'mysql') ? "DATE NULL" : "TEXT NULL",
+                'approved_visa_file' => ($driver === 'mysql') ? "VARCHAR(255) NULL" : "TEXT NULL",
+                'rejection_date'     => ($driver === 'mysql') ? "DATE NULL" : "TEXT NULL",
+                'rejection_reason'   => ($driver === 'mysql') ? "TEXT NULL" : "TEXT NULL",
+                'return_reason'      => ($driver === 'mysql') ? "TEXT NULL" : "TEXT NULL",
+                'return_deadline'    => ($driver === 'mysql') ? "DATE NULL" : "TEXT NULL",
+            ];
+            foreach ($appCols as $col => $def) {
+                try {
+                    $pdo->exec("ALTER TABLE applications ADD COLUMN {$col} {$def}");
+                } catch (\Throwable $e) {}
+            }
+
+            // Also re-verify Migration 34 customer columns
+            $custCols = [
+                'city'          => ($driver === 'mysql') ? "VARCHAR(100) NULL" : "TEXT NULL",
+                'birth_country' => ($driver === 'mysql') ? "VARCHAR(100) NULL" : "TEXT NULL",
+                'education'     => ($driver === 'mysql') ? "VARCHAR(100) NULL" : "TEXT NULL",
+                'language'      => ($driver === 'mysql') ? "VARCHAR(100) DEFAULT 'English'" : "TEXT DEFAULT 'English'",
+            ];
+            foreach ($custCols as $col => $def) {
+                try {
+                    $pdo->exec("ALTER TABLE customers ADD COLUMN {$col} {$def}");
+                } catch (\Throwable $eCol) {}
+            }
+
+            // Also re-verify visa_approvals and visa_rejections updated_at
+            try {
+                $updDef = ($driver === 'mysql') ? "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" : "DATETIME DEFAULT CURRENT_TIMESTAMP";
+                $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN updated_at {$updDef}");
+            } catch (\Throwable $e) {}
+            try {
+                $updDef = ($driver === 'mysql') ? "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" : "DATETIME DEFAULT CURRENT_TIMESTAMP";
+                $pdo->exec("ALTER TABLE visa_rejections ADD COLUMN updated_at {$updDef}");
+            } catch (\Throwable $e) {}
+        }
+
         // ── RECORD SCHEMA VERSION ─────────────────────────────────────────────
         // Must be the LAST operation so that a failed migration does NOT mark
         // itself as complete — allowing a retry on the next request.
@@ -3603,6 +3651,26 @@ class DatabaseBootstrapper
             try { $pdo->exec("ALTER TABLE appointments ADD COLUMN customer_id INTEGER NULL;"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE appointments ADD COLUMN assigned_staff_id INTEGER NULL;"); } catch (\Throwable $e) {}
             try { $pdo->exec("ALTER TABLE appointments ADD COLUMN document_file TEXT NULL;"); } catch (\Throwable $e) {}
+        }
+
+        // 12. Ensure customer_family & applications key columns exist
+        try {
+            $spouseDef = ($driver === 'mysql') ? 'VARCHAR(150) NULL' : 'TEXT NULL';
+            $pdo->exec("ALTER TABLE customer_family ADD COLUMN spouse_name {$spouseDef};");
+        } catch (\Throwable $e) {}
+
+        $appUniversalCols = [
+            'approval_date'      => ($driver === 'mysql') ? 'DATE NULL' : 'TEXT NULL',
+            'approved_visa_file' => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+            'rejection_date'     => ($driver === 'mysql') ? 'DATE NULL' : 'TEXT NULL',
+            'rejection_reason'   => ($driver === 'mysql') ? 'TEXT NULL' : 'TEXT NULL',
+            'return_reason'      => ($driver === 'mysql') ? 'TEXT NULL' : 'TEXT NULL',
+            'return_deadline'    => ($driver === 'mysql') ? 'DATE NULL' : 'TEXT NULL',
+        ];
+        foreach ($appUniversalCols as $col => $def) {
+            try {
+                $pdo->exec("ALTER TABLE applications ADD COLUMN {$col} {$def};");
+            } catch (\Throwable $e) {}
         }
     }
 
