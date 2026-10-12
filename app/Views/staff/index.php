@@ -50,108 +50,120 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </div>
   </div>
 
-  <!-- Bento KPI Metrics Strip -->
-  <div class="bento-staff-kpi-grid">
-    <!-- Card 1: Total Staff -->
-    <div class="bento-staff-kpi-card" style="--kpi-accent: #E11D48; --kpi-icon-bg: #FFF1F2; --kpi-icon-color: #E11D48;">
-      <div class="bento-staff-kpi-header">
-        <span class="bento-staff-kpi-title">Total Staff</span>
-        <div class="bento-staff-kpi-icon">
-          <i class="fa-solid fa-users"></i>
+  <!-- Bento KPI Metrics Strip (Harmonized with Dashboard / Visa Tracking reference) -->
+  <div class="row g-2 g-md-3 mb-4 bento-stat-grid">
+    <!-- Card 1: Total Staff (Featured Brand Card) -->
+    <div class="col-6 col-lg-3">
+      <div class="bento-stat-card featured-card" style="min-height: 120px; padding: 1.1rem 1rem;">
+        <div class="bento-stat-top">
+          <span class="bento-stat-title text-white opacity-90">Total Staff</span>
+          <div class="bento-arrow-circle" style="width: 28px; height: 28px;">
+            <i class="fa-solid fa-users text-primary"></i>
+          </div>
         </div>
-      </div>
-      <div class="bento-staff-kpi-value"><?= $totalStaff ?></div>
-      <div class="bento-staff-kpi-footer">
-        <i class="fa-solid fa-id-card-clip text-danger"></i>
-        <span>Registered enterprise officers</span>
+        <div class="bento-stat-value text-white my-1" style="font-size: 1.85rem;"><?= $totalStaff ?></div>
+        <div class="bento-stat-badge text-white opacity-90" style="font-size: 0.72rem;">
+          <span><i class="fa-solid fa-id-card-clip me-1"></i>Registered officers</span>
+        </div>
       </div>
     </div>
 
     <!-- Card 2: Active Accounts -->
-    <div class="bento-staff-kpi-card" style="--kpi-accent: #10B981; --kpi-icon-bg: #ECFDF5; --kpi-icon-color: #059669;">
-      <div class="bento-staff-kpi-header">
-        <span class="bento-staff-kpi-title">Active Accounts</span>
-        <div class="bento-staff-kpi-icon">
-          <i class="fa-solid fa-user-check"></i>
+    <div class="col-6 col-lg-3">
+      <div class="bento-stat-card" style="min-height: 120px; padding: 1.1rem 1rem;">
+        <div class="bento-stat-top">
+          <span class="bento-stat-title">Active Accounts</span>
+          <div class="bento-arrow-circle" style="width: 28px; height: 28px;">
+            <i class="fa-solid fa-user-check text-success"></i>
+          </div>
         </div>
-      </div>
-      <div class="bento-staff-kpi-value text-success"><?= $activeStaff ?></div>
-      <div class="bento-staff-kpi-footer">
-        <i class="fa-solid fa-circle-check text-success"></i>
-        <span>Authorized operational personnel</span>
+        <div class="bento-stat-value my-1 text-success" style="font-size: 1.85rem;"><?= $activeStaff ?></div>
+        <div class="bento-stat-badge text-muted" style="font-size: 0.72rem;">
+          <span class="text-success fw-semibold"><?= $totalStaff > 0 ? round(($activeStaff / $totalStaff) * 100) : 100 ?>%</span> authorized personnel
+        </div>
       </div>
     </div>
 
     <!-- Card 3: Branch Network -->
-    <div class="bento-staff-kpi-card" style="--kpi-accent: #0284C7; --kpi-icon-bg: #F0F9FF; --kpi-icon-color: #0284C7;">
-      <div class="bento-staff-kpi-header">
-        <span class="bento-staff-kpi-title">Operating Desks</span>
-        <div class="bento-staff-kpi-icon">
-          <i class="fa-solid fa-building"></i>
+    <div class="col-6 col-lg-3">
+      <div class="bento-stat-card" style="min-height: 120px; padding: 1.1rem 1rem;">
+        <div class="bento-stat-top">
+          <span class="bento-stat-title">Operating Desks</span>
+          <div class="bento-arrow-circle" style="width: 28px; height: 28px;">
+            <i class="fa-solid fa-building text-info"></i>
+          </div>
         </div>
-      </div>
-      <div class="bento-staff-kpi-value text-primary"><?= count($branches) ?></div>
-      <div class="bento-staff-kpi-footer">
-        <i class="fa-solid fa-globe text-primary"></i>
-        <span>Regional operational branches</span>
+        <div class="bento-stat-value my-1 text-primary" style="font-size: 1.85rem;"><?= count($branches) ?></div>
+        <div class="bento-stat-badge text-muted" style="font-size: 0.72rem;">
+          <span><i class="fa-solid fa-globe text-primary me-1"></i>Regional branches</span>
+        </div>
       </div>
     </div>
 
     <!-- Card 4: Security Roles -->
-    <div class="bento-staff-kpi-card" style="--kpi-accent: #8B5CF6; --kpi-icon-bg: #F5F3FF; --kpi-icon-color: #7C3AED;">
-      <div class="bento-staff-kpi-header">
-        <span class="bento-staff-kpi-title">Configured Roles</span>
-        <div class="bento-staff-kpi-icon">
-          <i class="fa-solid fa-shield-halved"></i>
+    <div class="col-6 col-lg-3">
+      <div class="bento-stat-card" style="min-height: 120px; padding: 1.1rem 1rem;">
+        <div class="bento-stat-top">
+          <span class="bento-stat-title">Configured Roles</span>
+          <div class="bento-arrow-circle" style="width: 28px; height: 28px;">
+            <i class="fa-solid fa-shield-halved text-purple" style="color: #7C3AED;"></i>
+          </div>
         </div>
-      </div>
-      <div class="bento-staff-kpi-value" style="color: #7C3AED;"><?= count($roles) ?></div>
-      <div class="bento-staff-kpi-footer">
-        <i class="fa-solid fa-lock text-purple"></i>
-        <span>RBAC privilege structures</span>
+        <div class="bento-stat-value my-1" style="font-size: 1.85rem; color: #7C3AED;"><?= count($roles) ?></div>
+        <div class="bento-stat-badge text-muted" style="font-size: 0.72rem;">
+          <span><i class="fa-solid fa-lock me-1"></i>RBAC privileges</span>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Bento Toolbar: Search, Role Filter, Branch Filter & View Switcher -->
-  <div class="bento-staff-toolbar">
+  <div class="bento-staff-toolbar mb-4">
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-      <form action="/staff" method="GET" class="d-flex align-items-center gap-2 flex-grow-1 flex-wrap" style="max-width: 780px;">
-        <div class="input-group" style="max-width: 320px;">
-          <span class="input-group-text bg-white border-end-0 text-muted rounded-start-pill ps-3">
-            <i class="fa-solid fa-magnifying-glass"></i>
-          </span>
-          <input type="text" name="search" class="form-control form-control-sm border-start-0 py-2" placeholder="Search officer, email, title..." value="<?= e($_GET['search'] ?? '') ?>">
-          <button type="submit" class="btn btn-primary btn-sm px-3 rounded-end-pill fw-semibold">Filter</button>
+      <form action="/staff" method="GET" class="row g-2 align-items-center flex-grow-1" style="max-width: 820px;">
+        <div class="col-12 col-md-5">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white border-end-0 text-muted rounded-start-pill ps-3">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </span>
+            <input type="text" name="search" class="form-control border-start-0 py-2" placeholder="Search officer, email, title..." value="<?= e($_GET['search'] ?? '') ?>">
+            <button type="submit" class="btn btn-primary btn-sm px-3 rounded-end-pill fw-semibold">Filter</button>
+          </div>
         </div>
 
-        <select name="role_id" class="form-select form-select-sm rounded-pill" style="width: auto; min-width: 160px;" onchange="this.form.submit()">
-          <option value="">All Security Roles</option>
-          <?php foreach ($roles as $r): ?>
-            <option value="<?= $r['id'] ?>" <?= ((int)($_GET['role_id'] ?? 0)) === (int)$r['id'] ? 'selected' : '' ?>>
-              <?= e($r['name']) ?>
-            </option>
-          <?php endforeach; ?>
-        </select>
+        <div class="col-6 col-md-3">
+          <select name="role_id" class="form-select form-select-sm rounded-pill w-100" onchange="this.form.submit()">
+            <option value="">All Security Roles</option>
+            <?php foreach ($roles as $r): ?>
+              <option value="<?= $r['id'] ?>" <?= ((int)($_GET['role_id'] ?? 0)) === (int)$r['id'] ? 'selected' : '' ?>>
+                <?= e($r['name']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
 
-        <select name="branch_id" class="form-select form-select-sm rounded-pill" style="width: auto; min-width: 160px;" onchange="this.form.submit()">
-          <option value="">All Operating Branches</option>
-          <?php foreach ($branches as $b): ?>
-            <option value="<?= $b['id'] ?>" <?= ((int)($_GET['branch_id'] ?? 0)) === (int)$b['id'] ? 'selected' : '' ?>>
-              <?= e($b['name']) ?> (<?= e($b['code']) ?>)
-            </option>
-          <?php endforeach; ?>
-        </select>
+        <div class="col-6 col-md-3">
+          <select name="branch_id" class="form-select form-select-sm rounded-pill w-100" onchange="this.form.submit()">
+            <option value="">All Operating Branches</option>
+            <?php foreach ($branches as $b): ?>
+              <option value="<?= $b['id'] ?>" <?= ((int)($_GET['branch_id'] ?? 0)) === (int)$b['id'] ? 'selected' : '' ?>>
+                <?= e($b['name']) ?> (<?= e($b['code']) ?>)
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
 
         <?php if (!empty($_GET['search']) || !empty($_GET['role_id']) || !empty($_GET['branch_id'])): ?>
-          <a href="/staff" class="btn btn-light btn-sm border rounded-pill px-2.5" title="Clear Filters">
-            <i class="fa-solid fa-rotate-left"></i>
-          </a>
+          <div class="col-auto">
+            <a href="/staff" class="btn btn-light btn-sm border rounded-pill px-2.5" title="Clear Filters">
+              <i class="fa-solid fa-rotate-left"></i>
+            </a>
+          </div>
         <?php endif; ?>
       </form>
 
       <!-- 3-View Segmented Switcher -->
-      <div class="view-switcher-pill-group" role="group" aria-label="Staff View Mode">
+      <div class="view-switcher-pill-group ms-auto ms-md-0" role="group" aria-label="Staff View Mode">
         <button type="button" class="staff-view-btn <?= $currentView === 'table' ? 'active' : '' ?>" onclick="switchStaffView('table')" id="btnStaffViewTable" title="Table View">
           <i class="fa-solid fa-table-list"></i> <span>Table</span>
         </button>
@@ -202,17 +214,12 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 ?>
                 <tr>
                   <td data-label="Staff Officer">
-                    <div class="d-flex align-items-center gap-2.5">
-                      <div class="staff-avatar-initials">
-                        <?= $initials ?>
-                      </div>
-                      <div>
-                        <a href="/staff/show?id=<?= $u['id'] ?>" class="fw-bold text-dark text-decoration-none">
-                          <?= e($u['name']) ?>
-                        </a>
-                        <div class="text-muted small" style="font-size: 0.73rem;">
-                          <?= e($u['email']) ?>
-                        </div>
+                    <div>
+                      <a href="/staff/show?id=<?= $u['id'] ?>" class="fw-bold text-dark text-decoration-none d-block">
+                        <?= e($u['name']) ?>
+                      </a>
+                      <div class="text-muted small" style="font-size: 0.73rem;">
+                        <?= e($u['email']) ?>
                       </div>
                     </div>
                   </td>
@@ -242,7 +249,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     </span>
                   </td>
                   <td data-label="Actions" class="text-end">
-                    <div class="d-inline-flex align-items-center gap-1">
+                    <div class="d-inline-flex align-items-center gap-1 flex-wrap justify-content-end">
                       <a href="/staff/show?id=<?= $u['id'] ?>" class="btn btn-sm btn-outline-primary py-1 px-2 rounded-pill" title="View Profile">
                         <i class="fa-solid fa-eye"></i>
                       </a>
@@ -295,41 +302,40 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <div class="col-12 col-md-6 col-xl-4">
             <div class="bento-staff-card">
               <div>
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold px-2 py-0.5 rounded-pill" style="font-size: 0.72rem;">
-                    <?= e($u['role_name']) ?>
+                <!-- Top Status Badges -->
+                <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-1">
+                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold px-2.5 py-1 rounded-pill" style="font-size: 0.72rem;">
+                    <i class="fa-solid fa-user-shield me-1"></i><?= e($u['role_name']) ?>
                   </span>
-                  <span class="badge <?= $isActive ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle' ?> fw-bold px-2 py-0.5 rounded-pill" style="font-size: 0.72rem;">
-                    <?= $isActive ? 'Active' : 'Disabled' ?>
+                  <span class="badge <?= $isActive ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle' ?> fw-bold px-2.5 py-1 rounded-pill" style="font-size: 0.72rem;">
+                    <i class="fa-solid <?= $isActive ? 'fa-circle-check' : 'fa-circle-xmark' ?> me-1"></i><?= $isActive ? 'Active' : 'Disabled' ?>
                   </span>
                 </div>
 
-                <div class="d-flex align-items-center gap-2.5 mb-2">
-                  <div class="staff-avatar-initials">
-                    <?= $initials ?>
-                  </div>
-                  <div class="min-w-0">
-                    <a href="/staff/show?id=<?= $u['id'] ?>" class="fw-bold text-dark text-decoration-none fs-6 text-truncate d-block">
-                      <?= e($u['name']) ?>
-                    </a>
-                    <div class="text-muted small text-truncate" style="font-size: 0.75rem;">
-                      <?= e($u['designation'] ?: 'Operations Officer') ?>
-                    </div>
+                <!-- Officer Name & Designation -->
+                <div class="mb-2">
+                  <a href="/staff/show?id=<?= $u['id'] ?>" class="fw-bold text-dark text-decoration-none fs-5 text-truncate d-block">
+                    <?= e($u['name']) ?>
+                  </a>
+                  <div class="text-muted small fw-medium" style="font-size: 0.78rem;">
+                    <?= e($u['designation'] ?: 'Operations Officer') ?>
                   </div>
                 </div>
 
-                <div class="p-2.5 bg-light rounded-3 border mb-3 small text-muted" style="font-size: 0.75rem;">
-                  <div class="text-truncate mb-1"><i class="fa-solid fa-envelope me-1 text-primary"></i> <?= e($u['email']) ?></div>
-                  <div class="text-truncate mb-1"><i class="fa-solid fa-building me-1 text-primary"></i> <?= e($u['branch_name'] ?? 'Global Desk') ?></div>
+                <!-- Contact & Location Box -->
+                <div class="p-2.5 bg-light rounded-3 border mb-3 small text-muted" style="font-size: 0.76rem;">
+                  <div class="text-truncate mb-1"><i class="fa-solid fa-envelope me-1.5 text-danger"></i> <?= e($u['email']) ?></div>
+                  <div class="text-truncate mb-1"><i class="fa-solid fa-building me-1.5 text-danger"></i> <?= e($u['branch_name'] ?? 'Global Desk') ?></div>
                   <?php if (!empty($u['phone'])): ?>
-                    <div class="text-truncate"><i class="fa-solid fa-phone me-1 text-primary"></i> <?= e($u['phone']) ?></div>
+                    <div class="text-truncate"><i class="fa-solid fa-phone me-1.5 text-danger"></i> <?= e($u['phone']) ?></div>
                   <?php endif; ?>
                 </div>
 
-                <div class="bento-staff-metrics-bar">
+                <!-- Dual Metrics Bar -->
+                <div class="bento-staff-metrics-bar mb-3">
                   <div>
                     <div class="bento-staff-metric-lbl">Active Cases</div>
-                    <div class="bento-staff-metric-val text-primary"><?= (int)$u['active_applications'] ?></div>
+                    <div class="bento-staff-metric-val text-danger"><?= (int)$u['active_applications'] ?></div>
                   </div>
                   <div>
                     <div class="bento-staff-metric-lbl">Pending Tasks</div>
@@ -338,17 +344,18 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 </div>
               </div>
 
-              <div class="pt-2 border-top d-flex align-items-center justify-content-between gap-1 flex-wrap mt-2">
+              <!-- Action Buttons Footer -->
+              <div class="pt-2.5 border-top d-flex align-items-center justify-content-between gap-1 flex-wrap mt-auto">
                 <div class="d-flex align-items-center gap-1">
-                  <a href="/staff/show?id=<?= $u['id'] ?>" class="btn btn-sm btn-outline-primary py-1 px-2.5 rounded-pill fw-semibold">
+                  <a href="/staff/show?id=<?= $u['id'] ?>" class="btn btn-sm btn-outline-danger py-1 px-3 rounded-pill fw-semibold" style="font-size: 0.8rem;">
                     <i class="fa-solid fa-eye me-1"></i> Profile
                   </a>
-                  <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2.5 rounded-pill" data-bs-toggle="modal" data-bs-target="#editStaffModal<?= $u['id'] ?>">
+                  <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rounded-pill" data-bs-toggle="modal" data-bs-target="#editStaffModal<?= $u['id'] ?>" title="Edit Officer">
                     <i class="fa-solid fa-pen-to-square"></i>
                   </button>
                 </div>
 
-                <div class="d-flex align-items-center gap-1">
+                <div class="d-flex align-items-center gap-1 ms-auto">
                   <form action="/staff/send-activation" method="POST" class="d-inline" onsubmit="return confirm('Send password reset link to <?= e($u['name']) ?>?');">
                     <?= csrf_field() ?>
                     <input type="hidden" name="staff_id" value="<?= $u['id'] ?>">
@@ -382,40 +389,53 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         <?php foreach ($staff as $u): ?>
           <?php
             $isActive = (int)($u['is_active'] ?? 0) === 1;
-            $initials = strtoupper(substr($u['name'] ?? 'U', 0, 1));
             $isSelf = (int)$u['id'] === (int)($_SESSION['user']['id'] ?? 0);
           ?>
-          <li class="list-group-item p-3 d-flex flex-wrap align-items-center justify-content-between gap-2.5">
-            <div class="d-flex align-items-center gap-2.5 min-w-0">
-              <div class="staff-avatar-initials" style="width: 36px; height: 36px; font-size: 0.85rem;">
-                <?= $initials ?>
-              </div>
-              <div class="min-w-0">
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                  <a href="/staff/show?id=<?= $u['id'] ?>" class="fw-bold text-dark text-decoration-none">
+          <li class="list-group-item p-3 bento-staff-list-item">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 w-100">
+              <div class="min-w-0 flex-grow-1">
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                  <a href="/staff/show?id=<?= $u['id'] ?>" class="fw-bold text-dark text-decoration-none fs-6">
                     <?= e($u['name']) ?>
                   </a>
                   <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill" style="font-size: 0.68rem;">
                     <?= e($u['role_name']) ?>
                   </span>
-                  <span class="badge <?= $isActive ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger' ?> rounded-pill" style="font-size: 0.68rem;">
+                  <span class="badge <?= $isActive ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle' ?> rounded-pill" style="font-size: 0.68rem;">
                     <?= $isActive ? 'Active' : 'Disabled' ?>
                   </span>
                 </div>
-                <div class="text-muted small mt-0.5 text-truncate" style="font-size: 0.74rem;">
-                  <?= e($u['email']) ?> &bull; <?= e($u['designation'] ?: 'Operations') ?> (<?= e($u['branch_name'] ?? 'Global Desk') ?>)
+                <div class="text-muted small text-truncate" style="font-size: 0.76rem;">
+                  <span class="me-2"><i class="fa-solid fa-envelope me-1 text-danger"></i><?= e($u['email']) ?></span>
+                  <span class="me-2 d-none d-sm-inline">• <i class="fa-solid fa-user-tag me-1 text-secondary"></i><?= e($u['designation'] ?: 'Operations') ?></span>
+                  <span class="d-none d-md-inline">• <i class="fa-solid fa-building me-1 text-secondary"></i><?= e($u['branch_name'] ?? 'Global Desk') ?></span>
                 </div>
               </div>
-            </div>
 
-            <div class="d-flex align-items-center gap-1.5">
-              <span class="badge bg-primary rounded-pill px-2.5 py-1 font-monospace small"><?= (int)$u['active_applications'] ?> Visas</span>
-              <a href="/staff/show?id=<?= $u['id'] ?>" class="btn btn-sm btn-outline-primary py-1 px-2 rounded-pill" title="View Profile">
-                <i class="fa-solid fa-eye"></i>
-              </a>
-              <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rounded-pill" data-bs-toggle="modal" data-bs-target="#editStaffModal<?= $u['id'] ?>" title="Edit">
-                <i class="fa-solid fa-pen-to-square"></i>
-              </button>
+              <div class="d-flex align-items-center gap-1.5 ms-auto flex-wrap">
+                <span class="badge bg-primary rounded-pill px-2.5 py-1 font-monospace small"><?= (int)$u['active_applications'] ?> Visas</span>
+                <a href="/staff/show?id=<?= $u['id'] ?>" class="btn btn-sm btn-outline-danger py-1 px-2.5 rounded-pill" title="View Profile">
+                  <i class="fa-solid fa-eye"></i>
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2.5 rounded-pill" data-bs-toggle="modal" data-bs-target="#editStaffModal<?= $u['id'] ?>" title="Edit">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <form action="/staff/send-activation" method="POST" class="d-inline" onsubmit="return confirm('Send password reset link to <?= e($u['name']) ?>?');">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="staff_id" value="<?= $u['id'] ?>">
+                  <button type="submit" class="btn btn-sm btn-outline-info py-1 px-2 rounded-pill" title="Send Password Link">
+                    <i class="fa-solid fa-paper-plane"></i>
+                  </button>
+                </form>
+                <?php if (!$isSelf): ?>
+                  <button type="button" class="btn btn-sm <?= $isActive ? 'btn-outline-warning' : 'btn-outline-success' ?> py-1 px-2 rounded-pill" data-bs-toggle="modal" data-bs-target="#toggleStaffModal<?= $u['id'] ?>" title="<?= $isActive ? 'Deactivate' : 'Activate' ?>">
+                    <i class="fa-solid <?= $isActive ? 'fa-user-slash' : 'fa-user-check' ?>"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 rounded-pill" data-bs-toggle="modal" data-bs-target="#deleteStaffModal<?= $u['id'] ?>" title="Delete">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                <?php endif; ?>
+              </div>
             </div>
           </li>
         <?php endforeach; ?>

@@ -8,8 +8,8 @@ $activeTab = $_GET['tab'] ?? 'logs';
 ?>
 
 <!-- Link Dedicated Bento CSS -->
-<link rel="stylesheet" href="/assets/css/dashboard-bento.css">
-<link rel="stylesheet" href="/assets/css/pages/notifications-admin.css">
+<link rel="stylesheet" href="/assets/css/dashboard-bento.css?v=<?= time() ?>">
+<link rel="stylesheet" href="/assets/css/pages/notifications-admin.css?v=<?= time() ?>">
 
 <div class="content-body notif-ops-dashboard">
   <?php if ($flash): ?>
@@ -50,61 +50,69 @@ $activeTab = $_GET['tab'] ?? 'logs';
     </div>
   </div>
 
-  <!-- Bento KPI Grid -->
-  <div class="bento-ops-kpi-grid">
-    <!-- Total Delivered -->
-    <div class="bento-ops-kpi-card">
-      <div class="bento-ops-kpi-header">
-        <span class="bento-ops-kpi-label">Total Delivered</span>
-        <div class="bento-ops-kpi-icon ops-icon-delivered">
-          <i class="fa-solid fa-paper-plane"></i>
+  <!-- Bento KPI Grid / Status Section (Harmonized with Visa Tracking reference UI) -->
+  <div class="row g-2 g-md-3 mb-4 bento-stat-grid">
+    <!-- Total Delivered (Featured Brand Card) -->
+    <div class="col-6 col-lg-3">
+      <div class="bento-stat-card featured-card" style="min-height: 120px; padding: 1.1rem 1rem;">
+        <div class="bento-stat-top">
+          <span class="bento-stat-title text-white opacity-90">Total Delivered</span>
+          <div class="bento-arrow-circle" style="width: 28px; height: 28px;">
+            <i class="fa-solid fa-paper-plane text-primary"></i>
+          </div>
         </div>
-      </div>
-      <div class="bento-ops-kpi-value"><?= number_format($totalSent) ?></div>
-      <div class="bento-ops-kpi-sub">
-        <span class="text-success fw-semibold"><i class="fa-solid fa-shield-halved me-1"></i>Across Email, WhatsApp &amp; In-App</span>
+        <div class="bento-stat-value text-white my-1" style="font-size: 1.85rem;"><?= number_format($totalSent) ?></div>
+        <div class="bento-stat-badge text-white opacity-90" style="font-size: 0.72rem;">
+          <span><i class="fa-solid fa-shield-halved me-1"></i>Multi-Channel</span>
+        </div>
       </div>
     </div>
 
     <!-- Email Success Rate -->
-    <div class="bento-ops-kpi-card">
-      <div class="bento-ops-kpi-header">
-        <span class="bento-ops-kpi-label">Email Success Rate</span>
-        <div class="bento-ops-kpi-icon ops-icon-email">
-          <i class="fa-solid fa-envelope"></i>
+    <div class="col-6 col-lg-3">
+      <div class="bento-stat-card" style="min-height: 120px; padding: 1.1rem 1rem;">
+        <div class="bento-stat-top">
+          <span class="bento-stat-title">Email Success Rate</span>
+          <div class="bento-arrow-circle" style="width: 28px; height: 28px;">
+            <i class="fa-solid fa-envelope text-info"></i>
+          </div>
         </div>
-      </div>
-      <div class="bento-ops-kpi-value"><?= $emailRate ?>%</div>
-      <div class="bento-ops-kpi-sub">
-        <span class="text-info fw-semibold"><?= number_format($emailSuccess ?? 0) ?></span> sent of <?= number_format($totalEmail) ?> attempts
+        <div class="bento-stat-value my-1 text-dark" style="font-size: 1.85rem;"><?= $emailRate ?>%</div>
+        <div class="bento-stat-badge text-muted" style="font-size: 0.72rem;">
+          <span class="text-info fw-semibold"><?= number_format($emailSuccess ?? 0) ?></span> sent of <?= number_format($totalEmail) ?> attempts
+        </div>
       </div>
     </div>
 
     <!-- WhatsApp Delivery Rate -->
-    <div class="bento-ops-kpi-card">
-      <div class="bento-ops-kpi-header">
-        <span class="bento-ops-kpi-label">WhatsApp Delivery Rate</span>
-        <div class="bento-ops-kpi-icon ops-icon-whatsapp">
-          <i class="fa-brands fa-whatsapp"></i>
+    <div class="col-6 col-lg-3">
+      <div class="bento-stat-card" style="min-height: 120px; padding: 1.1rem 1rem;">
+        <div class="bento-stat-top">
+          <span class="bento-stat-title">WhatsApp Delivery</span>
+          <div class="bento-arrow-circle" style="width: 28px; height: 28px;">
+            <i class="fa-brands fa-whatsapp text-success"></i>
+          </div>
         </div>
-      </div>
-      <div class="bento-ops-kpi-value"><?= $whatsappRate ?>%</div>
-      <div class="bento-ops-kpi-sub">
-        <span class="text-success fw-semibold"><?= number_format($whatsappSuccess ?? 0) ?></span> sent of <?= number_format($totalWhatsApp) ?> attempts
+        <div class="bento-stat-value my-1 text-success" style="font-size: 1.85rem;"><?= $whatsappRate ?>%</div>
+        <div class="bento-stat-badge text-muted" style="font-size: 0.72rem;">
+          <span class="text-success fw-semibold"><?= number_format($whatsappSuccess ?? 0) ?></span> sent of <?= number_format($totalWhatsApp) ?> attempts
+        </div>
       </div>
     </div>
 
     <!-- Failed & Pending Queue -->
-    <div class="bento-ops-kpi-card">
-      <div class="bento-ops-kpi-header">
-        <span class="bento-ops-kpi-label">Failed &amp; Pending Queue</span>
-        <div class="bento-ops-kpi-icon ops-icon-queue">
-          <i class="fa-solid fa-triangle-exclamation"></i>
+    <div class="col-6 col-lg-3">
+      <div class="bento-stat-card" style="min-height: 120px; padding: 1.1rem 1rem;">
+        <div class="bento-stat-top">
+          <span class="bento-stat-title">Failed &amp; Queue</span>
+          <div class="bento-arrow-circle" style="width: 28px; height: 28px;">
+            <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+          </div>
         </div>
-      </div>
-      <div class="bento-ops-kpi-value text-danger"><?= number_format($totalFailed) ?></div>
-      <div class="bento-ops-kpi-sub">
-        <span class="badge bg-warning bg-opacity-20 text-dark border"><?= $activeQueue ?> in retry queue</span>
+        <div class="bento-stat-value my-1 text-danger" style="font-size: 1.85rem;"><?= number_format($totalFailed) ?></div>
+        <div class="bento-stat-badge text-muted" style="font-size: 0.72rem;">
+          <span class="badge bg-warning bg-opacity-25 text-dark border-0 py-0.5 px-2" style="font-size: 0.68rem;"><?= $activeQueue ?> in retry queue</span>
+        </div>
       </div>
     </div>
   </div>
@@ -135,21 +143,21 @@ $activeTab = $_GET['tab'] ?? 'logs';
       <!-- TAB 1: DELIVERY LOGS & AUDIT TRAIL -->
       <!-- ========================================================================= -->
       <?php if ($activeTab === 'logs'): ?>
-        <!-- Filter Form -->
+        <!-- Filter Form (Responsive Bento Panel) -->
         <div class="notif-ops-filter-box">
-          <form method="GET" action="/notifications/admin" class="row g-2 align-items-end">
+          <form method="GET" action="/notifications/admin" class="row g-2 g-md-3 align-items-end">
             <input type="hidden" name="tab" value="logs">
             
-            <div class="col-md-3 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">Search Recipient / ID</label>
+            <div class="col-12 col-md-4 col-xl-3">
+              <label class="form-label small fw-semibold text-secondary mb-1">Search Recipient / ID</label>
               <div class="input-group input-group-sm">
-                <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
-                <input type="text" name="search" class="form-control" placeholder="Name, email, phone, id..." value="<?= e($search) ?>">
+                <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-start-0" placeholder="Name, email, phone, id..." value="<?= e($search) ?>">
               </div>
             </div>
 
-            <div class="col-md-2 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">Channel</label>
+            <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+              <label class="form-label small fw-semibold text-secondary mb-1">Channel</label>
               <select name="channel" class="form-select form-select-sm">
                 <option value="">All Channels</option>
                 <option value="Email" <?= $channel === 'Email' ? 'selected' : '' ?>>Email</option>
@@ -158,8 +166,8 @@ $activeTab = $_GET['tab'] ?? 'logs';
               </select>
             </div>
 
-            <div class="col-md-2 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">Status</label>
+            <div class="col-6 col-sm-6 col-md-4 col-xl-2">
+              <label class="form-label small fw-semibold text-secondary mb-1">Delivery Status</label>
               <select name="status" class="form-select form-select-sm">
                 <option value="">All Statuses</option>
                 <option value="Sent" <?= $status === 'Sent' ? 'selected' : '' ?>>Sent</option>
@@ -170,23 +178,32 @@ $activeTab = $_GET['tab'] ?? 'logs';
               </select>
             </div>
 
-            <div class="col-md-2 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">From Date</label>
+            <div class="col-6 col-sm-6 col-md-3 col-xl-2">
+              <label class="form-label small fw-semibold text-secondary mb-1">From Date</label>
               <input type="date" name="date_from" class="form-control form-control-sm" value="<?= e($dateFrom) ?>">
             </div>
 
-            <div class="col-md-2 col-sm-6">
-              <label class="form-label small fw-semibold text-muted mb-1">To Date</label>
+            <div class="col-6 col-sm-6 col-md-3 col-xl-2">
+              <label class="form-label small fw-semibold text-secondary mb-1">To Date</label>
               <input type="date" name="date_to" class="form-control form-control-sm" value="<?= e($dateTo) ?>">
             </div>
 
-            <div class="col-md-1 col-sm-12 d-flex gap-1">
-              <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold" title="Apply Filter">
+            <div class="col-12 col-md-auto d-flex align-items-center gap-2 mt-2 mt-md-0 ms-md-auto">
+              <button type="submit" class="btn btn-primary btn-sm px-3 fw-semibold rounded-pill d-inline-flex align-items-center gap-1.5 shadow-sm" title="Apply Filter">
                 <i class="fa-solid fa-filter"></i>
+                <span>Filter</span>
               </button>
-              <a href="/notifications/admin?tab=logs" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
-                <i class="fa-solid fa-rotate-left"></i>
-              </a>
+              <?php if (!empty($search) || !empty($channel) || !empty($status) || !empty($dateFrom) || !empty($dateTo)): ?>
+                <a href="/notifications/admin?tab=logs" class="btn btn-outline-danger btn-sm px-3 fw-semibold rounded-pill d-inline-flex align-items-center gap-1.5" title="Clear Active Filters">
+                  <i class="fa-solid fa-xmark"></i>
+                  <span>Clear</span>
+                </a>
+              <?php else: ?>
+                <a href="/notifications/admin?tab=logs" class="btn btn-outline-secondary btn-sm px-3 fw-semibold rounded-pill d-inline-flex align-items-center gap-1.5" title="Reset Filters">
+                  <i class="fa-solid fa-rotate-left"></i>
+                  <span>Reset</span>
+                </a>
+              <?php endif; ?>
             </div>
           </form>
         </div>
@@ -196,13 +213,13 @@ $activeTab = $_GET['tab'] ?? 'logs';
           <table class="ops-logs-table">
             <thead>
               <tr>
-                <th style="width: 140px;">Timestamp</th>
-                <th style="width: 110px;">Channel</th>
-                <th>Event &amp; Subject</th>
-                <th>Recipient</th>
-                <th style="width: 110px;">Status</th>
-                <th>Provider ID / Error</th>
-                <th class="text-end" style="width: 100px;">Actions</th>
+                <th style="min-width: 140px; width: 140px;" class="text-nowrap">Timestamp</th>
+                <th style="min-width: 110px; width: 110px;" class="text-nowrap">Channel</th>
+                <th style="min-width: 200px;">Event &amp; Subject</th>
+                <th style="min-width: 180px;">Recipient</th>
+                <th style="min-width: 115px; width: 115px;" class="text-nowrap">Status</th>
+                <th style="min-width: 180px;">Provider ID / Error</th>
+                <th class="text-end text-nowrap" style="min-width: 100px; width: 100px;">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -220,7 +237,7 @@ $activeTab = $_GET['tab'] ?? 'logs';
                     <td data-label="Timestamp" class="text-nowrap text-muted" style="font-size: 0.78rem;">
                       <div><i class="fa-regular fa-clock me-1"></i><?= format_datetime($log['created_at']) ?></div>
                     </td>
-                    <td data-label="Channel">
+                    <td data-label="Channel" class="text-nowrap">
                       <?php if ($log['channel'] === 'WhatsApp'): ?>
                         <span class="badge-channel-whatsapp">
                           <i class="fa-brands fa-whatsapp"></i> WhatsApp
@@ -245,22 +262,22 @@ $activeTab = $_GET['tab'] ?? 'logs';
                         <?= e($log['recipient_phone'] ?: ($log['recipient_email'] ?: 'Portal User #' . $log['recipient_id'])) ?>
                       </div>
                     </td>
-                    <td data-label="Status">
+                    <td data-label="Status" class="text-nowrap align-middle">
                       <?php if ($log['status'] === 'Sent'): ?>
-                        <span class="badge-status-sent"><i class="fa-solid fa-check me-1"></i> Sent</span>
+                        <span class="badge-status badge-status-sent"><i class="fa-solid fa-check"></i> <span>Sent</span></span>
                       <?php elseif ($log['status'] === 'Simulated'): ?>
-                        <span class="badge-status-simulated" title="Dispatched in local simulation mode"><i class="fa-solid fa-vial me-1"></i> Simulated</span>
+                        <span class="badge-status badge-status-simulated" title="Dispatched in local simulation mode"><i class="fa-solid fa-vial"></i> <span>Simulated</span></span>
                       <?php elseif ($log['status'] === 'Failed'): ?>
-                        <span class="badge-status-failed"><i class="fa-solid fa-xmark me-1"></i> Failed</span>
+                        <span class="badge-status badge-status-failed"><i class="fa-solid fa-xmark"></i> <span>Failed</span></span>
                       <?php elseif ($log['status'] === 'Retrying'): ?>
-                        <span class="badge-status-retry"><i class="fa-solid fa-rotate me-1"></i> Retry #<?= (int)$log['retry_count'] ?></span>
+                        <span class="badge-status badge-status-retry"><i class="fa-solid fa-rotate"></i> <span>Retry #<?= (int)$log['retry_count'] ?></span></span>
                       <?php else: ?>
-                        <span class="badge bg-secondary px-2 py-1"><?= e($log['status']) ?></span>
+                        <span class="badge bg-secondary px-2.5 py-1 rounded-pill fw-bold text-nowrap"><?= e($log['status']) ?></span>
                       <?php endif; ?>
                     </td>
                     <td data-label="Provider / Error">
                       <?php if (!empty($log['provider_message_id'])): ?>
-                        <div class="font-monospace small text-primary text-truncate" style="max-width: 180px;" title="<?= e($log['provider_message_id']) ?>">
+                        <div class="font-monospace small text-primary text-truncate" style="max-width: 220px;" title="<?= e($log['provider_message_id']) ?>">
                           <i class="fa-solid fa-hashtag small me-1"></i><?= e($log['provider_message_id']) ?>
                         </div>
                       <?php endif; ?>
@@ -299,22 +316,32 @@ $activeTab = $_GET['tab'] ?? 'logs';
 
         <!-- Pagination -->
         <?php if ($totalPages > 1): ?>
-          <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+          <?php
+            $paginationBaseQuery = array_filter([
+              'tab'       => 'logs',
+              'channel'   => $channel,
+              'status'    => $status,
+              'search'    => $search,
+              'date_from' => $dateFrom,
+              'date_to'   => $dateTo,
+            ], fn($v) => $v !== '' && $v !== null);
+          ?>
+          <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top flex-wrap gap-2">
             <div class="small text-muted">
               Showing page <strong><?= $page ?></strong> of <strong><?= $totalPages ?></strong> (<?= number_format($totalLogs) ?> total logs)
             </div>
             <nav>
               <ul class="pagination pagination-sm mb-0">
                 <?php if ($page > 1): ?>
-                  <li class="page-item"><a class="page-link" href="/notifications/admin?tab=logs&page=<?= $page - 1 ?>&channel=<?= urlencode($channel) ?>&status=<?= urlencode($status) ?>&search=<?= urlencode($search) ?>">&laquo; Previous</a></li>
+                  <li class="page-item"><a class="page-link" href="/notifications/admin?<?= http_build_query(array_merge($paginationBaseQuery, ['page' => $page - 1])) ?>">&laquo; Previous</a></li>
                 <?php endif; ?>
                 <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
                   <li class="page-item <?= $p === $page ? 'active' : '' ?>">
-                    <a class="page-link" href="/notifications/admin?tab=logs&page=<?= $p ?>&channel=<?= urlencode($channel) ?>&status=<?= urlencode($status) ?>&search=<?= urlencode($search) ?>"><?= $p ?></a>
+                    <a class="page-link" href="/notifications/admin?<?= http_build_query(array_merge($paginationBaseQuery, ['page' => $p])) ?>"><?= $p ?></a>
                   </li>
                 <?php endfor; ?>
                 <?php if ($page < $totalPages): ?>
-                  <li class="page-item"><a class="page-link" href="/notifications/admin?tab=logs&page=<?= $page + 1 ?>&channel=<?= urlencode($channel) ?>&status=<?= urlencode($status) ?>&search=<?= urlencode($search) ?>">Next &raquo;</a></li>
+                  <li class="page-item"><a class="page-link" href="/notifications/admin?<?= http_build_query(array_merge($paginationBaseQuery, ['page' => $page + 1])) ?>">Next &raquo;</a></li>
                 <?php endif; ?>
               </ul>
             </nav>
