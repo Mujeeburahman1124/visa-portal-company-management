@@ -118,8 +118,21 @@ class TrackingController
         }
 
         if ($stage !== '' && $stage !== 'All') {
-            $filterSql .= " AND a.current_stage = ?";
-            $params[] = $stage;
+            if ($stage === 'Application Registered' || $stage === 'New Application') {
+                $filterSql .= " AND (a.current_stage IN ('Application Registered', 'New Application') OR a.status = 'Draft')";
+            } elseif ($stage === 'Approved' || $stage === 'Visa Issued & Completed') {
+                $filterSql .= " AND (a.current_stage IN ('Approved', 'Visa Issued & Completed') OR a.status IN ('Approved', 'Completed'))";
+            } elseif ($stage === 'Documents Verified' || $stage === 'Documents Approved') {
+                $filterSql .= " AND (a.current_stage IN ('Documents Verified', 'Documents Approved') OR a.current_stage LIKE '%Verified%' OR a.current_stage LIKE '%Approved%')";
+            } elseif ($stage === 'Submitted / Posted' || $stage === 'Application Submitted') {
+                $filterSql .= " AND (a.current_stage IN ('Submitted / Posted', 'Application Submitted') OR a.current_stage LIKE '%Submitted%')";
+            } elseif ($stage === 'In Process' || $stage === 'Under Review') {
+                $filterSql .= " AND (a.current_stage IN ('In Process', 'Under Review', 'Documents Under Review', 'Pending Review') OR a.status = 'In Review')";
+            } else {
+                $filterSql .= " AND (a.current_stage = ? OR a.current_stage LIKE ?)";
+                $params[] = $stage;
+                $params[] = "%{$stage}%";
+            }
         }
 
         if ($status !== '' && $status !== 'All') {
@@ -128,7 +141,9 @@ class TrackingController
         }
 
         if ($countryId > 0) {
-            $filterSql .= " AND vs.country_id = ?";
+            $filterSql .= " AND (vs.country_id = ? OR ct.id = ? OR a.destination_country = (SELECT name FROM countries WHERE id = ? LIMIT 1))";
+            $params[] = $countryId;
+            $params[] = $countryId;
             $params[] = $countryId;
         }
 
@@ -187,31 +202,12 @@ class TrackingController
         }
         unset($app);
 
-        // Lists for filters
-        $stages = [
-            'All',
-            'Application Registered',
-            'Pending Review',
-            'Documents Required',
-            'Documents Submitted',
-            'Documents Under Review',
-            'Documents Approved',
-            'Ready for Submission',
-            'Security / Blacklist Check',
-            'Submitted / Posted',
-            'In Process',
-            'Approved',
-            'Returned / Modification Required',
-            'Customer Documents Required',
-            'Documents Resubmitted',
-            'Resubmitted',
-            'Rejected',
-            'Cancelled',
-            'On Hold',
-            'Waiting for Customer',
-            'Waiting for Supplier',
-            'Waiting for Embassy'
-        ];
+        // Lists for filters — load all database stages + comprehensive standard stages
+        $dbStages = $pdo->query("SELECT DISTINCT current_stage FROM applications WHERE current_stage IS NOT NULL AND current_stage != '' AND is_archived = 0 ORDER BY current_stage ASC")->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        $standardStages = \App\Validators\StageValidator::VALID_STAGES;
+        $allUniqueStages = array_values(array_unique(array_merge($dbStages, $standardStages)));
+        sort($allUniqueStages, SORT_NATURAL | SORT_FLAG_CASE);
+        $stages = array_merge(['All'], $allUniqueStages);
 
         $countriesList = $pdo->query("SELECT id, name, flag_emoji FROM countries WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $servicesList = $pdo->query("SELECT id, name FROM visa_services WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);

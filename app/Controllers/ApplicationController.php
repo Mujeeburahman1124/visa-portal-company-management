@@ -80,9 +80,18 @@ class ApplicationController
             $params[] = $status;
         }
 
-        if ($stage !== '') {
-            $sql .= " AND a.current_stage = ?";
-            $params[] = $stage;
+        if ($stage !== '' && $stage !== 'All') {
+            if ($stage === 'Application Registered' || $stage === 'New Application') {
+                $sql .= " AND (a.current_stage IN ('Application Registered', 'New Application') OR a.status = 'Draft')";
+            } elseif ($stage === 'Approved' || $stage === 'Visa Issued & Completed') {
+                $sql .= " AND (a.current_stage IN ('Approved', 'Visa Issued & Completed') OR a.status IN ('Approved', 'Completed'))";
+            } elseif ($stage === 'Documents Verified' || $stage === 'Documents Approved') {
+                $sql .= " AND (a.current_stage IN ('Documents Verified', 'Documents Approved') OR a.current_stage LIKE '%Verified%' OR a.current_stage LIKE '%Approved%')";
+            } else {
+                $sql .= " AND (a.current_stage = ? OR a.current_stage LIKE ?)";
+                $params[] = $stage;
+                $params[] = "%{$stage}%";
+            }
         }
 
         if ($priority !== '') {

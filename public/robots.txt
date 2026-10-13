@@ -1,0 +1,47 @@
+# MS Travel Hub — Global Visa Operations & Tracking Portal
+# Official Robots Exclusion File
+
+User-agent: *
+Allow: /
+Allow: /track
+Allow: /public-track
+Allow: /portal/track
+Allow: /login
+Allow: /portal/login
+Allow: /agent/login
+Allow: /agent-portal/login
+Allow: /assets/
+Allow: /favicon.ico
+Allow: /favicon.png
+Allow: /manifest.json
+
+# Disallow Internal Operations, Protected APIs & Admin Consoles
+Disallow: /admin
+Disallow: /superadmin
+Disallow: /dashboard
+Disallow: /api/
+Disallow: /staff
+Disallow: /users
+Disallow: /applications
+Disallow: /customers
+Disallow: /documents
+Disallow: /settings
+Disallow: /audit
+Disallow: /reports
+Disallow: /payroll
+Disallow: /inventory
+Disallow: /branches
+Disallow: /roles
+Disallow: /payments
+Disallow: /portal/dashboard
+Disallow: /portal/documents
+Disallow: /portal/invoices
+Disallow: /portal/wallet
+Disallow: /portal/support
+Disallow: /portal/appointments
+Disallow: /portal/notifications
+Disallow: /agent/dashboard
+Disallow: /agent-portal/dashboard
+
+# XML Sitemaps
+Sitemap: https://mshorizonuae.com/sitemap.xml

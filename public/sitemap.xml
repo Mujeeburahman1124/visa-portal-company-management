@@ -1,45 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+                            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+  <!-- Homepage / Main Entry -->
   <url>
-    <loc>https://visatrack.mstravelhub.com/</loc>
-    <lastmod>2026-10-06</lastmod>
+    <loc>https://mshorizonuae.com/</loc>
+    <lastmod>2026-10-13</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+
+  <!-- Public Real-Time Visa Tracking & Verification -->
   <url>
-    <loc>https://visatrack.mstravelhub.com/login</loc>
-    <lastmod>2026-10-06</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
+    <loc>https://mshorizonuae.com/track</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>always</changefreq>
+    <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://visatrack.mstravelhub.com/track</loc>
-    <lastmod>2026-10-06</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <loc>https://mshorizonuae.com/portal/track</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>always</changefreq>
+    <priority>0.95</priority>
   </url>
+
+  <!-- Public Applicant Self-Service Portal Sign In -->
   <url>
-    <loc>https://visatrack.mstravelhub.com/portal/login</loc>
-    <lastmod>2026-10-06</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://visatrack.mstravelhub.com/agent/login</loc>
-    <lastmod>2026-10-06</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://visatrack.mstravelhub.com/supplier/login</loc>
-    <lastmod>2026-10-06</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://visatrack.mstravelhub.com/services</loc>
-    <lastmod>2026-10-06</lastmod>
+    <loc>https://mshorizonuae.com/portal/login</loc>
+    <lastmod>2026-10-13</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Partner & Agency B2B Portal Sign In -->
+  <url>
+    <loc>https://mshorizonuae.com/agent/login</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- Global Operations & Staff Console Sign In -->
+  <url>
+    <loc>https://mshorizonuae.com/login</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
 </urlset>

@@ -44,6 +44,16 @@ Options -Indexes -MultiViews
     </IfModule>
 </FilesMatch>
 
+# Allow public web app manifest
+<Files "manifest.json">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Allow from all
+    </IfModule>
+</Files>
+
 # Production Security Headers
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"

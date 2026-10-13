@@ -52,7 +52,8 @@ class VisaPackageController
         }
 
         if ($search !== '') {
-            $sql .= " AND (vs.name LIKE ? OR vs.duration LIKE ? OR c.name LIKE ? OR vs.supplier_name LIKE ?)";
+            $sql .= " AND (vs.name LIKE ? OR vs.duration LIKE ? OR c.name LIKE ? OR vs.supplier_name LIKE ? OR vc.name LIKE ?)";
+            $params[] = "%{$search}%";
             $params[] = "%{$search}%";
             $params[] = "%{$search}%";
             $params[] = "%{$search}%";
@@ -231,15 +232,16 @@ class VisaPackageController
 
         // Financial KPIs & Full Dataset
         $allPackages = $packages;
-        $totalPackages = count($allPackages);
-        $activePackages = count(array_filter($allPackages, fn($p) => !empty($p['is_active'])));
-        $totalCountries = (int)$pdo->query("SELECT COUNT(DISTINCT country_id) FROM visa_services")->fetchColumn();
+        $matchedPackagesCount = count($allPackages);
+        $totalPackages = (int)$pdo->query("SELECT COUNT(*) FROM visa_services")->fetchColumn();
+        $activePackages = (int)$pdo->query("SELECT COUNT(*) FROM visa_services WHERE is_active = 1")->fetchColumn();
+        $totalCountries = (int)$pdo->query("SELECT COUNT(DISTINCT country_id) FROM visa_services WHERE country_id IS NOT NULL AND country_id > 0")->fetchColumn();
         $totalCategories = count($categories);
 
         // Pagination for Visa Packages (6 packages per page)
         $perPage = 6;
         $currentPage = max(1, (int)($_GET['page'] ?? 1));
-        $totalPages = max(1, (int)ceil($totalPackages / $perPage));
+        $totalPages = max(1, (int)ceil($matchedPackagesCount / $perPage));
         if ($currentPage > $totalPages) {
             $currentPage = $totalPages;
         }
@@ -569,6 +571,53 @@ class VisaPackageController
         redirect('/visa-packages?tab=categories', "Visa Category '{$name}' created successfully!", 'success');
     }
 
+    public function updateCategory(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+
+        $id = (int)($_POST['id'] ?? 0);
+        $name = trim($_POST['name'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $icon = trim($_POST['icon'] ?? 'fa-solid fa-passport');
+        $isActive = isset($_POST['is_active']) ? 1 : 0;
+
+        if ($id <= 0 || empty($name)) {
+            redirect('/visa-packages?tab=categories', 'Valid Category ID and Name are required.', 'danger');
+        }
+
+        $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));
+
+        $stmt = $pdo->prepare("UPDATE visa_categories SET name = ?, slug = ?, description = ?, icon = ?, is_active = ? WHERE id = ?");
+        $stmt->execute([$name, $slug, $description, $icon, $isActive, $id]);
+
+        AuditService::log('UPDATE', 'VisaCategories', $id, "Updated Visa Category: {$name}");
+        redirect('/visa-packages?tab=categories', "Visa Category '{$name}' updated successfully!", 'success');
+    }
+
+    public function deleteCategory(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id <= 0) {
+            redirect('/visa-packages?tab=categories', 'Invalid category ID.', 'danger');
+        }
+
+        $linkedCount = (int)$pdo->query("SELECT COUNT(*) FROM visa_services WHERE category_id = {$id}")->fetchColumn();
+        if ($linkedCount > 0) {
+            $pdo->prepare("UPDATE visa_categories SET is_active = 0 WHERE id = ?")->execute([$id]);
+            AuditService::log('DEACTIVATE', 'VisaCategories', $id, "Deactivated Visa Category #{$id} ({$linkedCount} linked packages)");
+            redirect('/visa-packages?tab=categories', "Category has {$linkedCount} linked packages. It has been deactivated instead of deleted.", 'warning');
+        } else {
+            $catName = (string)($pdo->query("SELECT name FROM visa_categories WHERE id = {$id}")->fetchColumn() ?: "Category #{$id}");
+            $pdo->prepare("DELETE FROM visa_categories WHERE id = ?")->execute([$id]);
+            AuditService::log('DELETE', 'VisaCategories', $id, "Deleted Visa Category: {$catName}");
+            redirect('/visa-packages?tab=categories', "Category '{$catName}' deleted successfully.", 'success');
+        }
+    }
+
     public function storeType(): void
     {
         AuthMiddleware::handle();
@@ -591,6 +640,46 @@ class VisaPackageController
         AuditService::log('CREATE', 'VisaTypes', $typeId, "Created new Visa Type: {$name}");
 
         redirect('/visa-packages?tab=types', "Visa Type '{$name}' created successfully!", 'success');
+    }
+
+    public function updateType(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+
+        $id = (int)($_POST['id'] ?? 0);
+        $name = trim($_POST['name'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $icon = trim($_POST['icon'] ?? 'fa-solid fa-file-lines');
+        $isActive = isset($_POST['is_active']) ? 1 : 0;
+
+        if ($id <= 0 || empty($name)) {
+            redirect('/visa-packages?tab=types', 'Valid Type ID and Name are required.', 'danger');
+        }
+
+        $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));
+
+        $stmt = $pdo->prepare("UPDATE visa_types SET name = ?, slug = ?, description = ?, icon = ?, is_active = ? WHERE id = ?");
+        $stmt->execute([$name, $slug, $description, $icon, $isActive, $id]);
+
+        AuditService::log('UPDATE', 'VisaTypes', $id, "Updated Visa Type: {$name}");
+        redirect('/visa-packages?tab=types', "Visa Type '{$name}' updated successfully!", 'success');
+    }
+
+    public function deleteType(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id <= 0) {
+            redirect('/visa-packages?tab=types', 'Invalid type ID.', 'danger');
+        }
+
+        $typeName = (string)($pdo->query("SELECT name FROM visa_types WHERE id = {$id}")->fetchColumn() ?: "Type #{$id}");
+        $pdo->prepare("DELETE FROM visa_types WHERE id = ?")->execute([$id]);
+        AuditService::log('DELETE', 'VisaTypes', $id, "Deleted Visa Type: {$typeName}");
+        redirect('/visa-packages?tab=types', "Visa Type '{$typeName}' deleted successfully.", 'success');
     }
 
     public function adjustInventory(): void

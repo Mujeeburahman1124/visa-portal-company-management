@@ -7,7 +7,15 @@ $flash = get_flash();
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= e($pageTitle) ?></title>
+
+  <!-- Enterprise SEO & Open Graph Engine -->
+  <?= \App\Services\SeoService::renderTags([
+      'title' => 'Staff & Operations Sign In — MS TRAVEL HUB',
+      'description' => 'Secure staff and visa operations console sign in for MS Travel Hub. Manage applicant journey, consular tracking, and workflow decisions.',
+      'canonical' => \App\Services\SeoService::getBaseUrl() . '/login',
+      'robots' => 'noindex, nofollow'
+  ]) ?>
+
   <link rel="icon" type="image/png" href="/assets/images/favicon.png?v=2">
   <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2">
   <link rel="apple-touch-icon" href="/assets/images/logo.png">

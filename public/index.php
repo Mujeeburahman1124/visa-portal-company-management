@@ -205,13 +205,46 @@ switch ($uri) {
 
     case '/track':
     case '/public-track':
+        (new App\Controllers\PortalController())->trackPublic();
+        break;
+
     case '/tracking':
         (new App\Controllers\TrackingController())->index();
         break;
 
     case '/sitemap.xml':
+        header('Content-Type: application/xml; charset=utf-8');
+        header('X-Robots-Tag: noindex, follow');
+        $sitemapFile = __DIR__ . '/sitemap.xml';
+        if (file_exists($sitemapFile)) {
+            readfile($sitemapFile);
+        } else {
+            http_response_code(404);
+            echo '<?xml version="1.0" encoding="UTF-8"?><error>Sitemap not found</error>';
+        }
+        exit;
+
     case '/robots.txt':
-        http_response_code(404);
+        header('Content-Type: text/plain; charset=utf-8');
+        $robotsFile = __DIR__ . '/robots.txt';
+        if (file_exists($robotsFile)) {
+            readfile($robotsFile);
+        } else {
+            http_response_code(404);
+            echo "User-agent: *\nDisallow:";
+        }
+        exit;
+
+    case '/manifest.json':
+    case '/site.webmanifest':
+        header('Content-Type: application/manifest+json; charset=utf-8');
+        $manifestFile = __DIR__ . '/manifest.json';
+        if (file_exists($manifestFile)) {
+            readfile($manifestFile);
+        } else {
+            http_response_code(404);
+            echo '{}';
+        }
         exit;
 
     // Dedicated Super Admin Login Routes
@@ -1039,9 +1072,29 @@ switch ($uri) {
         (new App\Controllers\VisaPackageController())->storeCategory();
         break;
 
+    case '/visa-packages/categories/update':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
+        (new App\Controllers\VisaPackageController())->updateCategory();
+        break;
+
+    case '/visa-packages/categories/delete':
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        (new App\Controllers\VisaPackageController())->deleteCategory();
+        break;
+
     case '/visa-packages/types/store':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
         (new App\Controllers\VisaPackageController())->storeType();
+        break;
+
+    case '/visa-packages/types/update':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
+        (new App\Controllers\VisaPackageController())->updateType();
+        break;
+
+    case '/visa-packages/types/delete':
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        (new App\Controllers\VisaPackageController())->deleteType();
         break;
 
     case '/visa-packages/price-history':

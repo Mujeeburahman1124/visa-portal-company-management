@@ -1435,10 +1435,12 @@ class DocumentController
         }
 
         if (!$filePath) {
+            $reuploadUrl = !empty($doc['application_id']) ? '/applications/show?id=' . (int)$doc['application_id'] : '/documents';
             \App\Services\FileStreamService::renderFileNotFound(
                 'Document Not Found on Server',
                 "The file for '" . ($doc['doc_name'] ?? $doc['file_name']) . "' was not found in storage. It may need to be re-uploaded.",
-                '/documents'
+                '/documents',
+                $reuploadUrl
             );
             return;
         }
@@ -1499,10 +1501,12 @@ class DocumentController
         }
 
         if (!$filePath) {
+            $reuploadUrl = !empty($doc['application_id']) ? '/applications/show?id=' . (int)$doc['application_id'] : '/documents';
             \App\Services\FileStreamService::renderFileNotFound(
                 'Document Not Found',
                 "The file for '" . ($doc['file_name'] ?? 'document') . "' was not found in server storage.",
-                '/documents'
+                '/documents',
+                $reuploadUrl
             );
             return;
         }

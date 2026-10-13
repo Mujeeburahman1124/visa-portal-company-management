@@ -7,7 +7,15 @@ $flash = get_flash();
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= e($pageTitle) ?></title>
+
+  <!-- Enterprise SEO & Security Directives -->
+  <?= \App\Services\SeoService::renderTags([
+      'title' => 'Master Control Console — MS TRAVEL HUB',
+      'description' => 'Restricted administrative access for MS Travel Hub system administrators.',
+      'canonical' => \App\Services\SeoService::getBaseUrl() . '/admin/login',
+      'robots' => 'noindex, nofollow'
+  ]) ?>
+
   <link rel="icon" type="image/png" href="/assets/images/favicon.png?v=2">
   <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2">
   <link rel="apple-touch-icon" href="/assets/images/logo.png">

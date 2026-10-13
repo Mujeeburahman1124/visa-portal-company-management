@@ -150,7 +150,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     <!-- View Switcher & Counter -->
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
       <div class="text-muted small">
-        Showing <span class="fw-bold text-dark"><?= count($packages) ?></span> of <span class="fw-bold text-dark"><?= $totalPackages ?></span> visa packages<?php if (($totalPages ?? 1) > 1): ?> &bull; <span class="badge bg-light text-dark border">Page <?= (int)($currentPage ?? 1) ?> of <?= (int)$totalPages ?></span><?php endif; ?>
+        Showing <span class="fw-bold text-dark"><?= count($packages) ?></span> of <span class="fw-bold text-dark"><?= $matchedPackagesCount ?? count($packages) ?></span> visa packages<?php if (($totalPackages ?? 0) > ($matchedPackagesCount ?? count($packages))): ?> &bull; <span class="badge bg-light text-muted border">Catalog: <?= $totalPackages ?></span><?php endif; ?><?php if (($totalPages ?? 1) > 1): ?> &bull; <span class="badge bg-light text-dark border">Page <?= (int)($currentPage ?? 1) ?> of <?= (int)$totalPages ?></span><?php endif; ?>
       </div>
       <div class="d-flex align-items-center gap-2">
         <div class="btn-group btn-group-sm p-1 bg-white rounded-pill border shadow-xs" role="group" aria-label="View Mode">
@@ -484,13 +484,25 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 <span class="bento-cat-slug">#<?= e($cat['slug']) ?></span>
               </div>
               <p class="bento-cat-desc"><?= e($cat['description'] ?: 'Official consular category classification.') ?></p>
-              <div class="bento-cat-footer">
+              <div class="bento-cat-footer d-flex align-items-center justify-content-between flex-wrap gap-1">
                 <span class="badge bg-light text-dark border small fw-semibold">
                   <i class="fa-solid fa-cube text-primary me-1"></i><?= (int)($cat['packages_count'] ?? 0) ?> Packages
                 </span>
-                <a href="/visa-packages?category_id=<?= $cat['id'] ?>" class="btn btn-sm btn-outline-primary rounded-pill px-2.5" title="Filter Packages">
-                  View <i class="fa-solid fa-arrow-right ms-1 small"></i>
-                </a>
+                <div class="btn-group btn-group-sm">
+                  <a href="/visa-packages?category_id=<?= $cat['id'] ?>" class="btn btn-sm btn-outline-primary rounded-pill px-2.5" title="Filter Packages">
+                    <i class="fa-solid fa-filter me-1"></i> View
+                  </a>
+                  <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2.5 ms-1" title="Edit Category" onclick='openEditCategoryModal(<?= htmlspecialchars(json_encode($cat), ENT_QUOTES, "UTF-8") ?>)'>
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </button>
+                  <form action="/visa-packages/categories/delete" method="POST" class="d-inline ms-1" onsubmit="return confirm('Are you sure you want to delete this Category?');">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="id" value="<?= $cat['id'] ?>">
+                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2" title="Delete Category">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
@@ -529,9 +541,21 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                   <?php endif; ?>
                 </td>
                 <td class="text-end">
-                  <a href="/visa-packages?category_id=<?= $cat['id'] ?>" class="btn btn-sm btn-outline-primary rounded-pill px-2.5">
-                    Filter Packages
-                  </a>
+                  <div class="btn-group btn-group-sm">
+                    <a href="/visa-packages?category_id=<?= $cat['id'] ?>" class="btn btn-sm btn-outline-primary rounded-pill px-2.5">
+                      <i class="fa-solid fa-filter me-1"></i> Packages
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2.5 ms-1" title="Edit Category" onclick='openEditCategoryModal(<?= htmlspecialchars(json_encode($cat), ENT_QUOTES, "UTF-8") ?>)'>
+                      <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                    </button>
+                    <form action="/visa-packages/categories/delete" method="POST" class="d-inline ms-1" onsubmit="return confirm('Are you sure you want to delete this Category?');">
+                      <?= csrf_field() ?>
+                      <input type="hidden" name="id" value="<?= $cat['id'] ?>">
+                      <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2.5" title="Delete Category">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             <?php endforeach; ?>
@@ -583,9 +607,20 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 <span class="bento-cat-slug">#<?= e($vt['slug']) ?></span>
               </div>
               <p class="bento-cat-desc"><?= e($vt['description'] ?: 'Government classification standard.') ?></p>
-              <div class="bento-cat-footer">
+              <div class="bento-cat-footer d-flex align-items-center justify-content-between flex-wrap gap-1">
                 <span class="text-muted small"><i class="fa-solid fa-shield-halved text-primary me-1"></i>Official Tier</span>
-                <span class="badge bg-light text-muted border">System</span>
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2.5" title="Edit Type" onclick='openEditTypeModal(<?= htmlspecialchars(json_encode($vt), ENT_QUOTES, "UTF-8") ?>)'>
+                    <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                  </button>
+                  <form action="/visa-packages/types/delete" method="POST" class="d-inline ms-1" onsubmit="return confirm('Are you sure you want to delete this Visa Type?');">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="id" value="<?= $vt['id'] ?>">
+                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2" title="Delete Type">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
@@ -603,6 +638,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               <th>Slug / Code</th>
               <th>Description</th>
               <th>Status</th>
+              <th class="text-end">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -619,6 +655,20 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                   <?php else: ?>
                     <span class="badge bg-secondary-subtle text-secondary border">Inactive</span>
                   <?php endif; ?>
+                </td>
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2.5" title="Edit Type" onclick='openEditTypeModal(<?= htmlspecialchars(json_encode($vt), ENT_QUOTES, "UTF-8") ?>)'>
+                      <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+                    </button>
+                    <form action="/visa-packages/types/delete" method="POST" class="d-inline ms-1" onsubmit="return confirm('Are you sure you want to delete this Visa Type?');">
+                      <?= csrf_field() ?>
+                      <input type="hidden" name="id" value="<?= $vt['id'] ?>">
+                      <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2.5" title="Delete Type">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             <?php endforeach; ?>
@@ -1348,6 +1398,88 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   </div>
 </div>
 
+<!-- Modal: Edit Category -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow" style="border-radius: 20px;">
+      <div class="modal-header bg-light border-bottom py-3 px-4">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square text-primary me-2"></i> Edit Visa Category</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/visa-packages/categories/update" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="id" id="editCatId">
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Category Name <span class="text-danger">*</span></label>
+            <input type="text" name="name" id="editCatName" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Icon Class (FontAwesome)</label>
+            <input type="text" name="icon" id="editCatIcon" class="form-control" placeholder="e.g. fa-solid fa-passport">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Description</label>
+            <textarea name="description" id="editCatDesc" class="form-control" rows="2"></textarea>
+          </div>
+          <div class="mb-0">
+            <label class="form-label small fw-semibold">Status</label>
+            <select name="is_active" id="editCatIsActive" class="form-select">
+              <option value="1">Active</option>
+              <option value="0">Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer bg-light py-2.5 px-4">
+          <button type="button" class="btn btn-light border rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold"><i class="fa-solid fa-save me-1"></i> Update Category</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Edit Visa Type -->
+<div class="modal fade" id="editTypeModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow" style="border-radius: 20px;">
+      <div class="modal-header bg-light border-bottom py-3 px-4">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square text-info me-2"></i> Edit Visa Type</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/visa-packages/types/update" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="id" id="editTypeId">
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Type Name <span class="text-danger">*</span></label>
+            <input type="text" name="name" id="editTypeName" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Icon Class (FontAwesome)</label>
+            <input type="text" name="icon" id="editTypeIcon" class="form-control" placeholder="e.g. fa-solid fa-file-lines">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Description</label>
+            <textarea name="description" id="editTypeDesc" class="form-control" rows="2"></textarea>
+          </div>
+          <div class="mb-0">
+            <label class="form-label small fw-semibold">Status</label>
+            <select name="is_active" id="editTypeIsActive" class="form-select">
+              <option value="1">Active</option>
+              <option value="0">Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer bg-light py-2.5 px-4">
+          <button type="button" class="btn btn-light border rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-info text-white rounded-pill px-4 fw-semibold"><i class="fa-solid fa-save me-1"></i> Update Visa Type</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
 // Image preview file helper with live card reflection
 function previewPkgImageLive(input, mode) {
@@ -1718,6 +1850,30 @@ function viewPriceHistory(pkgId, pkgName) {
     .catch(err => {
       document.getElementById('priceHistoryLoading').innerHTML = '<div class="text-danger py-3"><i class="fa-solid fa-triangle-exclamation me-1"></i> Failed to load price history.</div>';
     });
+}
+
+function openEditCategoryModal(cat) {
+  if (!cat) return;
+  document.getElementById('editCatId').value = cat.id || '';
+  document.getElementById('editCatName').value = cat.name || '';
+  document.getElementById('editCatIcon').value = cat.icon || 'fa-solid fa-passport';
+  document.getElementById('editCatDesc').value = cat.description || '';
+  document.getElementById('editCatIsActive').value = (cat.is_active != 0) ? '1' : '0';
+  const modalEl = document.getElementById('editCategoryModal');
+  const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+  modal.show();
+}
+
+function openEditTypeModal(t) {
+  if (!t) return;
+  document.getElementById('editTypeId').value = t.id || '';
+  document.getElementById('editTypeName').value = t.name || '';
+  document.getElementById('editTypeIcon').value = t.icon || 'fa-solid fa-file-lines';
+  document.getElementById('editTypeDesc').value = t.description || '';
+  document.getElementById('editTypeIsActive').value = (t.is_active != 0) ? '1' : '0';
+  const modalEl = document.getElementById('editTypeModal');
+  const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+  modal.show();
 }
 
 // Auto-open handler for URL parameters, View Mode Restore & Live Preview Init

@@ -38,18 +38,43 @@ class AuditService
                 description, details_json, ip_address, user_agent
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-            $stmt->execute([
-                $userId,
-                $customerId,
-                $actorType,
-                $action,
-                $module,
-                $recordId,
-                $description,
-                $json,
-                $ip,
-                $ua
-            ]);
+            try {
+                $stmt->execute([
+                    $userId,
+                    $customerId,
+                    $actorType,
+                    $action,
+                    $module,
+                    $recordId,
+                    $description,
+                    $json,
+                    $ip,
+                    $ua
+                ]);
+            } catch (\PDOException $pdoe) {
+                // If foreign key constraint fails (e.g. synthetic test user, deleted user, or guest ID)
+                if ($pdoe->getCode() === '23000' && ($userId !== null || $customerId !== null)) {
+                    $fallbackDetails = is_array($details) ? $details : [];
+                    if ($userId !== null) $fallbackDetails['unlinked_user_id'] = $userId;
+                    if ($customerId !== null) $fallbackDetails['unlinked_customer_id'] = $customerId;
+                    $fallbackJson = json_encode($fallbackDetails);
+
+                    $stmt->execute([
+                        null,
+                        null,
+                        $actorType,
+                        $action,
+                        $module,
+                        $recordId,
+                        $description,
+                        $fallbackJson,
+                        $ip,
+                        $ua
+                    ]);
+                } else {
+                    throw $pdoe;
+                }
+            }
         } catch (\Throwable $e) {
             // Failsafe so audit errors don't interrupt critical business flow
             error_log('Audit log failure: ' . $e->getMessage());

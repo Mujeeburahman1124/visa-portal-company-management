@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <meta name="theme-color" content="#e11d48">
   <meta name="csrf-token" content="<?= csrf_token() ?>">
-  <title><?= e($pageTitle ?? 'MS TRAVEL HUB — Global Visa Management Portal') ?></title>
+
+  <!-- Enterprise SEO, Open Graph & Structured Data Engine -->
+  <?= \App\Services\SeoService::renderTags(['title' => $pageTitle ?? 'MS TRAVEL HUB — Global Visa Management Portal']) ?>
+  <?= \App\Services\SeoService::renderStructuredData() ?>
   
   <!-- Official Favicon -->
   <link rel="icon" type="image/png" href="/assets/images/favicon.png?v=2">

@@ -130,15 +130,40 @@ class FileStreamService
     /**
      * Display a clean, styled error page when a file is missing instead of a raw 404 or white screen.
      */
-    public static function renderFileNotFound(string $title, string $details, string $backUrl = '/documents'): void
+    public static function renderFileNotFound(string $title, string $details, string $backUrl = '/documents', ?string $reuploadUrl = null): void
     {
         while (ob_get_level() > 0) {
             @ob_end_clean();
         }
+
+        // If an image tag requested the stream, return a clean SVG placeholder
+        $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+        if (str_contains($accept, 'image/') && !str_contains($accept, 'text/html')) {
+            http_response_code(404);
+            header('Content-Type: image/svg+xml');
+            header('Cache-Control: no-cache, no-store, must-revalidate');
+            echo '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="260" viewBox="0 0 400 260">
+                <rect width="400" height="260" rx="16" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2"/>
+                <circle cx="200" cy="100" r="36" fill="#FEF2F2"/>
+                <path d="M200 80v25m0 10h.01" stroke="#E11D48" stroke-width="4" stroke-linecap="round"/>
+                <text x="200" y="165" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto" font-size="14" font-weight="700" fill="#0F172A" text-anchor="middle">Document Not Found</text>
+                <text x="200" y="190" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto" font-size="12" fill="#64748B" text-anchor="middle">File missing on server storage</text>
+                <text x="200" y="210" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Roboto" font-size="11" font-weight="600" fill="#E11D48" text-anchor="middle">Re-upload Required</text>
+            </svg>';
+            exit;
+        }
+
         http_response_code(404);
         $safeTitle = htmlspecialchars($title);
         $safeDetails = htmlspecialchars($details);
         $safeUrl = htmlspecialchars($backUrl);
+        $reuploadBtn = '';
+        if ($reuploadUrl) {
+            $safeReupload = htmlspecialchars($reuploadUrl);
+            $reuploadBtn = "<a href='{$safeReupload}' class='btn btn-danger btn-sm rounded-pill px-3 fw-semibold' style='background: #E11D48; border-color: #E11D48;'>
+                <i class='fa-solid fa-cloud-arrow-up me-1'></i> Re-upload Document
+            </a>";
+        }
 
         echo "<!DOCTYPE html>
 <html lang='en'>
@@ -160,10 +185,11 @@ class FileStreamService
         </div>
         <h5 class='fw-bold text-dark mb-2'>{$safeTitle}</h5>
         <p class='text-muted small mb-4'>{$safeDetails}</p>
-        <div class='d-flex justify-content-center gap-2'>
-            <a href='{$safeUrl}' class='btn btn-primary btn-sm rounded-pill px-4'>
+        <div class='d-flex justify-content-center flex-wrap gap-2'>
+            <a href='{$safeUrl}' class='btn btn-primary btn-sm rounded-pill px-3'>
                 <i class='fa-solid fa-arrow-left me-1'></i> Return Back
             </a>
+            {$reuploadBtn}
             <button onclick='window.close();' class='btn btn-outline-secondary btn-sm rounded-pill px-3'>
                 Close Tab
             </button>

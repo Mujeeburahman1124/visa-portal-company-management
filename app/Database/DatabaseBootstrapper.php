@@ -15,7 +15,7 @@ class DatabaseBootstrapper
      * Schema version — increment this every time new DDL is added to init().
      * The fast-path guard uses this to decide if migrations need to run.
      */
-    private const SCHEMA_VERSION = 36;
+    private const SCHEMA_VERSION = 37;
 
     public static function init(bool $force = false): void
     {
@@ -52,9 +52,9 @@ class DatabaseBootstrapper
             )->fetchColumn();
         } catch (\Throwable $e) {}
 
-        // Fast path for HTTP requests: skip expensive DDL if schema is up-to-date and key tables exist
+        // Fast path: skip expensive DDL if schema is up-to-date and key tables exist
         $autoMigrate = (bool)\App\Config\Env::get('DB_AUTO_MIGRATE', false);
-        if (!$force && !$autoMigrate && php_sapi_name() !== 'cli') {
+        if (!$force && !$autoMigrate) {
             try {
                 $hasLeaveRequests = false;
                 try {
@@ -1867,63 +1867,64 @@ class DatabaseBootstrapper
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE
             );");
+        }
 
-            $pdo->exec("CREATE TABLE IF NOT EXISTS notification_preferences (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                event_type TEXT NOT NULL,
-                in_app INTEGER DEFAULT 1,
-                email INTEGER DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(user_id, event_type),
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            );");
+        $autoInc = ($driver === 'mysql') ? 'INT AUTO_INCREMENT PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
+        $insIgnore = ($driver === 'mysql') ? 'INSERT IGNORE INTO' : 'INSERT OR IGNORE INTO';
 
-            $autoInc = ($driver === 'mysql') ? 'INT AUTO_INCREMENT PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
-            $insIgnore = ($driver === 'mysql') ? 'INSERT IGNORE INTO' : 'INSERT OR IGNORE INTO';
-            $pdo->exec("CREATE TABLE IF NOT EXISTS visa_stages (
-                id {$autoInc},
-                name " . ($driver === 'mysql' ? 'VARCHAR(150) NOT NULL UNIQUE' : 'TEXT NOT NULL UNIQUE') . ",
-                code " . ($driver === 'mysql' ? 'VARCHAR(50) NOT NULL UNIQUE' : 'TEXT NOT NULL UNIQUE') . ",
-                sequence_order INT NOT NULL,
-                default_sla_days INT DEFAULT 2,
-                description TEXT,
-                is_active TINYINT(1) DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )");
+        $pdo->exec("CREATE TABLE IF NOT EXISTS notification_preferences (
+            id {$autoInc},
+            user_id INT NOT NULL,
+            event_type " . ($driver === 'mysql' ? 'VARCHAR(100) NOT NULL' : 'TEXT NOT NULL') . ",
+            in_app INT DEFAULT 1,
+            email INT DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, event_type),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )");
 
-            $stageStmt = $pdo->prepare("{$insIgnore} visa_stages (name, code, sequence_order, default_sla_days, description) VALUES (?, ?, ?, ?, ?)");
-            $defaultStages = [
-                ['Draft & Registration', 'REGISTRATION', 1, 1, 'Initial registration and customer file setup'],
-                ['Document Collection & Review', 'DOC_COLLECTION', 2, 2, 'All mandatory checklist documents uploaded & verified'],
-                ['Application Form & Prep', 'FORM_PREP', 3, 1, 'Consular form drafted, reviewed and validated'],
-                ['Appointment & Biometrics', 'BIOMETRICS', 4, 3, 'VFS / TLS / Consulate appointment booked and attended'],
-                ['Submitted / Under Embassy Review', 'EMBASSY_PROCESS', 5, 10, 'Passport and file submitted to consular clearing unit'],
-                ['Decision Received & Visa Stamping', 'DECISION', 6, 1, 'Visa grant decision issued and approved document stamped'],
-            ];
-            foreach ($defaultStages as $stg) {
-                $stageStmt->execute($stg);
-            }
+        $pdo->exec("CREATE TABLE IF NOT EXISTS visa_stages (
+            id {$autoInc},
+            name " . ($driver === 'mysql' ? 'VARCHAR(150) NOT NULL UNIQUE' : 'TEXT NOT NULL UNIQUE') . ",
+            code " . ($driver === 'mysql' ? 'VARCHAR(50) NOT NULL UNIQUE' : 'TEXT NOT NULL UNIQUE') . ",
+            sequence_order INT NOT NULL,
+            default_sla_days INT DEFAULT 2,
+            description TEXT,
+            is_active TINYINT(1) DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )");
 
-            // Production Performance Indexes
-            $indexes = [
-                "CREATE INDEX IF NOT EXISTS idx_apps_num_pass ON applications(application_number, passport_number)",
-                "CREATE INDEX IF NOT EXISTS idx_apps_status_stage ON applications(status, current_stage)",
-                "CREATE INDEX IF NOT EXISTS idx_apps_staff ON applications(assigned_staff_id)",
-                "CREATE INDEX IF NOT EXISTS idx_apps_customer ON applications(customer_id)",
-                "CREATE INDEX IF NOT EXISTS idx_tasks_staff_due ON tasks(assigned_to, due_date, status)",
-                "CREATE INDEX IF NOT EXISTS idx_docs_app_type ON documents(application_id, document_type_id)",
-                "CREATE INDEX IF NOT EXISTS idx_activity_logs_search ON activity_logs(module, action, created_at)",
-                "CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read)",
-                "CREATE INDEX IF NOT EXISTS idx_customers_code_email ON customers(customer_code, email)",
-            ];
+        $stageStmt = $pdo->prepare("{$insIgnore} visa_stages (name, code, sequence_order, default_sla_days, description) VALUES (?, ?, ?, ?, ?)");
+        $defaultStages = [
+            ['Draft & Registration', 'REGISTRATION', 1, 1, 'Initial registration and customer file setup'],
+            ['Document Collection & Review', 'DOC_COLLECTION', 2, 2, 'All mandatory checklist documents uploaded & verified'],
+            ['Application Form & Prep', 'FORM_PREP', 3, 1, 'Consular form drafted, reviewed and validated'],
+            ['Appointment & Biometrics', 'BIOMETRICS', 4, 3, 'VFS / TLS / Consulate appointment booked and attended'],
+            ['Submitted / Under Embassy Review', 'EMBASSY_PROCESS', 5, 10, 'Passport and file submitted to consular clearing unit'],
+            ['Decision Received & Visa Stamping', 'DECISION', 6, 1, 'Visa grant decision issued and approved document stamped'],
+        ];
+        foreach ($defaultStages as $stg) {
+            $stageStmt->execute($stg);
+        }
 
-            foreach ($indexes as $sql) {
-                try {
-                    $pdo->exec($sql);
-                } catch (\Throwable $e) {}
-            }
+        // Production Performance Indexes
+        $indexes = [
+            "CREATE INDEX IF NOT EXISTS idx_apps_num_pass ON applications(application_number, passport_number)",
+            "CREATE INDEX IF NOT EXISTS idx_apps_status_stage ON applications(status, current_stage)",
+            "CREATE INDEX IF NOT EXISTS idx_apps_staff ON applications(assigned_staff_id)",
+            "CREATE INDEX IF NOT EXISTS idx_apps_customer ON applications(customer_id)",
+            "CREATE INDEX IF NOT EXISTS idx_tasks_staff_due ON tasks(assigned_to, due_date, status)",
+            "CREATE INDEX IF NOT EXISTS idx_docs_app_type ON documents(application_id, document_type_id)",
+            "CREATE INDEX IF NOT EXISTS idx_activity_logs_search ON activity_logs(module, action, created_at)",
+            "CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read)",
+            "CREATE INDEX IF NOT EXISTS idx_customers_code_email ON customers(customer_code, email)",
+        ];
+
+        foreach ($indexes as $sql) {
+            try {
+                $pdo->exec($sql);
+            } catch (\Throwable $e) {}
         }
 
         // Auto-seed all 13 Phase 8 Permission Categories & Actions if not already populated
@@ -3689,6 +3690,27 @@ class DatabaseBootstrapper
                 $pdo->exec("ALTER TABLE documents ADD COLUMN {$col} {$def};");
             } catch (\Throwable $e) {}
         }
+
+        // Ensure visa_services description and image_url columns exist
+        $vsCols = [
+            'description' => ($driver === 'mysql') ? 'TEXT NULL' : 'TEXT NULL',
+            'image_url'   => ($driver === 'mysql') ? 'VARCHAR(255) NULL' : 'TEXT NULL',
+        ];
+        foreach ($vsCols as $col => $def) {
+            try {
+                $pdo->exec("ALTER TABLE visa_services ADD COLUMN {$col} {$def};");
+            } catch (\Throwable $e) {}
+        }
+
+        // Ensure visa_services country_id maps to real countries table entries
+        try {
+            $pdo->exec("UPDATE visa_services vs JOIN countries c ON c.name = 'United Arab Emirates' SET vs.country_id = c.id WHERE vs.name LIKE 'UAE%' AND vs.country_id != c.id");
+            $pdo->exec("UPDATE visa_services vs JOIN countries c ON c.name = 'United Kingdom' SET vs.country_id = c.id WHERE vs.name LIKE 'UK%' AND vs.country_id != c.id");
+            $pdo->exec("UPDATE visa_services vs JOIN countries c ON c.name = 'United States' SET vs.country_id = c.id WHERE vs.name LIKE 'US%' AND vs.country_id != c.id");
+            $pdo->exec("UPDATE visa_services vs JOIN countries c ON c.name = 'France' SET vs.country_id = c.id WHERE vs.name LIKE 'France%' AND vs.country_id != c.id");
+            $pdo->exec("UPDATE visa_services vs JOIN countries c ON c.name = 'Saudi Arabia' SET vs.country_id = c.id WHERE vs.name LIKE 'Saudi Arabia%' AND vs.country_id != c.id");
+            $pdo->exec("UPDATE visa_services vs JOIN countries c ON c.name = 'Canada' SET vs.country_id = c.id WHERE vs.name LIKE 'Canada%' AND vs.country_id != c.id");
+        } catch (\Throwable $e) {}
     }
 
     /**

@@ -7,7 +7,15 @@ $flash = get_flash();
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= e($pageTitle) ?></title>
+
+  <!-- Enterprise SEO & Open Graph Engine -->
+  <?= \App\Services\SeoService::renderTags([
+      'title' => 'Applicant Portal Sign In — MS TRAVEL HUB',
+      'description' => 'Sign in to your MS Travel Hub applicant portal. Upload documents, monitor real-time consular milestones, make payments, and manage visa appointments.',
+      'canonical' => \App\Services\SeoService::getBaseUrl() . '/portal/login',
+      'robots' => 'index, follow'
+  ]) ?>
+
   <link rel="icon" type="image/png" href="/assets/images/favicon.png?v=2">
   <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2">
   <link rel="apple-touch-icon" href="/assets/images/logo.png">

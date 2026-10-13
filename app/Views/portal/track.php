@@ -6,7 +6,33 @@ $pageTitle = 'Public Visa Application Tracking — MS TRAVEL HUB';
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= e($pageTitle) ?></title>
+
+  <!-- Enterprise SEO, Open Graph & Structured Data Engine -->
+  <?= \App\Services\SeoService::renderTags([
+      'title' => 'Track Visa Application Status Online | Real-Time Verification — MS TRAVEL HUB',
+      'description' => 'Track your UAE, Schengen, UK, and global visa application status online in real time. Secure 2-factor verification for consular processing milestones and document checklist.',
+      'keywords' => 'track visa status, UAE visa check, track Dubai visa, check visa status online, visa tracking portal, MS Travel Hub tracking, passport visa enquiry, Schengen visa progress',
+      'canonical' => \App\Services\SeoService::getBaseUrl() . '/track',
+      'robots' => 'index, follow, max-image-preview:large, max-snippet:-1'
+  ]) ?>
+  <?= \App\Services\SeoService::renderStructuredData([
+      '@type' => 'WebApplication',
+      'name' => 'MS Travel Hub Visa Application Tracker',
+      'url' => \App\Services\SeoService::getBaseUrl() . '/track',
+      'applicationCategory' => 'TravelApplication',
+      'operatingSystem' => 'All',
+      'offers' => [
+          '@type' => 'Offer',
+          'price' => '0',
+          'priceCurrency' => 'USD'
+      ],
+      'featureList' => [
+          '2-Factor Secure Consular Lookup',
+          'Milestone Journey Timeline',
+          'Automated Document Checklist Verification',
+          'Consular SLA Target Tracking'
+      ]
+  ]) ?>
   
   <!-- Favicons -->
   <link rel="icon" type="image/png" href="/assets/images/favicon.png?v=2">

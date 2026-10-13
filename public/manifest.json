@@ -1,0 +1,27 @@
+{
+  "name": "MS Travel Hub — Global Visa Operations & Tracking",
+  "short_name": "MS Travel Hub",
+  "description": "Global Visa Management and Real-Time Application Tracking Portal",
+  "start_url": "/track",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#e11d48",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/images/favicon.png?v=2",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["travel", "business", "utilities"],
+  "lang": "en"
+}
