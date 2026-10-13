@@ -906,7 +906,7 @@ class ApplicationController
                     $slipExt = strtolower(pathinfo($slipFile['name'], PATHINFO_EXTENSION));
                     $allowedSlipExts = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
                     if (in_array($slipExt, $allowedSlipExts, true)) {
-                        $slipDir = \App\Core\App::basePath('storage' . DIRECTORY_SEPARATOR . 'receipts');
+                        $slipDir = App::basePath('storage' . DIRECTORY_SEPARATOR . 'receipts');
                         if (!is_dir($slipDir)) {
                             @mkdir($slipDir, 0755, true);
                         }

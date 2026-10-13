@@ -859,7 +859,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 </h6>
                 <div class="mb-3 bento-input-group-clean">
                   <label>Pricing Notes / Audit Reason</label>
-                  <input type="text" name="notes" class="form-control bento-input-control" placeholder="e.g. Q4 standard supplier package rate">
+                  <input type="text" name="notes" class="form-control bento-input-control" placeholder="e.g. Q4 standard package rate">
                 </div>
                 <div class="mb-0 bento-input-group-clean">
                   <label>Cancellation &amp; Refund Policy</label>
@@ -1160,7 +1160,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 </h6>
                 <div class="mb-3 bento-input-group-clean">
                   <label>Pricing Notes / Audit Reason</label>
-                  <input type="text" name="notes" id="editPkgNotes" class="form-control bento-input-control" placeholder="e.g. Supplier rate increase for Q4">
+                  <input type="text" name="notes" id="editPkgNotes" class="form-control bento-input-control" placeholder="e.g. Standard package rate update">
                 </div>
                 <div class="mb-3 bento-input-group-clean">
                   <label>Cancellation &amp; Refund Policy</label>

@@ -149,7 +149,6 @@ class MasterSystemAuditTest
             \App\Controllers\StaffController::class,
             \App\Controllers\RoleController::class,
             \App\Controllers\BranchController::class,
-            \App\Controllers\SupplierController::class,
             \App\Controllers\NotificationController::class,
             \App\Controllers\AuditLogController::class,
             \App\Controllers\SettingsController::class,

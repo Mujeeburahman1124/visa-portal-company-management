@@ -40,7 +40,6 @@ $sessions = [];
 if ($staff)    { seedSession($sessDir, 'smokestaff0001',    ['user' => $staff]);             $sessions['staff'] = 'smokestaff0001'; }
 if ($customer) { seedSession($sessDir, 'smokecust00001',    ['customer' => $customer]);      $sessions['customer'] = 'smokecust00001'; }
 if ($agent)    { seedSession($sessDir, 'smokeagent0001',    ['agent_auth' => $agent]);       $sessions['agent'] = 'smokeagent0001'; }
-if ($supplier) { seedSession($sessDir, 'smokesupp00001',    ['supplier_auth' => $supplier]); $sessions['supplier'] = 'smokesupp00001'; }
 
 $appId  = (int)($pdo->query("SELECT id FROM applications ORDER BY id LIMIT 1")->fetchColumn() ?: 0);
 $custId = (int)($customer['id'] ?? 0);
@@ -50,17 +49,16 @@ $taskId = (int)($pdo->query("SELECT id FROM tasks WHERE proof_attachment IS NOT 
 $routes = [
     'public' => ['/', '/about', '/jobs', '/visa-enquiry', '/contact', '/faq', '/portal/track',
                  '/auth/login', '/admin/login', '/auth/forgot-password', '/portal/login', '/portal/forgot-password',
-                 '/agent/login', '/supplier/login'],
+                 '/agent/login'],
     'staff' => ['/dashboard', '/applications', '/applications/create', "/applications/show?id=$appId", "/applications/edit?id=$appId",
                 '/customers', '/customers/create', "/customers/show?id=$custId", '/documents', "/documents/profile?id=$appId",
                 "/documents/preview?id=$docId", '/payments', '/payments/history', '/payments/links', '/payments/wallets',
-                '/appointments', '/tasks', "/tasks/proof?id=$taskId", '/reports', '/suppliers', '/agents', '/attendance',
+                '/appointments', '/tasks', "/tasks/proof?id=$taskId", '/reports', '/agents', '/attendance',
                 '/payroll', '/inventory', '/branches', '/staff', '/roles', '/settings', '/notifications', '/audit-logs',
                 '/action-center'],
     'customer' => ['/portal/dashboard', '/portal/documents', '/portal/invoices', '/portal/appointments',
                    '/portal/notifications', '/portal/support', '/portal/wallet'],
     'agent' => ['/agent/dashboard', '/agent/applications', '/agent/profile'],
-    'supplier' => ['/supplier/dashboard', '/supplier/applications', '/supplier/payments', '/supplier/profile'],
 ];
 
 $pass = 0; $fail = 0; $warn = 0; $rows = [];

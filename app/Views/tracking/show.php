@@ -427,12 +427,9 @@ elseif ((int)($app['calculated_health'] ?? 100) < 80) $healthColor = 'warning';
               <div class="fw-semibold text-dark"><i class="fa-solid fa-building text-secondary me-1"></i><?= e($app['branch_name'] ?? 'Main Branch') ?></div>
             </div>
             <div class="col-sm-6 col-md-4">
-              <div class="text-muted">Supplier / Embassy Ref</div>
+              <div class="text-muted">Embassy / Agency Ref</div>
               <div class="fw-semibold text-dark">
-                <?= e($app['supplier_name'] ?? 'In-House') ?>
-                <?php if (!empty($app['supplier_reference'])): ?>
-                  <span class="text-muted font-monospace">(<?= e($app['supplier_reference']) ?>)</span>
-                <?php endif; ?>
+                <?= e($app['supplier_reference'] ?? ($app['supplier_name'] ?? 'Direct Consulate')) ?>
               </div>
             </div>
 
@@ -452,7 +449,7 @@ elseif ((int)($app['calculated_health'] ?? 100) < 80) $healthColor = 'warning';
             <?php if ($canViewFinancials): ?>
               <div class="col-12 mt-2 pt-2 border-top">
                 <div class="d-flex flex-wrap gap-4 small text-muted">
-                  <span><strong>Supplier Cost:</strong> <?= format_currency((float)($app['supplier_cost'] ?? 0)) ?></span>
+                  <span><strong>Base Cost:</strong> <?= format_currency((float)($app['supplier_cost'] ?? 0)) ?></span>
                   <span><strong>Selling Price:</strong> <?= format_currency((float)($app['selling_price'] ?? 0)) ?></span>
                   <span><strong>Gross Profit:</strong> <?= format_currency((float)($app['gross_profit'] ?? 0)) ?></span>
                 </div>

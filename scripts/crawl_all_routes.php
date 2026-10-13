@@ -45,7 +45,6 @@ $routesToTest = [
         '/auth/forgot-password',
         '/portal/login',
         '/agent-portal/login',
-        '/supplier-portal/login',
 
         // Admin / Staff Protected Routes
         '/dashboard',
@@ -65,9 +64,6 @@ $routesToTest = [
         '/appointments',
         '/tasks',
         '/reports',
-        '/suppliers',
-        '/suppliers/payments',
-        '/suppliers/wallet',
         '/agents',
         '/attendance',
         '/payroll',
@@ -101,12 +97,6 @@ $routesToTest = [
         '/agent-portal/applications',
         '/agent-portal/create-application',
         '/agent-portal/profile',
-
-        // Supplier Portal
-        '/supplier-portal/dashboard',
-        '/supplier-portal/applications',
-        '/supplier-portal/payments',
-        '/supplier-portal/profile',
     ]
 ];
 
@@ -114,7 +104,6 @@ $routesToTest = [
 $staffUser = $pdo->query("SELECT * FROM users WHERE role_id = 1 LIMIT 1")->fetch(PDO::FETCH_ASSOC);
 $customerUser = $pdo->query("SELECT * FROM customers LIMIT 1")->fetch(PDO::FETCH_ASSOC);
 $agentUser = $pdo->query("SELECT * FROM agents LIMIT 1")->fetch(PDO::FETCH_ASSOC);
-$supplierUser = $pdo->query("SELECT * FROM suppliers LIMIT 1")->fetch(PDO::FETCH_ASSOC);
 
 $results = [];
 $totalPassed = 0;
@@ -136,8 +125,6 @@ foreach ($routesToTest['GET'] as $urlPath) {
         curl_setopt($ch, CURLOPT_COOKIE, 'PHPSESSID=test_customer_session');
     } elseif (str_starts_with($urlPath, '/agent-portal/')) {
         curl_setopt($ch, CURLOPT_COOKIE, 'PHPSESSID=test_agent_session');
-    } elseif (str_starts_with($urlPath, '/supplier-portal/')) {
-        curl_setopt($ch, CURLOPT_COOKIE, 'PHPSESSID=test_supplier_session');
     } else {
         curl_setopt($ch, CURLOPT_COOKIE, 'PHPSESSID=test_staff_session');
     }

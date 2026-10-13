@@ -79,8 +79,7 @@ class SeoService
             '/portal/appointments',
             '/portal/notifications',
             '/agent/dashboard',
-            '/agent-portal/dashboard',
-            '/supplier-portal/dashboard'
+            '/agent-portal/dashboard'
         ];
 
         foreach ($privatePrefixes as $prefix) {
