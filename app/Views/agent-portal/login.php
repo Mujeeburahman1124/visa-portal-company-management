@@ -149,14 +149,6 @@ $flash = get_flash();
         <div>Wholesale B2B pricing, instant tracking, and bulk submittals.</div>
       </div>
 
-      <!-- Quick Switch to Portals -->
-      <div class="auth-switch-links">
-        <span>Switch Console:</span>
-        <a href="/auth/login" class="auth-switch-pill"><i class="fa-solid fa-user-shield"></i> Staff Portal</a>
-        <a href="/portal/login" class="auth-switch-pill"><i class="fa-solid fa-plane-departure"></i> Applicant Portal</a>
-        <a href="/supplier/login" class="auth-switch-pill"><i class="fa-solid fa-building"></i> Supplier Portal</a>
-      </div>
-
     </div>
 
     <!-- Security Compliance Footer -->

@@ -154,7 +154,6 @@ $flash = get_flash();
         <span>Other Portals:</span>
         <a href="/agent/login" class="auth-switch-pill"><i class="fa-solid fa-handshake"></i> Agent Portal</a>
         <a href="/portal/login" class="auth-switch-pill"><i class="fa-solid fa-plane-departure"></i> Applicant Portal</a>
-        <a href="/supplier/login" class="auth-switch-pill"><i class="fa-solid fa-building"></i> Supplier Portal</a>
       </div>
 
     </div>
