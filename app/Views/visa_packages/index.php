@@ -28,7 +28,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
     <div>
       <h3 class="fw-bold brand-font text-dark mb-0">Visa Services &amp; Packages</h3>
-      <p class="text-muted small mb-0">Manage global visa packages, destination country rules, categories, supplier costs, service fees, currencies &amp; pricing.</p>
+      <p class="text-muted small mb-0">Manage global visa packages, destination country rules, categories, base costs, service fees, currencies &amp; pricing.</p>
     </div>
     <div class="d-flex gap-2">
       <button type="button" class="btn btn-outline-primary px-3 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
@@ -947,7 +947,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     <span class="badge bg-light text-dark border small" id="createLiveCurBadge">USD</span>
                   </div>
                   <div class="d-flex justify-content-between small text-muted mb-1">
-                    <span>Supplier Cost:</span>
+                    <span>Base Cost:</span>
                     <span id="createLiveCostSum">$100.00</span>
                   </div>
                   <div class="d-flex justify-content-between small text-muted mb-1">
@@ -1252,7 +1252,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     <span class="badge bg-light text-dark border small" id="editLiveCurBadge">USD</span>
                   </div>
                   <div class="d-flex justify-content-between small text-muted mb-1">
-                    <span>Supplier Cost:</span>
+                    <span>Base Cost:</span>
                     <span id="editLiveCostSum">$100.00</span>
                   </div>
                   <div class="d-flex justify-content-between small text-muted mb-1">
@@ -1311,8 +1311,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 <tr>
                   <th>Effective From</th>
                   <th>Effective To</th>
-                  <th>Supplier</th>
-                  <th>Supplier Cost</th>
+                  <th>Provider</th>
+                  <th>Base Cost</th>
                   <th>Service Fee</th>
                   <th>VAT %</th>
                   <th>Selling Price</th>

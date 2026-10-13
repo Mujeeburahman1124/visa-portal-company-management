@@ -132,32 +132,32 @@ $buildDocUrl = function(array $params = []): string {
 
     <!-- ─── 3. SEARCH & ADVANCED FILTER TOOLBAR ────────────────────────────── -->
     <div class="bento-card mb-4 p-3 bg-white">
-      <form action="/documents" method="GET" class="row g-2 align-items-center">
+      <form action="/documents" method="GET" class="row g-2 align-items-center" id="documentsFilterForm">
         <!-- Keyword Search -->
         <div class="col-12 col-md-4">
           <div class="input-group input-group-sm">
             <span class="input-group-text bg-light border-end-0 text-muted">
               <i class="fa-solid fa-magnifying-glass"></i>
             </span>
-            <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Search applicant, passport, app #..." value="<?= e($_GET['search'] ?? '') ?>">
+            <input type="text" name="search" id="docSearchInput" class="form-control border-start-0 ps-0" placeholder="Search applicant, passport, app #..." value="<?= e($_GET['search'] ?? '') ?>">
           </div>
         </div>
 
         <!-- Compliance Status -->
         <div class="col-6 col-sm-4 col-md-2">
-          <select name="status" class="form-select form-select-sm">
+          <select name="status" id="docStatusSelect" class="form-select form-select-sm" onchange="document.getElementById('documentsFilterForm').submit()">
             <option value="">All Statuses</option>
-            <option value="VERIFIED" <?= ($_GET['status'] ?? '') === 'VERIFIED' ? 'selected' : '' ?>>Verified</option>
-            <option value="UNDER_REVIEW" <?= ($_GET['status'] ?? '') === 'UNDER_REVIEW' ? 'selected' : '' ?>>Under Review</option>
-            <option value="REJECTED" <?= ($_GET['status'] ?? '') === 'REJECTED' ? 'selected' : '' ?>>Rejected</option>
-            <option value="EXPIRING_SOON" <?= ($_GET['status'] ?? '') === 'EXPIRING_SOON' ? 'selected' : '' ?>>Expiring (&le;30d)</option>
-            <option value="EXPIRED" <?= ($_GET['status'] ?? '') === 'EXPIRED' ? 'selected' : '' ?>>Expired</option>
+            <option value="VERIFIED" <?= strtoupper($_GET['status'] ?? '') === 'VERIFIED' ? 'selected' : '' ?>>Verified</option>
+            <option value="UNDER_REVIEW" <?= strtoupper($_GET['status'] ?? '') === 'UNDER_REVIEW' ? 'selected' : '' ?>>Under Review</option>
+            <option value="REJECTED" <?= strtoupper($_GET['status'] ?? '') === 'REJECTED' ? 'selected' : '' ?>>Rejected</option>
+            <option value="EXPIRING_SOON" <?= strtoupper($_GET['status'] ?? '') === 'EXPIRING_SOON' ? 'selected' : '' ?>>Expiring (&le;30d)</option>
+            <option value="EXPIRED" <?= strtoupper($_GET['status'] ?? '') === 'EXPIRED' ? 'selected' : '' ?>>Expired</option>
           </select>
         </div>
 
         <!-- Destination Country -->
         <div class="col-6 col-sm-4 col-md-2">
-          <select name="country_id" class="form-select form-select-sm">
+          <select name="country_id" id="docCountrySelect" class="form-select form-select-sm" onchange="document.getElementById('documentsFilterForm').submit()">
             <option value="">All Countries</option>
             <?php foreach ($countries as $c): ?>
               <option value="<?= $c['id'] ?>" <?= ((int)($_GET['country_id'] ?? 0)) === (int)$c['id'] ? 'selected' : '' ?>>
@@ -169,7 +169,7 @@ $buildDocUrl = function(array $params = []): string {
 
         <!-- Visa Service -->
         <div class="col-6 col-sm-4 col-md-2">
-          <select name="service_id" class="form-select form-select-sm">
+          <select name="service_id" id="docServiceSelect" class="form-select form-select-sm" onchange="document.getElementById('documentsFilterForm').submit()">
             <option value="">All Services</option>
             <?php foreach ($services as $srv): ?>
               <option value="<?= $srv['id'] ?>" <?= ((int)($_GET['service_id'] ?? 0)) === (int)$srv['id'] ? 'selected' : '' ?>>
@@ -181,7 +181,7 @@ $buildDocUrl = function(array $params = []): string {
 
         <!-- Actions -->
         <div class="col-6 col-md-2 d-flex gap-1 justify-content-end">
-          <button type="submit" class="btn btn-sm btn-dark flex-grow-1 rounded-pill">
+          <button type="submit" id="btnSubmitDocFilter" class="btn btn-sm btn-dark flex-grow-1 rounded-pill">
             <i class="fa-solid fa-filter me-1 small"></i> Filter
           </button>
           <a href="/documents" class="btn btn-sm btn-light border rounded-pill" title="Reset Filters">

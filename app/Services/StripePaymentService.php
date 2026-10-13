@@ -177,7 +177,7 @@ class StripePaymentService
         $response = curl_exec($ch);
         $err = curl_error($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        unset($ch);
 
         if ($err) {
             return ['success' => false, 'message' => 'Stripe API communication error: ' . $err];

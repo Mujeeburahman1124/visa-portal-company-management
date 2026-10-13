@@ -252,7 +252,7 @@ class SentryService
                 CURLOPT_SSL_VERIFYPEER => true,
             ]);
             @curl_exec($ch);
-            @curl_close($ch);
+            unset($ch);
         }
     }
 }

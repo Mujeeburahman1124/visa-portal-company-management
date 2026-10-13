@@ -450,7 +450,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
 <!-- MODAL: ADD STAFF -->
 <div class="modal fade" id="newStaffModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content border-0 shadow" style="border-radius: var(--bento-radius);">
       <div class="modal-header bg-dark text-white" style="border-top-left-radius: var(--bento-radius); border-top-right-radius: var(--bento-radius);">
         <h6 class="modal-title fw-bold"><i class="fa-solid fa-user-plus me-2 text-danger"></i> Register New Staff Member</h6>
@@ -475,7 +475,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <div class="row g-2 mb-3">
             <div class="col-6">
               <label class="form-label small fw-semibold">Security Role <span class="text-danger">*</span></label>
-              <select name="role_id" class="form-select" required>
+              <select name="role_id" id="newStaffRoleId" class="form-select" required onchange="syncRolePermissionsToStaff(parseInt(this.value, 10))">
                 <?php foreach ($roles as $r): ?>
                   <option value="<?= $r['id'] ?>" <?= $r['slug'] === 'processing-staff' ? 'selected' : '' ?>><?= e($r['name']) ?></option>
                 <?php endforeach; ?>
@@ -502,9 +502,69 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             </div>
           </div>
 
-          <div class="mb-0">
+          <div class="mb-3">
             <label class="form-label small fw-semibold">Contact Phone / WhatsApp</label>
             <input type="text" name="phone" class="form-control" placeholder="+971 50 123 4567">
+          </div>
+
+          <!-- ─── GRANULAR PERMISSIONS SELECTOR ───────────────────────────── -->
+          <?php
+            $groupedPermissions = [];
+            foreach (($allPermissions ?? []) as $p) {
+                if (($p['module'] ?? '') === 'Suppliers') continue;
+                $mod = $p['module'] ?: 'General';
+                $groupedPermissions[$mod][] = $p;
+            }
+          ?>
+          <div class="mt-4 pt-3 border-top">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div>
+                <label class="form-label small fw-bold text-dark mb-0">
+                  <i class="fa-solid fa-shield-halved text-primary me-1"></i> Staff Permissions Matrix
+                </label>
+                <div class="text-muted" style="font-size: 0.72rem;">
+                  Pre-selected from the security role. Customize what this officer can view, create, edit or approve.
+                </div>
+              </div>
+              <div class="d-flex gap-1">
+                <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2.5 py-0.5" style="font-size: 0.72rem;" onclick="toggleAllStaffPermissions(true)">
+                  <i class="fa-solid fa-check-double me-1"></i>Select All
+                </button>
+                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-0.5" style="font-size: 0.72rem;" onclick="toggleAllStaffPermissions(false)">
+                  <i class="fa-solid fa-xmark me-1"></i>Clear All
+                </button>
+              </div>
+            </div>
+
+            <div class="border rounded-3 p-3 bg-light bg-opacity-50" style="max-height: 320px; overflow-y: auto;">
+              <div class="row g-2.5">
+                <?php foreach ($groupedPermissions as $moduleName => $perms): ?>
+                  <div class="col-12 col-md-6">
+                    <div class="card h-100 border shadow-none rounded-3 p-2 bg-white">
+                      <div class="d-flex align-items-center justify-content-between mb-1.5 pb-1 border-bottom">
+                        <span class="fw-bold small text-dark" style="font-size: 0.8rem;">
+                          <i class="fa-solid fa-folder-closed text-warning me-1"></i> <?= e($moduleName) ?>
+                        </span>
+                        <a href="javascript:void(0)" class="text-muted text-decoration-none small" style="font-size: 0.70rem;" onclick="toggleModulePermissions(this, '<?= e(addslashes($moduleName)) ?>')">
+                          Toggle All
+                        </a>
+                      </div>
+                      <div class="d-flex flex-column gap-1 module-perm-group" data-module="<?= e($moduleName) ?>">
+                        <?php foreach ($perms as $perm): ?>
+                          <div class="form-check form-check-sm mb-1">
+                            <input class="form-check-input staff-perm-checkbox" type="checkbox" name="permissions[]" value="<?= $perm['id'] ?>" id="perm_new_<?= $perm['id'] ?>">
+                            <label class="form-check-label text-dark" for="perm_new_<?= $perm['id'] ?>" style="font-size: 0.78rem; cursor: pointer;">
+                              <?= e($perm['name']) ?>
+                              <span class="text-muted font-monospace" style="font-size: 0.68rem;">(<?= e($perm['slug']) ?>)</span>
+                            </label>
+                          </div>
+                        <?php endforeach; ?>
+                      </div>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+            </div>
           </div>
         </div>
         <div class="modal-footer bg-light" style="border-bottom-left-radius: var(--bento-radius); border-bottom-right-radius: var(--bento-radius);">
@@ -663,12 +723,41 @@ function switchStaffView(mode) {
   }
 }
 
+const rolePermissionsMap = <?= json_encode($rolePermissionsMap ?? []) ?>;
+
+function syncRolePermissionsToStaff(roleId) {
+  const allowedIds = rolePermissionsMap[roleId] || [];
+  document.querySelectorAll('.staff-perm-checkbox').forEach(cb => {
+    const permId = parseInt(cb.value, 10);
+    cb.checked = allowedIds.includes(permId);
+  });
+}
+
+function toggleAllStaffPermissions(check) {
+  document.querySelectorAll('.staff-perm-checkbox').forEach(cb => {
+    cb.checked = check;
+  });
+}
+
+function toggleModulePermissions(btn, moduleName) {
+  const group = document.querySelector(`.module-perm-group[data-module="${moduleName}"]`);
+  if (!group) return;
+  const checkboxes = group.querySelectorAll('.staff-perm-checkbox');
+  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+  checkboxes.forEach(cb => cb.checked = !allChecked);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   const saved = (function() {
     try { return localStorage.getItem('vt_staff_view') || 'table'; } catch(e) { return 'table'; }
   })();
   if (saved === 'grid' || saved === 'compact') {
     switchStaffView(saved);
+  }
+
+  const roleSelect = document.getElementById('newStaffRoleId');
+  if (roleSelect) {
+    syncRolePermissionsToStaff(parseInt(roleSelect.value, 10));
   }
 });
 </script>

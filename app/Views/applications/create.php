@@ -931,9 +931,16 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                     <option value="Online">Online Gateway</option>
                   </select>
                 </div>
-                <div>
+                <div class="mb-2">
                   <label class="form-label small fw-semibold text-secondary">Payment Reference / Receipt #</label>
                   <input type="text" name="pay_reference" class="form-control form-control-sm" placeholder="e.g. REC-102938">
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small fw-semibold text-secondary">
+                    <i class="fa-solid fa-paperclip text-primary me-1"></i> Payment Slip / Receipt Scan
+                  </label>
+                  <input type="file" name="payment_slip" id="paySlipInput" class="form-control form-control-sm" accept="image/*,application/pdf">
+                  <div class="form-text text-muted" style="font-size: 0.72rem;">Attach bank deposit slip, cash voucher, or POS receipt (JPG, PNG, PDF)</div>
                 </div>
               </div>
             </div>

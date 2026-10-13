@@ -73,7 +73,7 @@ class DocumentController
             } elseif ($status === 'EXPIRING_SOON') {
                 $sql .= " AND d.expiry_date IS NOT NULL AND d.expiry_date >= '{$today}' AND d.expiry_date <= '{$in30Days}'";
             } else {
-                $sql .= " AND d.status = ?";
+                $sql .= " AND UPPER(d.status) = UPPER(?)";
                 $params[] = $status;
             }
         }
@@ -110,7 +110,8 @@ class DocumentController
         $fileFormat = strtolower(trim($_GET['file_format'] ?? ''));
 
         if ($countryId > 0) {
-            $sql .= " AND vs.country_id = ?";
+            $sql .= " AND (vs.country_id = ? OR a.destination_country = (SELECT name FROM countries WHERE id = ? LIMIT 1))";
+            $params[] = $countryId;
             $params[] = $countryId;
         }
 
@@ -204,13 +205,13 @@ class DocumentController
                              c.id as customer_id, c.customer_code, c.full_name as customer_name, c.nationality,
                              c.current_country, c.mobile, c.whatsapp, c.email, c.gender, c.dob, c.address, {$citySelect}, c.occupation,
                               cp.passport_number, cp.expiry_date as passport_expiry_date, cp.issuing_country as passport_issuing_country,
-                             vs.name as service_name, ct.name as country_name, ct.flag_emoji,
+                             vs.name as service_name, COALESCE(ct.name, a.destination_country, 'United Arab Emirates') as country_name, COALESCE(ct.flag_emoji, '🇦🇪') as flag_emoji,
                              b.name as branch_name,
                              u.name as assigned_staff_name,
                              COUNT(d.id) as total_docs,
-                             SUM(CASE WHEN d.status = 'VERIFIED' THEN 1 ELSE 0 END) as verified_docs,
-                             SUM(CASE WHEN d.status IN ('UNDER_REVIEW', 'UPLOADED') THEN 1 ELSE 0 END) as pending_docs,
-                             SUM(CASE WHEN d.status = 'REJECTED' THEN 1 ELSE 0 END) as rejected_docs
+                             SUM(CASE WHEN UPPER(d.status) IN ('VERIFIED', 'APPROVED') THEN 1 ELSE 0 END) as verified_docs,
+                             SUM(CASE WHEN UPPER(d.status) IN ('UNDER_REVIEW', 'UPLOADED', 'PENDING') THEN 1 ELSE 0 END) as pending_docs,
+                             SUM(CASE WHEN UPPER(d.status) IN ('REJECTED') THEN 1 ELSE 0 END) as rejected_docs
                       FROM applications a
                       JOIN customers c ON a.customer_id = c.id
                       LEFT JOIN customer_passports cp ON c.id = cp.customer_id AND cp.is_primary = 1
@@ -244,7 +245,8 @@ class DocumentController
         }
 
         if ($countryId > 0) {
-            $folderSql .= " AND vs.country_id = ?";
+            $folderSql .= " AND (vs.country_id = ? OR a.destination_country = (SELECT name FROM countries WHERE id = ? LIMIT 1))";
+            $folderParams[] = $countryId;
             $folderParams[] = $countryId;
         }
 
@@ -272,12 +274,17 @@ class DocumentController
         $folderSql .= " GROUP BY a.id";
 
         if ($status !== '') {
-            if ($status === 'VERIFIED') {
+            $upStatus = strtoupper($status);
+            if ($upStatus === 'VERIFIED') {
                 $folderSql .= " HAVING verified_docs > 0";
-            } elseif ($status === 'UNDER_REVIEW' || $status === 'PENDING') {
+            } elseif ($upStatus === 'UNDER_REVIEW' || $upStatus === 'PENDING') {
                 $folderSql .= " HAVING pending_docs > 0";
-            } elseif ($status === 'REJECTED') {
+            } elseif ($upStatus === 'REJECTED') {
                 $folderSql .= " HAVING rejected_docs > 0";
+            } elseif ($upStatus === 'EXPIRED') {
+                $folderSql .= " HAVING SUM(CASE WHEN d.expiry_date IS NOT NULL AND d.expiry_date < '{$today}' THEN 1 ELSE 0 END) > 0";
+            } elseif ($upStatus === 'EXPIRING_SOON') {
+                $folderSql .= " HAVING SUM(CASE WHEN d.expiry_date IS NOT NULL AND d.expiry_date >= '{$today}' AND d.expiry_date <= '{$in30Days}' THEN 1 ELSE 0 END) > 0";
             }
         }
 

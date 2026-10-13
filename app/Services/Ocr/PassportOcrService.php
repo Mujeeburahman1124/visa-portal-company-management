@@ -45,9 +45,7 @@ class PassportOcrService implements PassportOcrServiceInterface
 
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime = finfo_file($finfo, $filePath) ?: 'application/octet-stream';
-        if (PHP_VERSION_ID < 80500) {
-            @finfo_close($finfo);
-        }
+        unset($finfo);
 
         if (!in_array($mime, self::ALLOWED_MIMES, true)) {
             $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
@@ -381,9 +379,7 @@ class PassportOcrService implements PassportOcrServiceInterface
         $apiKey = Env::get('OCR_SPACE_API_KEY', 'helloworld');
         $finfo = @finfo_open(FILEINFO_MIME_TYPE);
         $mime = $finfo ? (@finfo_file($finfo, $filePath) ?: 'image/jpeg') : 'image/jpeg';
-        if ($finfo && PHP_VERSION_ID < 80500) {
-            @finfo_close($finfo);
-        }
+        unset($finfo);
 
         $postData = [
             'apikey' => $apiKey,
@@ -404,9 +400,7 @@ class PassportOcrService implements PassportOcrServiceInterface
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        if (PHP_VERSION_ID < 80500) {
-            @curl_close($ch);
-        }
+        unset($ch);
 
         if ($httpCode === 200 && $response) {
             $json = json_decode((string)$response, true);
@@ -585,7 +579,7 @@ class PassportOcrService implements PassportOcrServiceInterface
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        unset($ch);
 
         if ($httpCode === 200 && $response) {
             $data = json_decode((string)$response, true);

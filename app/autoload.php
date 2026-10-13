@@ -318,15 +318,28 @@ function user_permissions(bool $forceFresh = false): array {
         return $user['permissions'];
     }
     $roleId = (int)($user['role_id'] ?? 0);
-    if (!$forceFresh && isset($staticCache[$roleId])) {
-        return $staticCache[$roleId];
+    $userId = (int)($user['id'] ?? 0);
+    $cacheKey = "{$userId}_{$roleId}";
+    if (!$forceFresh && isset($staticCache[$cacheKey])) {
+        return $staticCache[$cacheKey];
     }
     try {
         $pdo = App\Config\Database::getConnection();
-        $stmt = $pdo->prepare("SELECT p.slug FROM role_permissions rp JOIN permissions p ON rp.permission_id = p.id WHERE rp.role_id = ?");
-        $stmt->execute([$roleId]);
-        $permissions = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
-        $staticCache[$roleId] = $permissions;
+        $permissions = [];
+        if ($roleId > 0) {
+            $stmt = $pdo->prepare("SELECT p.slug FROM role_permissions rp JOIN permissions p ON rp.permission_id = p.id WHERE rp.role_id = ?");
+            $stmt->execute([$roleId]);
+            $permissions = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        }
+        if ($userId > 0) {
+            $uStmt = $pdo->prepare("SELECT p.slug FROM user_permissions up JOIN permissions p ON up.permission_id = p.id WHERE up.user_id = ?");
+            $uStmt->execute([$userId]);
+            $userPerms = $uStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+            if (!empty($userPerms)) {
+                $permissions = array_values(array_unique(array_merge($permissions, $userPerms)));
+            }
+        }
+        $staticCache[$cacheKey] = $permissions;
         $_SESSION['user_permissions'] = $permissions;
         return $permissions;
     } catch (\Throwable $e) {

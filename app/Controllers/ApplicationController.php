@@ -899,6 +899,36 @@ class ApplicationController
                     $user['id'] ?? null
                 ]);
 
+                // Handle optional payment slip / receipt scan upload
+                $receiptFile = null;
+                if (!empty($_FILES['payment_slip']['name']) && $_FILES['payment_slip']['error'] === UPLOAD_ERR_OK) {
+                    $slipFile = $_FILES['payment_slip'];
+                    $slipExt = strtolower(pathinfo($slipFile['name'], PATHINFO_EXTENSION));
+                    $allowedSlipExts = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+                    if (in_array($slipExt, $allowedSlipExts, true)) {
+                        $slipDir = \App\Core\App::basePath('storage' . DIRECTORY_SEPARATOR . 'receipts');
+                        if (!is_dir($slipDir)) {
+                            @mkdir($slipDir, 0755, true);
+                        }
+                        $slipFileName = 'slip_' . $appId . '_' . time() . '_' . substr(bin2hex(random_bytes(4)), 0, 6) . '.' . $slipExt;
+                        $slipTargetPath = $slipDir . DIRECTORY_SEPARATOR . $slipFileName;
+                        if (@move_uploaded_file($slipFile['tmp_name'], $slipTargetPath)) {
+                            $receiptFile = 'storage/receipts/' . $slipFileName;
+                            try {
+                                $pdo->prepare("INSERT INTO documents (
+                                    application_id, customer_id, document_title, file_path, file_name, file_size, mime_type, status, uploaded_by_type, uploaded_by_id, created_at
+                                ) VALUES (?, ?, ?, ?, ?, ?, ?, 'Approved', 'Staff', ?, CURRENT_TIMESTAMP)")
+                                ->execute([
+                                    $appId, $customerId, 'Payment Deposit Slip (' . $payMethod . ')',
+                                    $receiptFile, $slipFile['name'], (int)$slipFile['size'],
+                                    @mime_content_type($slipTargetPath) ?: 'application/octet-stream',
+                                    $user['id'] ?? null
+                                ]);
+                            } catch (\Throwable $e) {}
+                        }
+                    }
+                }
+
                 if ($payMethod === 'Customer Wallet') {
                     $wallet = \App\Services\WalletService::getOrCreateWallet($customerId);
                     $wBal = (float)$wallet['current_balance'];
@@ -910,9 +940,9 @@ class ApplicationController
                         $rcpNum = sprintf("RCP-%s-%06d", date('Y'), $rcpCount);
 
                         $pdo->prepare("INSERT INTO payments (
-                            payment_number, invoice_number, application_id, customer_id, amount, payment_method, payment_date, transaction_reference, payment_type, status, received_by, wallet_transaction_id, notes, created_at
-                        ) VALUES (?, ?, ?, ?, ?, 'Customer Wallet', CURRENT_DATE, ?, 'Customer Payment', 'Completed', ?, ?, 'Immediate registration payment via wallet', CURRENT_TIMESTAMP)")
-                        ->execute([$rcpNum, $invNumber, $appId, $customerId, $totalAmount, $wDebit['transaction_id'] ?? 'WALLET_TXN', $user['id'] ?? null, $wDebit['id'] ?? null]);
+                            payment_number, invoice_number, application_id, customer_id, amount, payment_method, payment_date, transaction_reference, payment_type, status, received_by, wallet_transaction_id, receipt_file, notes, created_at
+                        ) VALUES (?, ?, ?, ?, ?, 'Customer Wallet', CURRENT_DATE, ?, 'Customer Payment', 'Completed', ?, ?, ?, 'Immediate registration payment via wallet', CURRENT_TIMESTAMP)")
+                        ->execute([$rcpNum, $invNumber, $appId, $customerId, $totalAmount, $wDebit['transaction_id'] ?? 'WALLET_TXN', $user['id'] ?? null, $wDebit['id'] ?? null, $receiptFile]);
 
                         $pdo->prepare("UPDATE applications SET paid_amount = ?, balance_amount = 0.00, payment_status = 'Paid' WHERE id = ?")->execute([$totalAmount, $appId]);
                     }
@@ -927,9 +957,9 @@ class ApplicationController
                     $rcpNum = sprintf("RCP-%s-%06d", date('Y'), $rcpCount);
 
                     $pdo->prepare("INSERT INTO payments (
-                        payment_number, invoice_number, application_id, customer_id, amount, payment_method, payment_date, transaction_reference, payment_type, status, received_by, notes, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, 'Customer Payment', 'Completed', ?, 'Immediate registration payment', CURRENT_TIMESTAMP)")
-                    ->execute([$rcpNum, $invNumber, $appId, $customerId, $totalAmount, $payMethod, $payRef ?: 'CASH_REC', $user['id'] ?? null]);
+                        payment_number, invoice_number, application_id, customer_id, amount, payment_method, payment_date, transaction_reference, payment_type, status, received_by, receipt_file, notes, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_DATE, ?, 'Customer Payment', 'Completed', ?, ?, 'Immediate registration payment', CURRENT_TIMESTAMP)")
+                    ->execute([$rcpNum, $invNumber, $appId, $customerId, $totalAmount, $payMethod, $payRef ?: 'CASH_REC', $user['id'] ?? null, $receiptFile]);
 
                     $pdo->prepare("UPDATE applications SET paid_amount = ?, balance_amount = 0.00, payment_status = 'Paid' WHERE id = ?")->execute([$totalAmount, $appId]);
                 }

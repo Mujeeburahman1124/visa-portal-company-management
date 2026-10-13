@@ -110,7 +110,7 @@ $canViewNotifAdmin  = $isAdmin || user_has_role(['branch-manager', 'visa-manager
     <?php endif; ?>
 
     <?php if ($canViewWallets): ?>
-    <a href="/payments/wallets" class="nav-link-custom <?= str_starts_with($currentUri, '/payments/wallets') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Customer, Supplier & Agent Digital Wallets">
+    <a href="/payments/wallets" class="nav-link-custom <?= str_starts_with($currentUri, '/payments/wallets') ? 'active' : '' ?>" data-bs-toggle="tooltip" data-bs-placement="right" title="Customer & Agent Digital Wallets">
       <i class="fa-solid fa-wallet nav-icon text-success"></i>
       <span class="nav-label">Wallets &amp; Ledgers</span>
     </a>

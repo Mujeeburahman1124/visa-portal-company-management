@@ -176,9 +176,7 @@ class DocumentApiController extends ApiController
         // Validate MIME type
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mimeType = finfo_file($finfo, $tmpPath) ?: ($file['type'] ?? 'application/octet-stream');
-        if (PHP_VERSION_ID < 80500) {
-            @finfo_close($finfo);
-        }
+        unset($finfo);
 
         $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
         if (!in_array($mimeType, $allowedMimes, true)) {
@@ -337,9 +335,7 @@ class DocumentApiController extends ApiController
                 $filePath = $matches[0];
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
                 $mimeType = finfo_file($finfo, $filePath) ?: 'image/jpeg';
-                if (PHP_VERSION_ID < 80500) {
-                    @finfo_close($finfo);
-                }
+                unset($finfo);
             } else {
                 http_response_code(404);
                 echo 'Temporary file not found or expired.';

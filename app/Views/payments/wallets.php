@@ -45,9 +45,6 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         <button type="button" class="bento-btn-outline" data-bs-toggle="modal" data-bs-target="#agentWalletModal" title="Top-up Agent Wallet">
           <i class="fa-solid fa-user-tie me-1"></i> Top-up Agent
         </button>
-        <button type="button" class="bento-btn-outline" data-bs-toggle="modal" data-bs-target="#supplierWalletModal" title="Direct Supplier Deposit">
-          <i class="fa-solid fa-building-columns me-1"></i> Top-up Supplier
-        </button>
       </div>
     </header>
 
@@ -55,9 +52,6 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     <div class="wallet-nav-tabs">
       <a class="wallet-tab-btn <?= $activeTab === 'customers' ? 'is-active' : '' ?>" href="/payments/wallets?tab=customers">
         <i class="fa-solid fa-user text-primary"></i> Customer Wallets (<?= count($customerWallets) ?>)
-      </a>
-      <a class="wallet-tab-btn <?= $activeTab === 'suppliers' ? 'is-active' : '' ?>" href="/payments/wallets?tab=suppliers">
-        <i class="fa-solid fa-truck-ramp-box text-success"></i> Supplier Wallets (<?= count($supplierWallets) ?>)
       </a>
       <a class="wallet-tab-btn <?= $activeTab === 'agents' ? 'is-active' : '' ?>" href="/payments/wallets?tab=agents">
         <i class="fa-solid fa-user-tie text-info"></i> Agent Wallets (<?= count($agentWallets) ?>)
@@ -162,62 +156,6 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                         <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2.5 py-1" onclick="quickDebitCustomer(<?= $cw['customer_id'] ?>, '<?= e(addslashes($cw['full_name'])) ?>', '<?= e($cw['currency'] ?: 'USD') ?>', <?= (float)$cw['current_balance'] ?>)">
                           <i class="fa-solid fa-minus me-1"></i> Debit
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                <?php endforeach; ?>
-              <?php endif; ?>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    <?php elseif ($activeTab === 'suppliers'): ?>
-      <!-- 4B. SUPPLIER WALLETS -->
-      <div class="bento-card p-0 overflow-hidden mb-4">
-        <div class="wallet-table-wrap">
-          <table class="wallet-table">
-            <thead>
-              <tr>
-                <th>Supplier Partner</th>
-                <th>Company Name</th>
-                <th>Country</th>
-                <th>Currency</th>
-                <th>Current Balance</th>
-                <th>Total Credited</th>
-                <th>Total Debited</th>
-                <th class="text-end">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php if (empty($supplierWallets)): ?>
-                <tr><td colspan="8" class="text-center py-5 text-muted">No supplier wallet accounts found.</td></tr>
-              <?php else: ?>
-                <?php foreach ($supplierWallets as $sw): ?>
-                  <tr>
-                    <td data-label="Supplier"><div class="fw-bold text-dark"><?= e($sw['supplier_name']) ?></div></td>
-                    <td data-label="Company"><span class="text-muted small"><?= e($sw['company_name'] ?: '—') ?></span></td>
-                    <td data-label="Country"><span class="badge bg-light text-dark border"><?= e($sw['country'] ?: 'Global') ?></span></td>
-                    <td data-label="Currency"><span class="badge bg-success-subtle text-success"><?= e($sw['currency'] ?: 'USD') ?></span></td>
-                    <td data-label="Balance">
-                      <span class="wallet-balance-val <?= (float)$sw['current_balance'] > 0 ? 'text-success' : 'text-muted' ?>">
-                        <?= e($sw['currency'] ?: 'USD') ?> <?= number_format((float)$sw['current_balance'], 2) ?>
-                      </span>
-                    </td>
-                    <td data-label="Credited" class="text-success small fw-semibold">
-                      <?= e($sw['currency'] ?: 'USD') ?> <?= number_format((float)$sw['total_credited'], 2) ?>
-                    </td>
-                    <td data-label="Debited" class="text-danger small fw-semibold">
-                      <?= e($sw['currency'] ?: 'USD') ?> <?= number_format((float)$sw['total_debited'], 2) ?>
-                    </td>
-                    <td data-label="Actions" class="text-end td-actions">
-                      <div class="d-flex align-items-center justify-content-end gap-1">
-                        <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-2.5 py-1" onclick="quickTopUpSupplier(<?= $sw['supplier_id'] ?>, '<?= e(addslashes($sw['supplier_name'])) ?>', '<?= e($sw['currency'] ?: 'AED') ?>')">
-                          <i class="fa-solid fa-plus me-1"></i> Top-up
-                        </button>
-                        <a href="/suppliers/wallet?id=<?= $sw['supplier_id'] ?>" class="btn btn-sm btn-outline-info rounded-pill px-2.5 py-1" title="Supplier Wallet &amp; Ledger">
-                          <i class="fa-solid fa-eye me-1"></i> Ledger
-                        </a>
                       </div>
                     </td>
                   </tr>
@@ -493,91 +431,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   </div>
 </div>
 
-<!-- ======================================================================= -->
-<!-- MODAL: TOP-UP SUPPLIER WALLET                                           -->
-<!-- ======================================================================= -->
-<div class="modal fade" id="supplierWalletModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
-      <div class="modal-header bg-dark text-white p-3.5">
-        <h5 class="modal-title fw-bold fs-6"><i class="fa-solid fa-building-columns me-2 text-success"></i> Direct Supplier Wallet Top-up</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <form action="/payments/supplier-wallet-deposit" method="POST" enctype="multipart/form-data">
-        <?= csrf_field() ?>
-        <div class="modal-body p-4">
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Supplier Partner <span class="text-danger">*</span></label>
-            <select name="supplier_id" id="topupSupId" class="form-select rounded-3" required>
-              <option value="">-- Select Supplier --</option>
-              <?php foreach ($suppliersList as $s): ?>
-                <option value="<?= $s['id'] ?>"><?= e($s['company_name']) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
 
-          <div class="row g-2 mb-3">
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Currency</label>
-              <select name="currency" id="topupSupCur" class="form-select form-select-sm fw-bold rounded-2" onchange="calcSupModalTopup()">
-                <?php foreach (['AED', 'USD', 'LKR', 'EUR', 'GBP', 'SAR', 'QAR', 'INR', 'CAD', 'AUD'] as $cur): ?>
-                  <option value="<?= $cur ?>"><?= $cur ?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="col-6">
-              <label class="form-label small fw-semibold">Deposit Amount <span class="text-danger">*</span></label>
-              <input type="number" step="0.01" name="amount" id="topupSupAmount" class="form-control form-control-sm fw-bold rounded-2" placeholder="0.00" required oninput="calcSupModalTopup()">
-            </div>
-          </div>
-
-          <div class="p-3 bg-light rounded-3 border mb-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <span class="small fw-semibold text-muted">Exchange Rate:</span>
-              <input type="number" step="0.000001" name="exchange_rate" id="topupSupRate" class="form-control form-control-sm text-end fw-bold rounded-2" style="width: 120px;" value="1.000000" oninput="calcSupModalTopup()">
-            </div>
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="small fw-bold text-dark">Credited to Wallet:</span>
-              <span class="h6 fw-bold text-success mb-0" id="topupSupConverted">0.00</span>
-            </div>
-            <input type="hidden" name="converted_amount" id="topupSupConvertedHidden" value="0.00">
-            <input type="hidden" name="original_amount" id="topupSupOriginalHidden" value="0.00">
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Payment Method</label>
-            <select name="payment_method" class="form-select form-select-sm rounded-3">
-              <option value="Bank Transfer">Bank Transfer / Wire</option>
-              <option value="Corporate Card">Corporate Card</option>
-              <option value="Cash Disbursement">Cash Disbursement</option>
-              <option value="Cheque">Cheque</option>
-            </select>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Reference</label>
-            <input type="text" name="reference" class="form-control form-control-sm rounded-3" placeholder="e.g. SW-<?= date('Ymd') ?>-01">
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Disbursement Voucher / Bank Slip <span class="text-danger">*</span></label>
-            <input type="file" name="receipt_file" class="form-control form-control-sm rounded-3" accept=".pdf,.jpg,.jpeg,.png,.docx" required>
-            <small class="text-muted" style="font-size: 0.72rem;"><i class="fa-solid fa-file-circle-check text-success me-1"></i>Mandatory deposit proof voucher.</small>
-          </div>
-
-          <div class="mb-0">
-            <label class="form-label small fw-semibold">Notes / Purpose</label>
-            <input type="text" name="notes" class="form-control form-control-sm rounded-3" placeholder="e.g. Advance deposit for Q4 bulk visa allocations">
-          </div>
-        </div>
-        <div class="modal-footer bg-light p-3 border-top">
-          <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success btn-sm rounded-pill px-4 fw-semibold"><i class="fa-solid fa-check me-1"></i> Credit Supplier</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
 
 <!-- ======================================================================= -->
 <!-- MODAL: TOP-UP AGENT WALLET                                              -->
@@ -735,14 +589,7 @@ function quickDebitCustomer(id, name, cur, bal) {
   new bootstrap.Modal(document.getElementById('customerDebitModal')).show();
 }
 
-function quickTopUpSupplier(id, name, cur) {
-  document.getElementById('topupSupId').value = id;
-  if (document.getElementById('topupSupCur')) {
-    document.getElementById('topupSupCur').value = cur || 'AED';
-  }
-  calcSupModalTopup();
-  new bootstrap.Modal(document.getElementById('supplierWalletModal')).show();
-}
+
 
 function quickTopUpAgent(id, name, cur) {
   document.getElementById('topupAgId').value = id;
@@ -771,15 +618,7 @@ function calcCustTopup() {
   document.getElementById('topupCustOriginalHidden').value = amt;
 }
 
-function calcSupModalTopup() {
-  const amt = parseFloat(document.getElementById('topupSupAmount').value) || 0;
-  const rate = parseFloat(document.getElementById('topupSupRate').value) || 1;
-  const cur = document.getElementById('topupSupCur').value;
-  const converted = (amt * rate).toFixed(2);
-  document.getElementById('topupSupConverted').innerText = converted + ' ' + cur;
-  document.getElementById('topupSupConvertedHidden').value = converted;
-  document.getElementById('topupSupOriginalHidden').value = amt;
-}
+
 
 function calcAgentTopup() {
   const amt = parseFloat(document.getElementById('topupAgAmount').value) || 0;

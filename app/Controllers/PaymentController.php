@@ -395,6 +395,9 @@ class PaymentController
         $pdo = Database::getConnection();
 
         $activeTab = trim($_GET['tab'] ?? 'customers');
+        if ($activeTab === 'suppliers') {
+            $activeTab = 'customers';
+        }
         $search = trim($_GET['search'] ?? '');
         $dateFrom = trim($_GET['date_from'] ?? '');
         $dateTo = trim($_GET['date_to'] ?? '');
@@ -407,16 +410,21 @@ class PaymentController
             WHERE 1=1";
         $cwParams = [];
         if ($search !== '') {
-            $cwSql .= " AND (c.full_name LIKE ? OR c.customer_code LIKE ? OR c.email LIKE ? OR c.mobile LIKE ?)";
+            $cwSql .= " AND (c.full_name LIKE ? OR c.customer_code LIKE ? OR c.email LIKE ? OR c.mobile LIKE ? 
+                      OR EXISTS (SELECT 1 FROM wallet_transactions wt WHERE wt.customer_id = c.id AND (wt.transaction_id LIKE ? OR wt.payment_reference LIKE ?)))";
             $t = "%{$search}%";
-            $cwParams = [$t, $t, $t, $t];
+            $cwParams = [$t, $t, $t, $t, $t, $t];
         }
         if (!empty($dateFrom)) {
-            $cwSql .= " AND DATE(cw.created_at) >= ?";
+            $cwSql .= " AND (DATE(cw.updated_at) >= ? OR DATE(cw.created_at) >= ? OR EXISTS (SELECT 1 FROM wallet_transactions wt WHERE wt.customer_id = c.id AND DATE(wt.created_at) >= ?))";
+            $cwParams[] = $dateFrom;
+            $cwParams[] = $dateFrom;
             $cwParams[] = $dateFrom;
         }
         if (!empty($dateTo)) {
-            $cwSql .= " AND DATE(cw.created_at) <= ?";
+            $cwSql .= " AND (DATE(cw.updated_at) <= ? OR DATE(cw.created_at) <= ? OR EXISTS (SELECT 1 FROM wallet_transactions wt WHERE wt.customer_id = c.id AND DATE(wt.created_at) <= ?))";
+            $cwParams[] = $dateTo;
+            $cwParams[] = $dateTo;
             $cwParams[] = $dateTo;
         }
         $cwSql .= " ORDER BY cw.current_balance DESC, c.full_name ASC";
@@ -429,34 +437,8 @@ class PaymentController
             $customerWallets = [];
         }
 
-        // 2. Supplier Wallets Filter
-        $swSql = "SELECT sw.*, s.company_name as supplier_name, s.company_name, s.country 
-            FROM supplier_wallets sw 
-            JOIN suppliers s ON sw.supplier_id = s.id 
-            WHERE 1=1";
-        $swParams = [];
-        if ($search !== '') {
-            $swSql .= " AND (s.company_name LIKE ? OR s.supplier_code LIKE ? OR s.contact_person LIKE ? OR s.country LIKE ?)";
-            $t = "%{$search}%";
-            $swParams = [$t, $t, $t, $t];
-        }
-        if (!empty($dateFrom)) {
-            $swSql .= " AND DATE(sw.created_at) >= ?";
-            $swParams[] = $dateFrom;
-        }
-        if (!empty($dateTo)) {
-            $swSql .= " AND DATE(sw.created_at) <= ?";
-            $swParams[] = $dateTo;
-        }
-        $swSql .= " ORDER BY sw.current_balance DESC, s.company_name ASC";
+        // Supplier wallets removed from system
         $supplierWallets = [];
-        try {
-            $swStmt = $pdo->prepare($swSql);
-            $swStmt->execute($swParams);
-            $supplierWallets = $swStmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (\Throwable $e) {
-            $supplierWallets = [];
-        }
 
         // 3. Agent Wallets Filter
         $awSql = "SELECT aw.*, COALESCE(ag.company_name, ag.contact_person, u.name, 'Agent') as agent_name, COALESCE(ag.email, u.email, '') as agent_email 
