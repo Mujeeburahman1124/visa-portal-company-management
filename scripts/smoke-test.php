@@ -75,7 +75,6 @@ foreach ($routes as $actor => $paths) {
         $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $hs = (int)curl_getinfo($ch, CURLINFO_HEADER_SIZE);
         $loc = (string)curl_getinfo($ch, CURLINFO_REDIRECT_URL);
-        curl_close($ch);
         $body = substr($raw, $hs);
 
         $fatal = preg_match('/Fatal error|Uncaught |SQLSTATE\[|Parse error/i', $body)

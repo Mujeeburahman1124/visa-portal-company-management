@@ -132,7 +132,6 @@ foreach ($routesToTest['GET'] as $urlPath) {
     $rawResponse = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-    curl_close($ch);
 
     $body = substr($rawResponse ?: '', $headerSize);
 

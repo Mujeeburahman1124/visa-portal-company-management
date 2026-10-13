@@ -22,7 +22,6 @@ function apiReq(string $url, string $method = 'GET', array $data = [], ?string $
     $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
     $body = substr($res, $headerSize);
-    curl_close($ch);
     $json = json_decode($body, true);
     return ['code' => $code, 'json' => $json, 'body' => $body];
 }
