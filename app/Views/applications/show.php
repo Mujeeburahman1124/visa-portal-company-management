@@ -368,6 +368,17 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
                       <span class="master-data-val"><?= e($app['branch_name'] ?? 'Dubai Head Office') ?></span>
                     </div>
                   </div>
+                  <?php if (!empty($app['agent_company_name'])): ?>
+                  <div class="col-12 col-sm-6">
+                    <div class="master-data-item">
+                      <span class="master-data-label">Partner Agency</span>
+                      <span class="master-data-val text-primary fw-semibold">
+                        <i class="fa-solid fa-handshake me-1 text-primary"></i><?= e($app['agent_company_name']) ?>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1 font-monospace" style="font-size: 0.72rem;"><?= e($app['agent_code'] ?? '') ?></span>
+                      </span>
+                    </div>
+                  </div>
+                  <?php endif; ?>
                   <div class="col-12">
                     <div class="master-data-item">
                       <span class="master-data-label">Created By</span>

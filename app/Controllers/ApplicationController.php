@@ -38,6 +38,7 @@ class ApplicationController
         $supplierId = (int)($_GET['supplier_id'] ?? 0);
         $staffId = (int)($_GET['staff_id'] ?? 0);
         $branchId = get_scoped_branch_id((int)($_GET['branch_id'] ?? 0), $user);
+        $agentId = (int)($_GET['agent_id'] ?? 0);
 
         // Apply Saved Presets (only when corresponding filters are not explicitly selected)
         if ($preset === 'my_assigned' && $user && $staffId === 0) {
@@ -56,7 +57,8 @@ class ApplicationController
                     ct.name as country_name, ct.flag_emoji,
                     u.name as staff_name, b.name as branch_name,
                     cp.passport_number as current_passport,
-                    s.company_name as supplier_name
+                    s.company_name as supplier_name,
+                    ag.company_name as agent_name, ag.agent_code
                 FROM applications a
                 LEFT JOIN customers c ON a.customer_id = c.id
                 LEFT JOIN visa_services vs ON a.visa_service_id = vs.id
@@ -65,6 +67,7 @@ class ApplicationController
                 LEFT JOIN users u ON a.assigned_staff_id = u.id
                 LEFT JOIN branches b ON a.branch_id = b.id
                 LEFT JOIN suppliers s ON a.supplier_id = s.id
+                LEFT JOIN agents ag ON a.agent_id = ag.id
                 WHERE a.is_archived = 0";
 
         $params = [];
@@ -135,6 +138,11 @@ class ApplicationController
             $params[] = $branchId;
         }
 
+        if ($agentId > 0) {
+            $sql .= " AND a.agent_id = ?";
+            $params[] = $agentId;
+        }
+
         $sql .= " ORDER BY CASE WHEN a.priority = 'Critical' THEN 1 WHEN a.priority = 'Urgent' THEN 2 WHEN a.priority = 'High' THEN 3 ELSE 4 END, a.created_at DESC";
 
         $stmt = $pdo->prepare($sql);
@@ -145,6 +153,7 @@ class ApplicationController
         $countries = $pdo->query("SELECT id, name, flag_emoji FROM countries WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $services = $pdo->query("SELECT id, name, country_id FROM visa_services WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $suppliers = $pdo->query("SELECT id, company_name FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $agents = $pdo->query("SELECT id, company_name, agent_code FROM agents WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $staffMembers = $pdo->query("SELECT id, name FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $branches = $pdo->query("SELECT id, name FROM branches WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -178,6 +187,7 @@ class ApplicationController
         $staffMembers = $pdo->query("SELECT id, name, designation FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $branches = $pdo->query("SELECT id, name, city FROM branches WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $suppliers = $pdo->query("SELECT id, company_name, supplier_code FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $agents = $pdo->query("SELECT id, company_name, agent_code, contact_person FROM agents WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $docTypes = $pdo->query("SELECT id, name, code, category FROM document_types WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         require_once dirname(__DIR__) . '/Views/applications/create.php';
@@ -236,6 +246,8 @@ class ApplicationController
 
         $sourceType = trim($_POST['source_type'] ?? 'Normal');
         $visitReason = trim($_POST['visit_reason'] ?? 'Tourism');
+        $agentId = !empty($_POST['agent_id']) ? (int)$_POST['agent_id'] : null;
+        $agentRef = trim($_POST['agent_reference'] ?? '');
 
         if ($customerId <= 0) {
             // Check if customer exists by passport number
@@ -629,7 +641,7 @@ class ApplicationController
                 selling_price, discount, tax_amount, total_amount, paid_amount, balance_amount,
                 supplier_cost, other_expenses, gross_profit, supplier_reference, embassy_reference,
                 internal_notes, customer_notes, next_action, next_action_due_date, payment_type, payment_status, created_by,
-                source_type, visit_reason
+                source_type, visit_reason, agent_id
             ) VALUES (
                 ?, ?, ?, ?, ?, ?,
                 'New Application', 'Draft', ?, 100, 'Application freshly initiated. Document checklist initialized.',
@@ -639,7 +651,7 @@ class ApplicationController
                 ?, ?, ?, ?, 0.00, ?,
                 ?, ?, ?, ?, ?,
                 ?, ?, 'Collect and verify initial required documents', ?, ?, ?, ?,
-                ?, ?
+                ?, ?, ?
             )";
 
             $nextActionDue = date('Y-m-d', strtotime('+3 days'));
@@ -654,10 +666,18 @@ class ApplicationController
                 $sellingPrice, $discount, $taxAmount, $totalAmount, $totalAmount,
                 $supplierCost, $otherExpenses, $grossProfit, $supplierRef, $embassyRef,
                 $internalNotes, $customerNotes, $nextActionDue, $paymentType, $paymentStatus, $user['id'] ?? null,
-                $sourceType, $visitReason
+                $sourceType, $visitReason, $agentId
             ]);
 
             $appId = (int)$pdo->lastInsertId();
+
+            // If linked to a partner agent, record linkage in agent_applications
+            if ($agentId !== null && $agentId > 0) {
+                try {
+                    $insAg = $pdo->prepare("INSERT INTO agent_applications (agent_id, application_id, agent_price, agent_reference) VALUES (?, ?, ?, ?)");
+                    $insAg->execute([$agentId, $appId, $sellingPrice, $agentRef]);
+                } catch (\Throwable $eAg) {}
+            }
 
             // Insert initial immutable stage history record
             $histStmt = $pdo->prepare("INSERT INTO application_status_history (
@@ -1054,7 +1074,8 @@ class ApplicationController
             u.name as staff_name, u.email as staff_email, u.phone as staff_phone, u.designation as staff_designation,
             creator.name as created_by_name,
             b.name as branch_name,
-            cp.passport_number as current_passport, cp.expiry_date as passport_expiry, cp.issuing_country as passport_issuing_country
+            cp.passport_number as current_passport, cp.expiry_date as passport_expiry, cp.issuing_country as passport_issuing_country,
+            ag.company_name as agent_company_name, ag.agent_code, ag.contact_person as agent_contact_person
             FROM applications a
             JOIN customers c ON a.customer_id = c.id
             JOIN visa_services vs ON a.visa_service_id = vs.id
@@ -1064,6 +1085,7 @@ class ApplicationController
             LEFT JOIN users u ON a.assigned_staff_id = u.id
             LEFT JOIN users creator ON a.created_by = creator.id
             LEFT JOIN branches b ON a.branch_id = b.id
+            LEFT JOIN agents ag ON a.agent_id = ag.id
             WHERE a.id = ?");
         $stmt->execute([$appId]);
         $app = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -2141,6 +2163,7 @@ class ApplicationController
         $countries = $pdo->query("SELECT id, name, iso_code, flag_emoji FROM countries WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $services = $pdo->query("SELECT vs.*, ct.name as country_name, ct.flag_emoji FROM visa_services vs JOIN countries ct ON vs.country_id = ct.id WHERE vs.is_active = 1 ORDER BY ct.name ASC, vs.name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $suppliers = $pdo->query("SELECT id, company_name, contact_person FROM suppliers WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $agents = $pdo->query("SELECT id, company_name, agent_code, contact_person FROM agents WHERE is_active = 1 ORDER BY company_name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $branches = $pdo->query("SELECT id, name, city FROM branches WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
         $staffMembers = $pdo->query("SELECT id, name, designation FROM users WHERE is_active = 1 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -2278,10 +2301,12 @@ class ApplicationController
             }
         }
 
+        $agentId = isset($_POST['agent_id']) ? (!empty($_POST['agent_id']) ? (int)$_POST['agent_id'] : null) : ($currentApp['agent_id'] ?? null);
+
         $stmt = $pdo->prepare("UPDATE applications SET 
             visa_service_id = ?, passport_number = ?, travel_date = ?, return_date = ?, 
             application_date = ?, expected_completion_date = ?, priority = ?, 
-            branch_id = ?, supplier_id = ?, assigned_staff_id = ?, 
+            branch_id = ?, supplier_id = ?, assigned_staff_id = ?, agent_id = ?,
             destination_country = ?, visa_category = ?, visa_type = ?, visa_duration = ?, entry_type = ?, processing_type = ?,
             selling_price = ?, supplier_cost = ?, other_expenses = ?, discount = ?, 
             discount_amount = ?, tax_amount = ?, total_amount = ?, balance_amount = ?, gross_profit = ?,
@@ -2290,13 +2315,26 @@ class ApplicationController
         $stmt->execute([
             $visaServiceId, $passportNumber, $travelDate, $returnDate,
             $applicationDate, $expectedDate, $priority,
-            $targetBranchId, $supplierId, $assignedStaffId,
+            $targetBranchId, $supplierId, $assignedStaffId, $agentId,
             $destinationCountry, $visaCategory, $visaType, $visaDuration, $entryType, $processingType,
             $sellingPrice, $supplierCost, $otherExpenses, $discountAmount,
             $discountAmount, $taxAmount, $totalAmount, $balanceAmount, $grossProfit,
             $notes,
             $id
         ]);
+
+        if ($agentId !== null && $agentId > 0) {
+            try {
+                $insAg = $pdo->prepare("INSERT INTO agent_applications (agent_id, application_id, agent_price) VALUES (?, ?, ?)
+                    ON DUPLICATE KEY UPDATE agent_id = VALUES(agent_id)");
+                $insAg->execute([$agentId, $id, $sellingPrice]);
+            } catch (\Throwable $eAg) {
+                try {
+                    $insAg = $pdo->prepare("INSERT OR REPLACE INTO agent_applications (agent_id, application_id, agent_price) VALUES (?, ?, ?)");
+                    $insAg->execute([$agentId, $id, $sellingPrice]);
+                } catch (\Throwable $eAg2) {}
+            }
+        }
 
         FinanceService::recalculateApplication($id);
         AuditService::log('APPLICATION_UPDATED', 'Applications', $id, "Updated application #{$id}", [

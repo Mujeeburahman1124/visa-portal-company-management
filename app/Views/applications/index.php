@@ -8,6 +8,7 @@ $activeCountry = (int)($_GET['country_id'] ?? 0);
 $activeService = (int)($_GET['service_id'] ?? 0);
 $activeSupplier = (int)($_GET['supplier_id'] ?? 0);
 $activeStaff = (int)($_GET['staff_id'] ?? 0);
+$activeAgent = (int)($_GET['agent_id'] ?? 0);
 $searchQuery = trim($_GET['search'] ?? '');
 
 $currentView = $_GET['view'] ?? 'table';
@@ -247,6 +248,18 @@ $getStageStep = function(string $stage, string $status): int {
                 </select>
               </div>
 
+              <!-- 6. Partner Agent Filter -->
+              <div class="col-6 col-sm-4 col-md-2 p-1">
+                <select name="agent_id" class="form-select form-select-sm" title="Filter by Partner Agent">
+                  <option value="">All Agents</option>
+                  <?php foreach ($agents ?? [] as $ag): ?>
+                    <option value="<?= $ag['id'] ?>" <?= $activeAgent === (int)$ag['id'] ? 'selected' : '' ?>>
+                      <?= e($ag['company_name']) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+
               <!-- 6. Filter Action Buttons -->
               <div class="col-12 col-sm-4 col-md-2 ms-auto d-flex align-items-center justify-content-end gap-1.5 p-1 apps-filter-actions">
                 <button type="submit" class="bento-btn-primary w-100 justify-content-center" style="padding: 0.42rem 0.9rem; font-size: 0.8rem;">
@@ -360,10 +373,15 @@ $getStageStep = function(string $stage, string $status): int {
                       </div>
                       <div class="overflow-hidden">
                         <div class="fw-bold text-dark fs-6 text-truncate" style="max-width: 170px;"><?= e($app['customer_name']) ?></div>
-                        <div class="mt-0.5">
+                        <div class="mt-0.5 d-flex align-items-center gap-1 flex-wrap">
                           <span class="badge bg-light text-secondary border font-monospace px-2 py-0.5" style="font-size: 0.72rem;">
                             <i class="fa-solid fa-passport text-primary me-1"></i><?= e($passportNum) ?>
                           </span>
+                          <?php if (!empty($app['agent_code'])): ?>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-1.5 py-0.5" style="font-size: 0.68rem;" title="Partner Agent: <?= e($app['agent_name'] ?? '') ?>">
+                              <i class="fa-solid fa-handshake me-1"></i><?= e($app['agent_code']) ?>
+                            </span>
+                          <?php endif; ?>
                         </div>
                       </div>
                     </div>

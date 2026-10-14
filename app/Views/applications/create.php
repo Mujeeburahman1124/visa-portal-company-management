@@ -599,20 +599,34 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               </div>
             </div>
 
-            <!-- Workflow details matching screenshot: Source Type, Visit Reason, Travel Dates -->
+            <!-- Workflow details matching screenshot: Source Type, Partner Agent, Visit Reason, Travel Dates -->
             <div class="row g-3 mb-3">
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label for="sourceTypeSelect" class="form-label small fw-semibold text-secondary mb-1">Source Type <span class="text-danger">*</span></label>
-                <select name="source_type" id="sourceTypeSelect" class="form-select" required>
+                <select name="source_type" id="sourceTypeSelect" class="form-select" required onchange="handleSourceTypeChange()">
                   <option value="Normal" selected>Normal / Direct</option>
+                  <option value="Agent">Agent Referral</option>
                   <option value="B2B">B2B Partner</option>
                   <option value="B2C">B2C Retail</option>
-                  <option value="Agent">Agent Referral</option>
                   <option value="Corporate">Corporate Account</option>
                 </select>
               </div>
 
-              <div class="col-md-4">
+              <div class="col-md-3" id="agentSelectCol">
+                <label for="agentIdSelect" class="form-label small fw-semibold text-secondary mb-1">
+                  <i class="fa-solid fa-handshake text-primary me-1"></i> Partner Agent
+                </label>
+                <select name="agent_id" id="agentIdSelect" class="form-select" onchange="handleAgentSelectChange()">
+                  <option value="">-- Direct (No Agent) --</option>
+                  <?php foreach ($agents ?? [] as $ag): ?>
+                    <option value="<?= (int)$ag['id'] ?>" <?= (!empty($_GET['agent_id']) && (int)$_GET['agent_id'] === (int)$ag['id']) ? 'selected' : '' ?>>
+                      <?= e($ag['company_name']) ?> (<?= e($ag['agent_code']) ?>)
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+
+              <div class="col-md-3">
                 <label for="visitReasonSelect" class="form-label small fw-semibold text-secondary mb-1">Visit Reason <span class="text-danger">*</span></label>
                 <select name="visit_reason" id="visitReasonSelect" class="form-select" required>
                   <option value="Tourism" selected>Tourism</option>
@@ -623,7 +637,7 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                 </select>
               </div>
 
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <label for="processingTypeSelect" class="form-label small fw-semibold text-secondary mb-1">Processing Type</label>
                 <select name="processing_type" id="processingTypeSelect" class="form-select">
                   <option value="Normal" selected>Normal Processing</option>
@@ -634,17 +648,41 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             </div>
 
             <div class="row g-3">
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label class="form-label small fw-semibold text-secondary">Estimated Arrival / Travel Date</label>
                 <input type="date" name="travel_date" class="form-control">
               </div>
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label class="form-label small fw-semibold text-secondary">Proposed Departure / Return Date</label>
                 <input type="date" name="return_date" class="form-control">
+              </div>
+              <div class="col-md-4" id="agentRefCol">
+                <label class="form-label small fw-semibold text-secondary">Agent Booking Reference</label>
+                <input type="text" name="agent_reference" id="agentReferenceInput" class="form-control" placeholder="e.g. AGT-REF-109">
               </div>
             </div>
           </div>
         </div>
+
+        <script>
+        function handleSourceTypeChange() {
+          const src = document.getElementById('sourceTypeSelect')?.value;
+          const agSelect = document.getElementById('agentIdSelect');
+          if (!agSelect) return;
+          if (src === 'Agent' || src === 'B2B') {
+            agSelect.classList.add('border-primary');
+          } else {
+            agSelect.classList.remove('border-primary');
+          }
+        }
+        function handleAgentSelectChange() {
+          const agVal = document.getElementById('agentIdSelect')?.value;
+          const srcSelect = document.getElementById('sourceTypeSelect');
+          if (agVal && srcSelect && srcSelect.value === 'Normal') {
+            srcSelect.value = 'Agent';
+          }
+        }
+        </script>
 
         <!-- ============================================================ -->
         <!-- SECTION 3: APPLICANT PHOTO & SUPPORTING DOCUMENTS            -->

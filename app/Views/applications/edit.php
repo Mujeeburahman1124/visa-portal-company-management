@@ -197,6 +197,18 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
               </select>
             </div>
 
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-secondary">Partner Agent (Optional)</label>
+              <select name="agent_id" class="form-select bg-light">
+                <option value="">-- Direct (No Agent) --</option>
+                <?php foreach ($agents ?? [] as $ag): ?>
+                  <option value="<?= $ag['id'] ?>" <?= (int)($app['agent_id'] ?? 0) === (int)$ag['id'] ? 'selected' : '' ?>>
+                    <?= e($ag['company_name']) ?> (<?= e($ag['agent_code']) ?>)
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+
             <input type="hidden" name="supplier_id" value="<?= (int)($app['supplier_id'] ?? 0) ?>">
           </div>
 
