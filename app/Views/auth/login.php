@@ -149,13 +149,6 @@ $flash = get_flash();
         <div>Sessions are monitored, encrypted, and audit-logged.</div>
       </div>
 
-      <!-- Quick Switch to Portals -->
-      <div class="auth-switch-links">
-        <span>Other Portals:</span>
-        <a href="/agent/login" class="auth-switch-pill"><i class="fa-solid fa-handshake"></i> Agent Portal</a>
-        <a href="/portal/login" class="auth-switch-pill"><i class="fa-solid fa-plane-departure"></i> Applicant Portal</a>
-      </div>
-
     </div>
 
     <!-- Security Compliance Footer -->
