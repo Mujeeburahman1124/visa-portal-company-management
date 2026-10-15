@@ -83,10 +83,6 @@ $getStageStep = function(string $stage, string $status): int {
             <i class="fa-solid fa-table-list me-1.5"></i> Table
           </a>
         </div>
-
-        <a href="/applications/create" class="bento-btn-primary" style="padding: 0.5rem 1.15rem; font-size: 0.82rem;">
-          <i class="fa-solid fa-plus"></i> New Application
-        </a>
       </div>
     </header>
 
