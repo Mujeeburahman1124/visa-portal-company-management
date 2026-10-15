@@ -50,7 +50,7 @@ $routes = [
     'public' => ['/', '/about', '/jobs', '/visa-enquiry', '/contact', '/faq', '/portal/track',
                  '/auth/login', '/admin/login', '/auth/forgot-password', '/portal/login', '/portal/forgot-password',
                  '/agent/login'],
-    'staff' => ['/dashboard', '/applications', '/applications/create', "/applications/show?id=$appId", "/applications/edit?id=$appId",
+    'staff' => ['/dashboard', '/profile', '/applications', '/applications/create', "/applications/show?id=$appId", "/applications/edit?id=$appId",
                 '/customers', '/customers/create', "/customers/show?id=$custId", '/documents', "/documents/profile?id=$appId",
                 "/documents/preview?id=$docId", '/payments', '/payments/history', '/payments/links', '/payments/wallets',
                 '/appointments', '/tasks', "/tasks/proof?id=$taskId", '/reports', '/agents', '/attendance',
