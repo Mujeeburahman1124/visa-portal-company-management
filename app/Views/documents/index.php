@@ -678,7 +678,7 @@ $buildDocUrl = function(array $params = []): string {
           <h6 class="modal-title fw-bold text-dark mb-0" id="previewModalTitle">Document Preview</h6>
         </div>
         <div class="d-flex align-items-center gap-2">
-          <a href="#" id="previewModalDownloadBtn" class="btn btn-sm btn-outline-primary rounded-pill px-3" download>
+          <a href="#" id="previewModalDownloadBtn" class="btn btn-sm btn-outline-primary rounded-pill px-3">
             <i class="fa-solid fa-download me-1"></i> Download
           </a>
           <a href="#" id="previewModalNewTabBtn" target="_blank" class="btn btn-sm btn-primary rounded-pill px-3">
@@ -700,7 +700,8 @@ $buildDocUrl = function(array $params = []): string {
     <div class="modal-content rounded-4 border-0 shadow">
       <form action="/documents/verify" method="POST" id="verifyDocForm">
         <?= csrf_field() ?>
-        <input type="hidden" name="id" id="verifyDocId" value="">
+        <input type="hidden" name="document_id" id="verifyDocId" value="">
+        <input type="hidden" name="id" id="verifyDocId_alias" value="">
         <div class="modal-header bg-light border-bottom py-3">
           <h6 class="modal-title fw-bold text-success"><i class="fa-solid fa-circle-check me-1.5"></i> Verify Document</h6>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -727,7 +728,8 @@ $buildDocUrl = function(array $params = []): string {
     <div class="modal-content rounded-4 border-0 shadow">
       <form action="/documents/reject" method="POST" id="rejectDocForm">
         <?= csrf_field() ?>
-        <input type="hidden" name="id" id="rejectDocId" value="">
+        <input type="hidden" name="document_id" id="rejectDocId" value="">
+        <input type="hidden" name="id" id="rejectDocId_alias" value="">
         <div class="modal-header bg-light border-bottom py-3">
           <h6 class="modal-title fw-bold text-danger"><i class="fa-solid fa-circle-xmark me-1.5"></i> Reject Document</h6>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -754,7 +756,8 @@ $buildDocUrl = function(array $params = []): string {
     <div class="modal-content rounded-4 border-0 shadow">
       <form action="/documents/delete" method="POST">
         <?= csrf_field() ?>
-        <input type="hidden" name="id" id="deleteDocId" value="">
+        <input type="hidden" name="document_id" id="deleteDocId" value="">
+        <input type="hidden" name="id" id="deleteDocId_alias" value="">
         <div class="modal-header bg-light border-bottom py-3">
           <h6 class="modal-title fw-bold text-danger"><i class="fa-solid fa-trash-can me-1.5"></i> Delete Document</h6>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -970,7 +973,10 @@ function openDocPreviewModal(id, filename, title) {
 
   const dlBtn = document.getElementById('previewModalDownloadBtn');
   const newTabBtn = document.getElementById('previewModalNewTabBtn');
-  if (dlBtn) dlBtn.href = '/documents/download?id=' + id;
+  if (dlBtn) {
+    dlBtn.href = '/documents/download?id=' + id;
+    dlBtn.removeAttribute('download');
+  }
   if (newTabBtn) newTabBtn.href = '/documents/preview?id=' + id;
 
   if (container) {
@@ -978,13 +984,20 @@ function openDocPreviewModal(id, filename, title) {
       container.innerHTML = `
         <div class="w-100">
           <div class="alert alert-light border py-2 px-3 small text-start d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2 rounded-3">
-            <span class="text-secondary"><i class="fa-solid fa-circle-info text-primary me-1"></i> PDF Document Viewer. If your browser blocks inline PDF streaming, use direct download.</span>
+            <span class="text-secondary"><i class="fa-solid fa-file-pdf text-danger me-1"></i> Document Viewer</span>
             <div class="d-flex gap-2">
               <a href="/documents/preview?id=${id}" target="_blank" class="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-1" style="font-size:0.75rem;"><i class="fa-solid fa-external-link me-1"></i> Full Window</a>
-              <a href="/documents/download?id=${id}" class="btn btn-xs btn-primary rounded-pill px-2.5 py-1" style="font-size:0.75rem;"><i class="fa-solid fa-download me-1"></i> Save File</a>
+              <a href="/documents/download?id=${id}" class="btn btn-xs btn-primary rounded-pill px-2.5 py-1" style="font-size:0.75rem;"><i class="fa-solid fa-download me-1"></i> Save / Download File</a>
             </div>
           </div>
-          <iframe src="/documents/preview?id=${id}" style="width: 100%; height: 600px; border: 1px solid #e2e8f0; border-radius: 8px;"></iframe>
+          <object data="/documents/preview?id=${id}" type="application/pdf" style="width: 100%; height: 620px; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <iframe src="/documents/preview?id=${id}" style="width: 100%; height: 620px; border: none; border-radius: 8px;">
+              <div class="p-4 text-center">
+                <p class="text-muted">Direct preview is not supported by your browser viewer.</p>
+                <a href="/documents/download?id=${id}" class="btn btn-primary btn-sm rounded-pill px-3"><i class="fa-solid fa-download me-1"></i> Download File</a>
+              </div>
+            </iframe>
+          </object>
         </div>
       `;
     } else if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
@@ -997,19 +1010,28 @@ function openDocPreviewModal(id, filename, title) {
 }
 
 function triggerVerifyDoc(id, title) {
-  document.getElementById('verifyDocId').value = id;
+  const el = document.getElementById('verifyDocId');
+  if (el) el.value = id;
+  const elAlias = document.getElementById('verifyDocId_alias');
+  if (elAlias) elAlias.value = id;
   document.getElementById('verifyDocTitle').textContent = title;
   bootstrap.Modal.getOrCreateInstance(document.getElementById('verifyModal')).show();
 }
 
 function triggerRejectDoc(id, title) {
-  document.getElementById('rejectDocId').value = id;
+  const el = document.getElementById('rejectDocId');
+  if (el) el.value = id;
+  const elAlias = document.getElementById('rejectDocId_alias');
+  if (elAlias) elAlias.value = id;
   document.getElementById('rejectDocTitle').textContent = title;
   bootstrap.Modal.getOrCreateInstance(document.getElementById('rejectModal')).show();
 }
 
 function triggerDeleteDoc(id, title) {
-  document.getElementById('deleteDocId').value = id;
+  const el = document.getElementById('deleteDocId');
+  if (el) el.value = id;
+  const elAlias = document.getElementById('deleteDocId_alias');
+  if (elAlias) elAlias.value = id;
   document.getElementById('deleteDocTitle').textContent = title;
   bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteDocModal')).show();
 }

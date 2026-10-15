@@ -67,7 +67,13 @@ class App
     {
         $upload = self::basePath('storage' . DIRECTORY_SEPARATOR . 'documents');
         if (!is_dir($upload)) {
-            mkdir($upload, 0755, true);
+            @mkdir($upload, 0777, true);
+            @chmod($upload, 0777);
+        }
+        $pubUpload = self::publicPath('uploads' . DIRECTORY_SEPARATOR . 'documents');
+        if (!is_dir($pubUpload)) {
+            @mkdir($pubUpload, 0777, true);
+            @chmod($pubUpload, 0777);
         }
         return $path ? $upload . DIRECTORY_SEPARATOR . ltrim($path, '/\\') : $upload;
     }

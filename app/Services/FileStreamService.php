@@ -36,8 +36,19 @@ class FileStreamService
 
         $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 
+        // Detect if a file renamed as .pdf is actually a plain text dummy / appointment slip
+        $isTextDummyPdf = false;
+        if ($ext === 'pdf' && $fileSize < 600) {
+            $sample = (string)@file_get_contents($filePath, false, null, 0, 600);
+            if (!str_contains($sample, 'obj') && !str_contains($sample, 'xref') && !str_contains($sample, 'trailer')) {
+                $isTextDummyPdf = true;
+            }
+        }
+
         // Accurate MIME detection by magic bytes first, then extension
-        if (str_starts_with($magicBytes, '%PDF')) {
+        if ($isTextDummyPdf && !$forceDownload) {
+            $mime = 'text/plain; charset=utf-8';
+        } elseif (str_starts_with($magicBytes, '%PDF')) {
             $mime = 'application/pdf';
         } elseif (str_starts_with($magicBytes, "\xFF\xD8\xFF")) {
             $mime = 'image/jpeg';
@@ -49,7 +60,7 @@ class FileStreamService
             $mime = 'image/webp';
         } elseif ($ext === 'pdf' && $fileSize < 300 && !str_starts_with($magicBytes, '%PDF')) {
             // A non-PDF file renamed as .pdf (e.g. plain text placeholder)
-            $mime = 'text/plain';
+            $mime = 'text/plain; charset=utf-8';
         } else {
             $extMap = [
                 'pdf'  => 'application/pdf',
@@ -58,8 +69,8 @@ class FileStreamService
                 'jpeg' => 'image/jpeg',
                 'webp' => 'image/webp',
                 'gif'  => 'image/gif',
-                'txt'  => 'text/plain',
-                'csv'  => 'text/csv',
+                'txt'  => 'text/plain; charset=utf-8',
+                'csv'  => 'text/csv; charset=utf-8',
                 'doc'  => 'application/msword',
                 'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                 'xls'  => 'application/vnd.ms-excel',
@@ -102,6 +113,7 @@ class FileStreamService
         header('Cache-Control: private, max-age=3600, must-revalidate');
         header('Pragma: public');
         header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: SAMEORIGIN');
 
         $stream = @fopen($filePath, 'rb');
         if ($stream) {

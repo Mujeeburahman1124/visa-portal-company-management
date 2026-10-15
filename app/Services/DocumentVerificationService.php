@@ -377,6 +377,17 @@ class DocumentVerificationService
             return ['success' => false, 'message' => 'Failed to save uploaded file to storage.'];
         }
 
+        $publicDir = App::publicPath('uploads/documents');
+        if (!is_dir($publicDir)) {
+            @mkdir($publicDir, 0777, true);
+            @chmod($publicDir, 0777);
+        }
+        @copy($targetPath, $publicDir . DIRECTORY_SEPARATOR . $safeFileName);
+        $rootUploads = dirname(__DIR__, 2) . '/uploads/documents';
+        if (is_dir($rootUploads)) {
+            @copy($targetPath, $rootUploads . DIRECTORY_SEPARATOR . $safeFileName);
+        }
+
         $pdo->beginTransaction();
         try {
             // Archive current version to document_versions

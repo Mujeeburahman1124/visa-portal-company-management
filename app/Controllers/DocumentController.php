@@ -930,7 +930,29 @@ class DocumentController
         $targetPath = $uploadDir . DIRECTORY_SEPARATOR . $safeFileName;
 
         if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
-            redirect($_SERVER['HTTP_REFERER'] ?? '/documents', 'Failed to save uploaded file to storage.', 'danger');
+            $altUpload = App::publicPath('uploads/documents');
+            if (!is_dir($altUpload)) {
+                @mkdir($altUpload, 0777, true);
+                @chmod($altUpload, 0777);
+            }
+            $targetPath = $altUpload . DIRECTORY_SEPARATOR . $safeFileName;
+            if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+                redirect($_SERVER['HTTP_REFERER'] ?? '/documents', 'Failed to save uploaded file to storage.', 'danger');
+            }
+        }
+
+        // Mirror uploaded file to both storage and public directories
+        $publicCopy = App::publicPath('uploads/documents/' . $safeFileName);
+        $storageCopy = App::uploadPath($safeFileName);
+        if ($targetPath !== $publicCopy && !file_exists($publicCopy)) {
+            @copy($targetPath, $publicCopy);
+        }
+        if ($targetPath !== $storageCopy && !file_exists($storageCopy)) {
+            @copy($targetPath, $storageCopy);
+        }
+        $rootUploads = dirname(__DIR__, 2) . '/uploads/documents/' . $safeFileName;
+        if (is_dir(dirname($rootUploads)) && !file_exists($rootUploads)) {
+            @copy($targetPath, $rootUploads);
         }
 
         // Check if existing document record exists
@@ -988,7 +1010,7 @@ class DocumentController
         AuthMiddleware::handle();
         $currentUser = auth_user();
 
-        $docId = (int)($_POST['document_id'] ?? 0);
+        $docId = (int)($_POST['document_id'] ?? $_POST['id'] ?? $_GET['document_id'] ?? $_GET['id'] ?? 0);
         $notes = trim($_POST['notes'] ?? '');
 
         if ($docId <= 0) {
@@ -1009,7 +1031,7 @@ class DocumentController
         AuthMiddleware::handle();
         $currentUser = auth_user();
 
-        $docId = (int)($_POST['document_id'] ?? 0);
+        $docId = (int)($_POST['document_id'] ?? $_POST['id'] ?? $_GET['document_id'] ?? $_GET['id'] ?? 0);
         $reason = trim($_POST['rejection_reason'] ?? '');
         $notes = trim($_POST['notes'] ?? '');
 
@@ -1037,7 +1059,7 @@ class DocumentController
         AuthMiddleware::handle();
         $currentUser = auth_user();
 
-        $docId = (int)($_POST['document_id'] ?? 0);
+        $docId = (int)($_POST['document_id'] ?? $_POST['id'] ?? $_GET['document_id'] ?? $_GET['id'] ?? 0);
         $expiryDate = !empty($_POST['expiry_date']) ? $_POST['expiry_date'] : null;
         $notes = trim($_POST['notes'] ?? '');
 
@@ -1077,7 +1099,7 @@ class DocumentController
         $currentUser = auth_user();
         $pdo = Database::getConnection();
 
-        $docId = (int)($_POST['document_id'] ?? 0);
+        $docId = (int)($_POST['document_id'] ?? $_POST['id'] ?? $_GET['document_id'] ?? $_GET['id'] ?? 0);
         $docTitle = trim($_POST['document_title'] ?? '');
         $docTypeId = (int)($_POST['document_type_id'] ?? 0);
         $expiryDate = !empty($_POST['expiry_date']) ? $_POST['expiry_date'] : null;
@@ -1209,7 +1231,7 @@ class DocumentController
         AuthMiddleware::handle();
         $currentUser = auth_user();
 
-        $docId = (int)($_POST['document_id'] ?? 0);
+        $docId = (int)($_POST['document_id'] ?? $_POST['id'] ?? $_GET['document_id'] ?? $_GET['id'] ?? 0);
         $notes = trim($_POST['notes'] ?? '');
 
         if ($docId <= 0) {
@@ -1239,7 +1261,7 @@ class DocumentController
         AuthMiddleware::handle();
         $currentUser = auth_user();
 
-        $docId = (int)($_POST['document_id'] ?? 0);
+        $docId = (int)($_POST['document_id'] ?? $_POST['id'] ?? $_GET['document_id'] ?? $_GET['id'] ?? 0);
         if ($docId <= 0) {
             $msg = 'Invalid document selected for deletion.';
             if ($this->isJsonRequest()) {
@@ -1390,6 +1412,68 @@ class DocumentController
     }
 
     /**
+     * Exhaustive resolver for physical document files on server storage with auto-healing sync.
+     */
+    public static function resolveDocumentFilePath(string $rawPath): ?string
+    {
+        $rawPath = trim($rawPath);
+        if (empty($rawPath)) {
+            return null;
+        }
+
+        $filename = basename($rawPath);
+        $baseDir = dirname(__DIR__, 2);
+        $parentDir = dirname($baseDir);
+
+        $candidates = array_unique(array_filter([
+            (file_exists($rawPath) && is_file($rawPath)) ? $rawPath : null,
+            App::uploadPath($rawPath),
+            App::uploadPath($filename),
+            App::publicPath('uploads/documents/' . $filename),
+            App::publicPath('uploads/documents/' . ltrim($rawPath, '/\\')),
+            $baseDir . '/storage/documents/' . $filename,
+            $baseDir . '/public/uploads/documents/' . $filename,
+            $baseDir . '/uploads/documents/' . $filename,
+            $baseDir . '/app/storage/documents/' . $filename,
+            $baseDir . '/storage/' . $filename,
+            $baseDir . '/' . ltrim($rawPath, '/\\'),
+            $baseDir . '/public/' . ltrim($rawPath, '/\\'),
+            $baseDir . '/public_html/storage/documents/' . $filename,
+            $baseDir . '/public_html/uploads/documents/' . $filename,
+            $baseDir . '/public_html/public/uploads/documents/' . $filename,
+            $parentDir . '/storage/documents/' . $filename,
+            $parentDir . '/public_html/storage/documents/' . $filename,
+            $parentDir . '/public_html/uploads/documents/' . $filename,
+            $parentDir . '/public_html/public/uploads/documents/' . $filename,
+        ]));
+
+        $found = null;
+        foreach ($candidates as $cand) {
+            if ($cand && file_exists($cand) && is_file($cand)) {
+                $found = $cand;
+                break;
+            }
+        }
+
+        // If found, ensure file is synchronized across both storage/documents and public/uploads/documents
+        if ($found) {
+            $storageDir = App::uploadPath();
+            $publicDir = App::publicPath('uploads/documents');
+            $storageTarget = $storageDir . DIRECTORY_SEPARATOR . $filename;
+            $publicTarget = $publicDir . DIRECTORY_SEPARATOR . $filename;
+
+            if (!file_exists($storageTarget)) {
+                @copy($found, $storageTarget);
+            }
+            if (!file_exists($publicTarget)) {
+                @copy($found, $publicTarget);
+            }
+        }
+
+        return $found;
+    }
+
+    /**
      * Preview / Stream Document Securely Inline
      */
     public function preview(): void
@@ -1399,10 +1483,10 @@ class DocumentController
             die('Access Denied. Please log in.');
         }
 
-        $docId = (int)($_GET['id'] ?? 0);
+        $docId = (int)($_GET['id'] ?? $_GET['document_id'] ?? $_POST['id'] ?? $_POST['document_id'] ?? 0);
         $pdo = Database::getConnection();
 
-        $stmt = $pdo->prepare("SELECT d.*, dt.name as doc_name FROM documents d JOIN document_types dt ON d.document_type_id = dt.id WHERE d.id = ?");
+        $stmt = $pdo->prepare("SELECT d.*, dt.name as doc_name FROM documents d LEFT JOIN document_types dt ON d.document_type_id = dt.id WHERE d.id = ?");
         $stmt->execute([$docId]);
         $doc = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -1416,30 +1500,7 @@ class DocumentController
             die('Access Denied. You are not authorized to view this document.');
         }
 
-        $rawPath = trim($doc['file_path'] ?? '');
-        $filename = basename($rawPath);
-        $baseDir = dirname(__DIR__, 2);
-        $candidates = array_unique(array_filter([
-            (file_exists($rawPath) && is_file($rawPath)) ? $rawPath : null,
-            App::uploadPath($rawPath),
-            App::uploadPath($filename),
-            App::publicPath('uploads/documents/' . $filename),
-            $baseDir . '/storage/documents/' . $filename,
-            $baseDir . '/public/uploads/documents/' . $filename,
-            $baseDir . '/uploads/documents/' . $filename,
-            $baseDir . '/app/storage/documents/' . $filename,
-            $baseDir . '/storage/' . $filename,
-            $baseDir . '/' . ltrim($rawPath, '/\\'),
-            $baseDir . '/public/' . ltrim($rawPath, '/\\'),
-        ]));
-
-        $filePath = null;
-        foreach ($candidates as $cand) {
-            if ($cand && file_exists($cand) && is_file($cand)) {
-                $filePath = $cand;
-                break;
-            }
-        }
+        $filePath = self::resolveDocumentFilePath($doc['file_path'] ?? '');
 
         if (!$filePath) {
             $reuploadUrl = !empty($doc['application_id']) ? '/applications/show?id=' . (int)$doc['application_id'] : '/documents';
@@ -1465,10 +1526,10 @@ class DocumentController
             die('Access Denied. Please log in.');
         }
 
-        $docId = (int)($_GET['id'] ?? 0);
+        $docId = (int)($_GET['id'] ?? $_GET['document_id'] ?? $_POST['id'] ?? $_POST['document_id'] ?? 0);
         $pdo = Database::getConnection();
 
-        $stmt = $pdo->prepare("SELECT d.* FROM documents d WHERE d.id = ?");
+        $stmt = $pdo->prepare("SELECT d.*, dt.name as doc_name FROM documents d LEFT JOIN document_types dt ON d.document_type_id = dt.id WHERE d.id = ?");
         $stmt->execute([$docId]);
         $doc = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -1482,30 +1543,7 @@ class DocumentController
             die('Access Denied. You are not authorized to download this document.');
         }
 
-        $rawPath = trim($doc['file_path'] ?? '');
-        $filename = basename($rawPath);
-        $baseDir = dirname(__DIR__, 2);
-        $candidates = array_unique(array_filter([
-            (file_exists($rawPath) && is_file($rawPath)) ? $rawPath : null,
-            App::uploadPath($rawPath),
-            App::uploadPath($filename),
-            App::publicPath('uploads/documents/' . $filename),
-            $baseDir . '/storage/documents/' . $filename,
-            $baseDir . '/public/uploads/documents/' . $filename,
-            $baseDir . '/uploads/documents/' . $filename,
-            $baseDir . '/app/storage/documents/' . $filename,
-            $baseDir . '/storage/' . $filename,
-            $baseDir . '/' . ltrim($rawPath, '/\\'),
-            $baseDir . '/public/' . ltrim($rawPath, '/\\'),
-        ]));
-
-        $filePath = null;
-        foreach ($candidates as $cand) {
-            if ($cand && file_exists($cand) && is_file($cand)) {
-                $filePath = $cand;
-                break;
-            }
-        }
+        $filePath = self::resolveDocumentFilePath($doc['file_path'] ?? '');
 
         if (!$filePath) {
             $reuploadUrl = !empty($doc['application_id']) ? '/applications/show?id=' . (int)$doc['application_id'] : '/documents';
@@ -1591,7 +1629,7 @@ class DocumentController
             exit;
         }
 
-        $docId = (int)($_GET['id'] ?? 0);
+        $docId = (int)($_GET['id'] ?? $_GET['document_id'] ?? 0);
         $pdo = Database::getConnection();
 
         $stmt = $pdo->prepare("SELECT d.* FROM documents d WHERE d.id = ?");
