@@ -608,6 +608,28 @@ class StaffController
             redirect('/profile', 'Full Name cannot be empty.', 'danger');
         }
 
+        $isSuperAdmin = is_super_admin($currentUser);
+        $newEmail = (string)($currentUser['email'] ?? '');
+        $emailChanged = false;
+
+        if ($isSuperAdmin && isset($_POST['email'])) {
+            $inputEmail = strtolower(trim($_POST['email']));
+            if (empty($inputEmail) || !filter_var($inputEmail, FILTER_VALIDATE_EMAIL)) {
+                redirect('/profile', 'Please provide a valid email address.', 'danger');
+            }
+
+            if ($inputEmail !== strtolower((string)$currentUser['email'])) {
+                // Ensure unique across users
+                $checkStmt = $pdo->prepare("SELECT id FROM users WHERE LOWER(email) = ? AND id != ? LIMIT 1");
+                $checkStmt->execute([$inputEmail, (int)$currentUser['id']]);
+                if ($checkStmt->fetch()) {
+                    redirect('/profile', "The email address '{$inputEmail}' is already registered with another user account.", 'danger');
+                }
+                $newEmail = $inputEmail;
+                $emailChanged = true;
+            }
+        }
+
         // Safely add columns if they don't exist yet (migration guard)
         try {
             $driver = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
@@ -623,18 +645,25 @@ class StaffController
             }
         } catch (\Throwable $ignored) {}
 
-        $stmt = $pdo->prepare("UPDATE users SET name = ?, phone = ?, whatsapp_number = ?, designation = ?, department = ?, address = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
-        $stmt->execute([$name, $phone, $whatsappNumber, $designation, $department, $address, (int)$currentUser['id']]);
+        $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, phone = ?, whatsapp_number = ?, designation = ?, department = ?, address = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+        $stmt->execute([$name, $newEmail, $phone, $whatsappNumber, $designation, $department, $address, (int)$currentUser['id']]);
 
         // Refresh session
         $_SESSION['user']['name'] = $name;
+        $_SESSION['user']['email'] = $newEmail;
         $_SESSION['user']['phone'] = $phone;
         $_SESSION['user']['designation'] = $designation;
         $_SESSION['user']['department'] = $department;
 
-        AuditService::log('UPDATE_PROFILE', 'Staff', (int)$currentUser['id'], "Staff {$name} updated their profile details", null, (int)$currentUser['id']);
+        $logMsg = $emailChanged 
+            ? "Super Admin {$name} updated profile details and updated login email to {$newEmail}"
+            : "Staff {$name} updated their profile details";
+        AuditService::log('UPDATE_PROFILE', 'Staff', (int)$currentUser['id'], $logMsg, null, (int)$currentUser['id']);
 
-        redirect('/profile', 'Your profile details have been successfully updated.', 'success');
+        $successMsg = $emailChanged 
+            ? 'Your profile details and login email have been successfully updated.'
+            : 'Your profile details have been successfully updated.';
+        redirect('/profile', $successMsg, 'success');
     }
 
     public function uploadPhoto(): void

@@ -372,14 +372,23 @@ class AuthController
         $stmt->execute([(int)$user['id']]);
         $userRecord = $stmt->fetch();
 
-        if (!$userRecord || !password_verify($currentPassword, $userRecord['password_hash'])) {
-            redirect($_SERVER['HTTP_REFERER'] ?? '/dashboard', 'Current password was incorrect.', 'danger');
+        $isSuperAdmin = is_super_admin($user);
+
+        // For regular users, current password is strictly required and verified.
+        // For Super Admin, if current_password is provided, verify it; if left empty, Super Admin direct credential reset is permitted.
+        if (!$isSuperAdmin || !empty($currentPassword)) {
+            if (!$userRecord || !password_verify($currentPassword, $userRecord['password_hash'])) {
+                redirect($_SERVER['HTTP_REFERER'] ?? '/dashboard', 'Current password was incorrect.', 'danger');
+            }
         }
 
         $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
         $pdo->prepare("UPDATE users SET password_hash = ? WHERE id = ?")->execute([$newHash, (int)$user['id']]);
 
-        AuditService::log('PASSWORD_CHANGED', 'Auth', (int)$user['id'], "Staff user {$user['name']} changed password", null, (int)$user['id']);
+        $logMsg = $isSuperAdmin && empty($currentPassword)
+            ? "Super Admin {$user['name']} performed direct administrative password reset"
+            : "Staff user {$user['name']} changed password";
+        AuditService::log('PASSWORD_CHANGED', 'Auth', (int)$user['id'], $logMsg, null, (int)$user['id']);
 
         redirect($_SERVER['HTTP_REFERER'] ?? '/dashboard', 'Password changed successfully.', 'success');
     }

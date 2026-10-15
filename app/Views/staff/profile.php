@@ -6,8 +6,9 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
 
 $flash = get_flash();
 $user = $staffUser ?? auth_user();
-$avatarUrl = !empty($user['profile_photo']) ? '/uploads/avatars/' . e($user['profile_photo']) : '';
+$avatarUrl = user_avatar_url($user);
 $initials = strtoupper(substr($user['name'] ?? 'U', 0, 2));
+$isSuperAdmin = is_super_admin($user);
 ?>
 
 <div class="content-body">
@@ -45,10 +46,15 @@ $initials = strtoupper(substr($user['name'] ?? 'U', 0, 2));
           <form action="/profile/upload-photo" method="POST" enctype="multipart/form-data" id="photoUploadForm" class="mb-3">
             <?= csrf_field() ?>
             <div class="mx-auto mb-2 position-relative" style="width: 96px; height: 96px;">
-              <?php if ($avatarUrl): ?>
-                <img id="profileAvatarImg" src="<?= $avatarUrl ?>?v=<?= time() ?>" alt="Profile Photo"
+              <?php if (!empty($avatarUrl)): ?>
+                <img id="profileAvatarImg" src="<?= e($avatarUrl) ?>?v=<?= time() ?>" alt="Profile Photo"
                      class="rounded-circle border border-3 border-primary shadow"
-                     style="width: 96px; height: 96px; object-fit: cover;">
+                     style="width: 96px; height: 96px; object-fit: cover;"
+                     onerror="this.style.display='none'; var initDiv = document.getElementById('profileAvatarInitials'); if(initDiv){ initDiv.classList.remove('d-none'); initDiv.style.display='flex'; }">
+                <div id="profileAvatarInitials" class="rounded-circle bg-primary text-white d-none align-items-center justify-content-center fw-bold shadow" 
+                     style="width: 96px; height: 96px; font-size: 2rem;">
+                  <?= $initials ?>
+                </div>
               <?php else: ?>
                 <div id="profileAvatarInitials" class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow" 
                      style="width: 96px; height: 96px; font-size: 2rem;">
@@ -96,12 +102,16 @@ $initials = strtoupper(substr($user['name'] ?? 'U', 0, 2));
         </div>
 
         <!-- Security Notice -->
-        <div class="card border-0 shadow-sm rounded-3 p-3 bg-warning bg-opacity-10">
+        <div class="card border-0 shadow-sm rounded-3 p-3 <?= $isSuperAdmin ? 'bg-primary bg-opacity-10 border-primary border-opacity-25' : 'bg-warning bg-opacity-10' ?>">
           <div class="d-flex align-items-start gap-2">
-            <i class="fa-solid fa-lock text-warning mt-1"></i>
+            <i class="fa-solid <?= $isSuperAdmin ? 'fa-shield-halved text-primary' : 'fa-lock text-warning' ?> mt-1"></i>
             <div>
-              <div class="fw-semibold small text-dark">Security Notice</div>
-              <div class="text-muted" style="font-size:0.72rem;">Role, branch, and company cannot be changed here. Contact your Super Admin for account changes.</div>
+              <div class="fw-semibold small text-dark"><?= $isSuperAdmin ? 'Super Administrator Privileges' : 'Security Notice' ?></div>
+              <div class="text-muted" style="font-size:0.72rem;">
+                <?= $isSuperAdmin 
+                  ? 'As Super Admin, you have full authority to modify your login email and directly update your security credentials.' 
+                  : 'Role, branch, and company cannot be changed here. Contact your Super Admin for account changes.' ?>
+              </div>
             </div>
           </div>
         </div>
@@ -142,9 +152,19 @@ $initials = strtoupper(substr($user['name'] ?? 'U', 0, 2));
                   </div>
 
                   <div class="col-12 col-md-6">
-                    <label class="form-label small fw-semibold text-dark">Work Email</label>
-                    <input type="email" class="form-control bg-light" value="<?= e($user['email'] ?? '') ?>" readonly title="Email cannot be changed directly for security reasons">
-                    <div class="form-text" style="font-size: 0.72rem;">To modify your login email, contact your Super Admin.</div>
+                    <label class="form-label small fw-semibold text-dark">Work Email <?= $isSuperAdmin ? '<span class="text-danger">*</span>' : '' ?></label>
+                    <?php if ($isSuperAdmin): ?>
+                      <div class="input-group">
+                        <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-envelope"></i></span>
+                        <input type="email" name="email" class="form-control" value="<?= e($user['email'] ?? '') ?>" required placeholder="admin@domain.com">
+                      </div>
+                      <div class="form-text text-success" style="font-size: 0.72rem;">
+                        <i class="fa-solid fa-shield-check me-1"></i> As Super Admin, you can edit and update your login email address directly.
+                      </div>
+                    <?php else: ?>
+                      <input type="email" class="form-control bg-light" value="<?= e($user['email'] ?? '') ?>" readonly title="Email cannot be changed directly for security reasons">
+                      <div class="form-text" style="font-size: 0.72rem;">To modify your login email, contact your Super Admin.</div>
+                    <?php endif; ?>
                   </div>
 
                   <div class="col-12 col-md-6">
@@ -197,11 +217,21 @@ $initials = strtoupper(substr($user['name'] ?? 'U', 0, 2));
                 
                 <div class="row g-3">
                   <div class="col-12">
-                    <label class="form-label small fw-semibold text-dark">Current Password <span class="text-danger">*</span></label>
+                    <label class="form-label small fw-semibold text-dark">
+                      Current Password <?= $isSuperAdmin ? '<span class="text-muted fw-normal">(Optional for Super Admin)</span>' : '<span class="text-danger">*</span>' ?>
+                    </label>
                     <div class="input-group">
-                      <input type="password" name="current_password" id="currentPasswordInput" class="form-control" required placeholder="Enter your existing password" autocomplete="current-password">
+                      <input type="password" name="current_password" id="currentPasswordInput" class="form-control" 
+                             <?= $isSuperAdmin ? '' : 'required' ?> 
+                             placeholder="<?= $isSuperAdmin ? 'Leave blank to reset directly without current password' : 'Enter your existing password' ?>" 
+                             autocomplete="current-password">
                       <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVis('currentPasswordInput',this)"><i class="fa-solid fa-eye"></i></button>
                     </div>
+                    <?php if ($isSuperAdmin): ?>
+                      <div class="form-text text-success" style="font-size:0.72rem;">
+                        <i class="fa-solid fa-unlock-keyhole me-1"></i> As Super Admin, you can reset your password directly without verifying the existing password.
+                      </div>
+                    <?php endif; ?>
                   </div>
 
                   <div class="col-12 col-md-6">
@@ -314,6 +344,17 @@ document.getElementById('cancelPhotoBtn').addEventListener('click', function() {
   document.getElementById('profilePhotoInput').value = '';
   document.getElementById('photoUploadActions').classList.add('d-none');
 });
+
+// Auto-switch to targeted tab if hash provided (e.g. #password-pane)
+if (window.location.hash) {
+  var triggerEl = document.querySelector('button[data-bs-target="' + window.location.hash + '"]');
+  if (triggerEl) {
+    try {
+      var tab = new bootstrap.Tab(triggerEl);
+      tab.show();
+    } catch (e) {}
+  }
+}
 </script>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>
