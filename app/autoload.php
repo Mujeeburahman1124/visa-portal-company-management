@@ -500,3 +500,40 @@ function json_response(array $data, int $statusCode = 200): void {
     }
     exit;
 }
+
+function visa_status_badge(?string $status): string {
+    $norm = strtolower(trim((string)$status));
+    return match($norm) {
+        'active' => '<span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold"><i class="fa-solid fa-circle-check me-1"></i>Active</span>',
+        'used' => '<span class="badge bg-info-subtle text-info-emphasis border border-info-subtle fw-semibold"><i class="fa-solid fa-plane-arrival me-1"></i>Used</span>',
+        'inactive' => '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle fw-semibold"><i class="fa-solid fa-circle-pause me-1"></i>Inactive</span>',
+        'before entry cancel', 'cancelled', 'canceled' => '<span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-semibold"><i class="fa-solid fa-ban me-1"></i>Before Entry Cancel</span>',
+        default => '<span class="badge bg-light text-dark border fw-semibold">' . htmlspecialchars(ucwords($status ?: 'Active')) . '</span>',
+    };
+}
+
+function visa_expiry_badge(?string $expiryDate): string {
+    if (empty($expiryDate) || $expiryDate === '—') {
+        return '<span class="badge bg-light text-muted border">No Expiry Date</span>';
+    }
+    $today = strtotime(date('Y-m-d'));
+    $exp = strtotime($expiryDate);
+    if (!$exp) return '<span class="badge bg-light text-muted border">No Expiry Date</span>';
+    $diff = (int)round(($exp - $today) / 86400);
+
+    if ($diff < 0) {
+        $abs = abs($diff);
+        return '<span class="badge bg-danger text-white fw-bold shadow-sm"><i class="fa-solid fa-triangle-exclamation me-1"></i>EXPIRED (' . $abs . 'd ago)</span>';
+    } elseif ($diff === 0) {
+        return '<span class="badge bg-danger text-white fw-bold shadow-sm"><i class="fa-solid fa-clock me-1"></i>EXPIRES TODAY</span>';
+    } elseif ($diff <= 5) {
+        return '<span class="badge bg-danger-subtle text-danger border border-danger fw-bold"><i class="fa-solid fa-bell me-1"></i>' . $diff . ' Days Left</span>';
+    } elseif ($diff <= 15) {
+        return '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning fw-bold"><i class="fa-solid fa-clock me-1"></i>' . $diff . ' Days Left</span>';
+    } elseif ($diff <= 30) {
+        return '<span class="badge bg-info-subtle text-info-emphasis border border-info fw-semibold"><i class="fa-regular fa-calendar-check me-1"></i>' . $diff . ' Days Left</span>';
+    } else {
+        return '<span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fa-regular fa-calendar me-1"></i>Valid (' . $diff . 'd left)</span>';
+    }
+}
+

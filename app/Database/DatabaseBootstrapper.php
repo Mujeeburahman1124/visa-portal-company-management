@@ -1805,8 +1805,11 @@ class DatabaseBootstrapper
         try { $pdo->exec("ALTER TABLE applications ADD COLUMN service_fee DECIMAL(10,2) DEFAULT 0.00"); } catch (\Throwable $e) {}
         try { $pdo->exec("ALTER TABLE applications ADD COLUMN notes TEXT NULL"); } catch (\Throwable $e) {}
         try { $pdo->exec("ALTER TABLE applications ADD COLUMN discount_amount DECIMAL(10,2) DEFAULT 0.00"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE applications ADD COLUMN visa_status VARCHAR(50) DEFAULT 'active'"); } catch (\Throwable $e) {}
+        try { $pdo->exec("ALTER TABLE applications ADD COLUMN entry_before_date DATE NULL"); } catch (\Throwable $e) {}
 
         // Safe column migrations for visa_approvals
+        try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN visa_status VARCHAR(50) DEFAULT 'active'"); } catch (\Throwable $e) {}
         try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN maximum_stay VARCHAR(100) DEFAULT '30 Days'"); } catch (\Throwable $e) {}
         try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN max_stay VARCHAR(100) DEFAULT '30 Days'"); } catch (\Throwable $e) {}
         try { $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN approved_visa_file VARCHAR(255) NULL"); } catch (\Throwable $e) {}
@@ -2166,6 +2169,7 @@ class DatabaseBootstrapper
             ['document.rejected', 'Documents', 'Document Rejected — Replacement Required', 'Triggered when verification officer rejects uploaded file.', 1, 1, 1, 1, 1],
             ['document.reminder_missing', 'Documents', 'Missing Mandatory Document Reminder', 'Triggered to remind applicant about missing mandatory files.', 1, 1, 1, 1, 1],
             ['document.expiry_reminder', 'Documents', 'Document Expiry Warning', 'Triggered when passport/ID in system is approaching expiry.', 1, 1, 1, 1, 1],
+            ['visa.expiry_alert', 'Visa Lifecycle', 'Visa Expiry Countdown Alert', 'Automated daily countdown follow-up (20, 15, 10, 5, 4, 3, 2, 1, 0 days or expired).', 1, 1, 1, 1, 1],
 
             // System / Security events
             ['system.announcement', 'System', 'Important System Announcement', 'Broadcast operational notices to staff or customers.', 1, 0, 1, 1, 1],
@@ -2369,6 +2373,26 @@ class DatabaseBootstrapper
                 'placement_confirmed',
                 'en_US',
                 'applicantName, applicationNumber, position, location, actionUrl, companyName'
+            ],
+            [
+                'visa.expiry_alert',
+                'Email',
+                'visa_expiry_alert_email',
+                'URGENT: Visa Expiry Follow-up — {{applicationNumber}} ({{daysRemaining}} Days Left)',
+                '<h3 style="color: #d97706;">Visa Expiry Follow-up Notice</h3><p>Dear {{applicantName}},</p><p>This is an automated operational follow-up regarding your visa for <strong>{{countryName}}</strong>.</p><div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; margin: 15px 0;"><p style="margin: 0 0 8px 0;"><strong>Visa Number:</strong> {{visaNumber}}</p><p style="margin: 0 0 8px 0;"><strong>Expiry Date:</strong> {{expiryDate}}</p><p style="margin: 0 0 8px 0;"><strong>Days Remaining:</strong> <span style="color: #dc2626; font-weight: bold; font-size: 1.1em;">{{daysRemaining}} Days</span></p><p style="margin: 0;"><strong>Visa Status:</strong> {{visaStatus}}</p></div><p>Please ensure you arrange visa renewal, exit, or status extension prior to this date to prevent overstay penalties or legal complications.</p><p style="text-align: center; margin: 25px 0;"><a href="{{actionUrl}}" style="background: #f59e0b; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">View Visa Details &amp; Contact Consultant</a></p>',
+                null,
+                'en_US',
+                'applicantName, applicationNumber, countryName, visaNumber, expiryDate, daysRemaining, visaStatus, actionUrl, companyName'
+            ],
+            [
+                'visa.expiry_alert',
+                'WhatsApp',
+                'visa_expiry_alert_wa',
+                null,
+                "⚠️ Visa Expiry Reminder: Hello {{applicantName}},\n\nYour visa for {{countryName}} (Visa #{{visaNumber}}) will expire on {{expiryDate}} ({{daysRemaining}} days remaining).\n\nPlease arrange renewal or extension to avoid penalties.\n\nPortal: {{actionUrl}}\n\n{{companyName}}",
+                'visa_expiry_reminder',
+                'en_US',
+                'applicantName, countryName, visaNumber, expiryDate, daysRemaining, actionUrl, companyName'
             ]
         ];
 

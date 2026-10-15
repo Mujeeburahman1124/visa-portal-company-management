@@ -144,6 +144,64 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
     </div>
   </div>
 
+  <?php 
+    $vStatus = strtolower(trim($visaApproval['visa_status'] ?? ($app['visa_status'] ?? 'active')));
+    $vExpiry = $visaApproval['expiry_date'] ?? ($app['visa_expiry_date'] ?? null);
+    $vNumber = $visaApproval['visa_number'] ?? ($app['visa_number'] ?? null);
+    $vIssue = $visaApproval['issue_date'] ?? ($app['visa_issue_date'] ?? null);
+    $vEntryBefore = $visaApproval['entry_before_date'] ?? ($app['entry_before_date'] ?? null);
+    $hasVisaRecord = ($isApproved || !empty($vNumber) || !empty($vExpiry) || !empty($visaApproval));
+  ?>
+
+  <?php if ($hasVisaRecord): ?>
+    <div class="card border-0 shadow-sm mb-4 rounded-4 overflow-hidden border-start border-4 border-success">
+      <div class="card-body p-3.5 bg-white">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <div class="d-flex align-items-center gap-3">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.12); color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+              <i class="fa-solid fa-award"></i>
+            </div>
+            <div>
+              <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                <span class="fw-bold text-dark fs-6">Official Visa Grant Status</span>
+                <?= visa_status_badge($vStatus) ?>
+                <?= visa_expiry_badge($vExpiry) ?>
+              </div>
+              <div class="text-muted small d-flex align-items-center gap-3 flex-wrap" style="font-size: 0.76rem;">
+                <span>Visa #: <strong class="font-monospace text-dark"><?= e($vNumber ?: 'Issued') ?></strong></span>
+                <span>&bull;</span>
+                <span>Issue Date: <strong><?= $vIssue ? format_date($vIssue) : '—' ?></strong></span>
+                <span>&bull;</span>
+                <span>Expiry Date: <strong class="text-danger"><?= $vExpiry ? format_date($vExpiry) : '—' ?></strong></span>
+                <?php if (!empty($vEntryBefore)): ?>
+                  <span>&bull;</span>
+                  <span>Entry Before: <strong><?= format_date($vEntryBefore) ?></strong></span>
+                <?php endif; ?>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <?php 
+              $visaDocFile = $visaApproval['approved_visa_file'] ?? ($visaApproval['visa_file'] ?? ($app['approved_visa_file'] ?? ($app['visa_file'] ?? null)));
+            ?>
+            <?php if (!empty($visaDocFile)): ?>
+              <a href="/storage/uploads/<?= e($visaDocFile) ?>" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold">
+                <i class="fa-solid fa-eye me-1"></i> View Visa
+              </a>
+              <a href="/storage/uploads/<?= e($visaDocFile) ?>" download class="btn btn-sm btn-success rounded-pill px-3 fw-semibold">
+                <i class="fa-solid fa-download me-1"></i> Download
+              </a>
+            <?php endif; ?>
+            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold shadow-xs" data-bs-toggle="modal" data-bs-target="#editVisaStatusModal">
+              <i class="fa-solid fa-pen-to-square me-1"></i> Edit Visa Status &amp; Expiry
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  <?php endif; ?>
+
   <!-- 2. PRIMARY OPERATIONAL BANNERS: Current Stage & Next Action (Bento Cards) -->
   <div class="row g-3 mb-4">
     <!-- Current Stage Bento Banner -->
@@ -611,6 +669,100 @@ elseif ($app['priority'] === 'High') $priorityBadgeClass = 'bg-primary text-whit
 
         <!-- TAB 3: Visa Details -->
         <div class="tab-pane fade" id="visa-pane" role="tabpanel">
+          <!-- Official Visa Status & Expiry Management Card -->
+          <div class="master-data-card mb-4 border-top border-3 border-primary">
+            <div class="master-data-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(225, 29, 72, 0.1); color: var(--bento-primary); display: flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+                  <i class="fa-solid fa-stamp"></i>
+                </div>
+                <div>
+                  <h6 class="fw-bold mb-0 text-dark">Official Visa Grant, Expiry &amp; Status</h6>
+                  <span class="small text-muted" style="font-size: 0.72rem;">Live monitoring of visa validity, entry deadline, and follow-up alerts</span>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold shadow-xs" data-bs-toggle="modal" data-bs-target="#editVisaStatusModal">
+                  <i class="fa-solid fa-pen-to-square me-1"></i> Edit Visa Status &amp; Expiry
+                </button>
+              </div>
+            </div>
+
+            <div class="row g-3 p-3">
+              <div class="col-6 col-md-3">
+                <div class="master-data-item p-2.5 bg-light rounded-3 border">
+                  <span class="master-data-label">Visa Status</span>
+                  <div class="mt-1"><?= visa_status_badge($vStatus) ?></div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="master-data-item p-2.5 bg-light rounded-3 border">
+                  <span class="master-data-label">Visa Expiry Date</span>
+                  <div class="mt-1"><?= visa_expiry_badge($vExpiry) ?></div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="master-data-item p-2.5 bg-light rounded-3 border">
+                  <span class="master-data-label">Visa Number</span>
+                  <span class="master-data-val font-monospace fw-bold text-dark fs-6 mt-1"><?= e($vNumber ?: 'Pending') ?></span>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="master-data-item p-2.5 bg-light rounded-3 border">
+                  <span class="master-data-label">Issue Date</span>
+                  <span class="master-data-val fw-semibold text-dark mt-1"><?= $vIssue ? format_date($vIssue) : '—' ?></span>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="master-data-item p-2.5 bg-light rounded-3 border">
+                  <span class="master-data-label">Entry-Before Date</span>
+                  <span class="master-data-val fw-semibold text-dark mt-1"><?= $vEntryBefore ? format_date($vEntryBefore) : '—' ?></span>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="master-data-item p-2.5 bg-light rounded-3 border">
+                  <span class="master-data-label">Maximum Stay</span>
+                  <span class="master-data-val fw-semibold text-dark mt-1"><?= e($visaApproval['maximum_stay'] ?? ($visaApproval['max_stay'] ?? ($app['duration'] ?? '30 Days'))) ?></span>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="master-data-item p-2.5 bg-light rounded-3 border">
+                  <span class="master-data-label">Visa Validity</span>
+                  <span class="master-data-val fw-semibold text-dark mt-1"><?= e($visaApproval['validity'] ?? ($app['service_validity'] ?? '60 Days')) ?></span>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="master-data-item p-2.5 bg-light rounded-3 border">
+                  <span class="master-data-label">Approved By</span>
+                  <span class="master-data-val fw-semibold text-dark mt-1"><?= e($visaApproval['approved_by_name'] ?? ($app['staff_name'] ?? 'Operations')) ?></span>
+                </div>
+              </div>
+            </div>
+
+            <?php 
+              $vDocFile = $visaApproval['approved_visa_file'] ?? ($visaApproval['visa_file'] ?? ($app['approved_visa_file'] ?? ($app['visa_file'] ?? null)));
+            ?>
+            <?php if (!empty($vDocFile)): ?>
+              <div class="p-3 mx-3 mb-3 bg-light rounded-3 border d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="fa-solid fa-file-pdf text-danger fs-3"></i>
+                  <div>
+                    <div class="fw-bold text-dark">Official Visa Document Attached</div>
+                    <div class="small text-muted">Customer can view, download and print from portal.</div>
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <a href="/storage/uploads/<?= e($vDocFile) ?>" target="_blank" class="btn btn-sm btn-outline-primary fw-semibold rounded-pill px-3">
+                    <i class="fa-solid fa-eye me-1"></i> View Visa
+                  </a>
+                  <a href="/storage/uploads/<?= e($vDocFile) ?>" download class="btn btn-sm btn-success fw-semibold rounded-pill px-3">
+                    <i class="fa-solid fa-download me-1"></i> Download Visa
+                  </a>
+                </div>
+              </div>
+            <?php endif; ?>
+          </div>
+
           <div class="row g-4">
             <!-- Visa Specification Bento Card -->
             <div class="col-12 col-lg-6">
@@ -2695,6 +2847,87 @@ function openAppDocDeleteModal(docId, docName) {
           <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn btn-primary fw-semibold">
             <i class="fa-solid fa-bolt me-1"></i> Generate &amp; Dispatch Link
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EDIT VISA STATUS & EXPIRY -->
+<div class="modal fade" id="editVisaStatusModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-primary text-white">
+        <h6 class="modal-title fw-bold">
+          <i class="fa-solid fa-stamp me-2"></i> Edit Visa Status &amp; Expiry
+        </h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/applications/update-visa-status" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
+        <input type="hidden" name="redirect_to" value="/applications/show?id=<?= $app['id'] ?>">
+
+        <div class="modal-body p-4">
+          <div class="p-3 bg-light rounded border mb-3">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <span class="small text-muted">Application:</span>
+              <span class="badge bg-primary-subtle text-primary font-monospace fw-bold"><?= e($app['application_number']) ?></span>
+            </div>
+            <div class="fw-bold fs-6 text-dark"><?= $app['flag_emoji'] ?> <?= e($app['country_name']) ?> &bull; <?= e($app['service_name']) ?></div>
+            <div class="small text-muted">Applicant: <strong><?= e($app['customer_name']) ?></strong> (<?= e($app['customer_code']) ?>)</div>
+          </div>
+
+          <!-- Visa Status Selection -->
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">
+              <i class="fa-solid fa-traffic-light text-primary me-1"></i> Visa Status <span class="text-danger">*</span>
+            </label>
+            <select name="visa_status" class="form-select fw-semibold" required>
+              <option value="active" <?= $vStatus === 'active' ? 'selected' : '' ?>>Active (Valid Visa)</option>
+              <option value="inactive" <?= $vStatus === 'inactive' ? 'selected' : '' ?>>Inactive</option>
+              <option value="used" <?= $vStatus === 'used' ? 'selected' : '' ?>>Used</option>
+              <option value="before entry cancel" <?= $vStatus === 'before entry cancel' ? 'selected' : '' ?>>Before Entry Cancel</option>
+            </select>
+            <div class="form-text small text-muted">Select current status: Active, Inactive, Used, or Before Entry Cancel.</div>
+          </div>
+
+          <!-- Visa Expiry Date -->
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">
+              <i class="fa-regular fa-calendar-xmark text-danger me-1"></i> Visa Expiry Date <span class="text-danger">*</span>
+            </label>
+            <input type="date" name="visa_expiry_date" class="form-control fw-bold font-monospace" value="<?= e($vExpiry ?? '') ?>" required>
+            <div class="form-text small text-muted">Follow-up notifications trigger at 20, 15, 10, 5, 4, 3, 2, 1, 0 days and expired.</div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Visa Issue Date</label>
+              <input type="date" name="visa_issue_date" class="form-control small font-monospace" value="<?= e($vIssue ?? '') ?>">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Entry-Before Date</label>
+              <input type="date" name="entry_before_date" class="form-control small font-monospace" value="<?= e($vEntryBefore ?? '') ?>">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Visa Number</label>
+            <input type="text" name="visa_number" class="form-control font-monospace" placeholder="e.g. 201/2026/1234567" value="<?= e($vNumber ?? '') ?>">
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label small fw-semibold text-dark">Status &amp; Update Notes</label>
+            <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Optional notes regarding this status change or expiry update..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light p-3">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm fw-bold">
+            <i class="fa-solid fa-floppy-disk me-1"></i> Save Visa Details
           </button>
         </div>
       </form>

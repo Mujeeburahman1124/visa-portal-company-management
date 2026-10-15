@@ -403,6 +403,11 @@ switch ($uri) {
         (new App\Controllers\ApplicationController())->decisionReturn();
         break;
 
+    case '/applications/update-visa-status':
+    case '/customers/update-visa-status':
+        (new App\Controllers\ApplicationController())->updateVisaStatus();
+        break;
+
     case '/applications/document-request':
         (new App\Controllers\ApplicationController())->requestDocument();
         break;
@@ -957,6 +962,11 @@ switch ($uri) {
 
     case '/notifications/test':
         (new App\Controllers\NotificationController())->sendTest();
+        break;
+
+    case '/notifications/run-expiry-checks':
+    case '/cron/expiry-notifications':
+        (new App\Controllers\NotificationController())->runExpiryChecks();
         break;
 
     case '/notifications/retry':

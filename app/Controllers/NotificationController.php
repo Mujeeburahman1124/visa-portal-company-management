@@ -321,6 +321,20 @@ class NotificationController
     }
 
     /**
+     * Run automated expiry scan and dispatch daily follow-up notifications.
+     */
+    public function runExpiryChecks(): void
+    {
+        AuthMiddleware::handle();
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'visa-manager']);
+
+        $res = \App\Services\ExpiryNotificationService::run();
+
+        $msg = "Expiry Follow-up Completed! Scanned {$res['scanned_visas']} visas & {$res['scanned_passports']} passports. Emails sent: {$res['emails_sent']}, In-App alerts: {$res['in_app_sent']}.";
+        redirect($_SERVER['HTTP_REFERER'] ?? '/notifications/admin', $msg, 'success');
+    }
+
+    /**
      * Admin Test Message Sender (Email / WhatsApp).
      */
     public function sendTest(): void

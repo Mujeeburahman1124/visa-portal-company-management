@@ -393,6 +393,18 @@ $getStageStep = function(string $stage, string $status): int {
                     </div>
                   </div>
                 </div>
+
+                <?php if (!empty($app['visa_status']) || !empty($app['visa_expiry_date'])): ?>
+                  <div class="mt-2.5 p-2 bg-light rounded-3 border d-flex align-items-center justify-content-between flex-wrap gap-1.5 small">
+                    <span class="text-muted fw-semibold" style="font-size: 0.72rem;"><i class="fa-solid fa-stamp text-primary me-1"></i> Visa:</span>
+                    <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                      <?= visa_status_badge($app['visa_status'] ?? 'active') ?>
+                      <?php if (!empty($app['visa_expiry_date'])): ?>
+                        <?= visa_expiry_badge($app['visa_expiry_date']) ?>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+                <?php endif; ?>
               </div>
 
               <!-- Card Action Footer -->
@@ -460,6 +472,14 @@ $getStageStep = function(string $stage, string $status): int {
                     <td>
                       <span class="badge bg-light text-dark border px-2 py-1 small"><?= e($app['current_stage']) ?></span>
                       <div class="small text-muted mt-0.5" style="font-size: 0.7rem;">Status: <?= e($app['status']) ?></div>
+                      <?php if (!empty($app['visa_status']) || !empty($app['visa_expiry_date'])): ?>
+                        <div class="mt-1 d-flex flex-column gap-1">
+                          <div><?= visa_status_badge($app['visa_status'] ?? 'active') ?></div>
+                          <?php if (!empty($app['visa_expiry_date'])): ?>
+                            <div><?= visa_expiry_badge($app['visa_expiry_date']) ?></div>
+                          <?php endif; ?>
+                        </div>
+                      <?php endif; ?>
                     </td>
                     <td>
                       <span class="small text-dark"><i class="fa-regular fa-user text-muted me-1"></i><?= e($app['staff_name'] ?? 'Operations') ?></span>

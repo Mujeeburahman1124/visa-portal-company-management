@@ -161,6 +161,75 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
   <div class="row g-4">
     <!-- Left Column: Customer Profile & Identity Credentials -->
     <div class="col-lg-4">
+      <!-- 0. Visa Status & Expiry Credentials Card -->
+      <div class="card-custom mb-3 border-top border-3 border-primary">
+        <div class="card-custom-header d-flex align-items-center justify-content-between">
+          <span class="fw-bold small text-uppercase"><i class="fa-solid fa-stamp text-primary me-2"></i> Visa Status &amp; Expiry</span>
+          <span class="badge bg-primary-subtle text-primary border rounded-pill px-2 py-0.5" style="font-size: 0.68rem;"><?= count($applications) ?> Record(s)</span>
+        </div>
+        <div class="card-custom-body p-3">
+          <?php if (empty($applications)): ?>
+            <div class="text-center py-3 text-muted small">
+              <i class="fa-solid fa-passport fs-4 text-muted opacity-50 mb-1 d-block"></i>
+              No visa applications recorded for this applicant.
+            </div>
+          <?php else: ?>
+            <?php foreach ($applications as $app): 
+              $vStatus = $app['approval_visa_status'] ?: ($app['visa_status'] ?? 'active');
+              $vExpiry = $app['approval_expiry_date'] ?: ($app['visa_expiry_date'] ?? null);
+              $vNumber = $app['approval_visa_number'] ?: ($app['visa_number'] ?? null);
+              $vIssue = $app['approval_issue_date'] ?: ($app['visa_issue_date'] ?? null);
+              $vEntryBefore = $app['approval_entry_before_date'] ?: ($app['entry_before_date'] ?? null);
+              $vFile = $app['approved_visa_file'] ?? ($app['visa_file'] ?? null);
+            ?>
+              <div class="p-2.5 mb-2.5 rounded-3 border bg-light shadow-xs">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                  <div class="fw-bold text-dark small text-truncate" style="max-width: 65%;">
+                    <?= $app['flag_emoji'] ?> <?= e($app['country_name']) ?> &bull; <span class="text-muted font-monospace"><?= e($app['application_number']) ?></span>
+                  </div>
+                  <div>
+                    <?= visa_status_badge($vStatus) ?>
+                  </div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <span class="text-muted small" style="font-size: 0.72rem;"><i class="fa-regular fa-clock me-1 text-danger"></i> Visa Expiry:</span>
+                  <div><?= visa_expiry_badge($vExpiry) ?></div>
+                </div>
+
+                <div class="row g-1 small text-muted mb-2" style="font-size: 0.72rem;">
+                  <div class="col-6">
+                    Visa #: <strong class="text-dark font-monospace"><?= e($vNumber ?: 'Pending') ?></strong>
+                  </div>
+                  <div class="col-6 text-end">
+                    Issue: <strong class="text-dark"><?= $vIssue ? format_date($vIssue) : '—' ?></strong>
+                  </div>
+                  <?php if (!empty($vEntryBefore)): ?>
+                    <div class="col-12 mt-0.5">
+                      Entry Before: <strong class="text-dark"><?= format_date($vEntryBefore) ?></strong>
+                    </div>
+                  <?php endif; ?>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between gap-1 pt-1.5 border-top">
+                  <div>
+                    <?php if (!empty($vFile)): ?>
+                      <a href="/storage/uploads/<?= e($vFile) ?>" target="_blank" class="btn btn-xs btn-outline-success py-0 px-2 rounded-pill" style="font-size: 0.7rem;" title="View / Download Official Visa">
+                        <i class="fa-solid fa-file-pdf me-1"></i> View Visa
+                      </a>
+                    <?php endif; ?>
+                  </div>
+                  <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 rounded-pill fw-semibold" style="font-size: 0.7rem;" 
+                          data-bs-toggle="modal" data-bs-target="#editVisaStatusModal_<?= $app['id'] ?>" title="Edit Visa Status & Expiry Date">
+                    <i class="fa-solid fa-pen-to-square me-1"></i> Edit Status &amp; Expiry
+                  </button>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+      </div>
+
       <!-- 1. Bio & Contact Card -->
       <div class="card-custom mb-3">
         <div class="card-custom-header">
@@ -400,12 +469,26 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
             <div class="tab-pane fade show active" id="tab-apps">
               <div class="table-responsive">
                 <table class="table-modern mb-0">
-                  <thead><tr><th>Application #</th><th>Country / Service</th><th>Stage</th><th>Status</th><th>Total / Balance</th><th class="text-end">Action</th></tr></thead>
+                  <thead>
+                    <tr>
+                      <th>Application #</th>
+                      <th>Country / Service</th>
+                      <th>Stage</th>
+                      <th>Status</th>
+                      <th>Visa Status</th>
+                      <th>Visa Expiry</th>
+                      <th>Total / Balance</th>
+                      <th class="text-end">Action</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     <?php if (empty($applications)): ?>
-                      <tr><td colspan="6" class="text-center py-4 text-muted">No visa applications registered yet.</td></tr>
+                      <tr><td colspan="8" class="text-center py-4 text-muted">No visa applications registered yet.</td></tr>
                     <?php else: ?>
-                      <?php foreach ($applications as $app): ?>
+                      <?php foreach ($applications as $app): 
+                        $vStatus = $app['approval_visa_status'] ?: ($app['visa_status'] ?? 'active');
+                        $vExpiry = $app['approval_expiry_date'] ?: ($app['visa_expiry_date'] ?? null);
+                      ?>
                         <tr>
                           <td><a href="/applications/show?id=<?= $app['id'] ?>" class="badge bg-primary-subtle text-primary fw-bold text-decoration-none px-2 py-1"><i class="fa-solid fa-folder me-1"></i><?= e($app['application_number']) ?></a></td>
                           <td>
@@ -414,6 +497,8 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                           </td>
                           <td><span class="badge bg-light text-dark border"><?= e($app['current_stage']) ?></span></td>
                           <td><span class="badge bg-primary"><?= e($app['status']) ?></span></td>
+                          <td><?= visa_status_badge($vStatus) ?></td>
+                          <td><?= visa_expiry_badge($vExpiry) ?></td>
                           <td>
                             <div class="fw-bold"><?= format_currency((float)$app['total_amount']) ?></div>
                             <?php if ((float)$app['balance_amount'] > 0): ?>
@@ -421,9 +506,14 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
                             <?php endif; ?>
                           </td>
                           <td class="text-end">
-                            <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-outline-primary btn-sm py-1 px-2">
-                              <i class="fa-solid fa-arrow-right"></i>
-                            </a>
+                            <div class="d-flex align-items-center justify-content-end gap-1">
+                              <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2" data-bs-toggle="modal" data-bs-target="#editVisaStatusModal_<?= $app['id'] ?>" title="Edit Visa Status & Expiry">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                              </button>
+                              <a href="/applications/show?id=<?= $app['id'] ?>" class="btn btn-outline-primary btn-sm py-0.5 px-2" title="Open Application">
+                                <i class="fa-solid fa-arrow-right"></i>
+                              </a>
+                            </div>
                           </td>
                         </tr>
                       <?php endforeach; ?>
@@ -582,5 +672,96 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
     </div>
   </div>
 </div>
+
+<!-- MODALS: EDIT VISA STATUS & EXPIRY (Per Application) -->
+<?php if (!empty($applications)): ?>
+  <?php foreach ($applications as $app): 
+    $vStatus = strtolower(trim($app['approval_visa_status'] ?: ($app['visa_status'] ?? 'active')));
+    $vExpiry = $app['approval_expiry_date'] ?: ($app['visa_expiry_date'] ?? '');
+    $vNumber = $app['approval_visa_number'] ?: ($app['visa_number'] ?? '');
+    $vIssue = $app['approval_issue_date'] ?: ($app['visa_issue_date'] ?? '');
+    $vEntryBefore = $app['approval_entry_before_date'] ?: ($app['entry_before_date'] ?? '');
+  ?>
+    <div class="modal fade" id="editVisaStatusModal_<?= $app['id'] ?>" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header bg-primary text-white">
+            <h6 class="modal-title fw-bold">
+              <i class="fa-solid fa-stamp me-2"></i> Edit Visa Status &amp; Expiry
+            </h6>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <form action="/applications/update-visa-status" method="POST">
+            <?= csrf_field() ?>
+            <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
+            <input type="hidden" name="redirect_to" value="/customers/show?id=<?= $customer['id'] ?>">
+
+            <div class="modal-body p-4">
+              <div class="p-3 bg-light rounded border mb-3">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <span class="small text-muted">Application:</span>
+                  <span class="badge bg-primary-subtle text-primary font-monospace fw-bold"><?= e($app['application_number']) ?></span>
+                </div>
+                <div class="fw-bold fs-6 text-dark"><?= $app['flag_emoji'] ?> <?= e($app['country_name']) ?> &bull; <?= e($app['service_name']) ?></div>
+                <div class="small text-muted">Applicant: <strong><?= e($customer['full_name']) ?></strong> (<?= e($customer['customer_code']) ?>)</div>
+              </div>
+
+              <!-- Visa Status Selection -->
+              <div class="mb-3">
+                <label class="form-label small fw-semibold text-dark">
+                  <i class="fa-solid fa-traffic-light text-primary me-1"></i> Visa Status <span class="text-danger">*</span>
+                </label>
+                <select name="visa_status" class="form-select fw-semibold" required>
+                  <option value="active" <?= $vStatus === 'active' ? 'selected' : '' ?>>Active (Valid Visa)</option>
+                  <option value="inactive" <?= $vStatus === 'inactive' ? 'selected' : '' ?>>Inactive</option>
+                  <option value="used" <?= $vStatus === 'used' ? 'selected' : '' ?>>Used</option>
+                  <option value="before entry cancel" <?= $vStatus === 'before entry cancel' ? 'selected' : '' ?>>Before Entry Cancel</option>
+                </select>
+                <div class="form-text small text-muted">Select current status: Active, Inactive, Used, or Before Entry Cancel.</div>
+              </div>
+
+              <!-- Visa Expiry Date -->
+              <div class="mb-3">
+                <label class="form-label small fw-semibold text-dark">
+                  <i class="fa-regular fa-calendar-xmark text-danger me-1"></i> Visa Expiry Date <span class="text-danger">*</span>
+                </label>
+                <input type="date" name="visa_expiry_date" class="form-control fw-bold font-monospace" value="<?= e($vExpiry) ?>" required>
+                <div class="form-text small text-muted">Follow-up notifications trigger at 20, 15, 10, 5, 4, 3, 2, 1, 0 days and expired.</div>
+              </div>
+
+              <div class="row g-2 mb-3">
+                <div class="col-6">
+                  <label class="form-label small fw-semibold text-dark">Visa Issue Date</label>
+                  <input type="date" name="visa_issue_date" class="form-control small font-monospace" value="<?= e($vIssue) ?>">
+                </div>
+                <div class="col-6">
+                  <label class="form-label small fw-semibold text-dark">Entry-Before Date</label>
+                  <input type="date" name="entry_before_date" class="form-control small font-monospace" value="<?= e($vEntryBefore) ?>">
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label small fw-semibold text-dark">Visa Number</label>
+                <input type="text" name="visa_number" class="form-control font-monospace" placeholder="e.g. 201/2026/1234567" value="<?= e($vNumber) ?>">
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label small fw-semibold text-dark">Status &amp; Update Notes</label>
+                <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Optional notes regarding this status change or expiry update..."></textarea>
+              </div>
+            </div>
+
+            <div class="modal-footer bg-light p-3">
+              <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary btn-sm fw-bold">
+                <i class="fa-solid fa-floppy-disk me-1"></i> Save Visa Details
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  <?php endforeach; ?>
+<?php endif; ?>
 
 <?php require_once dirname(__DIR__) . '/layouts/footer.php'; ?>

@@ -2053,6 +2053,148 @@ class ApplicationController
         redirect("/applications/show?id={$appId}", 'Modification return notice issued to applicant.', 'info');
     }
 
+    public function updateVisaStatus(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+        $user = auth_user();
+
+        $appId = (int)($_POST['application_id'] ?? 0);
+        $customerId = (int)($_POST['customer_id'] ?? 0);
+        $visaStatus = strtolower(trim($_POST['visa_status'] ?? 'active'));
+        $visaExpiryDate = !empty($_POST['visa_expiry_date']) ? trim($_POST['visa_expiry_date']) : null;
+        $visaIssueDate = !empty($_POST['visa_issue_date']) ? trim($_POST['visa_issue_date']) : null;
+        $visaNumber = trim($_POST['visa_number'] ?? '');
+        $entryBeforeDate = !empty($_POST['entry_before_date']) ? trim($_POST['entry_before_date']) : null;
+        $notes = trim($_POST['notes'] ?? '');
+
+        // Valid statuses: active, inactive, used, before entry cancel
+        $allowedStatuses = ['active', 'inactive', 'used', 'before entry cancel'];
+        if (!in_array($visaStatus, $allowedStatuses, true)) {
+            $visaStatus = 'active';
+        }
+
+        if ($appId <= 0) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/applications', 'Invalid application selected.', 'danger');
+        }
+
+        $stmt = $pdo->prepare("SELECT a.*, c.full_name as applicant_name FROM applications a JOIN customers c ON a.customer_id = c.id WHERE a.id = ?");
+        $stmt->execute([$appId]);
+        $app = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$app) {
+            redirect($_SERVER['HTTP_REFERER'] ?? '/applications', 'Application not found.', 'danger');
+        }
+
+        // RBAC check
+        $isAdmin = is_super_admin($user) || is_admin($user);
+        $roleSlug = $user['role_slug'] ?? '';
+        if (!$isAdmin && !user_can('applications.edit') && !user_can('applications.manage') && !in_array($roleSlug, ['visa-manager', 'branch-manager', 'visa-consultant'], true)) {
+            redirect($_SERVER['HTTP_REFERER'] ?? "/applications/show?id={$appId}", 'Unauthorized: Permission denied.', 'danger');
+        }
+
+        // Branch isolation check
+        $scopedBranchId = get_scoped_branch_id(0, $user);
+        if ($scopedBranchId > 0 && (int)$app['branch_id'] !== $scopedBranchId) {
+            redirect($_SERVER['HTTP_REFERER'] ?? "/applications/show?id={$appId}", 'Unauthorized: Cross-branch access denied.', 'danger');
+        }
+
+        // 1. Update applications table
+        try {
+            $pdo->exec("ALTER TABLE applications ADD COLUMN visa_status VARCHAR(50) DEFAULT 'active'");
+        } catch (\Throwable $e) {}
+        try {
+            $pdo->exec("ALTER TABLE applications ADD COLUMN entry_before_date DATE NULL");
+        } catch (\Throwable $e) {}
+
+        $appUpdate = $pdo->prepare("
+            UPDATE applications 
+            SET visa_status = ?,
+                visa_expiry_date = COALESCE(?, visa_expiry_date),
+                visa_issue_date = COALESCE(?, visa_issue_date),
+                visa_number = CASE WHEN ? != '' THEN ? ELSE visa_number END,
+                entry_before_date = COALESCE(?, entry_before_date),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ");
+        $appUpdate->execute([
+            $visaStatus,
+            $visaExpiryDate,
+            $visaIssueDate,
+            $visaNumber,
+            $visaNumber,
+            $entryBeforeDate,
+            $appId
+        ]);
+
+        // 2. Sync with visa_approvals table
+        try {
+            $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN visa_status VARCHAR(50) DEFAULT 'active'");
+        } catch (\Throwable $e) {}
+        try {
+            $pdo->exec("ALTER TABLE visa_approvals ADD COLUMN entry_before_date DATE NULL");
+        } catch (\Throwable $e) {}
+
+        $chkAppr = $pdo->prepare("SELECT id FROM visa_approvals WHERE application_id = ? LIMIT 1");
+        $chkAppr->execute([$appId]);
+        $apprId = $chkAppr->fetchColumn();
+
+        if ($apprId) {
+            $pdo->prepare("
+                UPDATE visa_approvals
+                SET visa_status = ?,
+                    expiry_date = COALESCE(?, expiry_date),
+                    issue_date = COALESCE(?, issue_date),
+                    visa_number = CASE WHEN ? != '' THEN ? ELSE visa_number END,
+                    entry_before_date = COALESCE(?, entry_before_date),
+                    approval_notes = CASE WHEN ? != '' THEN ? ELSE approval_notes END,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ")->execute([
+                $visaStatus,
+                $visaExpiryDate,
+                $visaIssueDate,
+                $visaNumber,
+                $visaNumber,
+                $entryBeforeDate,
+                $notes,
+                $notes,
+                $apprId
+            ]);
+        } else {
+            $pdo->prepare("
+                INSERT INTO visa_approvals (application_id, visa_number, issue_date, expiry_date, entry_before_date, visa_status, approval_notes, approved_by, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ")->execute([
+                $appId,
+                $visaNumber ?: ($app['visa_number'] ?? 'VISA-' . $appId),
+                $visaIssueDate ?: date('Y-m-d'),
+                $visaExpiryDate,
+                $entryBeforeDate,
+                $visaStatus,
+                $notes ?: "Visa status manually updated to {$visaStatus}",
+                $user['id'] ?? null
+            ]);
+        }
+
+        // 3. Log Audit
+        AuditService::log(
+            'VISA_STATUS_UPDATED',
+            'Applications',
+            $appId,
+            "Updated visa status to '{$visaStatus}', expiry: " . ($visaExpiryDate ?: 'unchanged'),
+            [
+                'visa_status' => $visaStatus,
+                'visa_expiry_date' => $visaExpiryDate,
+                'visa_number' => $visaNumber,
+            ],
+            $user['id'] ?? null
+        );
+
+        $redir = $_POST['redirect_to'] ?? ($_SERVER['HTTP_REFERER'] ?? ($customerId > 0 ? "/customers/show?id={$customerId}" : "/applications/show?id={$appId}"));
+        redirect($redir, "Visa details updated successfully: Status is '" . ucwords($visaStatus) . "', Expiry: " . ($visaExpiryDate ? format_date($visaExpiryDate) : 'Not set') . ".", 'success');
+    }
+
     public function requestDocument(): void
     {
         AuthMiddleware::handle();

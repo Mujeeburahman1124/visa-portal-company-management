@@ -647,12 +647,15 @@ class CustomerController
         $family = $pdo->query("SELECT * FROM customer_family WHERE customer_id = {$id}")->fetch(PDO::FETCH_ASSOC);
         $wallet = \App\Services\WalletService::getOrCreateWallet($id);
 
-        // Linked Applications
-        $appStmt = $pdo->prepare("SELECT a.*, vs.name as service_name, ct.name as country_name, ct.flag_emoji, u.name as staff_name 
+        // Linked Applications with Visa Details & Expiry
+        $appStmt = $pdo->prepare("SELECT a.*, vs.name as service_name, ct.name as country_name, ct.flag_emoji, u.name as staff_name,
+            va.visa_number as approval_visa_number, va.issue_date as approval_issue_date, va.expiry_date as approval_expiry_date,
+            va.entry_before_date as approval_entry_before_date, va.visa_status as approval_visa_status, va.approved_visa_file
             FROM applications a 
             JOIN visa_services vs ON a.visa_service_id = vs.id 
             JOIN countries ct ON vs.country_id = ct.id 
             LEFT JOIN users u ON a.assigned_staff_id = u.id 
+            LEFT JOIN visa_approvals va ON a.id = va.application_id
             WHERE a.customer_id = ? ORDER BY a.created_at DESC");
         $appStmt->execute([$id]);
         $applications = $appStmt->fetchAll();

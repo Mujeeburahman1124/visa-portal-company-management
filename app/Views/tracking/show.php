@@ -178,6 +178,10 @@ elseif ((int)($app['calculated_health'] ?? 100) < 80) $healthColor = 'warning';
 
   <!-- 3. OFFICIAL APPROVED VISA GRANT NOTICE (If Approved) -->
   <?php if ($isApproved || !empty($app['visa_number']) || !empty($visaApproval)): ?>
+    <?php 
+      $trkVStatus = strtolower(trim($visaApproval['visa_status'] ?? ($app['visa_status'] ?? 'active')));
+      $trkExpiry = $visaApproval['expiry_date'] ?? ($app['visa_expiry_date'] ?? null);
+    ?>
     <div class="card border-success shadow-sm mb-4">
       <div class="card-header bg-success text-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
         <div class="d-flex align-items-center gap-2">
@@ -188,6 +192,13 @@ elseif ((int)($app['calculated_health'] ?? 100) < 80) $healthColor = 'warning';
           </div>
         </div>
         <div class="d-flex align-items-center gap-2">
+          <?= visa_status_badge($trkVStatus) ?>
+          <?= visa_expiry_badge($trkExpiry) ?>
+          <?php if ($isStaff): ?>
+            <button type="button" class="btn btn-sm btn-light text-dark rounded-pill px-3 fw-semibold shadow-xs" data-bs-toggle="modal" data-bs-target="#editVisaStatusModal">
+              <i class="fa-solid fa-pen-to-square me-1"></i> Edit Visa Details
+            </button>
+          <?php endif; ?>
           <span class="badge bg-white text-success fs-6 font-monospace py-1.5 px-3">
             <i class="fa-solid fa-stamp me-1"></i> Visa # <?= e($app['visa_number'] ?: ($visaApproval['visa_number'] ?? 'ISSUED')) ?>
           </span>
@@ -706,6 +717,89 @@ elseif ((int)($app['calculated_health'] ?? 100) < 80) $healthColor = 'warning';
   </div>
 
 </div>
+
+<?php if ($isStaff): ?>
+<!-- MODAL: EDIT VISA STATUS & EXPIRY -->
+<div class="modal fade" id="editVisaStatusModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-primary text-white">
+        <h6 class="modal-title fw-bold">
+          <i class="fa-solid fa-stamp me-2"></i> Edit Visa Status &amp; Expiry
+        </h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/applications/update-visa-status" method="POST">
+        <?= csrf_field() ?>
+        <input type="hidden" name="application_id" value="<?= $app['id'] ?>">
+        <input type="hidden" name="redirect_to" value="/tracking/show?id=<?= $app['id'] ?>">
+
+        <div class="modal-body p-4">
+          <div class="p-3 bg-light rounded border mb-3">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <span class="small text-muted">Application:</span>
+              <span class="badge bg-primary-subtle text-primary font-monospace fw-bold"><?= e($app['application_number']) ?></span>
+            </div>
+            <div class="fw-bold fs-6 text-dark"><?= $app['flag_emoji'] ?> <?= e($app['country_name']) ?> &bull; <?= e($app['service_name']) ?></div>
+            <div class="small text-muted">Applicant: <strong><?= e($app['customer_name']) ?></strong> (<?= e($app['customer_code'] ?? '') ?>)</div>
+          </div>
+
+          <!-- Visa Status Selection -->
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">
+              <i class="fa-solid fa-traffic-light text-primary me-1"></i> Visa Status <span class="text-danger">*</span>
+            </label>
+            <select name="visa_status" class="form-select fw-semibold" required>
+              <option value="active" <?= ($trkVStatus ?? 'active') === 'active' ? 'selected' : '' ?>>Active (Valid Visa)</option>
+              <option value="inactive" <?= ($trkVStatus ?? '') === 'inactive' ? 'selected' : '' ?>>Inactive</option>
+              <option value="used" <?= ($trkVStatus ?? '') === 'used' ? 'selected' : '' ?>>Used</option>
+              <option value="before entry cancel" <?= ($trkVStatus ?? '') === 'before entry cancel' ? 'selected' : '' ?>>Before Entry Cancel</option>
+            </select>
+            <div class="form-text small text-muted">Select current status: Active, Inactive, Used, or Before Entry Cancel.</div>
+          </div>
+
+          <!-- Visa Expiry Date -->
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">
+              <i class="fa-regular fa-calendar-xmark text-danger me-1"></i> Visa Expiry Date <span class="text-danger">*</span>
+            </label>
+            <input type="date" name="visa_expiry_date" class="form-control fw-bold font-monospace" value="<?= e($trkExpiry ?? ($visaApproval['expiry_date'] ?? ($app['visa_expiry_date'] ?? ''))) ?>" required>
+            <div class="form-text small text-muted">Follow-up notifications trigger at 20, 15, 10, 5, 4, 3, 2, 1, 0 days and expired.</div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Visa Issue Date</label>
+              <input type="date" name="visa_issue_date" class="form-control small font-monospace" value="<?= e($visaApproval['issue_date'] ?? ($app['visa_issue_date'] ?? '')) ?>">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark">Entry-Before Date</label>
+              <input type="date" name="entry_before_date" class="form-control small font-monospace" value="<?= e($visaApproval['entry_before_date'] ?? ($app['entry_before_date'] ?? '')) ?>">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark">Visa Number</label>
+            <input type="text" name="visa_number" class="form-control font-monospace" placeholder="e.g. 201/2026/1234567" value="<?= e($visaApproval['visa_number'] ?? ($app['visa_number'] ?? '')) ?>">
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label small fw-semibold text-dark">Status &amp; Update Notes</label>
+            <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Optional notes regarding this status change or expiry update..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light p-3">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm fw-bold">
+            <i class="fa-solid fa-floppy-disk me-1"></i> Save Visa Details
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
 
 <?php 
 if ($isStaff) {

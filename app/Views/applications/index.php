@@ -416,9 +416,9 @@ $getStageStep = function(string $stage, string $status): int {
                     </div>
                   </td>
 
-                  <!-- Status -->
+                  <!-- Status & Visa Expiry -->
                   <td data-label="Status">
-                    <span class="apps-chip <?= $statusClass ?>">
+                    <span class="apps-chip <?= $statusClass ?> mb-1">
                       <?php if ($status === 'Approved' || $status === 'Completed'): ?>
                         <i class="fa-solid fa-circle-check me-1"></i>
                       <?php elseif ($status === 'In Process'): ?>
@@ -430,6 +430,14 @@ $getStageStep = function(string $stage, string $status): int {
                       <?php endif; ?>
                       <?= e($status) ?>
                     </span>
+                    <?php if (!empty($app['visa_status']) || !empty($app['visa_expiry_date']) || $status === 'Approved'): ?>
+                      <div class="mt-1 d-flex flex-column gap-1">
+                        <div><?= visa_status_badge($app['visa_status'] ?? 'active') ?></div>
+                        <?php if (!empty($app['visa_expiry_date'])): ?>
+                          <div><?= visa_expiry_badge($app['visa_expiry_date']) ?></div>
+                        <?php endif; ?>
+                      </div>
+                    <?php endif; ?>
                   </td>
 
                   <!-- Priority -->
@@ -640,6 +648,18 @@ $getStageStep = function(string $stage, string $status): int {
                     </div>
                   </div>
                 </div>
+
+                <?php if (!empty($app['visa_status']) || !empty($app['visa_expiry_date']) || $status === 'Approved'): ?>
+                  <div class="mt-2.5 p-2 bg-light rounded-3 border d-flex align-items-center justify-content-between flex-wrap gap-1.5 small">
+                    <span class="text-muted fw-semibold" style="font-size: 0.72rem;"><i class="fa-solid fa-stamp text-primary me-1"></i> Visa:</span>
+                    <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                      <?= visa_status_badge($app['visa_status'] ?? 'active') ?>
+                      <?php if (!empty($app['visa_expiry_date'])): ?>
+                        <?= visa_expiry_badge($app['visa_expiry_date']) ?>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+                <?php endif; ?>
               </div>
 
               <!-- Card Action Footer -->
@@ -720,6 +740,12 @@ $getStageStep = function(string $stage, string $status): int {
                 <span class="apps-chip <?= $statusClass ?>" style="font-size: 0.7rem;">
                   <?= e($status) ?>
                 </span>
+                <?php if (!empty($app['visa_status']) || !empty($app['visa_expiry_date']) || $status === 'Approved'): ?>
+                  <?= visa_status_badge($app['visa_status'] ?? 'active') ?>
+                  <?php if (!empty($app['visa_expiry_date'])): ?>
+                    <?= visa_expiry_badge($app['visa_expiry_date']) ?>
+                  <?php endif; ?>
+                <?php endif; ?>
               </div>
 
               <!-- Assigned Officer -->
