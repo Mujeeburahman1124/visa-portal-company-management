@@ -39,6 +39,8 @@ class ApplicationController
         $staffId = (int)($_GET['staff_id'] ?? 0);
         $branchId = get_scoped_branch_id((int)($_GET['branch_id'] ?? 0), $user);
         $agentId = (int)($_GET['agent_id'] ?? 0);
+        $visaExpiry = trim($_GET['visa_expiry'] ?? '');
+        $visaStatus = trim($_GET['visa_status'] ?? '');
 
         // Apply Saved Presets (only when corresponding filters are not explicitly selected)
         if ($preset === 'my_assigned' && $user && $staffId === 0) {
@@ -58,7 +60,10 @@ class ApplicationController
                     u.name as staff_name, b.name as branch_name,
                     cp.passport_number as current_passport,
                     s.company_name as supplier_name,
-                    ag.company_name as agent_name, ag.agent_code
+                    ag.company_name as agent_name, ag.agent_code,
+                    COALESCE(a.visa_expiry_date, va.expiry_date) as visa_expiry_date,
+                    COALESCE(a.visa_status, va.visa_status, 'active') as visa_status,
+                    COALESCE(a.visa_number, va.visa_number) as visa_number
                 FROM applications a
                 LEFT JOIN customers c ON a.customer_id = c.id
                 LEFT JOIN visa_services vs ON a.visa_service_id = vs.id
@@ -68,6 +73,7 @@ class ApplicationController
                 LEFT JOIN branches b ON a.branch_id = b.id
                 LEFT JOIN suppliers s ON a.supplier_id = s.id
                 LEFT JOIN agents ag ON a.agent_id = ag.id
+                LEFT JOIN visa_approvals va ON a.id = va.application_id
                 WHERE a.is_archived = 0";
 
         $params = [];
@@ -143,6 +149,34 @@ class ApplicationController
             $params[] = $agentId;
         }
 
+        // Visa Expiry Filtering
+        if ($visaExpiry === 'expiring_7') {
+            $in7Days = date('Y-m-d', strtotime('+7 days'));
+            $sql .= " AND COALESCE(a.visa_expiry_date, va.expiry_date) >= '{$today}' AND COALESCE(a.visa_expiry_date, va.expiry_date) <= '{$in7Days}'";
+        } elseif ($visaExpiry === 'expiring_15') {
+            $in15Days = date('Y-m-d', strtotime('+15 days'));
+            $sql .= " AND COALESCE(a.visa_expiry_date, va.expiry_date) >= '{$today}' AND COALESCE(a.visa_expiry_date, va.expiry_date) <= '{$in15Days}'";
+        } elseif ($visaExpiry === 'expiring_20') {
+            $in20Days = date('Y-m-d', strtotime('+20 days'));
+            $sql .= " AND COALESCE(a.visa_expiry_date, va.expiry_date) >= '{$today}' AND COALESCE(a.visa_expiry_date, va.expiry_date) <= '{$in20Days}'";
+        } elseif ($visaExpiry === 'expiring_30') {
+            $in30Days = date('Y-m-d', strtotime('+30 days'));
+            $sql .= " AND COALESCE(a.visa_expiry_date, va.expiry_date) >= '{$today}' AND COALESCE(a.visa_expiry_date, va.expiry_date) <= '{$in30Days}'";
+        } elseif ($visaExpiry === 'today') {
+            $sql .= " AND COALESCE(a.visa_expiry_date, va.expiry_date) = '{$today}'";
+        } elseif ($visaExpiry === 'expired') {
+            $sql .= " AND COALESCE(a.visa_expiry_date, va.expiry_date) < '{$today}'";
+        } elseif ($visaExpiry === 'has_expiry') {
+            $sql .= " AND (a.visa_expiry_date IS NOT NULL OR va.expiry_date IS NOT NULL)";
+        }
+
+        // Visa Status Filtering
+        if ($visaStatus !== '') {
+            $sql .= " AND (a.visa_status = ? OR va.visa_status = ?)";
+            $params[] = $visaStatus;
+            $params[] = $visaStatus;
+        }
+
         $sql .= " ORDER BY CASE WHEN a.priority = 'Critical' THEN 1 WHEN a.priority = 'Urgent' THEN 2 WHEN a.priority = 'High' THEN 3 ELSE 4 END, a.created_at DESC";
 
         $stmt = $pdo->prepare($sql);
@@ -165,6 +199,7 @@ class ApplicationController
             'pending_docs' => (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE status = 'Documents Pending' AND is_archived = 0")->fetchColumn(),
             'action_required' => (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE status = 'Action Required' AND is_archived = 0")->fetchColumn(),
             'overdue' => (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE expected_completion_date IS NOT NULL AND expected_completion_date < '{$today}' AND status NOT IN ('Approved', 'Completed') AND is_archived = 0")->fetchColumn(),
+            'expiring_visas' => (int)$pdo->query("SELECT COUNT(*) FROM applications a LEFT JOIN visa_approvals va ON a.id = va.application_id WHERE a.is_archived = 0 AND COALESCE(a.visa_expiry_date, va.expiry_date) >= '{$today}' AND COALESCE(a.visa_expiry_date, va.expiry_date) <= '" . date('Y-m-d', strtotime('+30 days')) . "' AND a.status NOT IN ('Rejected', 'Cancelled')")->fetchColumn(),
         ];
 
         require_once dirname(__DIR__) . '/Views/applications/index.php';

@@ -125,7 +125,11 @@ class DashboardController
         $kpi['my_tasks'] = (int)$stmtMyTasksCount->fetchColumn();
 
         // 2. Operational Expiry & Compliance Alerts (Scoped)
+        // 2. Operational Expiry & Compliance Alerts (Scoped)
         $alerts = [];
+        $visaExpiryWhere = "WHERE a.is_archived = 0 AND (a.visa_expiry_date IS NOT NULL OR va.expiry_date IS NOT NULL) AND a.status NOT IN ('Rejected', 'Cancelled')";
+        $visaExpiryParams = [];
+
         if ($dashboardType === 'processing') {
             // Filter expiring documents to applicants of assigned applications
             $stmtExpPass = $pdo->prepare("SELECT COUNT(DISTINCT cp.id) FROM customer_passports cp 
@@ -136,12 +140,14 @@ class DashboardController
 
             $alerts['expiring_national_ids'] = 0;
             $alerts['expiring_residences'] = 0;
-            $alerts['expiring_visas'] = 0;
 
             $stmtMyOverdueTasks = $pdo->prepare("SELECT COUNT(*) FROM tasks WHERE assigned_to = ? AND status != 'Completed' AND due_date < ?");
             $stmtMyOverdueTasks->execute([$userId, $today]);
             $alerts['overdue_tasks'] = (int)$stmtMyOverdueTasks->fetchColumn();
             $alerts['unpaid_applications'] = 0; // Concealed from processing desk
+
+            $visaExpiryWhere .= " AND a.assigned_staff_id = ?";
+            $visaExpiryParams[] = $userId;
         } elseif ($scopedBranch > 0) {
             $stmtExpPass = $pdo->prepare("SELECT COUNT(DISTINCT cp.id) FROM customer_passports cp 
                 JOIN applications a ON cp.customer_id = a.customer_id 
@@ -151,7 +157,6 @@ class DashboardController
 
             $alerts['expiring_national_ids'] = (int)$pdo->query("SELECT COUNT(*) FROM customer_national_ids WHERE expiry_date <= '{$in90Days}'")->fetchColumn();
             $alerts['expiring_residences'] = (int)$pdo->query("SELECT COUNT(*) FROM customer_residences WHERE expiry_date <= '{$in90Days}'")->fetchColumn();
-            $alerts['expiring_visas'] = (int)$pdo->query("SELECT COUNT(*) FROM visa_approvals WHERE expiry_date <= '{$in30Days}'")->fetchColumn();
 
             $stmtBranchTasks = $pdo->prepare("SELECT COUNT(*) FROM tasks t 
                 JOIN users u ON t.assigned_to = u.id 
@@ -162,17 +167,77 @@ class DashboardController
             $stmtBranchUnpaid = $pdo->prepare("SELECT COUNT(*) FROM applications WHERE is_archived = 0 AND branch_id = ? AND balance_amount > 0");
             $stmtBranchUnpaid->execute([$scopedBranch]);
             $alerts['unpaid_applications'] = (int)$stmtBranchUnpaid->fetchColumn();
+
+            $visaExpiryWhere .= " AND a.branch_id = ?";
+            $visaExpiryParams[] = $scopedBranch;
         } else {
             // Global alerts for admin and accounts
             $alerts['expiring_passports'] = (int)$pdo->query("SELECT COUNT(*) FROM customer_passports WHERE expiry_date <= '{$in90Days}'")->fetchColumn();
             $alerts['expiring_national_ids'] = (int)$pdo->query("SELECT COUNT(*) FROM customer_national_ids WHERE expiry_date <= '{$in90Days}'")->fetchColumn();
             $alerts['expiring_residences'] = (int)$pdo->query("SELECT COUNT(*) FROM customer_residences WHERE expiry_date <= '{$in90Days}'")->fetchColumn();
-            $alerts['expiring_visas'] = (int)$pdo->query("SELECT COUNT(*) FROM visa_approvals WHERE expiry_date <= '{$in30Days}'")->fetchColumn();
             $alerts['overdue_tasks'] = (int)$pdo->query("SELECT COUNT(*) FROM tasks WHERE status != 'Completed' AND due_date < '{$today}'")->fetchColumn();
             $alerts['unpaid_applications'] = (int)$pdo->query("SELECT COUNT(*) FROM applications WHERE is_archived = 0 AND balance_amount > 0")->fetchColumn();
         }
-        $kpi['expiring_passports'] = $alerts['expiring_passports'];
 
+        // Live Visa Expiry Alerts computation (across all roles with accurate scoping)
+        $in7Days = date('Y-m-d', strtotime('+7 days'));
+        try {
+            // Expiring in next 30 days
+            $stmtExpVisas = $pdo->prepare("SELECT COUNT(*) FROM applications a 
+                LEFT JOIN visa_approvals va ON a.id = va.application_id 
+                {$visaExpiryWhere} AND COALESCE(a.visa_expiry_date, va.expiry_date) >= ? AND COALESCE(a.visa_expiry_date, va.expiry_date) <= ?");
+            $stmtExpVisas->execute(array_merge($visaExpiryParams, [$today, $in30Days]));
+            $alerts['expiring_visas'] = (int)$stmtExpVisas->fetchColumn();
+
+            // Expiring in next 7 days
+            $stmtExpVisas7 = $pdo->prepare("SELECT COUNT(*) FROM applications a 
+                LEFT JOIN visa_approvals va ON a.id = va.application_id 
+                {$visaExpiryWhere} AND COALESCE(a.visa_expiry_date, va.expiry_date) >= ? AND COALESCE(a.visa_expiry_date, va.expiry_date) <= ?");
+            $stmtExpVisas7->execute(array_merge($visaExpiryParams, [$today, $in7Days]));
+            $alerts['expiring_visas_7'] = (int)$stmtExpVisas7->fetchColumn();
+
+            // Expiring today
+            $stmtExpVisasToday = $pdo->prepare("SELECT COUNT(*) FROM applications a 
+                LEFT JOIN visa_approvals va ON a.id = va.application_id 
+                {$visaExpiryWhere} AND COALESCE(a.visa_expiry_date, va.expiry_date) = ?");
+            $stmtExpVisasToday->execute(array_merge($visaExpiryParams, [$today]));
+            $alerts['expiring_visas_today'] = (int)$stmtExpVisasToday->fetchColumn();
+
+            // Already expired
+            $stmtExpiredVisas = $pdo->prepare("SELECT COUNT(*) FROM applications a 
+                LEFT JOIN visa_approvals va ON a.id = va.application_id 
+                {$visaExpiryWhere} AND COALESCE(a.visa_expiry_date, va.expiry_date) < ?");
+            $stmtExpiredVisas->execute(array_merge($visaExpiryParams, [$today]));
+            $alerts['expired_visas'] = (int)$stmtExpiredVisas->fetchColumn();
+
+            // Fetch top expiring/expired visa records for live widget
+            $liveExpStmt = $pdo->prepare("SELECT a.id, a.application_number, a.customer_id, a.status,
+                COALESCE(a.visa_expiry_date, va.expiry_date) as expiry_date,
+                COALESCE(a.visa_number, va.visa_number, '—') as visa_number,
+                COALESCE(a.visa_status, va.visa_status, 'active') as visa_status,
+                c.full_name as customer_name, c.mobile as customer_mobile,
+                ct.name as country_name, ct.flag_emoji,
+                vs.name as service_name
+                FROM applications a
+                JOIN customers c ON a.customer_id = c.id
+                LEFT JOIN visa_services vs ON a.visa_service_id = vs.id
+                LEFT JOIN countries ct ON vs.country_id = ct.id
+                LEFT JOIN visa_approvals va ON a.id = va.application_id
+                {$visaExpiryWhere} AND COALESCE(a.visa_expiry_date, va.expiry_date) <= ?
+                ORDER BY COALESCE(a.visa_expiry_date, va.expiry_date) ASC
+                LIMIT 6");
+            $liveExpStmt->execute(array_merge($visaExpiryParams, [$in30Days]));
+            $liveExpiringVisas = $liveExpStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            $alerts['expiring_visas'] = 0;
+            $alerts['expiring_visas_7'] = 0;
+            $alerts['expiring_visas_today'] = 0;
+            $alerts['expired_visas'] = 0;
+            $liveExpiringVisas = [];
+        }
+
+        $kpi['expiring_passports'] = $alerts['expiring_passports'];
+        $kpi['expiring_visas'] = $alerts['expiring_visas'];
         // 3. Financial Metrics (Strictly checked against permissions)
         $finance = [
             'total_sales' => 0.0,

@@ -54,6 +54,20 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
           <i class="fa-solid fa-bell"></i> Live Alerts:
         </div>
 
+        <?php if (!empty($alerts['expiring_visas'])): ?>
+          <a href="/applications?visa_expiry=expiring_30" class="bento-alert-chip chip-warning" title="Visas Expiring within 30 Days">
+            <i class="fa-solid fa-hourglass-half text-warning"></i> Expiring Visas:
+            <span class="bento-alert-badge" style="background:#F59E0B; color:#000;"><?= (int)$alerts['expiring_visas'] ?></span>
+          </a>
+        <?php endif; ?>
+
+        <?php if (!empty($alerts['expired_visas'])): ?>
+          <a href="/applications?visa_expiry=expired" class="bento-alert-chip chip-danger" title="Already Expired Visas Requiring Follow-Up">
+            <i class="fa-solid fa-triangle-exclamation text-danger"></i> Visas Expired:
+            <span class="bento-alert-badge" style="background:#EF4444; color:#fff;"><?= (int)$alerts['expired_visas'] ?></span>
+          </a>
+        <?php endif; ?>
+
         <?php if (!empty($alerts['expiring_passports'])): ?>
           <a href="/documents?expiry_filter=30" class="bento-alert-chip chip-warning">
             <i class="fa-solid fa-passport"></i> Expiring Passports:
@@ -96,6 +110,102 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         <span class="bento-time-pill">This Month: <strong><?= (int)$kpi['month'] ?></strong></span>
       </div>
     </div>
+
+    <!-- ─── LIVE VISA EXPIRY ALERTS & MONITORING HUB ──────────────────────── -->
+    <?php if (!empty($alerts['expiring_visas']) || !empty($alerts['expired_visas']) || !empty($liveExpiringVisas)): ?>
+      <div class="card card-enterprise mb-4 border shadow-sm" style="border-radius: var(--bento-radius-card); border-left: 5px solid #F59E0B !important;">
+        <div class="card-body p-3 p-md-4">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+            <div class="d-flex align-items-center gap-2.5">
+              <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(245, 158, 11, 0.15); color: #B45309; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                <i class="fa-solid fa-hourglass-half fa-spin-pulse"></i>
+              </div>
+              <div>
+                <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                  Live Visa Expiry Alerts &amp; Follow-up Monitor
+                  <span class="badge bg-danger rounded-pill px-2.5 py-1 text-white" style="font-size: 0.72rem;">LIVE</span>
+                </h5>
+                <p class="text-muted small mb-0">Daily countdown monitoring for issued visas (20, 15, 10, 5, 4, 3, 2, 1, 0 days and expired).</p>
+              </div>
+            </div>
+
+            <!-- Fast Quick-Filter Badges -->
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <a href="/applications?visa_expiry=expiring_7" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold">
+                <i class="fa-solid fa-bell me-1"></i> &le; 7 Days (<?= (int)($alerts['expiring_visas_7'] ?? 0) ?>)
+              </a>
+              <a href="/applications?visa_expiry=expiring_15" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-semibold text-dark">
+                <i class="fa-solid fa-clock me-1 text-warning"></i> &le; 15 Days
+              </a>
+              <a href="/applications?visa_expiry=expiring_30" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
+                <i class="fa-solid fa-calendar-days me-1"></i> &le; 30 Days (<?= (int)($alerts['expiring_visas'] ?? 0) ?>)
+              </a>
+              <?php if (!empty($alerts['expired_visas'])): ?>
+                <a href="/applications?visa_expiry=expired" class="btn btn-sm btn-danger rounded-pill px-3 fw-bold">
+                  <i class="fa-solid fa-triangle-exclamation me-1"></i> Expired (<?= (int)$alerts['expired_visas'] ?>)
+                </a>
+              <?php endif; ?>
+              <a href="/applications?visa_expiry=has_expiry" class="btn btn-sm btn-light border rounded-pill px-3 fw-semibold text-muted">
+                View All &rarr;
+              </a>
+            </div>
+          </div>
+
+          <!-- Top Expiring Visas Table -->
+          <?php if (!empty($liveExpiringVisas)): ?>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0" style="font-size: 0.84rem;">
+                <thead class="table-light">
+                  <tr>
+                    <th>Applicant Name</th>
+                    <th>Application #</th>
+                    <th>Destination Country</th>
+                    <th>Visa Number</th>
+                    <th>Visa Status</th>
+                    <th>Expiry Date &amp; Countdown</th>
+                    <th class="text-end">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($liveExpiringVisas as $lv): ?>
+                    <tr>
+                      <td>
+                        <div class="fw-bold text-dark"><?= e($lv['customer_name']) ?></div>
+                        <div class="text-muted small"><?= e($lv['customer_mobile'] ?: '—') ?></div>
+                      </td>
+                      <td>
+                        <a href="/applications/show?id=<?= $lv['id'] ?>" class="font-monospace fw-semibold text-decoration-none text-primary">
+                          <?= e($lv['application_number']) ?>
+                        </a>
+                      </td>
+                      <td>
+                        <span class="fs-5 me-1"><?= $lv['flag_emoji'] ?? '🌐' ?></span>
+                        <span class="fw-semibold text-dark"><?= e($lv['country_name'] ?? '—') ?></span>
+                      </td>
+                      <td>
+                        <span class="badge bg-light text-dark border font-monospace"><?= e($lv['visa_number'] ?: 'On File') ?></span>
+                      </td>
+                      <td>
+                        <?= visa_status_badge($lv['visa_status'] ?? 'active') ?>
+                      </td>
+                      <td>
+                        <?= visa_expiry_badge($lv['expiry_date']) ?>
+                        <div class="text-muted small mt-0.5"><?= format_date($lv['expiry_date']) ?></div>
+                      </td>
+                      <td class="text-end">
+                        <a href="/applications/show?id=<?= $lv['id'] ?>" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                          <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> View
+                        </a>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
+          <?php endif; ?>
+        </div>
+      </div>
+    <?php endif; ?>
 
     <!-- ─── TOP 4 BENTO METRIC STAT CARDS (TAILORED BY ROLE WITH LOGO COLOR) ── -->
     <div class="row g-3 g-md-4 mb-4 bento-stat-grid">

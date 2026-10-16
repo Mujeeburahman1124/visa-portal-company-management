@@ -9,6 +9,8 @@ $activeService = (int)($_GET['service_id'] ?? 0);
 $activeSupplier = (int)($_GET['supplier_id'] ?? 0);
 $activeStaff = (int)($_GET['staff_id'] ?? 0);
 $activeAgent = (int)($_GET['agent_id'] ?? 0);
+$activeVisaExpiry = trim($_GET['visa_expiry'] ?? '');
+$activeVisaStatus = trim($_GET['visa_status'] ?? '');
 $searchQuery = trim($_GET['search'] ?? '');
 
 $currentView = $_GET['view'] ?? 'table';
@@ -155,6 +157,16 @@ $getStageStep = function(string $stage, string $status): int {
         <div class="apps-kpi-value text-danger"><?= (int)($counts['overdue'] ?? 0) ?></div>
         <span class="apps-muted">Past expected date</span>
       </a>
+
+      <!-- Expiring Visas -->
+      <a href="/applications?visa_expiry=expiring_30" class="apps-kpi tone-warning <?= (!empty($activeVisaExpiry)) ? 'is-active' : '' ?>">
+        <div class="apps-kpi-top">
+          <span class="apps-kpi-label">Expiring Visas</span>
+          <div class="apps-kpi-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+        </div>
+        <div class="apps-kpi-value text-warning"><?= (int)($counts['expiring_visas'] ?? 0) ?></div>
+        <span class="apps-muted">&le; 30d countdown</span>
+      </a>
     </div>
 
     <!-- ─── 3. SEARCH & ADVANCED FILTER PANEL ────────────────────────────── -->
@@ -200,15 +212,28 @@ $getStageStep = function(string $stage, string $status): int {
                 </select>
               </div>
 
-              <!-- 2. All Providers (Suppliers) -->
+              <!-- 2. Visa Expiry Filter -->
               <div class="col-6 col-sm-4 col-md-2 p-1">
-                <select name="supplier_id" class="form-select form-select-sm" title="Filter by Provider / Supplier">
-                  <option value="">All Providers</option>
-                  <?php foreach ($suppliers as $sup): ?>
-                    <option value="<?= $sup['id'] ?>" <?= $activeSupplier === (int)$sup['id'] ? 'selected' : '' ?>>
-                      <?= e($sup['company_name']) ?>
-                    </option>
-                  <?php endforeach; ?>
+                <select name="visa_expiry" class="form-select form-select-sm" title="Filter by Visa Expiry">
+                  <option value="">-- Visa Expiry --</option>
+                  <option value="expiring_7" <?= $activeVisaExpiry === 'expiring_7' ? 'selected' : '' ?>>⚠️ In 7 Days</option>
+                  <option value="expiring_15" <?= $activeVisaExpiry === 'expiring_15' ? 'selected' : '' ?>>⚠️ In 15 Days</option>
+                  <option value="expiring_20" <?= $activeVisaExpiry === 'expiring_20' ? 'selected' : '' ?>>⚠️ In 20 Days</option>
+                  <option value="expiring_30" <?= $activeVisaExpiry === 'expiring_30' ? 'selected' : '' ?>>⚠️ In 30 Days</option>
+                  <option value="today" <?= $activeVisaExpiry === 'today' ? 'selected' : '' ?>>🚨 Expires Today</option>
+                  <option value="expired" <?= $activeVisaExpiry === 'expired' ? 'selected' : '' ?>>❌ Already Expired</option>
+                  <option value="has_expiry" <?= $activeVisaExpiry === 'has_expiry' ? 'selected' : '' ?>>📅 Has Expiry Date</option>
+                </select>
+              </div>
+
+              <!-- 2b. Visa Status Filter -->
+              <div class="col-6 col-sm-4 col-md-2 p-1">
+                <select name="visa_status" class="form-select form-select-sm" title="Filter by Visa Status">
+                  <option value="">-- Visa Status --</option>
+                  <option value="active" <?= $activeVisaStatus === 'active' ? 'selected' : '' ?>>Active</option>
+                  <option value="inactive" <?= $activeVisaStatus === 'inactive' ? 'selected' : '' ?>>Inactive</option>
+                  <option value="used" <?= $activeVisaStatus === 'used' ? 'selected' : '' ?>>Used</option>
+                  <option value="before entry cancel" <?= $activeVisaStatus === 'before entry cancel' ? 'selected' : '' ?>>Before Entry Cancel</option>
                 </select>
               </div>
 
