@@ -105,6 +105,11 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         <i class="fa-solid fa-file-lines me-1.5 text-info"></i> Visa Types (<?= count($visaTypes) ?>)
       </a>
     </li>
+    <li class="nav-item" role="presentation">
+      <a class="nav-link <?= $activeTab === 'rules' ? 'active fw-bold' : '' ?>" href="/visa-packages?tab=rules">
+        <i class="fa-solid fa-scale-balanced me-1.5 text-warning"></i> Nationality &amp; Residence Rules (<?= count($eligibilityRules) ?>)
+      </a>
+    </li>
   </ul>
 
   <?php if ($activeTab === 'packages'): ?>
@@ -676,7 +681,194 @@ require_once dirname(__DIR__) . '/layouts/topbar.php';
         </table>
       </div>
     </div>
+  <?php elseif ($activeTab === 'rules'): ?>
+    <!-- Nationality & Residence Eligibility / Pricing Override Rules Header -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+      <div>
+        <h5 class="fw-bold mb-1 text-dark d-flex align-items-center gap-2">
+          <i class="fa-solid fa-scale-balanced text-warning"></i> Nationality &amp; Residence Rules
+        </h5>
+        <p class="text-muted small mb-0">Define specific price overrides, processing durations, and consular eligibility restrictions by applicant nationality and residence.</p>
+      </div>
+      <div>
+        <button type="button" class="btn btn-warning text-dark fw-bold px-3 shadow-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#createRuleModal">
+          <i class="fa-solid fa-plus me-1"></i> Add Override Rule
+        </button>
+      </div>
+    </div>
+
+    <!-- Rules Table -->
+    <div class="card card-enterprise shadow-sm border mb-4">
+      <div class="table-responsive">
+        <table class="table table-enterprise table-hover mb-0 align-middle">
+          <thead>
+            <tr>
+              <th>Destination</th>
+              <th>Visa Service / Package</th>
+              <th>Applicant Nationality</th>
+              <th>Residence Country</th>
+              <th>Status</th>
+              <th>Price Override</th>
+              <th>Processing Days</th>
+              <th>Special Conditions / Notes</th>
+              <th class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if (empty($eligibilityRules)): ?>
+              <tr>
+                <td colspan="9" class="text-center py-5">
+                  <div class="text-muted mb-2"><i class="fa-solid fa-scale-balanced fs-2 opacity-50"></i></div>
+                  <h6 class="fw-bold text-dark">No Nationality Override Rules Configured</h6>
+                  <p class="text-muted small mb-0">Standard visa package prices and processing durations will apply for all nationalities.</p>
+                </td>
+              </tr>
+            <?php else: ?>
+              <?php foreach ($eligibilityRules as $r): ?>
+                <tr>
+                  <td>
+                    <span class="fs-5 me-1"><?= $r['flag_emoji'] ?? '🌐' ?></span>
+                    <span class="fw-semibold text-dark"><?= e($r['country_name'] ?? 'All Destinations') ?></span>
+                  </td>
+                  <td>
+                    <div class="fw-bold text-dark"><?= e($r['service_name'] ?? 'All Services') ?></div>
+                    <?php if (!empty($r['standard_selling_price'])): ?>
+                      <div class="text-muted small">Base: $<?= number_format((float)$r['standard_selling_price'], 2) ?></div>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <?php if (strtoupper($r['applicant_nationality'] ?? 'ANY') === 'ANY'): ?>
+                      <span class="badge bg-secondary-subtle text-secondary border">Any Nationality</span>
+                    <?php else: ?>
+                      <span class="badge bg-primary-subtle text-primary border font-monospace fw-bold"><?= e($r['applicant_nationality']) ?></span>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <?php if (strtoupper($r['residence_country'] ?? 'ANY') === 'ANY' || empty($r['residence_country'])): ?>
+                      <span class="badge bg-light text-muted border">Any Residence</span>
+                    <?php else: ?>
+                      <span class="badge bg-info-subtle text-info border fw-semibold"><?= e($r['residence_country']) ?></span>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <?php if (!empty($r['is_eligible'])): ?>
+                      <span class="badge bg-success-subtle text-success border"><i class="fa-solid fa-circle-check me-1"></i>Eligible</span>
+                    <?php else: ?>
+                      <span class="badge bg-danger-subtle text-danger border"><i class="fa-solid fa-ban me-1"></i>Restricted</span>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <?php if ($r['override_selling_price'] !== null && $r['override_selling_price'] !== ''): ?>
+                      <span class="fw-bold text-success fs-6">$<?= number_format((float)$r['override_selling_price'], 2) ?></span>
+                    <?php else: ?>
+                      <span class="text-muted small">Standard</span>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <?php if ($r['override_processing_days'] !== null && $r['override_processing_days'] !== ''): ?>
+                      <span class="badge bg-light text-dark border"><?= (int)$r['override_processing_days'] ?> Days</span>
+                    <?php else: ?>
+                      <span class="text-muted small">Standard</span>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <span class="small text-secondary"><?= e($r['special_conditions'] ?: ($r['notes'] ?: '—')) ?></span>
+                  </td>
+                  <td class="text-end">
+                    <form action="/visa-packages/rules/delete" method="POST" class="d-inline" onsubmit="return confirm('Delete this Nationality Rule?');">
+                      <?= csrf_field() ?>
+                      <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                      <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2.5" title="Delete Rule">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            <?php endif; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
   <?php endif; ?>
+</div>
+
+<!-- Modal: Add Override Rule -->
+<div class="modal fade" id="createRuleModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+      <div class="modal-header bg-white border-bottom py-3 px-4">
+        <div class="d-flex align-items-center gap-2">
+          <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(234, 179, 8, 0.15); color: #B45309; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+            <i class="fa-solid fa-scale-balanced"></i>
+          </div>
+          <div>
+            <h5 class="modal-title fw-bold text-dark fs-6 mb-0">Create Nationality &amp; Residence Rule</h5>
+            <small class="text-muted">Configure pricing overrides and eligibility restrictions for specific applicant origins.</small>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="/visa-packages/rules/store" method="POST">
+        <?= csrf_field() ?>
+        <div class="modal-body p-4" style="background: #FAFAFA;">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Destination Country <span class="text-danger">*</span></label>
+              <select name="destination_country_id" class="form-select" required id="ruleCountrySelect">
+                <option value="">-- Select Destination --</option>
+                <?php foreach ($countries as $c): ?>
+                  <option value="<?= $c['id'] ?>"><?= $c['flag_emoji'] ?> <?= e($c['name']) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Visa Service / Package <span class="text-danger">*</span></label>
+              <select name="visa_service_id" class="form-select" required id="rulePackageSelect">
+                <option value="">-- Select Visa Package --</option>
+                <?php foreach ($allPackages as $pkg): ?>
+                  <option value="<?= $pkg['id'] ?>" data-country="<?= $pkg['country_id'] ?>"><?= e($pkg['name']) ?> (<?= e($pkg['country_name'] ?? '') ?> - $<?= number_format((float)$pkg['selling_price'], 2) ?>)</option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Applicant Nationality</label>
+              <input type="text" name="applicant_nationality" class="form-control" placeholder="e.g. India, Philippines, Pakistan (or ANY)" value="ANY">
+              <div class="form-text small">Enter nationality name or 'ANY' for all.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold text-secondary">Residence Country</label>
+              <input type="text" name="residence_country" class="form-control" placeholder="e.g. United Arab Emirates, Saudi Arabia (or ANY)" value="United Arab Emirates">
+              <div class="form-text small">Country where applicant legally resides.</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold text-secondary">Eligibility Status</label>
+              <select name="is_eligible" class="form-select">
+                <option value="1">Eligible (Allowed)</option>
+                <option value="0">Restricted / Ineligible</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold text-secondary">Override Selling Price ($)</label>
+              <input type="number" step="0.01" name="override_selling_price" class="form-control" placeholder="Leave empty for default">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold text-secondary">Override Processing Days</label>
+              <input type="number" name="override_processing_days" class="form-control" placeholder="Leave empty for default">
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-semibold text-secondary">Special Conditions / Restriction Notes</label>
+              <textarea name="special_conditions" class="form-control" rows="2" placeholder="e.g., Must hold valid UAE residency of 6+ months, or Requires additional consular clearance..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-white border-top py-3 px-4">
+          <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning text-dark fw-bold rounded-pill px-4">Save Rule</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <!-- Modal: + Add Visa Package (Image 1 2-Column Split Layout) -->

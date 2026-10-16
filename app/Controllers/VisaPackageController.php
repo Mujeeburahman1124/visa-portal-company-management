@@ -20,7 +20,7 @@ class VisaPackageController
         $supplierId = !empty($_GET['supplier_id']) ? (int)$_GET['supplier_id'] : 0;
         $search = trim($_GET['search'] ?? '');
         $activeTab = trim($_GET['tab'] ?? 'packages');
-        if (!in_array($activeTab, ['packages', 'categories', 'types'], true)) {
+        if (!in_array($activeTab, ['packages', 'categories', 'types', 'rules'], true)) {
             $activeTab = 'packages';
         }
 
@@ -116,6 +116,17 @@ class VisaPackageController
             $visaTypes = $pdo->query("SELECT * FROM visa_types ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
         } catch (\Throwable $e) {
             $visaTypes = [];
+        }
+
+        $eligibilityRules = [];
+        try {
+            $eligibilityRules = $pdo->query("SELECT vr.*, c.name as country_name, c.flag_emoji, vs.name as service_name, vs.selling_price as standard_selling_price, vs.estimated_days as standard_days 
+                FROM visa_eligibility_rules vr 
+                LEFT JOIN countries c ON c.id = vr.destination_country_id 
+                LEFT JOIN visa_services vs ON vs.id = COALESCE(vr.visa_service_id, vr.service_id) 
+                ORDER BY vr.id DESC")->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            $eligibilityRules = [];
         }
 
 
@@ -756,6 +767,73 @@ class VisaPackageController
         }
 
         redirect('/dashboard', 'Cover image updated successfully!', 'success');
+    }
+
+    public function createRule(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+
+        $destinationCountryId = (int)($_POST['destination_country_id'] ?? 0);
+        $visaServiceId = (int)($_POST['visa_service_id'] ?? 0);
+        $applicantNationality = trim($_POST['applicant_nationality'] ?? 'ANY');
+        $residenceCountry = trim($_POST['residence_country'] ?? 'ANY');
+        $overrideSellingPrice = !empty($_POST['override_selling_price']) ? (float)$_POST['override_selling_price'] : null;
+        $overrideProcessingDays = !empty($_POST['override_processing_days']) ? (int)$_POST['override_processing_days'] : null;
+        $isEligible = isset($_POST['is_eligible']) ? (int)$_POST['is_eligible'] : 1;
+        $specialConditions = trim($_POST['special_conditions'] ?? '');
+
+        if ($destinationCountryId <= 0 || $visaServiceId <= 0) {
+            redirect('/visa-packages?tab=rules', 'Please select both Destination Country and Visa Service.', 'danger');
+        }
+
+        if ($applicantNationality === '') {
+            $applicantNationality = 'ANY';
+        }
+        if ($residenceCountry === '') {
+            $residenceCountry = 'ANY';
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $stmt = $pdo->prepare("INSERT INTO visa_eligibility_rules 
+            (destination_country_id, visa_service_id, service_id, applicant_nationality, residence_country, override_selling_price, price_override, override_processing_days, processing_days_override, is_eligible, special_conditions, notes, created_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([
+            $destinationCountryId,
+            $visaServiceId,
+            $visaServiceId,
+            $applicantNationality,
+            $residenceCountry,
+            $overrideSellingPrice,
+            $overrideSellingPrice,
+            $overrideProcessingDays,
+            $overrideProcessingDays,
+            $isEligible,
+            $specialConditions ?: null,
+            $specialConditions ?: null,
+            $now
+        ]);
+
+        $ruleId = (int)$pdo->lastInsertId();
+        AuditService::log('CREATE', 'VisaEligibilityRules', $ruleId, "Created rule for nationality {$applicantNationality} (Destination #{$destinationCountryId}, Service #{$visaServiceId})");
+
+        redirect('/visa-packages?tab=rules', 'Nationality & Residence rule created successfully!', 'success');
+    }
+
+    public function deleteRule(): void
+    {
+        AuthMiddleware::handle();
+        $pdo = Database::getConnection();
+
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id <= 0) {
+            redirect('/visa-packages?tab=rules', 'Invalid rule ID.', 'danger');
+        }
+
+        $pdo->prepare("DELETE FROM visa_eligibility_rules WHERE id = ?")->execute([$id]);
+        AuditService::log('DELETE', 'VisaEligibilityRules', $id, "Deleted eligibility rule #{$id}");
+
+        redirect('/visa-packages?tab=rules', 'Eligibility rule deleted successfully.', 'success');
     }
 }
 

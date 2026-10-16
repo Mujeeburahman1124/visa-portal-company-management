@@ -1131,6 +1131,17 @@ switch ($uri) {
         redirect('/visa-packages');
         break;
 
+    case '/visa-packages/rules/store':
+    case '/visa-packages/rules/create':
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager']);
+        (new App\Controllers\VisaPackageController())->createRule();
+        break;
+
+    case '/visa-packages/rules/delete':
+        RoleMiddleware::authorize(['super-admin', 'admin']);
+        (new App\Controllers\VisaPackageController())->deleteRule();
+        break;
+
     case '/countries':
     case '/countries/index':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'visa-manager']);

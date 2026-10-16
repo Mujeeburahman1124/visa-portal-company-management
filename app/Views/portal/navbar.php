@@ -37,9 +37,21 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
       <!-- Portal Navigation Links -->
       <ul class="navbar-nav mx-auto my-2 my-xl-0 gap-1 gap-xl-2 align-items-stretch align-items-xl-center">
         <li class="nav-item">
-          <a class="nav-link <?= str_starts_with($currentUri, '/portal/dashboard') ? 'active' : '' ?>" href="/portal/dashboard">
+          <a class="nav-link <?= $currentUri === '/portal/dashboard' ? 'active' : '' ?>" href="/portal/dashboard">
             <i class="fa-solid fa-gauge-high"></i>
             <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <?= str_contains($currentUri, '#applications') ? 'active' : '' ?>" href="/portal/dashboard#applications">
+            <i class="fa-solid fa-folder-open"></i>
+            <span>My Applications</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <?= str_starts_with($currentUri, '/tracking') ? 'active' : '' ?>" href="/tracking">
+            <i class="fa-solid fa-magnifying-glass-location"></i>
+            <span>Track Visa</span>
           </a>
         </li>
         <li class="nav-item">
@@ -57,13 +69,7 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
         <li class="nav-item">
           <a class="nav-link <?= str_starts_with($currentUri, '/portal/invoices') ? 'active' : '' ?>" href="/portal/invoices">
             <i class="fa-solid fa-receipt"></i>
-            <span>Invoices</span>
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link <?= str_starts_with($currentUri, '/portal/wallet') ? 'active' : '' ?>" href="/portal/wallet">
-            <i class="fa-solid fa-wallet"></i>
-            <span>Wallet</span>
+            <span>Invoices &amp; Receipts</span>
           </a>
         </li>
         <li class="nav-item">
@@ -101,6 +107,16 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
               <div class="badge mt-1" style="background:var(--portal-primary);"><?= e($customer['customer_code'] ?? '') ?></div>
             </li>
             <li>
+              <a href="/portal/dashboard#profile" class="dropdown-item py-2 text-dark">
+                <i class="fa-solid fa-id-card me-2 text-primary"></i> My Applicant Profile
+              </a>
+            </li>
+            <li>
+              <a href="/portal/dashboard#applications" class="dropdown-item py-2 text-dark">
+                <i class="fa-solid fa-passport me-2 text-success"></i> My Visa Applications
+              </a>
+            </li>
+            <li>
               <button type="button" class="dropdown-item py-2 text-dark" data-bs-toggle="modal" data-bs-target="#portalChangePasswordModal">
                 <i class="fa-solid fa-key me-2 text-warning"></i> Reset / Change Password
               </button>
@@ -128,6 +144,9 @@ $unreadNotifsCount = (int)$pdo->query("SELECT COUNT(*) FROM notifications WHERE 
           </div>
         </div>
         <div class="portal-mobile-actions">
+          <a href="/portal/dashboard#profile" class="btn btn-sm btn-outline-light">
+            <i class="fa-solid fa-id-card"></i> Profile
+          </a>
           <button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#portalChangePasswordModal">
             <i class="fa-solid fa-key text-warning"></i> Password
           </button>

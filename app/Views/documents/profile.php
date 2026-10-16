@@ -139,7 +139,7 @@ $canDeleteDocs = user_can('documents.delete') || user_has_role(['super-admin', '
           <?php if (!empty($app['whatsapp'])): ?>
             <?php 
               $waClean = preg_replace('/[^0-9]/', '', (string)$app['whatsapp']); 
-              $waMsg = urlencode("Hello " . $app['customer_name'] . ", regarding your visa application " . $app['application_number'] . " at MS Travel Hub Global Visa Management:");
+              $waMsg = urlencode("Hello " . $app['customer_name'] . ", regarding your visa application " . $app['application_number'] . " at MS Travel Hub Visa Management:");
             ?>
             <a href="https://wa.me/<?= e($waClean) ?>?text=<?= $waMsg ?>" target="_blank" 
                class="btn btn-sm btn-outline-success rounded-pill px-3 shadow-xs fw-semibold" title="Direct WhatsApp Chat">

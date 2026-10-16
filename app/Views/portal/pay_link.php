@@ -94,12 +94,6 @@ $flash = get_flash();
                 <span class="text-muted">Entry &amp; Duration:</span>
                 <span class="text-secondary"><?= e($link['entry_type']) ?> &bull; <?= e($link['duration']) ?></span>
               </div>
-              <?php if (!empty($link['supplier_name'])): ?>
-                <div class="d-flex justify-content-between">
-                  <span class="text-muted">Supplier Channel:</span>
-                  <span class="text-secondary"><?= e($link['supplier_name']) ?></span>
-                </div>
-              <?php endif; ?>
             </div>
 
             <div class="d-flex justify-content-between align-items-center pt-2">

@@ -91,7 +91,7 @@ $flash = get_flash();
   <?php endif; ?>
 
   <!-- ─── MY VISA APPLICATIONS SECTION ─────────────────────────────────────── -->
-  <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+  <div class="d-flex align-items-center justify-content-between gap-2 mb-3" id="applications">
     <h4 class="fw-bold mb-0 text-dark" style="font-family:'Outfit', sans-serif;">
       <i class="fa-solid fa-folder-open me-2" style="color:var(--portal-primary);"></i> My Visa Applications
     </h4>
@@ -336,6 +336,56 @@ $flash = get_flash();
       </div>
     </div>
   <?php endif; ?>
+
+  <!-- ─── APPLICANT PROFILE & IDENTITY SECTION ────────────────────────── -->
+  <div class="portal-bento-card mb-4" id="profile">
+    <div class="portal-card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <h6 class="fw-bold text-dark mb-0">
+        <i class="fa-solid fa-id-card me-2" style="color:var(--portal-primary);"></i> Applicant Profile &amp; Verification Details
+      </h6>
+      <span class="badge font-monospace px-3 py-1.5" style="background:var(--portal-primary); font-size:0.75rem;">
+        <?= e($customer['customer_code'] ?? 'MSV-CUST') ?>
+      </span>
+    </div>
+    <div class="p-3 p-md-4">
+      <div class="row g-3">
+        <div class="col-sm-6 col-md-3">
+          <div class="p-3 bg-light rounded-3 border">
+            <div class="text-muted small mb-1">Full Legal Name</div>
+            <div class="fw-bold text-dark"><?= e($customer['full_name'] ?? '—') ?></div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="p-3 bg-light rounded-3 border">
+            <div class="text-muted small mb-1">Registered Email</div>
+            <div class="fw-bold text-dark text-truncate" title="<?= e($customer['email'] ?? '') ?>"><?= e($customer['email'] ?? '—') ?></div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="p-3 bg-light rounded-3 border">
+            <div class="text-muted small mb-1">Contact Phone</div>
+            <div class="fw-bold text-dark"><?= e($customer['phone'] ?? '—') ?></div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+          <div class="p-3 bg-light rounded-3 border">
+            <div class="text-muted small mb-1">Passport / Travel Doc</div>
+            <div class="fw-bold text-dark font-monospace"><?= e($customer['passport_number'] ?? 'On File') ?></div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-3 pt-3 border-top d-flex flex-wrap align-items-center justify-content-between gap-2 text-muted small">
+        <div>
+          <i class="fa-solid fa-circle-check text-success me-1"></i> Customer account active and linked to MS TRAVEL HUB consular management network.
+        </div>
+        <div>
+          <a href="/portal/documents" class="text-decoration-none fw-semibold" style="color:var(--portal-primary);">
+            <i class="fa-solid fa-file-circle-check me-1"></i> Manage Document Vault &rarr;
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <footer class="text-center py-4 text-muted small" style="border-top: 1px solid var(--portal-border-subtle);">

@@ -28,8 +28,8 @@
       <div class="d-flex align-items-center gap-3">
         <img src="/assets/images/logo.png" alt="MS Travel Hub" style="height: 58px; width: auto;">
         <div>
-          <div class="fw-bold fs-3 text-dark">MS TRAVEL HUB GLOBAL</div>
-          <div class="text-muted small">Global Visa Processing &amp; Embassy Document Operations</div>
+          <div class="fw-bold fs-3 text-dark">MS TRAVEL HUB</div>
+          <div class="text-muted small">Visa Processing &amp; Embassy Document Operations</div>
           <div class="text-muted small">TRN / Tax Registration: 100-8899-2233-0001</div>
           <div class="text-muted small">Dubai, UAE &bull; London, UK &bull; New York, USA</div>
         </div>
@@ -144,7 +144,7 @@
     <div class="border-top pt-4 text-muted small d-flex justify-content-between align-items-center">
       <div>
         <div>Payment Methods: Bank Wire Transfer, Corporate Card, Cash Settlement.</div>
-        <div style="font-size: 0.72rem;">MS Travel Hub Global Visa Services &bull; Computer Generated Tax Invoice</div>
+        <div style="font-size: 0.72rem;">MS Travel Hub Visa Services &bull; Computer Generated Tax Invoice</div>
       </div>
       <div class="text-end">
         <span class="badge bg-light text-dark border p-2">Official Tax Document</span>

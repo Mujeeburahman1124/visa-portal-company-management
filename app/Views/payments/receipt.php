@@ -28,8 +28,8 @@
       <div class="d-flex align-items-center gap-3">
         <img src="/assets/images/logo.png" alt="MS Travel Hub" style="height: 54px; width: auto;">
         <div>
-          <div class="fw-bold fs-4 text-dark">MS TRAVEL HUB GLOBAL</div>
-          <div class="text-muted small">Global Visa Processing &amp; Document Clearing Services</div>
+          <div class="fw-bold fs-4 text-dark">MS TRAVEL HUB</div>
+          <div class="text-muted small">Visa Processing &amp; Document Clearing Services</div>
           <div class="text-muted small">Business Bay, Dubai, United Arab Emirates</div>
         </div>
       </div>
@@ -103,7 +103,7 @@
     <div class="border-top pt-4 mt-4 d-flex justify-content-between align-items-center text-muted small">
       <div>
         <div>Authorized Signatory: <strong><?= e($payment['received_by_name'] ?? 'Accounts Department') ?></strong></div>
-        <div style="font-size: 0.72rem;">Thank you for trusting MS Travel Hub Global Services.</div>
+        <div style="font-size: 0.72rem;">Thank you for trusting MS Travel Hub Services.</div>
       </div>
       <div class="text-end">
         <i class="fa-solid fa-stamp text-primary opacity-50 fs-2"></i>
