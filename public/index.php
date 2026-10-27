@@ -551,8 +551,15 @@ switch ($uri) {
 
     // Management & Workflow: Payments & Invoices (Protected: Finance/Management)
     case '/payments':
+    case '/payments/create':
+    case '/payments/record':
         RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts', 'visa-manager']);
-        (new App\Controllers\PaymentController())->index();
+        $payCtrl = new App\Controllers\PaymentController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $payCtrl->store();
+        } else {
+            $payCtrl->index();
+        }
         break;
 
     case '/payments/history':
@@ -567,7 +574,7 @@ switch ($uri) {
         break;
 
     case '/payments/store':
-        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts']);
+        RoleMiddleware::authorize(['super-admin', 'admin', 'branch-manager', 'accounts', 'visa-manager']);
         (new App\Controllers\PaymentController())->store();
         break;
 

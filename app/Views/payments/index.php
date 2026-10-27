@@ -788,9 +788,19 @@ document.addEventListener('DOMContentLoaded', function () {
   var sel = document.getElementById('paymentAppSelect');
   if (sel && sel.value) {
     onApplicantSelected(sel);
-    if (typeof openModalById === 'function') {
-      openModalById('recordPaymentModal');
-    }
+    setTimeout(function () {
+      if (typeof openModalById === 'function') {
+        openModalById('recordPaymentModal');
+      } else if (window.bootstrap && bootstrap.Modal) {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('recordPaymentModal')).show();
+      } else {
+        var m = document.getElementById('recordPaymentModal');
+        if (m) {
+          m.classList.add('show');
+          m.style.display = 'block';
+        }
+      }
+    }, 60);
   }
 
   const urlParams = new URLSearchParams(window.location.search);
